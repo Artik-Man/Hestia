@@ -72,18 +72,32 @@ config_digest() {
         /etc/hestia/profile.json /etc/wireguard/wg-keenetic.conf
 }
 
-[[ -f /etc/hestia/.installer-managed && ! -L /etc/hestia/.installer-managed &&
-    $(stat -c '%u:%a' /etc/hestia/.installer-managed) == 0:600 &&
-    $(cat /etc/hestia/.installer-managed) == 1 ]] || die "Refusing an unmanaged Hestia installation"
+adopt_profile=0
+if [[ -e /etc/hestia/.installer-managed || -L /etc/hestia/.installer-managed ]]; then
+    [[ -f /etc/hestia/.installer-managed && ! -L /etc/hestia/.installer-managed &&
+        $(stat -c '%u:%a' /etc/hestia/.installer-managed) == 0:600 &&
+        $(cat /etc/hestia/.installer-managed) == 1 ]] || die "Installer marker conflicts with the managed installation"
+else
+    [[ ! -e /etc/hestia/profile.json && ! -L /etc/hestia/profile.json &&
+        ! -e /etc/hestia/profile-source.sha256 && ! -L /etc/hestia/profile-source.sha256 &&
+        ! -e /etc/hestia/profile-backend.sha256 && ! -L /etc/hestia/profile-backend.sha256 ]] || die "Unmanaged profile artifacts exist without an installer marker"
+    [[ $(systemctl show hestia.service -p ExecStart --value) == *"/usr/local/bin/hestia -watch -config /etc/hestia/snapshot.json -interval 1s"* &&
+    $(systemctl show hestia-panel.service -p ExecStart --value) == *"/usr/local/lib/hestia-ui/hestia-panel -listen 192.168.1.133:8080"* &&
+    $(systemctl show hestia-panel.service -p User --value) == "" ]] || die "Unmanaged installation differs from the known stage1 legacy layout"
+    adopt_profile=1
+fi
 [[ ! -e /etc/hestia/.binding-pending && ! -L /etc/hestia/.binding-pending ]] || die "Recover the pending binding transaction before updating"
 
 # Establish safe parents and target states before lock acquisition or any system mutation.
 for dir in /etc /etc/hestia /etc/systemd /etc/systemd/system /etc/tmpfiles.d /etc/sudoers.d \
-    /usr /usr/local /usr/local/bin /usr/local/lib /usr/local/lib/hestia \
+    /usr /usr/local /usr/local/bin /usr/local/lib \
     /usr/local/share /usr/local/share/hestia-panel /usr/local/share/hestia-panel/releases \
     /run /var /var/backups /etc/wireguard; do
     die_if_untrusted_dir "$dir"
 done
+if [[ -e /usr/local/lib/hestia || -L /usr/local/lib/hestia ]]; then
+    die_if_untrusted_dir /usr/local/lib/hestia
+fi
 for dir in /etc/hestia/awg /run/hestia-awg; do
     if [[ -e $dir || -L $dir ]]; then
         die_if_untrusted_dir "$dir"
@@ -107,7 +121,11 @@ for path in /etc/hestia/.installer-managed /etc/hestia/.binding-pending /etc/hes
     if [[ $parent == /run/hestia-awg && ! -e $parent && ! -L $parent ]]; then
         : # systemd-tmpfiles creates this runtime directory after installation.
     else
-        die_if_untrusted_dir "$parent"
+        if [[ $parent == /usr/local/lib/hestia && ! -e $parent && ! -L $parent ]]; then
+            : # Created after the manual backup, before installing the new runtime.
+        else
+            die_if_untrusted_dir "$parent"
+        fi
     fi
     if [[ $path == */current ]]; then
         [[ ! -e $path || -L $path ]] || die "Panel current must be a symlink: $path"
@@ -142,16 +160,20 @@ require_root_file /etc/hestia/snapshot.json
 require_root_file /etc/hestia/sing-box.json
 require_root_file /etc/wireguard/wg-keenetic.conf
 [[ $(stat -c '%u' /etc/wireguard/wg-keenetic.conf) == 0 ]] || die "wg-keenetic config is not root-owned"
-getent group hestia-snapshot >/dev/null || die "hestia-snapshot group is missing"
-getent passwd hestia-panel >/dev/null || die "Static hestia-panel account is missing"
-[[ $(getent passwd hestia-panel | cut -d: -f7) == /usr/sbin/nologin ]] || die "hestia-panel is not a locked service account"
+if getent passwd hestia-panel >/dev/null; then
+    [[ $(getent passwd hestia-panel | cut -d: -f7) == /usr/sbin/nologin ]] || die "hestia-panel is not a locked service account"
+fi
 [[ $(systemctl show hestia-panel.service -p FragmentPath --value) == /etc/systemd/system/hestia-panel.service ]] || die "Expected managed hestia-panel.service was not found"
 grep -Fq -- '-listen 192.168.1.133:8080' /etc/systemd/system/hestia-panel.service || die "The current panel listener differs from stage1"
 [[ $(systemctl is-enabled hestia-panel.service 2>/dev/null || :) == enabled ]] || die "The panel unit must already be enabled"
 
 (cd "$bundle" && sha256sum --check SHA256SUMS)
 "$bundle/amneziawg-go" --version | grep -F "amneziawg-go v3.1.20260828" >/dev/null || die "The bundled AmneziaWG runtime version is unexpected"
-python3 -I "$bundle/profile.py" --validate-managed /etc/hestia
+if ((adopt_profile)); then
+    python3 -I "$bundle/adopt-profile.py" check /etc/hestia "$bundle/guest-profile.json" "$bundle/profile.py"
+else
+    python3 -I "$bundle/profile.py" --validate-managed /etc/hestia
+fi
 python3 -I -c 'import json,sys; p=json.load(open(sys.argv[1])); raise SystemExit(1 if any(c.get("status")=="ready" for c in p.get("connectors", [])) else 0)' /etc/hestia/profile.json || die "Refusing an update while an AWG connector is marked ready"
 
 expected_version=$'amneziawg-go=3.1.20260828 commit=b5928efb6ca19f0153958460c3d141f04abc5c2e\namneziawg-tools=3.1.20260812 commit=ee0f0a9aa34ff0a0da4b3433b9512781cfe02843'

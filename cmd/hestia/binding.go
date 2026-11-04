@@ -1,3 +1,5 @@
+//go:build linux && arm64 && !android
+
 package main
 
 import (

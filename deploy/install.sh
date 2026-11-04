@@ -4,7 +4,6 @@ set -euo pipefail
 umask 077
 repo=$(cd "$(dirname "$0")/.." && pwd)
 sing_version=1.14.4
-sing_sha=436441f76ee2f7fe21b5b2d426d3cb261a480455a704865789ad533e4273ec26
 go_version=1.27.3
 go_sha=a06e99309dbcbdca1a8ccd2282c3ee146e55930886e26b4f1193269587165f49
 controller=
@@ -107,7 +106,7 @@ if [[ -z $controller ]]; then
     fetch "https://go.dev/dl/go$go_version.linux-arm64.tar.gz" "$work/go.tgz"
     check_hash "$go_sha" "$work/go.tgz"
     tar -C "$work" -xzf "$work/go.tgz"
-    (cd "$repo" && GOENV=off GOTOOLCHAIN=local GOWORK=off GOPROXY=off CGO_ENABLED=0 \
+    (cd "$repo" && GOENV=off GOTOOLCHAIN=local GOWORK=off GOPROXY=off CGO_ENABLED=0 GOOS=linux GOARCH=arm64 \
         GOCACHE="$work/cache" "$work/go/bin/go" build -mod=readonly -trimpath -buildvcs=false -o "$work/hestia" ./cmd/hestia)
 else
     install -m 0755 "$controller" "$work/hestia"
@@ -117,7 +116,7 @@ if [[ -z $archive ]]; then
 else
     cp -- "$archive" "$work/sing.tgz"
 fi
-check_hash "$sing_sha" "$work/sing.tgz"
+(cd "$work" && sha256sum -c "$repo/deploy/sing-box-1.14.4-linux-arm64.sha256")
 member=sing-box-$sing_version-linux-arm64/sing-box
 tar -C "$work" -xzf "$work/sing.tgz" "$member"
 backend=$work/$member

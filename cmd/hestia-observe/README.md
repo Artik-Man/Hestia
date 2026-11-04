@@ -34,7 +34,7 @@ hestia observe -config observer.json -check
 hestia observe -config observer.json -rounds 3
 ```
 
-Без `-rounds` наблюдатель работает до SIGTERM или прерывания. Перед первым раундом проверяется наличие каждого интерфейса. Для воспроизведения стенда можно собрать самостоятельную команду из корня проекта через `go build -o /tmp/hestia-observe ./cmd/hestia-observe`. У неё те же параметры.
+Без `-rounds` наблюдатель работает до SIGTERM или прерывания. Перед первым раундом проверяется наличие каждого интерфейса. Для воспроизведения стенда можно собрать самостоятельную команду из корня проекта через `CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o /tmp/hestia-observe ./cmd/hestia-observe`. У неё те же параметры.
 
 ## Решение и журнал
 

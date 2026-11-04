@@ -2,12 +2,23 @@
 # Build and transfer the reviewed AWG panel/runtime bundle to the fixed stage1 Lima guest.
 set -euo pipefail
 umask 077
-[[ $# == 0 ]] || {
-    echo "Usage: bash deploy/stage1-awg-update.sh" >&2
+[[ $# == 0 || ($# == 1 && $1 == --fresh) ]] || {
+    echo "Usage: bash deploy/stage1-awg-update.sh [--fresh]" >&2
     exit 2
 }
 repo=$(cd "$(dirname "$0")/.." && pwd)
 instance=hestia-stage1
+apply=stage1-awg-apply.sh
+extra=()
+if [[ ${1:-} == --fresh ]]; then
+    apply=stage1-fresh-apply.sh
+    extra=(hestia-binding.conf hestia-binding-recovery.service hestia-binding-watch.path hestia-binding-watch.service)
+    runtime=/private/tmp/hestia-vm-run
+    if [[ -d $runtime/lima-state/hestia-stage1 ]]; then
+        export LIMA_HOME=${LIMA_HOME:-$runtime/lima-state}
+        LIMACTL=${LIMACTL:-$runtime/bin/limactl}
+    fi
+fi
 vm=${LIMACTL:-limactl}
 go_version=1.27.3
 awg_go_tag=v3.1.20260828
@@ -45,8 +56,8 @@ guest ip -4 -o addr show dev lima0 scope global |
     echo "Refusing a guest without 192.168.1.133 on lima0" >&2
     exit 1
 }
-[[ $(go version) == "go version go$go_version darwin/arm64" ]] || {
-    echo "Building the stage1 package requires Go $go_version on macOS ARM64" >&2
+[[ $(GOENV=off GOTOOLCHAIN=local go env GOVERSION) == "go$go_version" ]] || {
+    echo "Building the stage1 package requires Go $go_version" >&2
     exit 1
 }
 
@@ -78,8 +89,11 @@ git clone --depth 1 --branch "$awg_tools_tag" \
 }
 git -C "$work/amneziawg-tools-source" archive --format=tar HEAD >"$work/amneziawg-tools-source.tar"
 
-cp "$repo/deploy/stage1-awg-apply.sh" "$work/"
+cp "$repo/deploy/$apply" "$work/"
+for unit in ${extra[@]+"${extra[@]}"}; do cp "$repo/deploy/systemd/$unit" "$work/"; done
 cp "$repo/deploy/profile.py" "$work/"
+cp "$repo/deploy/scheme3/adopt-profile.py" "$work/"
+cp "$repo/deploy/scheme3/guest-profile.json" "$work/"
 cp "$repo/deploy/systemd/hestia.service" "$work/"
 cp "$repo/deploy/systemd/hestia-awg.service" "$work/"
 cp "$repo/deploy/systemd/hestia-awg.conf" "$work/"
@@ -88,7 +102,7 @@ cp "$repo/deploy/systemd/hestia-panel.service.in" "$work/"
 (cd "$work" && shasum -a 256 hestia hestia-panel amneziawg-go amneziawg-tools-source.tar >SHA256SUMS)
 COPYFILE_DISABLE=1 tar -C "$work" -czf "$work/stage1-awg-update.tgz" \
     hestia hestia-panel browser amneziawg-go amneziawg-tools-source.tar SHA256SUMS \
-    stage1-awg-apply.sh profile.py hestia.service hestia-awg.service \
+    "$apply" ${extra[@]+"${extra[@]}"} profile.py adopt-profile.py guest-profile.json hestia.service hestia-awg.service \
     hestia-awg.conf hestia-awg.sudoers hestia-panel.service.in
 
 remote=$(guest mktemp -d /tmp/hestia-stage1-awg.XXXXXXXX)
@@ -101,5 +115,5 @@ guest tar -C "$remote" -xzf "$remote/package.tgz"
 guest sudo chown -R root:root -- "$remote"
 guest sudo chmod -R go-w -- "$remote"
 guest sudo chmod 0700 -- "$remote"
-guest sudo bash "$remote/stage1-awg-apply.sh" "$remote"
+guest sudo bash "$remote/$apply" "$remote"
 echo "Stage1 AWG package applied. The script did not alter the router, WireGuard profile, or main route."

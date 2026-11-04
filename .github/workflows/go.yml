@@ -4,7 +4,7 @@ permissions:
   contents: read
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -23,6 +23,13 @@ jobs:
           python3 -m venv "$RUNNER_TEMP/hestia-experiment-tests"
           "$RUNNER_TEMP/hestia-experiment-tests/bin/python" -m pip install --require-hashes --only-binary=:all: -r experiments/requirements-test.txt
           echo "$RUNNER_TEMP/hestia-experiment-tests/bin" >> "$GITHUB_PATH"
+      - run: make build
+      - name: Verify that other platforms have no gateway commands
+        run: |
+          for target in darwin/arm64 linux/amd64 linux/arm android/arm64; do
+            packages=$(GOOS="${target%/*}" GOARCH="${target#*/}" go list ./cmd/...)
+            test -z "$packages"
+          done
       - run: make check
   frontend:
     runs-on: ubuntu-latest

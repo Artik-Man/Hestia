@@ -87,16 +87,10 @@ remote=
 build_awg_runtime() {
     local output=$1 source tools_source awg_go_commit awg_tools_commit
     local awg_go_tag=3.1.20260828 awg_tools_tag=v3.1.20260812
-    local go_version=1.27.3
     awg_go_commit=b5928efb6ca19f0153958460c3d141f04abc5c2e
     awg_tools_commit=ee0f0a9aa34ff0a0da4b3433b9512781cfe02843
     source="$output/amneziawg-go-source"
     tools_source="$output/amneziawg-tools-source"
-
-    [[ $(go version) == "go version go$go_version darwin/arm64" ]] || {
-        echo "Building Hestia and AmneziaWG requires Go $go_version for Darwin ARM64" >&2
-        return 1
-    }
 
     git clone --depth 1 --branch "v$awg_go_tag" \
         https://github.com/amnezia-vpn/amneziawg-go.git "$source"
@@ -130,8 +124,8 @@ trap cleanup EXIT
 remote=$(guest mktemp -d /tmp/hestia-s3.XXXXXXXX)
 [[ $remote =~ ^/tmp/hestia-s3\.[a-zA-Z0-9]+$ ]]
 cd "$repo"
-[[ $(go version) == "go version go1.27.3 darwin/arm64" ]] || {
-    echo "Building Hestia and AmneziaWG requires Go 1.27.3 for Darwin ARM64" >&2
+[[ $(GOENV=off GOTOOLCHAIN=local go env GOVERSION) == go1.27.3 ]] || {
+    echo "Building Hestia and AmneziaWG requires Go 1.27.3" >&2
     exit 1
 }
 for name in hestia hestia-panel; do
@@ -158,7 +152,7 @@ if [[ $action == install ]]; then
         curl --fail --location --proto '=https' --proto-redir '=https' --output "$work/sing.tgz" \
             "https://github.com/SagerNet/sing-box/releases/download/v1.14.4/$release.tar.gz"
     fi
-    (cd "$work" && echo "436441f76ee2f7fe21b5b2d426d3cb261a480455a704865789ad533e4273ec26  sing.tgz" | shasum -a 256 -c -)
+    (cd "$work" && shasum -a 256 -c "$repo/deploy/sing-box-1.14.4-linux-arm64.sha256")
     tar -C "$work" -xzf "$work/sing.tgz" "$release/sing-box"
     mv "$work/$release/sing-box" "$work/sing-box"
     files+=(sing-box)

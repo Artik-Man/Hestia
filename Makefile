@@ -3,11 +3,15 @@ SHELLCHECK ?= shellcheck
 GO_PACKAGES := ./cmd/... ./internal/... ./tools/...
 SHFMT_FLAGS := -i 4 -ci
 
-.PHONY: fmt fmt-check lint test check
+.PHONY: build fmt fmt-check lint test check
 
 fmt:
 	go fmt $(GO_PACKAGES)
 	find deploy experiments -type f -name '*.sh' -exec $(SHFMT) $(SHFMT_FLAGS) -w {} +
+
+# Gateway executables have one distribution target, regardless of the build host.
+build:
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -buildvcs=false -o dist/ ./cmd/hestia ./cmd/hestia-observe ./cmd/hestia-panel
 
 fmt-check:
 	find deploy experiments -type f -name '*.sh' -exec $(SHFMT) $(SHFMT_FLAGS) -d {} +
@@ -39,5 +43,9 @@ check: fmt-check lint test test-installer test-experiments docs-check
 
 .PHONY: generate-api
 generate-api:
-	go run ./cmd/hestia-panel -openapi api/openapi.yaml
+	go run ./tools/openapi -output api/openapi.yaml
 	cd frontend && npm run generate
+
+.PHONY: stage1-fresh
+stage1-fresh:
+	bash deploy/stage1-awg-update.sh --fresh

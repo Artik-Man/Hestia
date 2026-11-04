@@ -10,11 +10,21 @@ work=$(mktemp -d)
 trap 'rm -rf -- "$work"' EXIT
 export COPYFILE_DISABLE=1
 mkdir -p "$work/app/deploy/bootstrap" "$work/app/deploy/systemd/hestia.service.d"
-for name in install.sh profile.py smoke.py export-config.py bootstrap/snapshot.json bootstrap/sing-box.json systemd/hestia.service systemd/hestia-binding-recovery.service systemd/hestia-binding-watch.path systemd/hestia-binding-watch.service systemd/hestia-binding.conf systemd/hestia-observe.service systemd/hestia-sing-box.service systemd/hestia.service.d/backend.conf; do
+for name in install.sh sing-box-1.14.4-linux-arm64.sha256 profile.py smoke.py export-config.py bootstrap/snapshot.json bootstrap/sing-box.json systemd/hestia.service systemd/hestia-binding-recovery.service systemd/hestia-binding-watch.path systemd/hestia-binding-watch.service systemd/hestia-binding.conf systemd/hestia-observe.service systemd/hestia-sing-box.service systemd/hestia.service.d/backend.conf; do
     cp "$repo/deploy/$name" "$work/app/deploy/$name"
 done
 cp "$1" "$work/app/controller"
-cp "$2" "$work/app/sing-box.tgz"
+if ! GOENV=off GOTOOLCHAIN=local go version -m "$work/app/controller" | awk '
+    $1 == "build" && $2 == "GOOS=linux" { linux = 1 }
+    $1 == "build" && $2 == "GOARCH=arm64" { arm64 = 1 }
+    END { exit !(linux && arm64) }
+'; then
+    echo "Controller must be a Go executable built for linux/arm64" >&2
+    exit 1
+fi
+cp "$2" "$work/app/sing.tgz"
+(cd "$work/app" && shasum -a 256 -c "deploy/sing-box-1.14.4-linux-arm64.sha256")
+mv "$work/app/sing.tgz" "$work/app/sing-box.tgz"
 tar -czf "$work/archive" -C "$work/app" deploy controller sing-box.tgz
 digest=$(shasum -a 256 "$work/archive" | cut -d' ' -f1)
 cat >"$work/output" <<'HEADER'
