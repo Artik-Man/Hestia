@@ -1,0 +1,11 @@
+READY
+{"at_ns": 1793785057559917112, "qname": "baseline.ru.lab.test", "qtype": 1, "peer": "10.88.1.1", "peer_port": 32995}
+{"at_ns": 1793785057562314661, "qname": "baseline.fi.lab.test", "qtype": 1, "peer": "10.88.2.1", "peer_port": 52900}
+{"at_ns": 1793785058667437256, "qname": "switched.ru.lab.test", "qtype": 1, "peer": "10.88.1.1", "peer_port": 32995}
+{"at_ns": 1793785058669051414, "qname": "switched.fi.lab.test", "qtype": 1, "peer": "10.88.3.1", "peer_port": 51242}
+{"at_ns": 1793785060763835983, "qname": "equal.ru.lab.test", "qtype": 1, "peer": "10.88.1.1", "peer_port": 32995}
+{"at_ns": 1793785060765938525, "qname": "equal.fi.lab.test", "qtype": 1, "peer": "10.88.3.1", "peer_port": 51242}
+{"at_ns": 1793785062830875914, "qname": "shared.ru.lab.test", "qtype": 1, "peer": "10.88.1.1", "peer_port": 32995}
+{"at_ns": 1793785062832680034, "qname": "shared.fi.lab.test", "qtype": 1, "peer": "10.88.3.1", "peer_port": 51242}
+{"at_ns": 1793785064050530554, "qname": "restored.ru.lab.test", "qtype": 1, "peer": "10.88.1.1", "peer_port": 32995}
+{"at_ns": 1793785064052607470, "qname": "restored.fi.lab.test", "qtype": 1, "peer": "10.88.2.1", "peer_port": 53103}

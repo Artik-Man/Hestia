@@ -21,7 +21,7 @@ func RunCLI(ctx context.Context, args []string, output, diagnostics io.Writer) e
 	if *path == "" || *rounds < 0 || flags.NArg() != 0 {
 		return fmt.Errorf("usage: hestia observe -config FILE [-rounds N] [-check]")
 	}
-	s, err := readSettings(*path)
+	s, err := ReadSettings(*path)
 	if err != nil {
 		return err
 	}
@@ -31,8 +31,8 @@ func RunCLI(ctx context.Context, args []string, output, diagnostics io.Writer) e
 	return Run(ctx, s, *rounds, output)
 }
 
-// readSettings decodes at most one MiB of validated observer configuration.
-func readSettings(path string) (Settings, error) {
+// ReadSettings decodes at most one MiB of validated observer configuration.
+func ReadSettings(path string) (Settings, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return Settings{}, err

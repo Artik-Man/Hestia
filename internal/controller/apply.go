@@ -68,7 +68,7 @@ func apply(ctx context.Context, client *http.Client, base string, cfg Config, do
 	}
 	for _, group := range cfg.Groups {
 		if group.ID == d.Group {
-			_, err := reconcile(ctx, client, base, group, target)
+			_, err := ownedReconcile(ctx, client, base, group, target)
 			if err != nil {
 				return Result{}, err
 			}

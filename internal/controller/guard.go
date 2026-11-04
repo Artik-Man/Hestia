@@ -2,12 +2,11 @@ package controller
 
 import (
 	"context"
-	"crypto/sha256"
+
 	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"os"
 	"runtime"
@@ -42,7 +41,7 @@ func RunGuardCLI(ctx context.Context, args []string, out, diagnostics io.Writer)
 		return fmt.Errorf("group guard requires Linux")
 	}
 	// Linux abstract sockets serialize cooperating invocations in the API's network namespace.
-	lock, err := net.Listen("unix", fmt.Sprintf("@hestia-guard-%x", sha256.Sum256([]byte(*group))))
+	lock, err := groupLock(*group)
 	if err != nil {
 		return fmt.Errorf("acquire group lock: %w", err)
 	}

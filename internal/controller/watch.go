@@ -81,7 +81,7 @@ func (w *watcher) sync(ctx context.Context) ([]Result, error) {
 			target = deny
 		}
 		requestCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
-		changed, err := reconcile(requestCtx, w.client, w.base, g, target)
+		changed, err := ownedReconcile(requestCtx, w.client, w.base, g, target)
 		cancel()
 		if err != nil {
 			delete(w.confirmed, g.ID)

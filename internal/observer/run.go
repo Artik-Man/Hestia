@@ -16,11 +16,11 @@ type probeFunc func(context.Context, Connection, Target, time.Duration) Probe
 // Run checks Linux interfaces, then reports each scope in input order until canceled or the requested rounds finish.
 func Run(ctx context.Context, s Settings, rounds int, output io.Writer) error {
 	encoder := json.NewEncoder(output)
-	return runReports(ctx, s, rounds, func(r Report) error { return encoder.Encode(r) })
+	return RunReports(ctx, s, rounds, func(r Report) error { return encoder.Encode(r) })
 }
 
-// runReports validates runtime prerequisites and passes each typed report to its consumer.
-func runReports(ctx context.Context, s Settings, rounds int, emit func(Report) error) error {
+// RunReports validates runtime prerequisites and passes each typed report to its consumer.
+func RunReports(ctx context.Context, s Settings, rounds int, emit func(Report) error) error {
 	if rounds < 0 {
 		return fmt.Errorf("rounds must be nonnegative")
 	}

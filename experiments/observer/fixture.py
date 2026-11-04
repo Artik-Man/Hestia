@@ -9,21 +9,23 @@ import threading
 X = "203.0.113.77"
 Y = "203.0.113.78"
 PORT = 19091
+LOG_LOCK = threading.Lock()
 
 
 def record(server, protocol, peer, payload):
     """Log the exact marker and addresses observed by a bound echo listener."""
-    print(
-        json.dumps(
-            {
-                "target": server.server_address[0],
-                "protocol": protocol,
-                "source": peer[0],
-                "token": payload.decode("ascii").strip(),
-            }
-        ),
-        flush=True,
-    )
+    with LOG_LOCK:
+        print(
+            json.dumps(
+                {
+                    "target": server.server_address[0],
+                    "protocol": protocol,
+                    "source": peer[0],
+                    "token": payload.decode("ascii").strip(),
+                }
+            ),
+            flush=True,
+        )
 
 
 class Stream(socketserver.BaseRequestHandler):

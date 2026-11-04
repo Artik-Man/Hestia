@@ -37,7 +37,7 @@ func RunSteerCLI(ctx context.Context, args []string, output, diagnostics io.Writ
 	if *config == "" || *path == "" || *rounds < 0 || flags.NArg() != 0 {
 		return fmt.Errorf("usage: hestia steer -config FILE -rules PATH [-rounds N]")
 	}
-	s, err := readSettings(*config)
+	s, err := ReadSettings(*config)
 	if err != nil {
 		return err
 	}
@@ -47,7 +47,7 @@ func RunSteerCLI(ctx context.Context, args []string, output, diagnostics io.Writ
 	}
 	defer rules.close()
 	log := json.NewEncoder(output)
-	return runReports(ctx, s, *rounds, func(r Report) error {
+	return RunReports(ctx, s, *rounds, func(r Report) error {
 		action, applyErr := rules.apply(r)
 		event := struct {
 			Report

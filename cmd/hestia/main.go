@@ -17,10 +17,13 @@ import (
 // main selects snapshot validation, one-shot application, or continuous reconciliation.
 // In watch mode SIGTERM and SIGINT cancel the polling loop.
 func main() {
-	if len(os.Args) > 1 && (os.Args[1] == "observe" || os.Args[1] == "steer" || os.Args[1] == "guard") {
+	if len(os.Args) > 1 && (os.Args[1] == "observe" || os.Args[1] == "steer" || os.Args[1] == "guard" || os.Args[1] == "balance") {
 		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 		defer stop()
 		command := observer.RunCLI
+		if os.Args[1] == "balance" {
+			command = controller.RunBalanceCLI
+		}
 		if os.Args[1] == "guard" {
 			command = controller.RunGuardCLI
 		}
