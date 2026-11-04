@@ -1,0 +1,21 @@
+READY
+{"proto": "tcp", "peer": "10.88.2.1", "target": "203.0.113.77", "token": "warm-tcp-dfae5654e7b82fac"}
+{"proto": "tcp", "peer": "10.88.2.1", "target": "203.0.113.77", "token": "warm-tcp-7eec22a6904acf80"}
+{"proto": "udp", "peer": "10.88.3.1", "target": "203.0.113.77", "token": "warm-udp-8182b4521c32dbd4"}
+{"proto": "udp", "peer": "10.88.3.1", "target": "203.0.113.77", "token": "warm-udp-c4bf5c688e3eb3fd"}
+{"proto": "tcp", "peer": "10.88.1.1", "target": "203.0.113.77", "token": "warm-tcp-6ff4765b09ae16ec"}
+{"proto": "udp", "peer": "10.88.1.1", "target": "203.0.113.77", "token": "warm-udp-ce7b8bbf11fbf42a"}
+{"proto": "tcp", "peer": "10.88.1.1", "target": "203.0.113.77", "token": "blocked-tcp-dab4819cde31f6cc"}
+{"proto": "udp", "peer": "10.88.1.1", "target": "203.0.113.77", "token": "blocked-udp-0ad924a2de02f85d"}
+{"proto": "tcp", "peer": "10.88.3.1", "target": "203.0.113.77", "token": "partial-tcp-bc4c84726a7994b2"}
+{"proto": "tcp", "peer": "10.88.3.1", "target": "203.0.113.77", "token": "partial-tcp-16f448f56209d380"}
+{"proto": "udp", "peer": "10.88.3.1", "target": "203.0.113.77", "token": "partial-udp-c441028f1ee0d05e"}
+{"proto": "tcp", "peer": "10.88.1.1", "target": "203.0.113.77", "token": "partial-tcp-f242b65cf377dc1d"}
+{"proto": "udp", "peer": "10.88.3.1", "target": "203.0.113.77", "token": "partial-udp-5d28316b2b043e7e"}
+{"proto": "udp", "peer": "10.88.1.1", "target": "203.0.113.77", "token": "partial-udp-da1d9526284307d9"}
+{"proto": "udp", "peer": "10.88.3.1", "target": "203.0.113.77", "token": "restored-udp-347d5ed770c99a05"}
+{"proto": "tcp", "peer": "10.88.2.1", "target": "203.0.113.77", "token": "restored-tcp-0abc14c6d0b39cb6"}
+{"proto": "tcp", "peer": "10.88.2.1", "target": "203.0.113.77", "token": "restored-tcp-719185d2c2aaa041"}
+{"proto": "udp", "peer": "10.88.1.1", "target": "203.0.113.77", "token": "restored-udp-7b1cc8e0ead82ea2"}
+{"proto": "udp", "peer": "10.88.3.1", "target": "203.0.113.77", "token": "restored-udp-9af17a26b6edff86"}
+{"proto": "tcp", "peer": "10.88.1.1", "target": "203.0.113.77", "token": "restored-tcp-1c7e2cdfcc4c1eb8"}

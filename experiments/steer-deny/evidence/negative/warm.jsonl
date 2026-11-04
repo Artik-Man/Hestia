@@ -1,0 +1,7 @@
+{"at_ns": 1793784411732736879, "query_names": {"fi": "warm.fi.lab.test", "ru": "warm.ru.lab.test"}, "targets": {"fi": "198.18.0.2", "raw": "203.0.113.77", "ru": "198.18.0.3"}}
+{"at_ns": 1793784411735317475, "phase": "warm", "domain": "fi", "fake": "198.18.0.2", "proto": "udp", "expected_peer": "10.88.3.1", "token": "warm-udp-93332027883745a2", "source_port": 35001, "outcome": "echo", "peer": "10.88.3.1"}
+{"at_ns": 1793784411738080246, "phase": "warm", "domain": "raw", "fake": "203.0.113.77", "proto": "udp", "expected_peer": "10.88.3.1", "token": "warm-udp-42aad2cdba88bd51", "source_port": 35003, "outcome": "echo", "peer": "10.88.3.1"}
+{"at_ns": 1793784411738954459, "phase": "warm", "domain": "fi", "fake": "198.18.0.2", "proto": "tcp", "expected_peer": "10.88.2.1", "token": "warm-tcp-bc7e295d4cce7838", "source_port": 35000, "outcome": "echo", "peer": "10.88.2.1"}
+{"at_ns": 1793784411739036547, "phase": "warm", "domain": "ru", "fake": "198.18.0.3", "proto": "udp", "expected_peer": "10.88.1.1", "token": "warm-udp-5b9976a3de0257ea", "source_port": 35005, "outcome": "echo", "peer": "10.88.1.1"}
+{"at_ns": 1793784411739081508, "phase": "warm", "domain": "raw", "fake": "203.0.113.77", "proto": "tcp", "expected_peer": "10.88.2.1", "token": "warm-tcp-c4e3df459999487c", "source_port": 35002, "outcome": "echo", "peer": "10.88.2.1"}
+{"at_ns": 1793784411739269893, "phase": "warm", "domain": "ru", "fake": "198.18.0.3", "proto": "tcp", "expected_peer": "10.88.1.1", "token": "warm-tcp-99734848f7a223de", "source_port": 35004, "outcome": "echo", "peer": "10.88.1.1"}

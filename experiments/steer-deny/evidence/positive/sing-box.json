@@ -1,0 +1,200 @@
+{
+  "log": {
+    "level": "debug",
+    "timestamp": true
+  },
+  "experimental": {
+    "clash_api": {
+      "external_controller": "127.0.0.1:9090"
+    }
+  },
+  "dns": {
+    "servers": [
+      {
+        "type": "fakeip",
+        "tag": "virtual",
+        "inet4_range": "198.18.0.0/15"
+      },
+      {
+        "type": "udp",
+        "tag": "dns-ru",
+        "server": "203.0.113.77",
+        "bind_interface": "ru0"
+      },
+      {
+        "type": "udp",
+        "tag": "dns-fi1",
+        "server": "203.0.113.77",
+        "bind_interface": "fi1"
+      },
+      {
+        "type": "udp",
+        "tag": "dns-fi2",
+        "server": "203.0.113.77",
+        "bind_interface": "fi2"
+      },
+      {
+        "type": "udp",
+        "tag": "dns-deny",
+        "server": "203.0.113.77",
+        "bind_interface": "deny0"
+      },
+      {
+        "type": "udp",
+        "tag": "dns-fi-active",
+        "server": "203.0.113.77",
+        "detour": "fi"
+      }
+    ],
+    "rules": [
+      {
+        "inbound": "lan-tun",
+        "domain_suffix": "lab.test",
+        "query_type": "A",
+        "action": "route",
+        "server": "virtual"
+      }
+    ],
+    "final": "dns-deny",
+    "strategy": "ipv4_only"
+  },
+  "inbounds": [
+    {
+      "type": "tun",
+      "tag": "lan-tun",
+      "interface_name": "hestia0",
+      "address": "172.19.0.1/30",
+      "auto_route": false,
+      "stack": "system"
+    },
+    {
+      "type": "socks",
+      "tag": "fi-inner",
+      "listen": "127.0.0.1",
+      "listen_port": 11088
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "direct",
+      "tag": "ru",
+      "bind_interface": "ru0",
+      "domain_resolver": "dns-ru"
+    },
+    {
+      "type": "direct",
+      "tag": "fi1",
+      "bind_interface": "fi1",
+      "domain_resolver": "dns-fi1"
+    },
+    {
+      "type": "direct",
+      "tag": "fi2",
+      "bind_interface": "fi2",
+      "domain_resolver": "dns-fi2"
+    },
+    {
+      "type": "direct",
+      "tag": "deny",
+      "bind_interface": "deny0",
+      "domain_resolver": "dns-deny"
+    },
+    {
+      "type": "selector",
+      "tag": "fi",
+      "outbounds": [
+        "deny",
+        "fi1",
+        "fi2"
+      ],
+      "default": "deny",
+      "interrupt_exist_connections": true
+    },
+    {
+      "type": "selector",
+      "tag": "fi-alt",
+      "outbounds": [
+        "deny",
+        "fi1",
+        "fi2"
+      ],
+      "default": "deny",
+      "interrupt_exist_connections": true
+    },
+    {
+      "type": "selector",
+      "tag": "fi-gate",
+      "outbounds": [
+        "deny",
+        "fi-dispatch"
+      ],
+      "default": "deny",
+      "interrupt_exist_connections": true
+    },
+    {
+      "type": "socks",
+      "tag": "fi-dispatch",
+      "server": "127.0.0.1",
+      "server_port": 11088,
+      "version": "5"
+    }
+  ],
+  "route": {
+    "default_domain_resolver": "dns-deny",
+    "rules": [
+      {
+        "inbound": "lan-tun",
+        "port": 53,
+        "action": "hijack-dns"
+      },
+      {
+        "inbound": "lan-tun",
+        "domain_suffix": "ru.lab.test",
+        "action": "route",
+        "outbound": "ru"
+      },
+      {
+        "inbound": "lan-tun",
+        "domain_suffix": "fi.lab.test",
+        "action": "route",
+        "outbound": "fi-gate"
+      },
+      {
+        "inbound": "lan-tun",
+        "ip_cidr": "203.0.113.77/32",
+        "action": "route",
+        "outbound": "fi-gate"
+      },
+      {
+        "inbound": "fi-inner",
+        "domain_suffix": "fi.lab.test",
+        "action": "resolve",
+        "server": "dns-fi-active"
+      },
+      {
+        "inbound": "fi-inner",
+        "network": "udp",
+        "rule_set": "fi-udp",
+        "action": "route",
+        "outbound": "fi-alt"
+      },
+      {
+        "inbound": "fi-inner",
+        "ip_cidr": "203.0.113.77/32",
+        "action": "route",
+        "outbound": "fi"
+      },
+      {
+        "action": "reject"
+      }
+    ],
+    "rule_set": [
+      {
+        "type": "local",
+        "format": "source",
+        "tag": "fi-udp",
+        "path": "/var/tmp/deny-green3/fi-udp.json"
+      }
+    ]
+  }
+}

@@ -1,0 +1,1 @@
+{"type": "Selector", "name": "fi-gate", "udp": true, "history": [], "now": "fi-dispatch", "all": ["deny","fi-dispatch"]}

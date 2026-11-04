@@ -1,0 +1,1 @@
+{"group":"fi","connections":[{"id":"fi1","interface":"fi1"},{"id":"fi2","interface":"fi2"}],"targets":[{"address":"203.0.113.77","protocol":"udp","port":19092}],"interval":"100ms","timeout":"50ms","window":"2s","min_samples":3,"margin_percent":15}

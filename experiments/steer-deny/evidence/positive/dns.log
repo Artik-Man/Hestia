@@ -1,0 +1,8 @@
+READY
+{"at_ns": 1793784486078762419, "qname": "warm.fi.lab.test", "qtype": 1, "peer": "10.88.2.1", "peer_port": 49149}
+{"at_ns": 1793784486082286388, "qname": "warm.ru.lab.test", "qtype": 1, "peer": "10.88.1.1", "peer_port": 59886}
+{"at_ns": 1793784490610301316, "qname": "blocked.ru.lab.test", "qtype": 1, "peer": "10.88.1.1", "peer_port": 59886}
+{"at_ns": 1793784494867704420, "qname": "partial.fi.lab.test", "qtype": 1, "peer": "10.88.3.1", "peer_port": 41743}
+{"at_ns": 1793784494871833232, "qname": "partial.ru.lab.test", "qtype": 1, "peer": "10.88.1.1", "peer_port": 59886}
+{"at_ns": 1793784495134947595, "qname": "restored.fi.lab.test", "qtype": 1, "peer": "10.88.2.1", "peer_port": 54343}
+{"at_ns": 1793784495135008921, "qname": "restored.ru.lab.test", "qtype": 1, "peer": "10.88.1.1", "peer_port": 59886}

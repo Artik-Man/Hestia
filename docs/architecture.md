@@ -39,7 +39,7 @@ flowchart LR
 
 ### 3. Лабораторная схема — Гестия в ВМ на MacBook
 
-Для проверки возможностей Гестии отдельное физическое устройство заменено Linux ARM64-ВМ Lima на MacBook. MacBook подключён к Keenetic по Wi‑Fi, а сетевой адаптер ВМ подключён к тому же LAN мостом Lima `bridged` через интерфейс `en0`. На macOS для этого установлен `socket_vmnet` в `/opt/socket_vmnet` и добавлено ограниченное правило sudoers, сгенерированное `limactl sudoers`. ВМ получает собственный DHCP-адрес в домашней сети, поэтому Keenetic может установить WireGuard к её локальному адресу.
+Пока физическая машина для Гестии не куплена, Гестия временно работает в Linux ARM64-ВМ Lima на MacBook. MacBook подключён к Keenetic по Wi‑Fi, а сетевой адаптер ВМ подключён к тому же LAN мостом Lima `bridged` через интерфейс `en0`. На macOS для этого установлен `socket_vmnet` в `/opt/socket_vmnet` и добавлено ограниченное правило sudoers, сгенерированное `limactl sudoers`. ВМ получает собственный DHCP-адрес в домашней сети, поэтому Keenetic может установить WireGuard к её локальному адресу.
 
 ```mermaid
 flowchart LR

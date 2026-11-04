@@ -1,0 +1,5 @@
+PASS warm: 6 client flows and independent WAN DNS checks
+PASS blocked: 6 client flows and independent WAN DNS checks
+PASS restored: 6 client flows and independent WAN DNS checks
+PASS isolated FI-only window: capture witnesses on all three live uplinks
+PASS negative: active X exception preserved across gate and restore; engine unchanged

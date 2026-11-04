@@ -1,0 +1,5 @@
+{"at_ns": 1793784412012301260, "query_names": {"fi": "audit.fi.lab.test", "ru": "audit.ru.lab.test"}, "targets": {"fi": "198.18.0.4", "raw": "203.0.113.77"}}
+{"at_ns": 1793784412015098490, "phase": "audit", "domain": "fi", "fake": "198.18.0.4", "proto": "udp", "expected_peer": "10.88.3.1", "token": "audit-udp-df27cc7ce7c1b4fe", "source_port": 35301, "outcome": "echo", "peer": "10.88.3.1"}
+{"at_ns": 1793784412015346878, "phase": "audit", "domain": "raw", "fake": "203.0.113.77", "proto": "udp", "expected_peer": "10.88.3.1", "token": "audit-udp-6447dee62ac2a435", "source_port": 35303, "outcome": "echo", "peer": "10.88.3.1"}
+{"at_ns": 1793784416022522283, "phase": "audit", "domain": "fi", "fake": "198.18.0.4", "proto": "tcp", "expected_peer": null, "token": "audit-tcp-a517456f4d348673", "source_port": 35300, "outcome": "blocked", "error": "timed out"}
+{"at_ns": 1793784416023027308, "phase": "audit", "domain": "raw", "fake": "203.0.113.77", "proto": "tcp", "expected_peer": null, "token": "audit-tcp-405acf5a8fb1ff0b", "source_port": 35302, "outcome": "blocked", "error": "timed out"}
