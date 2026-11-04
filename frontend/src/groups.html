@@ -1,0 +1,101 @@
+<section aria-labelledby="groups-heading">
+  <div class="section-heading">
+    <h2 id="groups-heading">Группы подключений</h2>
+    <span class="count">{{ snapshot().groups.length }}</span>
+  </div>
+  <p class="hint">Выходы перечислены в порядке приоритета.</p>
+  <div class="groups">
+    @for (group of snapshot().groups; track group.id) {
+      <article class="group">
+        <header class="card-head">
+          <h3>
+            <a
+              routerLink="/groups-and-rules"
+              [queryParams]="{ group: group.id }"
+              >{{ group.id }}</a
+            >
+          </h3>
+          @if (group.isDefault) {
+            <span class="default">По умолчанию</span>
+          }
+        </header>
+        <ol class="exits">
+          @for (exit of group.exits; track exit.id; let i = $index) {
+            <li>
+              <span class="ordinal" aria-hidden="true">{{ i + 1 }}</span
+              ><strong>{{ exit.id }}</strong
+              ><span class="health" [class.up]="exit.available"
+                ><span class="dot"></span
+                >{{ exit.available ? "Доступен" : "Недоступен" }}</span
+              >
+            </li>
+          } @empty {
+            <li class="muted">Нет настроенных выходов</li>
+          }
+        </ol>
+      </article>
+    } @empty {
+      <p class="notice">Нет настроенных групп</p>
+    }
+  </div>
+</section>
+<section aria-labelledby="lists-heading">
+  <div class="section-heading">
+    <h2 id="lists-heading">Доменные списки</h2>
+    <span class="count">{{ snapshot().lists.length }}</span>
+  </div>
+  @if (snapshot().lists.length) {
+    <div class="list-wrap">
+      <table>
+        <caption class="sr-only">
+          Доменные списки, их маски, группы и состояние
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Список и маски</th>
+            <th scope="col">Группа</th>
+            <th scope="col">Состояние</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (list of snapshot().lists; track list.id) {
+            <tr>
+              <th scope="row">
+                <a
+                  class="list-id"
+                  routerLink="/groups-and-rules"
+                  [queryParams]="{ list: list.id }"
+                  >{{ list.id }}</a
+                ><span class="masks">
+                  @for (mask of list.masks; track $index) {
+                    <code>{{ mask }}</code>
+                  } @empty {
+                    <span class="muted">Нет масок</span>
+                  }
+                </span>
+              </th>
+              <td>
+                @if (list.group) {
+                  <a
+                    routerLink="/groups-and-rules"
+                    [queryParams]="{ group: list.group }"
+                    >{{ list.group }}</a
+                  >
+                } @else {
+                  Группа не назначена
+                }
+              </td>
+              <td>
+                <span class="state" [class.on]="list.enabled">{{
+                  list.enabled ? "Включён" : "Выключен"
+                }}</span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <p class="notice">Нет доменных списков</p>
+  }
+</section>

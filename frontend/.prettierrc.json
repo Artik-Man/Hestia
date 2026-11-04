@@ -1,0 +1,8 @@
+{
+  "overrides": [
+    {
+      "files": "src/{panel,groups,connections,details,snapshot-screen}.html",
+      "options": { "parser": "angular" }
+    }
+  ]
+}

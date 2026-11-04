@@ -1,0 +1,117 @@
+@let item = detail();
+@switch (item.kind) {
+  @case ("group") {
+    <section aria-label="Настройки группы">
+      @if (item.group.isDefault) {
+        <span class="default">По умолчанию</span>
+      }
+      <h2>Выходы по приоритету</h2>
+      <p class="hint">Первым указан выход с наивысшим приоритетом.</p>
+      <ol class="detail-rows">
+        @for (exit of item.group.exits; track exit.id; let i = $index) {
+          <li>
+            <span class="ordinal">{{ i + 1 }}</span
+            ><a routerLink="/connections" [queryParams]="{ exit: exit.id }">{{
+              exit.id
+            }}</a>
+            <span class="health" [class.up]="exit.available"
+              ><span class="dot"></span
+              >{{ exit.available ? "Доступен" : "Недоступен" }}</span
+            >
+          </li>
+        } @empty {
+          <li class="muted">Нет настроенных выходов</li>
+        }
+      </ol>
+    </section>
+    <section>
+      <h2>Привязанные доменные списки</h2>
+      <ul class="detail-rows">
+        @for (list of item.lists; track list.id) {
+          <li>
+            <a
+              routerLink="/groups-and-rules"
+              [queryParams]="{ list: list.id }"
+              >{{ list.id }}</a
+            ><span class="state" [class.on]="list.enabled">{{
+              list.enabled ? "Включён" : "Выключен"
+            }}</span>
+          </li>
+        } @empty {
+          <li class="muted">Нет привязанных доменных списков</li>
+        }
+      </ul>
+    </section>
+  }
+  @case ("list") {
+    <section>
+      <h2>Настройки списка</h2>
+      <dl class="facts">
+        <dt>Группа</dt>
+        <dd>
+          @if (item.list.group) {
+            <a
+              routerLink="/groups-and-rules"
+              [queryParams]="{ group: item.list.group }"
+              >{{ item.list.group }}</a
+            >
+          } @else {
+            Группа не назначена
+          }
+        </dd>
+        <dt>Состояние</dt>
+        <dd>
+          <span class="state" [class.on]="item.list.enabled">{{
+            item.list.enabled ? "Включён" : "Выключен"
+          }}</span>
+        </dd>
+      </dl>
+    </section>
+    <section>
+      <h2>Доменные маски</h2>
+      <ul class="detail-rows">
+        @for (mask of item.list.masks; track $index) {
+          <li>
+            <code>{{ mask }}</code>
+          </li>
+        } @empty {
+          <li class="muted">Нет масок</li>
+        }
+      </ul>
+    </section>
+  }
+  @case ("exit") {
+    <section>
+      <h2>Параметры выхода</h2>
+      <dl class="facts">
+        <dt>Группа</dt>
+        <dd>
+          <a
+            routerLink="/groups-and-rules"
+            [queryParams]="{ group: item.group.id }"
+            >{{ item.group.id }}</a
+          >
+        </dd>
+        <dt>Приоритет в группе</dt>
+        <dd>{{ item.priority }}</dd>
+        <dt>Доступность по снимку</dt>
+        <dd>
+          <span class="health" [class.up]="item.exit.available"
+            ><span class="dot"></span
+            >{{ item.exit.available ? "Доступен" : "Недоступен" }}</span
+          >
+        </dd>
+      </dl>
+    </section>
+  }
+  @case ("missing") {
+    <p class="notice" role="status">
+      Объект отсутствует в текущем снимке конфигурации.
+    </p>
+  }
+  @case ("invalid") {
+    <p class="notice" role="status">
+      В ссылке указан неверный идентификатор карточки.
+    </p>
+  }
+}

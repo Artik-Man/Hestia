@@ -1,0 +1,55 @@
+<section aria-labelledby="connections-heading">
+  <div class="section-heading">
+    <h2 id="connections-heading">Выходы шлюза</h2>
+    <span class="count">{{ rows().length }}</span>
+  </div>
+  <p class="hint">Приоритет 1 соответствует первому выходу группы.</p>
+  @if (rows().length) {
+    <div class="list-wrap">
+      <table class="connections">
+        <caption class="sr-only">
+          Настроенные выходы и доступность по снимку конфигурации
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Выход</th>
+            <th scope="col">Группа</th>
+            <th scope="col">Приоритет</th>
+            <th scope="col">Доступность</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows(); track row.exit.id) {
+            <tr>
+              <th scope="row">
+                <strong
+                  ><a
+                    routerLink="/connections"
+                    [queryParams]="{ exit: row.exit.id }"
+                    >{{ row.exit.id }}</a
+                  ></strong
+                >
+              </th>
+              <td>
+                <a
+                  routerLink="/groups-and-rules"
+                  [queryParams]="{ group: row.group }"
+                  >{{ row.group }}</a
+                >
+              </td>
+              <td>{{ row.priority }}</td>
+              <td>
+                <span class="health" [class.up]="row.exit.available"
+                  ><span class="dot"></span
+                  >{{ row.exit.available ? "Доступен" : "Недоступен" }}</span
+                >
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <p class="notice">Нет настроенных выходов</p>
+  }
+</section>
