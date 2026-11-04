@@ -33,6 +33,36 @@ class Winner:
         return max(0, int(self.expires - monotonic()))
 
 
+class NegativeAnswer(Exception):
+    """A definitive negative DNS outcome from currently eligible resolver contexts."""
+
+    def __init__(self, groups, code, soa=()):
+        """Carry the actual upstream RCODE and relevant SOA RRsets to the original caller."""
+        super().__init__(dns.rcode.to_text(code))
+        self.groups = groups
+        self.code = code
+        self.soa = soa
+
+    def wire(self, query):
+        """Encode a negative response with the requester's transaction ID and no positive address."""
+        reply = answer(query, code=self.code)
+        reply.authority.extend(self.soa)
+        return reply.to_wire()
+
+
+def direct_a(query, reply):
+    """Return the one direct A RRset for the exact question, if present and unambiguous."""
+    matches = [
+        rr
+        for rr in reply.answer
+        if rr.name == query.question[0].name
+        and rr.rdclass == dns.rdataclass.IN
+        and rr.rdtype == dns.rdatatype.A
+        and len(rr) == 1
+    ]
+    return matches[0] if len(matches) == 1 else None
+
+
 class WinnerCache:
     """Own separate upstream observations and a single selected response per eligible resolver set."""
 
@@ -63,18 +93,10 @@ class WinnerCache:
         except (OSError, TimeoutError, dns.exception.DNSException):
             log("upstream-error", domain=domain, group=group)
             return None
-        matches = [
-            rr
-            for rr in reply.answer
-            if rr.name == query.question[0].name
-            and rr.rdclass == dns.rdataclass.IN
-            and rr.rdtype == dns.rdatatype.A
-            and len(rr) == 1
-        ]
-        if reply.rcode() != dns.rcode.NOERROR or len(matches) != 1:
+        rr = direct_a(query, reply)
+        if reply.rcode() != dns.rcode.NOERROR or rr is None:
             log("finish", domain=domain, group=group, code=reply.rcode(), ip=None)
             return None
-        rr = matches[0]
         value = Winner(group, rr[0].address, monotonic() + rr.ttl)
         log(
             "finish",
@@ -85,6 +107,10 @@ class WinnerCache:
             ttl=rr.ttl,
         )
         return value
+
+    def permits_answer(self, query, selected):
+        """Check that the selected resolver is still eligible just before issuing a wire response."""
+        return selected.group in self.allowed(query)
 
     async def refresh(
         self, query: dns.message.Message, groups: tuple[str, ...]
@@ -147,17 +173,25 @@ async def gateway(down: Path, cache=None, client_select=None) -> None:
             or query.question[0].rdclass != dns.rdataclass.IN
         ):
             return answer(query, code=dns.rcode.REFUSED).to_wire()
-        if client_dns and client_select is not None:
-            selected = await client_select(query, peer)
-        else:
-            selected = await cache.select(query)
+        try:
+            if client_dns and client_select is not None:
+                selected = await client_select(query, peer)
+            else:
+                selected = await cache.select(query)
+        except NegativeAnswer as negative:
+            if negative.groups == cache.allowed(query):
+                return negative.wire(query)
+            return answer(query, code=dns.rcode.SERVFAIL).to_wire()
         if selected is None:
             return answer(query, code=dns.rcode.SERVFAIL).to_wire()
         addr = selected.ip
         if client_dns:
             addr = unpack(await ask(query, "127.0.0.1", 1054))
-            if not addr or selected.group not in cache.allowed(query):
+            if not addr:
                 return answer(query, code=dns.rcode.SERVFAIL).to_wire()
+        if not cache.permits_answer(query, selected):
+            return answer(query, code=dns.rcode.SERVFAIL).to_wire()
+        if client_dns:
             log(
                 "serve",
                 domain=name(query),

@@ -1,0 +1,3 @@
+8710db837f9e5c2faddaa1d55e0d3c68fbed2036f154e521960fa969b8a2eac6  /var/tmp/staletest/experiments/dns-geo/fixture.py
+47f04ff65c81ac9da29708f13d08858ac750352e2ded609b9f16cfcedae650f1  /var/tmp/staletest/experiments/dns-geo/../dns-rotation/cache.py
+c8dc32e04a536d4edb29db5a676adc3b63cb72f0c781ee0ec20ebe00d9d5426a  /var/tmp/staletest/experiments/dns-stale/cache.py

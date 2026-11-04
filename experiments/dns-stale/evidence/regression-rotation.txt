@@ -1,0 +1,3 @@
+PASS refresh: 16 fresh flows, reused exactly one FakeIP per domain, LAN DNS=A once each
+PASS cached .11 before authoritative TTL; fresh UDP/TCP after expiry reached .22, free name RU→FI; explicit FI→FI
+PASS one old and one new A per eligible resolver; concurrent TCP/UDP refresh produced one upstream wave

@@ -1,0 +1,10 @@
+PASS seed: checked 3 LAN DNS responses and 6 fresh flows against both WANs
+PASS failed: checked 3 LAN DNS responses and 6 fresh flows against both WANs
+PASS no-revival: checked 2 LAN DNS responses and 4 fresh flows against both WANs
+PASS fi-down: checked 1 LAN DNS responses and 2 fresh flows against both WANs
+PASS ru-control: checked 1 LAN DNS responses and 2 fresh flows against both WANs
+PASS reseed: checked 1 LAN DNS responses and 2 fresh flows against both WANs
+PASS second: checked 1 LAN DNS responses and 2 fresh flows against both WANs
+PASS beyond: checked 1 LAN DNS responses and 2 fresh flows against both WANs
+PASS recovered: checked 3 LAN DNS responses and 6 fresh flows against both WANs
+PASS strict: 32 flows, stable FakeIPs and PID; absolute stale limit, authoritative negatives, FI denial, generation B recovery

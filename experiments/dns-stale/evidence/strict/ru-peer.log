@@ -1,0 +1,5 @@
+{"event": "ready", "ns": 478951838076}
+{"event": "authority", "ns": 479358005763, "group": "ru", "domain": "control.lab.test", "mode": "old", "source": "10.85.1.1", "ip": "203.0.113.11"}
+{"event": "authority", "ns": 506307182646, "group": "ru", "domain": "control.lab.test", "mode": "old", "source": "10.85.1.1", "ip": "203.0.113.11"}
+{"event": "peer", "ns": 506311218689, "token": "ru-control-control.lab.test-udp", "group": "ru", "ip": "203.0.113.11", "source": "10.85.1.1", "proto": "udp"}
+{"event": "peer", "ns": 506311798755, "token": "ru-control-control.lab.test-tcp", "group": "ru", "ip": "203.0.113.11", "source": "10.85.1.1", "proto": "tcp"}

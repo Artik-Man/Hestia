@@ -15,8 +15,8 @@ OLD, NEW = fixture.IPS[:2]
 PORT = 19091
 
 
-async def serve(group: str, state: Path) -> None:
-    """Answer DNS with a controlled 4-second A record and log actual destinations for both transports."""
+async def serve(group: str, state: Path, dns_handler=None) -> None:
+    """Serve the supplied DNS behavior or the rotation authority, together with the shared TCP/UDP peers."""
 
     async def resolve(data: bytes, peer: tuple) -> bytes:
         """Return the selected generation at response time, with predictable resolver completion order."""
@@ -68,7 +68,9 @@ async def serve(group: str, state: Path) -> None:
             writer.close()
             await writer.wait_closed()
 
-    listeners = [await fixture.bind(fixture.RESOLVER[group], 53, resolve)]
+    listeners = [
+        await fixture.bind(fixture.RESOLVER[group], 53, dns_handler or resolve)
+    ]
     for address in (OLD, NEW):
 
         async def udp(data: bytes, peer: tuple, addr=address) -> bytes:

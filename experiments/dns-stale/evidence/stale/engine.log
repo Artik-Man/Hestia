@@ -1,0 +1,496 @@
++0300 2026-11-04 13:54:03 [36mINFO[0m inbound/direct[issuer]: udp server started at 127.0.0.1:1054
++0300 2026-11-04 13:54:03 [36mINFO[0m inbound/tun[lan]: started at hestia0
++0300 2026-11-04 13:54:03 [36mINFO[0m network: updated default interface ru0, index 3
++0300 2026-11-04 13:54:03 [36mINFO[0m network: updated network environment: gateway 10.85.1.2
++0300 2026-11-04 13:54:03 [36mINFO[0m sing-box started (0.00s)
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;226m2027929042[0m 0ms] inbound/direct[issuer]: inbound packet connection from 127.0.0.1:48856
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;226m2027929042[0m 0ms] inbound/direct[issuer]: inbound packet connection to 127.0.0.1:1054
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;226m2027929042[0m 0ms] router: match[0] inbound=issuer => hijack-dns
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;226m2027929042[0m 0ms] dns: exchange wait.only-fi.lab.test. IN A
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;226m2027929042[0m 0ms] dns: match[0] inbound=issuer query_type=A => route(virtual)
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;226m2027929042[0m 0ms] dns: exchanged wait.only-fi.lab.test NOERROR 600
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;226m2027929042[0m 0ms] dns: exchanged A wait.only-fi.lab.test. 600 IN A 198.18.0.2
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;68m221708852[0m 0ms] inbound/direct[issuer]: inbound packet connection from 127.0.0.1:39737
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;68m221708852[0m 0ms] inbound/direct[issuer]: inbound packet connection to 127.0.0.1:1054
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;68m221708852[0m 0ms] router: match[0] inbound=issuer => hijack-dns
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;68m221708852[0m 0ms] dns: exchange missing.only-fi.lab.test. IN A
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;68m221708852[0m 0ms] dns: match[0] inbound=issuer query_type=A => route(virtual)
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;68m221708852[0m 0ms] dns: exchanged missing.only-fi.lab.test NOERROR 600
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;68m221708852[0m 0ms] dns: exchanged A missing.only-fi.lab.test. 600 IN A 198.18.0.3
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;154m612045450[0m 0ms] inbound/direct[issuer]: inbound packet connection from 127.0.0.1:58550
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;154m612045450[0m 0ms] inbound/direct[issuer]: inbound packet connection to 127.0.0.1:1054
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;154m612045450[0m 0ms] router: match[0] inbound=issuer => hijack-dns
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;154m612045450[0m 0ms] dns: exchange empty.only-fi.lab.test. IN A
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;154m612045450[0m 0ms] dns: match[0] inbound=issuer query_type=A => route(virtual)
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;154m612045450[0m 0ms] dns: exchanged empty.only-fi.lab.test NOERROR 600
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;154m612045450[0m 0ms] dns: exchanged A empty.only-fi.lab.test. 600 IN A 198.18.0.4
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;171m3231091611[0m 0ms] inbound/direct[issuer]: inbound packet connection from 127.0.0.1:55516
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;171m3231091611[0m 0ms] inbound/direct[issuer]: inbound packet connection to 127.0.0.1:1054
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;171m3231091611[0m 0ms] router: match[0] inbound=issuer => hijack-dns
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;171m3231091611[0m 0ms] dns: exchange control.lab.test. IN A
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;171m3231091611[0m 0ms] dns: match[0] inbound=issuer query_type=A => route(virtual)
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;171m3231091611[0m 0ms] dns: exchanged control.lab.test NOERROR 600
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;171m3231091611[0m 0ms] dns: exchanged A control.lab.test. 600 IN A 198.18.0.5
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;138m1319806842[0m 0ms] inbound/direct[issuer]: inbound packet connection from 127.0.0.1:41109
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;138m1319806842[0m 0ms] inbound/direct[issuer]: inbound packet connection to 127.0.0.1:1054
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;138m1319806842[0m 0ms] router: match[0] inbound=issuer => hijack-dns
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;138m1319806842[0m 0ms] dns: exchange missing.only-fi.lab.test. IN A
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;138m1319806842[0m 0ms] dns: match[0] inbound=issuer query_type=A => route(virtual)
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;138m1319806842[0m 0ms] dns: exchanged missing.only-fi.lab.test NOERROR 600
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;138m1319806842[0m 0ms] dns: exchanged A missing.only-fi.lab.test. 600 IN A 198.18.0.3
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;154m2113886858[0m 0ms] inbound/direct[issuer]: inbound packet connection from 127.0.0.1:52972
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;154m2113886858[0m 0ms] inbound/direct[issuer]: inbound packet connection to 127.0.0.1:1054
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;154m2113886858[0m 0ms] router: match[0] inbound=issuer => hijack-dns
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;154m2113886858[0m 0ms] dns: exchange wait.only-fi.lab.test. IN A
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;154m2113886858[0m 0ms] dns: match[0] inbound=issuer query_type=A => route(virtual)
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;154m2113886858[0m 0ms] dns: exchanged wait.only-fi.lab.test NOERROR 600
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;154m2113886858[0m 0ms] dns: exchanged A wait.only-fi.lab.test. 600 IN A 198.18.0.2
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;142m3517542782[0m 0ms] inbound/direct[issuer]: inbound packet connection from 127.0.0.1:36200
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;142m3517542782[0m 0ms] inbound/direct[issuer]: inbound packet connection to 127.0.0.1:1054
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;142m3517542782[0m 0ms] router: match[0] inbound=issuer => hijack-dns
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;142m3517542782[0m 0ms] dns: exchange empty.only-fi.lab.test. IN A
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;142m3517542782[0m 0ms] dns: match[0] inbound=issuer query_type=A => route(virtual)
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;142m3517542782[0m 0ms] dns: exchanged empty.only-fi.lab.test NOERROR 600
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;142m3517542782[0m 0ms] dns: exchanged A empty.only-fi.lab.test. 600 IN A 198.18.0.4
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;133m2013636469[0m 0ms] router: found fakeip domain: wait.only-fi.lab.test
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;133m2013636469[0m 0ms] router: pre-match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;80m1303429440[0m 0ms] inbound/tun[lan]: inbound connection from 10.85.0.2:40000
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;80m1303429440[0m 0ms] inbound/tun[lan]: inbound connection to 198.18.0.2:19091
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;80m1303429440[0m 0ms] router: found fakeip domain: wait.only-fi.lab.test
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;80m1303429440[0m 0ms] router: match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;80m1303429440[0m 0ms] outbound/direct[fi-out]: outbound connection to wait.only-fi.lab.test:19091
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;80m1303429440[0m 0ms] dns: lookup domain wait.only-fi.lab.test
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;227m2529820883[0m 0ms] router: found fakeip domain: wait.only-fi.lab.test
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;227m2529820883[0m 0ms] router: pre-match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;189m3894782125[0m 0ms] inbound/tun[lan]: inbound packet connection from 10.85.0.2:40001
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;189m3894782125[0m 0ms] inbound/tun[lan]: inbound packet connection to 198.18.0.2:19091
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;189m3894782125[0m 0ms] router: found fakeip domain: wait.only-fi.lab.test
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;189m3894782125[0m 0ms] router: match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;189m3894782125[0m 0ms] outbound/direct[fi-out]: outbound packet connection
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;189m3894782125[0m 0ms] dns: lookup domain wait.only-fi.lab.test
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;200m3146617016[0m 0ms] router: found fakeip domain: missing.only-fi.lab.test
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;200m3146617016[0m 0ms] router: pre-match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;192m44324016[0m 0ms] inbound/tun[lan]: inbound connection from 10.85.0.2:40004
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;192m44324016[0m 0ms] inbound/tun[lan]: inbound connection to 198.18.0.3:19091
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;192m44324016[0m 0ms] router: found fakeip domain: missing.only-fi.lab.test
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;192m44324016[0m 0ms] router: match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;192m44324016[0m 0ms] outbound/direct[fi-out]: outbound connection to missing.only-fi.lab.test:19091
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;192m44324016[0m 0ms] dns: lookup domain missing.only-fi.lab.test
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;80m1303429440[0m 0ms] dns: exchanged wait.only-fi.lab.test NOERROR 1
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;80m1303429440[0m 0ms] dns: exchanged A wait.only-fi.lab.test. 1 IN A 203.0.113.11
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;80m1303429440[0m 0ms] dns: lookup succeed for wait.only-fi.lab.test: 203.0.113.11
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;153m2495113097[0m 0ms] router: found fakeip domain: missing.only-fi.lab.test
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;153m2495113097[0m 0ms] router: pre-match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;199m770017463[0m 0ms] router: found fakeip domain: empty.only-fi.lab.test
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;199m770017463[0m 0ms] router: pre-match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;203m3074936507[0m 0ms] router: found fakeip domain: empty.only-fi.lab.test
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;203m3074936507[0m 0ms] router: pre-match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;192m44324016[0m 1ms] dns: exchanged missing.only-fi.lab.test NOERROR 1
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;192m44324016[0m 1ms] dns: exchanged A missing.only-fi.lab.test. 1 IN A 203.0.113.11
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;192m44324016[0m 1ms] dns: lookup succeed for missing.only-fi.lab.test: 203.0.113.11
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;203m4105353147[0m 0ms] inbound/tun[lan]: inbound packet connection from 10.85.0.2:40009
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;203m4105353147[0m 0ms] inbound/tun[lan]: inbound packet connection to 198.18.0.4:19091
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;203m4105353147[0m 0ms] router: found fakeip domain: empty.only-fi.lab.test
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;203m4105353147[0m 0ms] router: match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;189m3894782125[0m 1ms] dns: exchanged wait.only-fi.lab.test NOERROR 1
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;189m3894782125[0m 1ms] dns: exchanged A wait.only-fi.lab.test. 1 IN A 203.0.113.11
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;189m3894782125[0m 1ms] dns: lookup succeed for wait.only-fi.lab.test: 203.0.113.11
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;203m4105353147[0m 0ms] outbound/direct[fi-out]: outbound packet connection
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;203m4105353147[0m 0ms] dns: lookup domain empty.only-fi.lab.test
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;166m2918053526[0m 0ms] inbound/tun[lan]: inbound packet connection from 10.85.0.2:40005
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;166m2918053526[0m 0ms] inbound/tun[lan]: inbound packet connection to 198.18.0.3:19091
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;166m2918053526[0m 0ms] router: found fakeip domain: missing.only-fi.lab.test
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;166m2918053526[0m 0ms] router: match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;166m2918053526[0m 0ms] outbound/direct[fi-out]: outbound packet connection
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;166m2918053526[0m 0ms] dns: lookup domain missing.only-fi.lab.test
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;231m3762555648[0m 0ms] inbound/tun[lan]: inbound connection from 10.85.0.2:40008
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;231m3762555648[0m 0ms] inbound/tun[lan]: inbound connection to 198.18.0.4:19091
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;231m3762555648[0m 0ms] router: found fakeip domain: empty.only-fi.lab.test
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;231m3762555648[0m 0ms] router: match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:03 [36mINFO[0m [[38;5;231m3762555648[0m 0ms] outbound/direct[fi-out]: outbound connection to empty.only-fi.lab.test:19091
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;231m3762555648[0m 0ms] dns: lookup domain empty.only-fi.lab.test
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;192m44324016[0m 2ms] connection: connection download finished
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;80m1303429440[0m 2ms] connection: connection download finished
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;166m2918053526[0m 0ms] dns: exchanged missing.only-fi.lab.test NOERROR 1
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;166m2918053526[0m 0ms] dns: exchanged A missing.only-fi.lab.test. 1 IN A 203.0.113.11
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;166m2918053526[0m 0ms] dns: lookup succeed for missing.only-fi.lab.test: 203.0.113.11
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;203m4105353147[0m 0ms] dns: exchanged empty.only-fi.lab.test NOERROR 1
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;203m4105353147[0m 0ms] dns: exchanged A empty.only-fi.lab.test. 1 IN A 203.0.113.11
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;203m4105353147[0m 0ms] dns: lookup succeed for empty.only-fi.lab.test: 203.0.113.11
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;80m1303429440[0m 3ms] connection: connection upload finished
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;231m3762555648[0m 0ms] dns: exchanged empty.only-fi.lab.test NOERROR 1
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;231m3762555648[0m 0ms] dns: exchanged A empty.only-fi.lab.test. 1 IN A 203.0.113.11
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;231m3762555648[0m 0ms] dns: lookup succeed for empty.only-fi.lab.test: 203.0.113.11
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;192m44324016[0m 2ms] connection: connection upload finished
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;231m3762555648[0m 1ms] connection: connection download finished
++0300 2026-11-04 13:54:03 [37mDEBUG[0m [[38;5;231m3762555648[0m 1ms] connection: connection upload finished
++0300 2026-11-04 13:54:04 [36mINFO[0m network: updated network environment: gateway 10.85.1.2, gateway_mac 5a:2a:82:b0:8d:be
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;158m825661257[0m 0ms] router: found fakeip domain: wait.only-fi.lab.test
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;158m825661257[0m 0ms] router: pre-match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:05 [36mINFO[0m [[38;5;189m496719533[0m 0ms] inbound/tun[lan]: inbound connection from 10.85.0.2:40100
++0300 2026-11-04 13:54:05 [36mINFO[0m [[38;5;189m496719533[0m 0ms] inbound/tun[lan]: inbound connection to 198.18.0.2:19091
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;189m496719533[0m 0ms] router: found fakeip domain: wait.only-fi.lab.test
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;189m496719533[0m 0ms] router: match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:05 [36mINFO[0m [[38;5;189m496719533[0m 0ms] outbound/direct[fi-out]: outbound connection to wait.only-fi.lab.test:19091
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;189m496719533[0m 0ms] dns: lookup domain wait.only-fi.lab.test
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;31m3603057894[0m 0ms] router: found fakeip domain: missing.only-fi.lab.test
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;31m3603057894[0m 0ms] router: pre-match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;226m1022827269[0m 0ms] router: found fakeip domain: wait.only-fi.lab.test
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;226m1022827269[0m 0ms] router: pre-match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;133m3874765173[0m 0ms] router: found fakeip domain: missing.only-fi.lab.test
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;133m3874765173[0m 0ms] router: pre-match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;199m3197639863[0m 0ms] router: found fakeip domain: empty.only-fi.lab.test
++0300 2026-11-04 13:54:05 [36mINFO[0m [[38;5;105m831756633[0m 0ms] inbound/tun[lan]: inbound packet connection from 10.85.0.2:40101
++0300 2026-11-04 13:54:05 [36mINFO[0m [[38;5;105m831756633[0m 0ms] inbound/tun[lan]: inbound packet connection to 198.18.0.2:19091
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;105m831756633[0m 0ms] router: found fakeip domain: wait.only-fi.lab.test
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;105m831756633[0m 0ms] router: match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:05 [36mINFO[0m [[38;5;105m831756633[0m 0ms] outbound/direct[fi-out]: outbound packet connection
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;105m831756633[0m 0ms] dns: lookup domain wait.only-fi.lab.test
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;199m3197639863[0m 0ms] router: pre-match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:05 [36mINFO[0m [[38;5;223m4043569887[0m 0ms] inbound/tun[lan]: inbound packet connection from 10.85.0.2:40105
++0300 2026-11-04 13:54:05 [36mINFO[0m [[38;5;223m4043569887[0m 0ms] inbound/tun[lan]: inbound packet connection to 198.18.0.3:19091
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;223m4043569887[0m 0ms] router: found fakeip domain: missing.only-fi.lab.test
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;223m4043569887[0m 0ms] router: match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:05 [36mINFO[0m [[38;5;223m4043569887[0m 0ms] outbound/direct[fi-out]: outbound packet connection
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;223m4043569887[0m 0ms] dns: lookup domain missing.only-fi.lab.test
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;157m3491765834[0m 0ms] router: found fakeip domain: empty.only-fi.lab.test
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;157m3491765834[0m 0ms] router: pre-match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:05 [36mINFO[0m [[38;5;43m4228864498[0m 0ms] inbound/tun[lan]: inbound connection from 10.85.0.2:40108
++0300 2026-11-04 13:54:05 [36mINFO[0m [[38;5;43m4228864498[0m 0ms] inbound/tun[lan]: inbound connection to 198.18.0.4:19091
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;43m4228864498[0m 0ms] router: found fakeip domain: empty.only-fi.lab.test
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;43m4228864498[0m 0ms] router: match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:05 [36mINFO[0m [[38;5;43m4228864498[0m 0ms] outbound/direct[fi-out]: outbound connection to empty.only-fi.lab.test:19091
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;43m4228864498[0m 0ms] dns: lookup domain empty.only-fi.lab.test
++0300 2026-11-04 13:54:05 [36mINFO[0m [[38;5;28m4119956492[0m 0ms] inbound/tun[lan]: inbound connection from 10.85.0.2:40104
++0300 2026-11-04 13:54:05 [36mINFO[0m [[38;5;28m4119956492[0m 0ms] inbound/tun[lan]: inbound connection to 198.18.0.3:19091
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;28m4119956492[0m 0ms] router: found fakeip domain: missing.only-fi.lab.test
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;28m4119956492[0m 0ms] router: match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:05 [36mINFO[0m [[38;5;28m4119956492[0m 0ms] outbound/direct[fi-out]: outbound connection to missing.only-fi.lab.test:19091
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;28m4119956492[0m 0ms] dns: lookup domain missing.only-fi.lab.test
++0300 2026-11-04 13:54:05 [36mINFO[0m [[38;5;87m1672052112[0m 0ms] inbound/tun[lan]: inbound packet connection from 10.85.0.2:40109
++0300 2026-11-04 13:54:05 [36mINFO[0m [[38;5;87m1672052112[0m 0ms] inbound/tun[lan]: inbound packet connection to 198.18.0.4:19091
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;87m1672052112[0m 0ms] router: found fakeip domain: empty.only-fi.lab.test
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;87m1672052112[0m 0ms] router: match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:05 [36mINFO[0m [[38;5;87m1672052112[0m 0ms] outbound/direct[fi-out]: outbound packet connection
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;87m1672052112[0m 0ms] dns: lookup domain empty.only-fi.lab.test
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;87m1672052112[0m 2ms] dns: exchanged empty.only-fi.lab.test NOERROR 2
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;87m1672052112[0m 2ms] dns: exchanged SOA lab.test. 2 IN SOA ns.lab.test. admin.lab.test. 1 60 60 60 2
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;28m4119956492[0m 3ms] dns: exchanged missing.only-fi.lab.test NXDOMAIN 2
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;87m1672052112[0m 2ms] dns: lookup failed for empty.only-fi.lab.test: empty result
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;28m4119956492[0m 3ms] dns: exchanged SOA lab.test. 2 IN SOA ns.lab.test. admin.lab.test. 1 60 60 60 2
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;28m4119956492[0m 3ms] dns: lookup failed for missing.only-fi.lab.test: NXDOMAIN
++0300 2026-11-04 13:54:05 [31mERROR[0m [[38;5;87m1672052112[0m 2ms] connection: listen packet connection using  using outbound/direct[fi-out]: lookup empty.only-fi.lab.test: empty result
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;43m4228864498[0m 3ms] dns: exchanged empty.only-fi.lab.test NOERROR 2
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;43m4228864498[0m 3ms] dns: exchanged SOA lab.test. 2 IN SOA ns.lab.test. admin.lab.test. 1 60 60 60 2
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;43m4228864498[0m 3ms] dns: lookup failed for empty.only-fi.lab.test: empty result
++0300 2026-11-04 13:54:05 [31mERROR[0m [[38;5;28m4119956492[0m 3ms] connection: open connection to missing.only-fi.lab.test:19091 using outbound/direct[fi-out]: lookup missing.only-fi.lab.test: NXDOMAIN
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;223m4043569887[0m 3ms] dns: exchanged missing.only-fi.lab.test NXDOMAIN 2
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;223m4043569887[0m 3ms] dns: exchanged SOA lab.test. 2 IN SOA ns.lab.test. admin.lab.test. 1 60 60 60 2
++0300 2026-11-04 13:54:05 [31mERROR[0m [[38;5;43m4228864498[0m 3ms] connection: open connection to empty.only-fi.lab.test:19091 using outbound/direct[fi-out]: lookup empty.only-fi.lab.test: empty result
++0300 2026-11-04 13:54:05 [37mDEBUG[0m [[38;5;223m4043569887[0m 3ms] dns: lookup failed for missing.only-fi.lab.test: NXDOMAIN
++0300 2026-11-04 13:54:05 [31mERROR[0m [[38;5;223m4043569887[0m 3ms] connection: listen packet connection using  using outbound/direct[fi-out]: lookup missing.only-fi.lab.test: NXDOMAIN
++0300 2026-11-04 13:54:07 [36mINFO[0m [[38;5;51m2096815866[0m 0ms] inbound/direct[issuer]: inbound packet connection from 127.0.0.1:39302
++0300 2026-11-04 13:54:07 [36mINFO[0m [[38;5;51m2096815866[0m 0ms] inbound/direct[issuer]: inbound packet connection to 127.0.0.1:1054
++0300 2026-11-04 13:54:07 [37mDEBUG[0m [[38;5;51m2096815866[0m 0ms] router: match[0] inbound=issuer => hijack-dns
++0300 2026-11-04 13:54:07 [37mDEBUG[0m [[38;5;51m2096815866[0m 0ms] dns: exchange wait.only-fi.lab.test. IN A
++0300 2026-11-04 13:54:07 [37mDEBUG[0m [[38;5;51m2096815866[0m 0ms] dns: match[0] inbound=issuer query_type=A => route(virtual)
++0300 2026-11-04 13:54:07 [37mDEBUG[0m [[38;5;51m2096815866[0m 0ms] dns: exchanged wait.only-fi.lab.test NOERROR 600
++0300 2026-11-04 13:54:07 [36mINFO[0m [[38;5;51m2096815866[0m 0ms] dns: exchanged A wait.only-fi.lab.test. 600 IN A 198.18.0.2
++0300 2026-11-04 13:54:07 [37mDEBUG[0m [[38;5;189m496719533[0m 1.99s] dns: exchanged wait.only-fi.lab.test NOERROR 0
++0300 2026-11-04 13:54:07 [37mDEBUG[0m [[38;5;189m496719533[0m 1.99s] dns: exchanged A wait.only-fi.lab.test. 0 IN A 203.0.113.11
++0300 2026-11-04 13:54:07 [37mDEBUG[0m [[38;5;189m496719533[0m 1.99s] dns: lookup succeed for wait.only-fi.lab.test: 203.0.113.11
++0300 2026-11-04 13:54:07 [37mDEBUG[0m [[38;5;105m831756633[0m 1.99s] dns: exchanged wait.only-fi.lab.test NOERROR 0
++0300 2026-11-04 13:54:07 [37mDEBUG[0m [[38;5;105m831756633[0m 1.99s] dns: exchanged A wait.only-fi.lab.test. 0 IN A 203.0.113.11
++0300 2026-11-04 13:54:07 [37mDEBUG[0m [[38;5;105m831756633[0m 1.99s] dns: lookup succeed for wait.only-fi.lab.test: 203.0.113.11
++0300 2026-11-04 13:54:07 [37mDEBUG[0m [[38;5;189m496719533[0m 2.0s] connection: connection download finished
++0300 2026-11-04 13:54:07 [37mDEBUG[0m [[38;5;189m496719533[0m 2.0s] connection: connection upload finished
++0300 2026-11-04 13:54:10 [37mDEBUG[0m [[38;5;32m4162857744[0m 0ms] router: found fakeip domain: missing.only-fi.lab.test
++0300 2026-11-04 13:54:10 [37mDEBUG[0m [[38;5;32m4162857744[0m 0ms] router: pre-match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:10 [36mINFO[0m [[38;5;186m1634389805[0m 0ms] inbound/tun[lan]: inbound packet connection from 10.85.0.2:40201
++0300 2026-11-04 13:54:10 [36mINFO[0m [[38;5;186m1634389805[0m 0ms] inbound/tun[lan]: inbound packet connection to 198.18.0.3:19091
++0300 2026-11-04 13:54:10 [37mDEBUG[0m [[38;5;186m1634389805[0m 0ms] router: found fakeip domain: missing.only-fi.lab.test
++0300 2026-11-04 13:54:10 [37mDEBUG[0m [[38;5;186m1634389805[0m 0ms] router: match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:10 [36mINFO[0m [[38;5;186m1634389805[0m 0ms] outbound/direct[fi-out]: outbound packet connection
++0300 2026-11-04 13:54:10 [37mDEBUG[0m [[38;5;186m1634389805[0m 0ms] dns: lookup domain missing.only-fi.lab.test
++0300 2026-11-04 13:54:10 [37mDEBUG[0m [[38;5;141m2784168317[0m 0ms] router: found fakeip domain: missing.only-fi.lab.test
++0300 2026-11-04 13:54:10 [37mDEBUG[0m [[38;5;141m2784168317[0m 0ms] router: pre-match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:10 [36mINFO[0m [[38;5;223m1158028808[0m 0ms] inbound/tun[lan]: inbound connection from 10.85.0.2:40200
++0300 2026-11-04 13:54:10 [36mINFO[0m [[38;5;223m1158028808[0m 0ms] inbound/tun[lan]: inbound connection to 198.18.0.3:19091
++0300 2026-11-04 13:54:10 [37mDEBUG[0m [[38;5;223m1158028808[0m 0ms] router: found fakeip domain: missing.only-fi.lab.test
++0300 2026-11-04 13:54:10 [37mDEBUG[0m [[38;5;223m1158028808[0m 0ms] router: match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:10 [36mINFO[0m [[38;5;223m1158028808[0m 0ms] outbound/direct[fi-out]: outbound connection to missing.only-fi.lab.test:19091
++0300 2026-11-04 13:54:10 [37mDEBUG[0m [[38;5;223m1158028808[0m 0ms] dns: lookup domain missing.only-fi.lab.test
++0300 2026-11-04 13:54:10 [37mDEBUG[0m [[38;5;186m1634389805[0m 1ms] dns: exchanged missing.only-fi.lab.test SERVFAIL 0
++0300 2026-11-04 13:54:10 [37mDEBUG[0m [[38;5;186m1634389805[0m 1ms] dns: lookup failed for missing.only-fi.lab.test: SERVFAIL
++0300 2026-11-04 13:54:10 [31mERROR[0m [[38;5;186m1634389805[0m 1ms] connection: listen packet connection using  using outbound/direct[fi-out]: lookup missing.only-fi.lab.test: SERVFAIL
++0300 2026-11-04 13:54:10 [37mDEBUG[0m [[38;5;223m1158028808[0m 1ms] dns: exchanged missing.only-fi.lab.test SERVFAIL 0
++0300 2026-11-04 13:54:10 [37mDEBUG[0m [[38;5;223m1158028808[0m 1ms] dns: lookup failed for missing.only-fi.lab.test: SERVFAIL
++0300 2026-11-04 13:54:10 [31mERROR[0m [[38;5;223m1158028808[0m 1ms] connection: open connection to missing.only-fi.lab.test:19091 using outbound/direct[fi-out]: lookup missing.only-fi.lab.test: SERVFAIL
++0300 2026-11-04 13:54:10 [37mDEBUG[0m [[38;5;105m2516854617[0m 0ms] router: found fakeip domain: empty.only-fi.lab.test
++0300 2026-11-04 13:54:10 [37mDEBUG[0m [[38;5;105m2516854617[0m 0ms] router: pre-match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:10 [36mINFO[0m [[38;5;102m4003178070[0m 0ms] inbound/tun[lan]: inbound connection from 10.85.0.2:40204
++0300 2026-11-04 13:54:10 [36mINFO[0m [[38;5;102m4003178070[0m 0ms] inbound/tun[lan]: inbound connection to 198.18.0.4:19091
++0300 2026-11-04 13:54:10 [37mDEBUG[0m [[38;5;102m4003178070[0m 0ms] router: found fakeip domain: empty.only-fi.lab.test
++0300 2026-11-04 13:54:10 [37mDEBUG[0m [[38;5;102m4003178070[0m 0ms] router: match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:10 [36mINFO[0m [[38;5;102m4003178070[0m 0ms] outbound/direct[fi-out]: outbound connection to empty.only-fi.lab.test:19091
++0300 2026-11-04 13:54:10 [37mDEBUG[0m [[38;5;102m4003178070[0m 0ms] dns: lookup domain empty.only-fi.lab.test
++0300 2026-11-04 13:54:10 [37mDEBUG[0m [[38;5;101m2915224661[0m 0ms] router: found fakeip domain: empty.only-fi.lab.test
++0300 2026-11-04 13:54:10 [37mDEBUG[0m [[38;5;101m2915224661[0m 0ms] router: pre-match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:10 [36mINFO[0m [[38;5;205m3318474685[0m 0ms] inbound/tun[lan]: inbound packet connection from 10.85.0.2:40205
++0300 2026-11-04 13:54:10 [36mINFO[0m [[38;5;205m3318474685[0m 0ms] inbound/tun[lan]: inbound packet connection to 198.18.0.4:19091
++0300 2026-11-04 13:54:10 [37mDEBUG[0m [[38;5;205m3318474685[0m 0ms] router: found fakeip domain: empty.only-fi.lab.test
++0300 2026-11-04 13:54:10 [37mDEBUG[0m [[38;5;205m3318474685[0m 0ms] router: match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:10 [36mINFO[0m [[38;5;205m3318474685[0m 0ms] outbound/direct[fi-out]: outbound packet connection
++0300 2026-11-04 13:54:10 [37mDEBUG[0m [[38;5;205m3318474685[0m 0ms] dns: lookup domain empty.only-fi.lab.test
++0300 2026-11-04 13:54:10 [37mDEBUG[0m [[38;5;102m4003178070[0m 1ms] dns: exchanged empty.only-fi.lab.test SERVFAIL 0
++0300 2026-11-04 13:54:10 [37mDEBUG[0m [[38;5;102m4003178070[0m 1ms] dns: lookup failed for empty.only-fi.lab.test: SERVFAIL
++0300 2026-11-04 13:54:10 [31mERROR[0m [[38;5;102m4003178070[0m 1ms] connection: open connection to empty.only-fi.lab.test:19091 using outbound/direct[fi-out]: lookup empty.only-fi.lab.test: SERVFAIL
++0300 2026-11-04 13:54:10 [37mDEBUG[0m [[38;5;205m3318474685[0m 1ms] dns: exchanged empty.only-fi.lab.test SERVFAIL 0
++0300 2026-11-04 13:54:10 [37mDEBUG[0m [[38;5;205m3318474685[0m 1ms] dns: lookup failed for empty.only-fi.lab.test: SERVFAIL
++0300 2026-11-04 13:54:10 [31mERROR[0m [[38;5;205m3318474685[0m 1ms] connection: listen packet connection using  using outbound/direct[fi-out]: lookup empty.only-fi.lab.test: SERVFAIL
++0300 2026-11-04 13:54:14 [37mDEBUG[0m [[38;5;189m1397772973[0m 0ms] router: found fakeip domain: wait.only-fi.lab.test
++0300 2026-11-04 13:54:14 [37mDEBUG[0m [[38;5;189m1397772973[0m 0ms] router: pre-match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:14 [36mINFO[0m [[38;5;179m377298083[0m 0ms] inbound/tun[lan]: inbound connection from 10.85.0.2:40600
++0300 2026-11-04 13:54:14 [36mINFO[0m [[38;5;179m377298083[0m 0ms] inbound/tun[lan]: inbound connection to 198.18.0.2:19091
++0300 2026-11-04 13:54:14 [37mDEBUG[0m [[38;5;179m377298083[0m 0ms] router: found fakeip domain: wait.only-fi.lab.test
++0300 2026-11-04 13:54:14 [37mDEBUG[0m [[38;5;179m377298083[0m 0ms] router: match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:14 [36mINFO[0m [[38;5;179m377298083[0m 0ms] outbound/direct[fi-out]: outbound connection to wait.only-fi.lab.test:19091
++0300 2026-11-04 13:54:14 [37mDEBUG[0m [[38;5;179m377298083[0m 0ms] dns: lookup domain wait.only-fi.lab.test
++0300 2026-11-04 13:54:14 [37mDEBUG[0m [[38;5;101m3649603925[0m 0ms] router: found fakeip domain: wait.only-fi.lab.test
++0300 2026-11-04 13:54:14 [37mDEBUG[0m [[38;5;101m3649603925[0m 0ms] router: pre-match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:14 [36mINFO[0m [[38;5;228m2697067523[0m 0ms] inbound/tun[lan]: inbound packet connection from 10.85.0.2:40601
++0300 2026-11-04 13:54:14 [36mINFO[0m [[38;5;228m2697067523[0m 0ms] inbound/tun[lan]: inbound packet connection to 198.18.0.2:19091
++0300 2026-11-04 13:54:14 [37mDEBUG[0m [[38;5;228m2697067523[0m 0ms] router: found fakeip domain: wait.only-fi.lab.test
++0300 2026-11-04 13:54:14 [37mDEBUG[0m [[38;5;228m2697067523[0m 0ms] router: match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:14 [36mINFO[0m [[38;5;228m2697067523[0m 0ms] outbound/direct[fi-out]: outbound packet connection
++0300 2026-11-04 13:54:14 [37mDEBUG[0m [[38;5;228m2697067523[0m 0ms] dns: lookup domain wait.only-fi.lab.test
++0300 2026-11-04 13:54:14 [36mINFO[0m [[38;5;152m3330859400[0m 0ms] inbound/direct[issuer]: inbound packet connection from 127.0.0.1:48092
++0300 2026-11-04 13:54:14 [36mINFO[0m [[38;5;152m3330859400[0m 0ms] inbound/direct[issuer]: inbound packet connection to 127.0.0.1:1054
++0300 2026-11-04 13:54:14 [37mDEBUG[0m [[38;5;152m3330859400[0m 0ms] router: match[0] inbound=issuer => hijack-dns
++0300 2026-11-04 13:54:14 [37mDEBUG[0m [[38;5;152m3330859400[0m 0ms] dns: exchange wait.only-fi.lab.test. IN A
++0300 2026-11-04 13:54:14 [37mDEBUG[0m [[38;5;152m3330859400[0m 0ms] dns: match[0] inbound=issuer query_type=A => route(virtual)
++0300 2026-11-04 13:54:14 [37mDEBUG[0m [[38;5;152m3330859400[0m 0ms] dns: exchanged wait.only-fi.lab.test NOERROR 600
++0300 2026-11-04 13:54:14 [36mINFO[0m [[38;5;152m3330859400[0m 0ms] dns: exchanged A wait.only-fi.lab.test. 600 IN A 198.18.0.2
++0300 2026-11-04 13:54:14 [37mDEBUG[0m [[38;5;179m377298083[0m 1ms] dns: exchanged wait.only-fi.lab.test NOERROR 0
++0300 2026-11-04 13:54:14 [37mDEBUG[0m [[38;5;179m377298083[0m 1ms] dns: exchanged A wait.only-fi.lab.test. 0 IN A 203.0.113.11
++0300 2026-11-04 13:54:14 [37mDEBUG[0m [[38;5;179m377298083[0m 1ms] dns: lookup succeed for wait.only-fi.lab.test: 203.0.113.11
++0300 2026-11-04 13:54:14 [37mDEBUG[0m [[38;5;228m2697067523[0m 1ms] dns: exchanged wait.only-fi.lab.test NOERROR 0
++0300 2026-11-04 13:54:14 [37mDEBUG[0m [[38;5;228m2697067523[0m 1ms] dns: exchanged A wait.only-fi.lab.test. 0 IN A 203.0.113.11
++0300 2026-11-04 13:54:14 [37mDEBUG[0m [[38;5;228m2697067523[0m 1ms] dns: lookup succeed for wait.only-fi.lab.test: 203.0.113.11
++0300 2026-11-04 13:54:14 [37mDEBUG[0m [[38;5;179m377298083[0m 2ms] connection: connection download finished
++0300 2026-11-04 13:54:14 [37mDEBUG[0m [[38;5;179m377298083[0m 2ms] connection: connection upload finished
++0300 2026-11-04 13:54:29 [37mDEBUG[0m [[38;5;215m3666663623[0m 0ms] router: found fakeip domain: wait.only-fi.lab.test
++0300 2026-11-04 13:54:29 [37mDEBUG[0m [[38;5;215m3666663623[0m 0ms] router: pre-match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:29 [36mINFO[0m [[38;5;226m861206533[0m 0ms] inbound/tun[lan]: inbound connection from 10.85.0.2:40700
++0300 2026-11-04 13:54:29 [36mINFO[0m [[38;5;226m861206533[0m 0ms] inbound/tun[lan]: inbound connection to 198.18.0.2:19091
++0300 2026-11-04 13:54:29 [37mDEBUG[0m [[38;5;226m861206533[0m 0ms] router: found fakeip domain: wait.only-fi.lab.test
++0300 2026-11-04 13:54:29 [37mDEBUG[0m [[38;5;226m861206533[0m 0ms] router: match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:29 [36mINFO[0m [[38;5;226m861206533[0m 0ms] outbound/direct[fi-out]: outbound connection to wait.only-fi.lab.test:19091
++0300 2026-11-04 13:54:29 [37mDEBUG[0m [[38;5;226m861206533[0m 0ms] dns: lookup domain wait.only-fi.lab.test
++0300 2026-11-04 13:54:29 [37mDEBUG[0m [[38;5;40m1391185135[0m 0ms] router: found fakeip domain: wait.only-fi.lab.test
++0300 2026-11-04 13:54:29 [37mDEBUG[0m [[38;5;40m1391185135[0m 0ms] router: pre-match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:29 [36mINFO[0m [[38;5;95m3391864655[0m 0ms] inbound/tun[lan]: inbound packet connection from 10.85.0.2:40701
++0300 2026-11-04 13:54:29 [36mINFO[0m [[38;5;95m3391864655[0m 0ms] inbound/tun[lan]: inbound packet connection to 198.18.0.2:19091
++0300 2026-11-04 13:54:29 [37mDEBUG[0m [[38;5;95m3391864655[0m 0ms] router: found fakeip domain: wait.only-fi.lab.test
++0300 2026-11-04 13:54:29 [37mDEBUG[0m [[38;5;95m3391864655[0m 0ms] router: match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:29 [36mINFO[0m [[38;5;95m3391864655[0m 0ms] outbound/direct[fi-out]: outbound packet connection
++0300 2026-11-04 13:54:29 [37mDEBUG[0m [[38;5;95m3391864655[0m 0ms] dns: lookup domain wait.only-fi.lab.test
++0300 2026-11-04 13:54:29 [37mDEBUG[0m [[38;5;95m3391864655[0m 2ms] dns: exchanged wait.only-fi.lab.test SERVFAIL 0
++0300 2026-11-04 13:54:29 [37mDEBUG[0m [[38;5;226m861206533[0m 2ms] dns: exchanged wait.only-fi.lab.test SERVFAIL 0
++0300 2026-11-04 13:54:29 [37mDEBUG[0m [[38;5;226m861206533[0m 2ms] dns: lookup failed for wait.only-fi.lab.test: SERVFAIL
++0300 2026-11-04 13:54:29 [31mERROR[0m [[38;5;226m861206533[0m 2ms] connection: open connection to wait.only-fi.lab.test:19091 using outbound/direct[fi-out]: lookup wait.only-fi.lab.test: SERVFAIL
++0300 2026-11-04 13:54:29 [37mDEBUG[0m [[38;5;95m3391864655[0m 2ms] dns: lookup failed for wait.only-fi.lab.test: SERVFAIL
++0300 2026-11-04 13:54:29 [31mERROR[0m [[38;5;95m3391864655[0m 2ms] connection: listen packet connection using  using outbound/direct[fi-out]: lookup wait.only-fi.lab.test: SERVFAIL
++0300 2026-11-04 13:54:34 [37mDEBUG[0m [[38;5;231m1533167831[0m 0ms] router: found fakeip domain: wait.only-fi.lab.test
++0300 2026-11-04 13:54:34 [37mDEBUG[0m [[38;5;231m1533167831[0m 0ms] router: pre-match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:34 [36mINFO[0m [[38;5;32m542767591[0m 0ms] inbound/tun[lan]: inbound connection from 10.85.0.2:40500
++0300 2026-11-04 13:54:34 [36mINFO[0m [[38;5;32m542767591[0m 0ms] inbound/tun[lan]: inbound connection to 198.18.0.2:19091
++0300 2026-11-04 13:54:34 [37mDEBUG[0m [[38;5;32m542767591[0m 0ms] router: found fakeip domain: wait.only-fi.lab.test
++0300 2026-11-04 13:54:34 [37mDEBUG[0m [[38;5;32m542767591[0m 0ms] router: match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:34 [36mINFO[0m [[38;5;32m542767591[0m 0ms] outbound/direct[fi-out]: outbound connection to wait.only-fi.lab.test:19091
++0300 2026-11-04 13:54:34 [37mDEBUG[0m [[38;5;32m542767591[0m 0ms] dns: lookup domain wait.only-fi.lab.test
++0300 2026-11-04 13:54:34 [37mDEBUG[0m [[38;5;37m1132461036[0m 0ms] router: found fakeip domain: wait.only-fi.lab.test
++0300 2026-11-04 13:54:34 [37mDEBUG[0m [[38;5;37m1132461036[0m 0ms] router: pre-match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:34 [36mINFO[0m [[38;5;146m1609759874[0m 0ms] inbound/tun[lan]: inbound packet connection from 10.85.0.2:40501
++0300 2026-11-04 13:54:34 [36mINFO[0m [[38;5;146m1609759874[0m 0ms] inbound/tun[lan]: inbound packet connection to 198.18.0.2:19091
++0300 2026-11-04 13:54:34 [37mDEBUG[0m [[38;5;146m1609759874[0m 0ms] router: found fakeip domain: wait.only-fi.lab.test
++0300 2026-11-04 13:54:34 [37mDEBUG[0m [[38;5;146m1609759874[0m 0ms] router: match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:34 [36mINFO[0m [[38;5;146m1609759874[0m 0ms] outbound/direct[fi-out]: outbound packet connection
++0300 2026-11-04 13:54:34 [37mDEBUG[0m [[38;5;146m1609759874[0m 0ms] dns: lookup domain wait.only-fi.lab.test
++0300 2026-11-04 13:54:34 [36mINFO[0m [[38;5;110m3942273886[0m 0ms] inbound/direct[issuer]: inbound packet connection from 127.0.0.1:34111
++0300 2026-11-04 13:54:34 [36mINFO[0m [[38;5;110m3942273886[0m 0ms] inbound/direct[issuer]: inbound packet connection to 127.0.0.1:1054
++0300 2026-11-04 13:54:34 [37mDEBUG[0m [[38;5;110m3942273886[0m 0ms] router: match[0] inbound=issuer => hijack-dns
++0300 2026-11-04 13:54:34 [37mDEBUG[0m [[38;5;110m3942273886[0m 0ms] dns: exchange wait.only-fi.lab.test. IN A
++0300 2026-11-04 13:54:34 [37mDEBUG[0m [[38;5;110m3942273886[0m 0ms] dns: match[0] inbound=issuer query_type=A => route(virtual)
++0300 2026-11-04 13:54:34 [37mDEBUG[0m [[38;5;110m3942273886[0m 0ms] dns: exchanged wait.only-fi.lab.test NOERROR 600
++0300 2026-11-04 13:54:34 [36mINFO[0m [[38;5;110m3942273886[0m 0ms] dns: exchanged A wait.only-fi.lab.test. 600 IN A 198.18.0.2
++0300 2026-11-04 13:54:34 [37mDEBUG[0m [[38;5;146m1609759874[0m 2ms] dns: exchanged wait.only-fi.lab.test NOERROR 1
++0300 2026-11-04 13:54:34 [37mDEBUG[0m [[38;5;146m1609759874[0m 2ms] dns: exchanged A wait.only-fi.lab.test. 1 IN A 203.0.113.11
++0300 2026-11-04 13:54:34 [37mDEBUG[0m [[38;5;146m1609759874[0m 2ms] dns: lookup succeed for wait.only-fi.lab.test: 203.0.113.11
++0300 2026-11-04 13:54:34 [37mDEBUG[0m [[38;5;32m542767591[0m 3ms] dns: exchanged wait.only-fi.lab.test NOERROR 1
++0300 2026-11-04 13:54:34 [37mDEBUG[0m [[38;5;32m542767591[0m 3ms] dns: exchanged A wait.only-fi.lab.test. 1 IN A 203.0.113.11
++0300 2026-11-04 13:54:34 [37mDEBUG[0m [[38;5;32m542767591[0m 3ms] dns: lookup succeed for wait.only-fi.lab.test: 203.0.113.11
++0300 2026-11-04 13:54:34 [37mDEBUG[0m [[38;5;32m542767591[0m 4ms] connection: connection download finished
++0300 2026-11-04 13:54:34 [37mDEBUG[0m [[38;5;32m542767591[0m 4ms] connection: connection upload finished
++0300 2026-11-04 13:54:36 [37mDEBUG[0m [[38;5;50m2510594297[0m 0ms] router: found fakeip domain: wait.only-fi.lab.test
++0300 2026-11-04 13:54:36 [37mDEBUG[0m [[38;5;50m2510594297[0m 0ms] router: pre-match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:36 [36mINFO[0m [[38;5;32m1099561744[0m 0ms] inbound/tun[lan]: inbound packet connection from 10.85.0.2:40301
++0300 2026-11-04 13:54:36 [36mINFO[0m [[38;5;32m1099561744[0m 0ms] inbound/tun[lan]: inbound packet connection to 198.18.0.2:19091
++0300 2026-11-04 13:54:36 [37mDEBUG[0m [[38;5;32m1099561744[0m 0ms] router: found fakeip domain: wait.only-fi.lab.test
++0300 2026-11-04 13:54:36 [37mDEBUG[0m [[38;5;32m1099561744[0m 0ms] router: match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:36 [36mINFO[0m [[38;5;32m1099561744[0m 0ms] outbound/direct[fi-out]: outbound packet connection
++0300 2026-11-04 13:54:36 [37mDEBUG[0m [[38;5;32m1099561744[0m 0ms] dns: lookup domain wait.only-fi.lab.test
++0300 2026-11-04 13:54:36 [37mDEBUG[0m [[38;5;228m1317139203[0m 0ms] router: found fakeip domain: wait.only-fi.lab.test
++0300 2026-11-04 13:54:36 [37mDEBUG[0m [[38;5;228m1317139203[0m 0ms] router: pre-match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:36 [36mINFO[0m [[38;5;214m1651748550[0m 0ms] inbound/tun[lan]: inbound connection from 10.85.0.2:40300
++0300 2026-11-04 13:54:36 [36mINFO[0m [[38;5;214m1651748550[0m 0ms] inbound/tun[lan]: inbound connection to 198.18.0.2:19091
++0300 2026-11-04 13:54:36 [37mDEBUG[0m [[38;5;214m1651748550[0m 0ms] router: found fakeip domain: wait.only-fi.lab.test
++0300 2026-11-04 13:54:36 [37mDEBUG[0m [[38;5;214m1651748550[0m 0ms] router: match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:36 [36mINFO[0m [[38;5;214m1651748550[0m 0ms] outbound/direct[fi-out]: outbound connection to wait.only-fi.lab.test:19091
++0300 2026-11-04 13:54:36 [37mDEBUG[0m [[38;5;214m1651748550[0m 0ms] dns: lookup domain wait.only-fi.lab.test
++0300 2026-11-04 13:54:36 [37mDEBUG[0m [[38;5;32m1099561744[0m 0ms] dns: exchanged wait.only-fi.lab.test SERVFAIL 0
++0300 2026-11-04 13:54:36 [37mDEBUG[0m [[38;5;32m1099561744[0m 0ms] dns: lookup failed for wait.only-fi.lab.test: SERVFAIL
++0300 2026-11-04 13:54:36 [31mERROR[0m [[38;5;32m1099561744[0m 0ms] connection: listen packet connection using  using outbound/direct[fi-out]: lookup wait.only-fi.lab.test: SERVFAIL
++0300 2026-11-04 13:54:36 [37mDEBUG[0m [[38;5;214m1651748550[0m 0ms] dns: exchanged wait.only-fi.lab.test SERVFAIL 0
++0300 2026-11-04 13:54:36 [37mDEBUG[0m [[38;5;214m1651748550[0m 0ms] dns: lookup failed for wait.only-fi.lab.test: SERVFAIL
++0300 2026-11-04 13:54:36 [31mERROR[0m [[38;5;214m1651748550[0m 0ms] connection: open connection to wait.only-fi.lab.test:19091 using outbound/direct[fi-out]: lookup wait.only-fi.lab.test: SERVFAIL
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;155m295563659[0m 0ms] router: found fakeip domain: control.lab.test
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;155m295563659[0m 0ms] router: pre-match[2] domain_suffix=lab.test => resolve(winner,ipv4_only)
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;155m295563659[0m 0ms] dns: lookup domain control.lab.test
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;175m3390678687[0m 0ms] inbound/direct[issuer]: inbound packet connection from 127.0.0.1:43764
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;175m3390678687[0m 0ms] inbound/direct[issuer]: inbound packet connection to 127.0.0.1:1054
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;175m3390678687[0m 0ms] router: match[0] inbound=issuer => hijack-dns
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;175m3390678687[0m 0ms] dns: exchange control.lab.test. IN A
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;175m3390678687[0m 0ms] dns: match[0] inbound=issuer query_type=A => route(virtual)
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;175m3390678687[0m 0ms] dns: exchanged control.lab.test NOERROR 600
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;175m3390678687[0m 0ms] dns: exchanged A control.lab.test. 600 IN A 198.18.0.5
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;155m295563659[0m 1ms] dns: exchanged control.lab.test NOERROR 1
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;155m295563659[0m 1ms] dns: exchanged A control.lab.test. 1 IN A 203.0.113.11
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;155m295563659[0m 1ms] dns: lookup succeed for control.lab.test: 203.0.113.11
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;155m295563659[0m 1ms] router: resolved [203.0.113.11]
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;155m295563659[0m 1ms] router: pre-match[4] ip_cidr=203.0.113.11/32 => route(ru-out)
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;227m972296923[0m 0ms] router: found fakeip domain: control.lab.test
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;227m972296923[0m 0ms] router: pre-match[2] domain_suffix=lab.test => resolve(winner,ipv4_only)
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;227m972296923[0m 0ms] dns: lookup domain control.lab.test
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;227m972296923[0m 0ms] dns: exchanged control.lab.test NOERROR 1
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;227m972296923[0m 0ms] dns: exchanged A control.lab.test. 1 IN A 203.0.113.11
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;227m972296923[0m 0ms] dns: lookup succeed for control.lab.test: 203.0.113.11
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;227m972296923[0m 0ms] router: resolved [203.0.113.11]
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;227m972296923[0m 0ms] router: pre-match[4] ip_cidr=203.0.113.11/32 => route(ru-out)
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;221m2080231373[0m 0ms] inbound/tun[lan]: inbound packet connection from 10.85.0.2:40401
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;221m2080231373[0m 0ms] inbound/tun[lan]: inbound packet connection to 198.18.0.5:19091
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;221m2080231373[0m 0ms] router: found fakeip domain: control.lab.test
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;221m2080231373[0m 0ms] router: match[2] domain_suffix=lab.test => resolve(winner,ipv4_only)
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;221m2080231373[0m 0ms] dns: lookup domain control.lab.test
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;173m4209719197[0m 0ms] inbound/tun[lan]: inbound connection from 10.85.0.2:40400
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;173m4209719197[0m 0ms] inbound/tun[lan]: inbound connection to 198.18.0.5:19091
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;173m4209719197[0m 0ms] router: found fakeip domain: control.lab.test
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;173m4209719197[0m 0ms] router: match[2] domain_suffix=lab.test => resolve(winner,ipv4_only)
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;173m4209719197[0m 0ms] dns: lookup domain control.lab.test
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;221m2080231373[0m 0ms] dns: exchanged control.lab.test NOERROR 1
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;221m2080231373[0m 0ms] dns: exchanged A control.lab.test. 1 IN A 203.0.113.11
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;221m2080231373[0m 0ms] dns: lookup succeed for control.lab.test: 203.0.113.11
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;221m2080231373[0m 0ms] router: resolved [203.0.113.11]
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;221m2080231373[0m 0ms] router: match[4] ip_cidr=203.0.113.11/32 => route(ru-out)
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;221m2080231373[0m 0ms] outbound/direct[ru-out]: outbound packet connection
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;173m4209719197[0m 0ms] dns: exchanged control.lab.test NOERROR 1
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;173m4209719197[0m 0ms] dns: exchanged A control.lab.test. 1 IN A 203.0.113.11
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;173m4209719197[0m 0ms] dns: lookup succeed for control.lab.test: 203.0.113.11
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;173m4209719197[0m 0ms] router: resolved [203.0.113.11]
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;173m4209719197[0m 0ms] router: match[4] ip_cidr=203.0.113.11/32 => route(ru-out)
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;173m4209719197[0m 0ms] outbound/direct[ru-out]: outbound connection to control.lab.test:19091
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;173m4209719197[0m 1ms] connection: connection download finished
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;173m4209719197[0m 1ms] connection: connection upload finished
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;51m477494196[0m 0ms] router: found fakeip domain: wait.only-fi.lab.test
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;51m477494196[0m 0ms] router: pre-match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;219m206347723[0m 0ms] inbound/tun[lan]: inbound connection from 10.85.0.2:40800
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;219m206347723[0m 0ms] inbound/tun[lan]: inbound connection to 198.18.0.2:19091
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;219m206347723[0m 0ms] router: found fakeip domain: wait.only-fi.lab.test
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;219m206347723[0m 0ms] router: match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;219m206347723[0m 0ms] outbound/direct[fi-out]: outbound connection to wait.only-fi.lab.test:19091
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;219m206347723[0m 0ms] dns: lookup domain wait.only-fi.lab.test
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;220m16261324[0m 0ms] router: found fakeip domain: wait.only-fi.lab.test
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;220m16261324[0m 0ms] router: pre-match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;38m4278188781[0m 0ms] inbound/tun[lan]: inbound packet connection from 10.85.0.2:40801
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;38m4278188781[0m 0ms] inbound/tun[lan]: inbound packet connection to 198.18.0.2:19091
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;38m4278188781[0m 0ms] router: found fakeip domain: wait.only-fi.lab.test
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;38m4278188781[0m 0ms] router: match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;38m4278188781[0m 0ms] outbound/direct[fi-out]: outbound packet connection
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;38m4278188781[0m 0ms] dns: lookup domain wait.only-fi.lab.test
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;135m222886007[0m 0ms] inbound/direct[issuer]: inbound packet connection from 127.0.0.1:42419
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;135m222886007[0m 0ms] inbound/direct[issuer]: inbound packet connection to 127.0.0.1:1054
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;135m222886007[0m 0ms] router: match[0] inbound=issuer => hijack-dns
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;135m222886007[0m 0ms] dns: exchange wait.only-fi.lab.test. IN A
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;135m222886007[0m 0ms] dns: match[0] inbound=issuer query_type=A => route(virtual)
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;135m222886007[0m 0ms] dns: exchanged wait.only-fi.lab.test NOERROR 600
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;135m222886007[0m 0ms] dns: exchanged A wait.only-fi.lab.test. 600 IN A 198.18.0.2
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;219m206347723[0m 2ms] dns: exchanged wait.only-fi.lab.test NOERROR 1
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;219m206347723[0m 2ms] dns: exchanged A wait.only-fi.lab.test. 1 IN A 203.0.113.22
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;219m206347723[0m 2ms] dns: lookup succeed for wait.only-fi.lab.test: 203.0.113.22
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;40m3459865368[0m 0ms] router: found fakeip domain: missing.only-fi.lab.test
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;40m3459865368[0m 0ms] router: pre-match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;156m3101187212[0m 0ms] inbound/tun[lan]: inbound connection from 10.85.0.2:40804
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;156m3101187212[0m 0ms] inbound/tun[lan]: inbound connection to 198.18.0.3:19091
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;156m3101187212[0m 0ms] router: found fakeip domain: missing.only-fi.lab.test
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;156m3101187212[0m 0ms] router: match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;156m3101187212[0m 0ms] outbound/direct[fi-out]: outbound connection to missing.only-fi.lab.test:19091
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;156m3101187212[0m 0ms] dns: lookup domain missing.only-fi.lab.test
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;210m4086215874[0m 0ms] router: found fakeip domain: missing.only-fi.lab.test
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;210m4086215874[0m 0ms] router: pre-match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;67m1107907379[0m 0ms] inbound/tun[lan]: inbound packet connection from 10.85.0.2:40805
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;67m1107907379[0m 0ms] inbound/tun[lan]: inbound packet connection to 198.18.0.3:19091
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;67m1107907379[0m 0ms] router: found fakeip domain: missing.only-fi.lab.test
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;67m1107907379[0m 0ms] router: match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;67m1107907379[0m 0ms] outbound/direct[fi-out]: outbound packet connection
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;67m1107907379[0m 0ms] dns: lookup domain missing.only-fi.lab.test
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;83m293118275[0m 0ms] router: found fakeip domain: empty.only-fi.lab.test
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;83m293118275[0m 0ms] router: pre-match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;171m3872412315[0m 0ms] inbound/tun[lan]: inbound connection from 10.85.0.2:40808
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;171m3872412315[0m 0ms] inbound/tun[lan]: inbound connection to 198.18.0.4:19091
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;171m3872412315[0m 0ms] router: found fakeip domain: empty.only-fi.lab.test
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;171m3872412315[0m 0ms] router: match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;171m3872412315[0m 0ms] outbound/direct[fi-out]: outbound connection to empty.only-fi.lab.test:19091
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;171m3872412315[0m 0ms] dns: lookup domain empty.only-fi.lab.test
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;38m4278188781[0m 2ms] dns: exchanged wait.only-fi.lab.test NOERROR 1
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;38m4278188781[0m 2ms] dns: exchanged A wait.only-fi.lab.test. 1 IN A 203.0.113.22
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;38m4278188781[0m 2ms] dns: lookup succeed for wait.only-fi.lab.test: 203.0.113.22
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;219m206347723[0m 3ms] connection: connection download finished
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;156m3101187212[0m 1ms] dns: exchanged missing.only-fi.lab.test NOERROR 1
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;156m3101187212[0m 1ms] dns: exchanged A missing.only-fi.lab.test. 1 IN A 203.0.113.22
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;156m3101187212[0m 1ms] dns: lookup succeed for missing.only-fi.lab.test: 203.0.113.22
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;65m1409761585[0m 0ms] inbound/direct[issuer]: inbound packet connection from 127.0.0.1:41566
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;65m1409761585[0m 0ms] inbound/direct[issuer]: inbound packet connection to 127.0.0.1:1054
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;65m1409761585[0m 0ms] router: match[0] inbound=issuer => hijack-dns
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;65m1409761585[0m 0ms] dns: exchange empty.only-fi.lab.test. IN A
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;65m1409761585[0m 0ms] dns: match[0] inbound=issuer query_type=A => route(virtual)
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;65m1409761585[0m 0ms] dns: exchanged empty.only-fi.lab.test NOERROR 600
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;65m1409761585[0m 0ms] dns: exchanged A empty.only-fi.lab.test. 600 IN A 198.18.0.4
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;87m278134160[0m 0ms] inbound/direct[issuer]: inbound packet connection from 127.0.0.1:59510
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;87m278134160[0m 0ms] inbound/direct[issuer]: inbound packet connection to 127.0.0.1:1054
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;87m278134160[0m 0ms] router: match[0] inbound=issuer => hijack-dns
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;87m278134160[0m 0ms] dns: exchange missing.only-fi.lab.test. IN A
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;87m278134160[0m 0ms] dns: match[0] inbound=issuer query_type=A => route(virtual)
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;87m278134160[0m 0ms] dns: exchanged missing.only-fi.lab.test NOERROR 600
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;87m278134160[0m 0ms] dns: exchanged A missing.only-fi.lab.test. 600 IN A 198.18.0.3
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;156m3101187212[0m 2ms] connection: connection download finished
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;171m3872412315[0m 1ms] dns: exchanged empty.only-fi.lab.test NOERROR 1
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;171m3872412315[0m 1ms] dns: exchanged A empty.only-fi.lab.test. 1 IN A 203.0.113.22
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;171m3872412315[0m 1ms] dns: lookup succeed for empty.only-fi.lab.test: 203.0.113.22
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;167m2296871831[0m 0ms] router: found fakeip domain: empty.only-fi.lab.test
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;167m2296871831[0m 0ms] router: pre-match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;29m2014132493[0m 0ms] inbound/tun[lan]: inbound packet connection from 10.85.0.2:40809
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;29m2014132493[0m 0ms] inbound/tun[lan]: inbound packet connection to 198.18.0.4:19091
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;29m2014132493[0m 0ms] router: found fakeip domain: empty.only-fi.lab.test
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;29m2014132493[0m 0ms] router: match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 13:54:40 [36mINFO[0m [[38;5;29m2014132493[0m 0ms] outbound/direct[fi-out]: outbound packet connection
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;29m2014132493[0m 0ms] dns: lookup domain empty.only-fi.lab.test
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;67m1107907379[0m 2ms] dns: exchanged missing.only-fi.lab.test NOERROR 1
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;67m1107907379[0m 2ms] dns: exchanged A missing.only-fi.lab.test. 1 IN A 203.0.113.22
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;67m1107907379[0m 2ms] dns: lookup succeed for missing.only-fi.lab.test: 203.0.113.22
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;29m2014132493[0m 0ms] dns: exchanged empty.only-fi.lab.test NOERROR 1
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;29m2014132493[0m 0ms] dns: exchanged A empty.only-fi.lab.test. 1 IN A 203.0.113.22
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;29m2014132493[0m 0ms] dns: lookup succeed for empty.only-fi.lab.test: 203.0.113.22
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;219m206347723[0m 5ms] connection: connection upload finished
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;156m3101187212[0m 3ms] connection: connection upload finished
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;171m3872412315[0m 3ms] connection: connection download finished
++0300 2026-11-04 13:54:40 [37mDEBUG[0m [[38;5;171m3872412315[0m 3ms] connection: connection upload finished
