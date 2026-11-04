@@ -1,0 +1,10 @@
+{"stage": "first", "name": "hot.lab.test", "fake": "198.18.0.2", "begin_ns": 491114153384, "end_ns": 491135715335, "wall_begin_ns": 1793786755937547630, "wall_end_ns": 1793786755959111664}
+{"stage": "first", "name": "hot.only-fi.lab.test", "fake": "198.18.0.3", "begin_ns": 491135748712, "end_ns": 491153583681, "wall_begin_ns": 1793786755959144459, "wall_end_ns": 1793786755976980178}
+{"stage": "first", "name": "rare.lab.test", "fake": "198.18.0.4", "begin_ns": 491153603766, "end_ns": 491171200590, "wall_begin_ns": 1793786755976999513, "wall_end_ns": 1793786755994597128}
+{"stage": "repeat", "name": "hot.lab.test", "fake": "198.18.0.2", "begin_ns": 491171222133, "end_ns": 491172043369, "wall_begin_ns": 1793786755994617880, "wall_end_ns": 1793786755995439491}
+{"stage": "repeat", "name": "hot.only-fi.lab.test", "fake": "198.18.0.3", "begin_ns": 491172059913, "end_ns": 491172767431, "wall_begin_ns": 1793786755995455701, "wall_end_ns": 1793786755996163469}
+{"stage": "repeat", "name": "hot.lab.test", "fake": "198.18.0.2", "begin_ns": 491172784557, "end_ns": 491173464323, "wall_begin_ns": 1793786755996180387, "wall_end_ns": 1793786755996860403}
+{"stage": "repeat", "name": "hot.only-fi.lab.test", "fake": "198.18.0.3", "begin_ns": 491173478491, "end_ns": 491174181092, "wall_begin_ns": 1793786755996874321, "wall_end_ns": 1793786755997577172}
+{"stage": "after-original-ttl", "name": "hot.lab.test", "fake": "198.18.0.2", "begin_ns": 495784546278, "end_ns": 495787567241, "wall_begin_ns": 1793786760607940608, "wall_end_ns": 1793786760610963654}
+{"stage": "after-original-ttl", "name": "hot.only-fi.lab.test", "fake": "198.18.0.3", "begin_ns": 495792437693, "end_ns": 495793881898, "wall_begin_ns": 1793786760615833147, "wall_end_ns": 1793786760617278144}
+{"stage": "single-late", "name": "hot.lab.test", "fake": "198.18.0.2", "begin_ns": 506263723730, "end_ns": 506284918953, "wall_begin_ns": 1793786771087119185, "wall_end_ns": 1793786771108315324}

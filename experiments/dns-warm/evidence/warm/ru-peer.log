@@ -1,0 +1,15 @@
+{"event": "ready", "ns": 490741252387}
+{"event": "peer", "ns": 491175424114, "token": "data-rare.lab.test-tcp-0", "group": "ru", "ip": "203.0.113.11", "source": "10.85.1.1", "proto": "tcp"}
+{"event": "peer", "ns": 491176692888, "token": "data-rare.lab.test-udp-1", "group": "ru", "ip": "203.0.113.11", "source": "10.85.1.1", "proto": "udp"}
+{"event": "authority", "ns": 491177980831, "group": "ru", "domain": "hot.lab.test", "ip": "203.0.113.11", "ttl": 4, "source": "10.85.1.1"}
+{"event": "peer", "ns": 491178219726, "token": "data-rare.lab.test-tcp-2", "group": "ru", "ip": "203.0.113.11", "source": "10.85.1.1", "proto": "tcp"}
+{"event": "peer", "ns": 491179462831, "token": "data-rare.lab.test-udp-3", "group": "ru", "ip": "203.0.113.11", "source": "10.85.1.1", "proto": "udp"}
+{"event": "authority", "ns": 491215393454, "group": "ru", "domain": "rare.lab.test", "ip": "203.0.113.11", "ttl": 4, "source": "10.85.1.1"}
+{"event": "authority", "ns": 492300112244, "group": "ru", "domain": "hot.lab.test", "ip": "203.0.113.22", "ttl": 4, "source": "10.85.1.1"}
+{"event": "authority", "ns": 493450140313, "group": "ru", "domain": "hot.lab.test", "ip": "203.0.113.22", "ttl": 4, "source": "10.85.1.1"}
+{"event": "authority", "ns": 494611413960, "group": "ru", "domain": "hot.lab.test", "ip": "203.0.113.22", "ttl": 4, "source": "10.85.1.1"}
+{"event": "authority", "ns": 495748660214, "group": "ru", "domain": "hot.lab.test", "ip": "203.0.113.22", "ttl": 4, "source": "10.85.1.1"}
+{"event": "authority", "ns": 496878903512, "group": "ru", "domain": "hot.lab.test", "ip": "203.0.113.22", "ttl": 4, "source": "10.85.1.1"}
+{"event": "authority", "ns": 498031294268, "group": "ru", "domain": "hot.lab.test", "ip": "203.0.113.22", "ttl": 4, "source": "10.85.1.1"}
+{"event": "authority", "ns": 499191625320, "group": "ru", "domain": "hot.lab.test", "ip": "203.0.113.22", "ttl": 4, "source": "10.85.1.1"}
+{"event": "authority", "ns": 506331232184, "group": "ru", "domain": "hot.lab.test", "ip": "203.0.113.22", "ttl": 4, "source": "10.85.1.1"}

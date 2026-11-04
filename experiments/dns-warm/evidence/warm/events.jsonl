@@ -1,0 +1,6 @@
+{"stage": "rotation", "ns": 491222741784, "wall_ns": 1793786756046138322}
+{"stage": "last-active", "ns": 495797116295, "wall_ns": 1793786760620512500}
+{"stage": "quiet-start", "ns": 504005496187, "wall_ns": 1793786768828893267}
+{"stage": "quiet-end", "ns": 506263215646, "wall_ns": 1793786771086613392}
+{"stage": "one-only-start", "ns": 506440373022, "wall_ns": 1793786771263769685}
+{"stage": "one-only-end", "ns": 508947673048, "wall_ns": 1793786773771070503}

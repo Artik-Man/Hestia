@@ -1,0 +1,23 @@
+{"event": "ready", "ns": 490769671877}
+{"event": "authority", "ns": 491133623991, "group": "fi", "domain": "hot.lab.test", "ip": "203.0.113.11", "ttl": 4, "source": "10.85.2.1"}
+{"event": "authority", "ns": 491152159436, "group": "fi", "domain": "hot.only-fi.lab.test", "ip": "203.0.113.11", "ttl": 4, "source": "10.85.2.1"}
+{"event": "authority", "ns": 491169765885, "group": "fi", "domain": "rare.lab.test", "ip": "203.0.113.11", "ttl": 4, "source": "10.85.2.1"}
+{"event": "authority", "ns": 492249239945, "group": "fi", "domain": "hot.lab.test", "ip": "203.0.113.22", "ttl": 4, "source": "10.85.2.1"}
+{"event": "authority", "ns": 492249693775, "group": "fi", "domain": "hot.only-fi.lab.test", "ip": "203.0.113.22", "ttl": 4, "source": "10.85.2.1"}
+{"event": "authority", "ns": 493299418591, "group": "fi", "domain": "hot.lab.test", "ip": "203.0.113.22", "ttl": 4, "source": "10.85.2.1"}
+{"event": "authority", "ns": 493302550855, "group": "fi", "domain": "hot.only-fi.lab.test", "ip": "203.0.113.22", "ttl": 4, "source": "10.85.2.1"}
+{"event": "authority", "ns": 494353263903, "group": "fi", "domain": "hot.lab.test", "ip": "203.0.113.22", "ttl": 4, "source": "10.85.2.1"}
+{"event": "authority", "ns": 494354918501, "group": "fi", "domain": "hot.only-fi.lab.test", "ip": "203.0.113.22", "ttl": 4, "source": "10.85.2.1"}
+{"event": "authority", "ns": 495399525892, "group": "fi", "domain": "hot.lab.test", "ip": "203.0.113.22", "ttl": 4, "source": "10.85.2.1"}
+{"event": "authority", "ns": 495399768288, "group": "fi", "domain": "hot.only-fi.lab.test", "ip": "203.0.113.22", "ttl": 4, "source": "10.85.2.1"}
+{"event": "peer", "ns": 495790121414, "token": "data-hot.lab.test-tcp-10", "group": "fi", "ip": "203.0.113.22", "source": "10.85.2.1", "proto": "tcp"}
+{"event": "peer", "ns": 495792038868, "token": "data-hot.lab.test-udp-11", "group": "fi", "ip": "203.0.113.22", "source": "10.85.2.1", "proto": "udp"}
+{"event": "peer", "ns": 495795388275, "token": "data-hot.only-fi.lab.test-tcp-12", "group": "fi", "ip": "203.0.113.22", "source": "10.85.2.1", "proto": "tcp"}
+{"event": "peer", "ns": 495796980534, "token": "data-hot.only-fi.lab.test-udp-13", "group": "fi", "ip": "203.0.113.22", "source": "10.85.2.1", "proto": "udp"}
+{"event": "authority", "ns": 496426529744, "group": "fi", "domain": "hot.lab.test", "ip": "203.0.113.22", "ttl": 4, "source": "10.85.2.1"}
+{"event": "authority", "ns": 496426752513, "group": "fi", "domain": "hot.only-fi.lab.test", "ip": "203.0.113.22", "ttl": 4, "source": "10.85.2.1"}
+{"event": "authority", "ns": 497466148314, "group": "fi", "domain": "hot.lab.test", "ip": "203.0.113.22", "ttl": 4, "source": "10.85.2.1"}
+{"event": "authority", "ns": 497466753823, "group": "fi", "domain": "hot.only-fi.lab.test", "ip": "203.0.113.22", "ttl": 4, "source": "10.85.2.1"}
+{"event": "authority", "ns": 498511935258, "group": "fi", "domain": "hot.lab.test", "ip": "203.0.113.22", "ttl": 4, "source": "10.85.2.1"}
+{"event": "authority", "ns": 498512731825, "group": "fi", "domain": "hot.only-fi.lab.test", "ip": "203.0.113.22", "ttl": 4, "source": "10.85.2.1"}
+{"event": "authority", "ns": 506283546422, "group": "fi", "domain": "hot.lab.test", "ip": "203.0.113.22", "ttl": 4, "source": "10.85.2.1"}

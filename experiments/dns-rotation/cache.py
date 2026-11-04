@@ -8,8 +8,10 @@ from pathlib import Path
 from time import monotonic
 
 import dns.exception
+import dns.flags
 import dns.message
 import dns.name
+import dns.opcode
 import dns.rcode
 import dns.rdataclass
 import dns.rdatatype
@@ -124,20 +126,31 @@ class WinnerCache:
         return selected if selected and selected.group in self.allowed(query) else None
 
 
-async def gateway(down: Path) -> None:
+async def gateway(down: Path, cache=None, client_select=None) -> None:
     """Serve FakeIP requests on LAN and resolve real addresses independently for new sing-box flows."""
-    cache = WinnerCache(down)
+    if cache is None:
+        cache = WinnerCache(down)
 
-    async def respond(data: bytes, client_dns: bool) -> bytes:
+    async def respond(data: bytes, client_dns: bool, peer) -> bytes | None:
         """Use the same arbitration for both listeners; only the client listener asks the FakeIP issuer."""
-        query = dns.message.from_wire(data)
+        try:
+            query = dns.message.from_wire(data)
+        except dns.exception.DNSException:
+            return None
+        if query.flags & dns.flags.QR:
+            return None
+        if query.opcode() != dns.opcode.QUERY:
+            return answer(query, code=dns.rcode.NOTIMP).to_wire()
         if (
             len(query.question) != 1
             or query.question[0].rdtype != dns.rdatatype.A
             or query.question[0].rdclass != dns.rdataclass.IN
         ):
             return answer(query, code=dns.rcode.REFUSED).to_wire()
-        selected = await cache.select(query)
+        if client_dns and client_select is not None:
+            selected = await client_select(query, peer)
+        else:
+            selected = await cache.select(query)
         if selected is None:
             return answer(query, code=dns.rcode.SERVFAIL).to_wire()
         addr = selected.ip
@@ -157,8 +170,8 @@ async def gateway(down: Path) -> None:
         return answer(query, addr, ttl=selected.remaining()).to_wire()
 
     services = [
-        await bind("10.85.0.1", 53, lambda data, peer: respond(data, True)),
-        await bind("127.0.0.1", 1055, lambda data, peer: respond(data, False)),
+        await bind("10.85.0.1", 53, lambda data, peer: respond(data, True, peer)),
+        await bind("127.0.0.1", 1055, lambda data, peer: respond(data, False, peer)),
     ]
     log("ready")
     try:

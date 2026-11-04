@@ -62,7 +62,9 @@ class Service(asyncio.DatagramProtocol):
 
     async def reply(self, data, peer):
         """Run the fixture handler and return its encoded response to the requesting peer."""
-        self.transport.sendto(await self.handle(data, peer), peer)
+        response = await self.handle(data, peer)
+        if response is not None:
+            self.transport.sendto(response, peer)
 
 
 async def bind(addr, port, handle):
