@@ -31,7 +31,11 @@ label {
 }
 input,
 textarea,
-select {
+select,
+.p-inputtext,
+.p-textarea,
+.p-select,
+.p-inputnumber-input {
   width: 100%;
   min-height: 40px;
   padding: 8px;
@@ -77,10 +81,55 @@ button:disabled {
   align-items: center;
   margin: 12px 0;
 }
+.field-label {
+  margin: 8px 0 5px;
+  font-size: 14px;
+  font-weight: 620;
+}
+.config-file {
+  display: grid;
+  gap: 7px;
+  margin-top: 14px;
+}
+.p-fileupload-basic {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.p-fileupload-choose-button.p-button {
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid #17664f;
+  border-radius: 6px;
+  background: #17664f;
+  color: white;
+  font: inherit;
+  font-weight: 620;
+  cursor: pointer;
+}
+.selected-file {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  overflow-wrap: anywhere;
+}
+.p-inputnumber {
+  display: flex;
+  min-width: 0;
+}
+.p-inputnumber-input {
+  flex: 1;
+  width: 100%;
+}
 button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
+.p-inputtext:focus-visible,
+.p-textarea:focus-visible,
+.p-select:focus-visible,
+.p-inputnumber-input:focus-visible,
 summary:focus-visible {
   outline: 3px solid #168164;
   outline-offset: 2px;

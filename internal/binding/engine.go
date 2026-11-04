@@ -3,6 +3,7 @@ package binding
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -29,6 +30,9 @@ const (
 	systemctl = "/usr/bin/systemctl"
 	watcher   = "hestia.service"
 	router    = "hestia-sing-box.service"
+	awgUnit   = "hestia-awg.service"
+	awgReady  = "/run/hestia-awg/ready"
+	awgRoutes = "/run/hestia-awg/routes.json"
 	pending   = ".binding-pending"
 )
 
@@ -39,6 +43,8 @@ type Engine struct {
 	dir, lock   string
 	snapshotGID int
 	run         func(context.Context, string, ...string) error
+	unitCheck   func() (bool, error)
+	readyWait   func(context.Context) error
 }
 
 // Installed returns the engine for the installer-managed Debian gateway.
@@ -97,15 +103,161 @@ func (e Engine) verify(ctx context.Context) error {
 
 // stop waits until both routing services are stopped so the watcher cannot observe a partially published generation.
 func (e Engine) stop(ctx context.Context) error {
-	return e.run(ctx, systemctl, "stop", watcher, router)
+	if err := e.run(ctx, systemctl, "stop", watcher, router); err != nil {
+		return err
+	}
+	installed, err := e.awgUnitInstalled()
+	if err != nil {
+		return err
+	}
+	if installed {
+		if err := e.run(ctx, systemctl, "stop", awgUnit); err != nil {
+			return err
+		}
+	}
+	ready, err := e.hasReadyAWG(e.dir)
+	if err != nil {
+		return err
+	}
+	if ready && !installed {
+		return ErrUnavailable
+	}
+	return ensureNoAWGRouteManifest()
 }
 
 // startVerified starts the managed backend and a fresh watcher and waits for confirmation from both.
 func (e Engine) startVerified(ctx context.Context) error {
+	ready, err := e.hasReadyAWG(e.dir)
+	if err != nil {
+		return err
+	}
+	if ready {
+		installed, err := e.awgUnitInstalled()
+		if err != nil || !installed {
+			return ErrUnavailable
+		}
+		if err := clearAWGReadyMarker(); err != nil {
+			return err
+		}
+		if err := e.run(ctx, systemctl, "start", awgUnit); err != nil {
+			return err
+		}
+		if err := e.waitForAWGReady(ctx); err != nil {
+			return err
+		}
+	}
 	if err := e.run(ctx, systemctl, "start", router, watcher); err != nil {
 		return err
 	}
 	return e.verify(ctx)
+}
+
+// hasReadyAWG reports whether a profile generation contains exactly one connector eligible for group traffic.
+func (e Engine) hasReadyAWG(directory string) (bool, error) {
+	data, err := os.ReadFile(filepath.Join(directory, "profile.json"))
+	if err != nil {
+		return false, ErrUnavailable
+	}
+	var profile struct {
+		Connectors []struct {
+			Status string `json:"status"`
+		} `json:"connectors"`
+	}
+	if err := json.Unmarshal(data, &profile); err != nil {
+		return false, ErrUnavailable
+	}
+	ready := false
+	for _, connector := range profile.Connectors {
+		if connector.Status != "ready" {
+			continue
+		}
+		if ready {
+			return false, ErrUnavailable
+		}
+		ready = true
+	}
+	return ready, nil
+}
+
+// awgUnitInstalled checks only fixed systemd unit locations before a transaction asks systemd to run the root service.
+func (e Engine) awgUnitInstalled() (bool, error) {
+	if e.unitCheck != nil {
+		return e.unitCheck()
+	}
+	for _, path := range []string{"/etc/systemd/system/" + awgUnit, "/lib/systemd/system/" + awgUnit, "/usr/lib/systemd/system/" + awgUnit} {
+		info, err := os.Lstat(path)
+		if err == nil {
+			if !info.Mode().IsRegular() || info.Mode()&os.ModeSymlink != 0 {
+				return false, ErrUnavailable
+			}
+			return true, nil
+		}
+		if !errors.Is(err, os.ErrNotExist) {
+			return false, ErrUnavailable
+		}
+	}
+	return false, nil
+}
+
+// waitAWGReady waits for the root service's private marker written only after handshake and bound egress verification.
+func waitAWGReady(ctx context.Context) error {
+	deadline := time.NewTicker(100 * time.Millisecond)
+	defer deadline.Stop()
+	timer := time.NewTimer(25 * time.Second)
+	defer timer.Stop()
+	for {
+		info, err := os.Lstat(awgReady)
+		stat, ok := infoStat(info)
+		if err == nil && info.Mode().IsRegular() && info.Mode().Perm() == 0600 && info.Size() == 6 && ok && int(stat.Uid) == 0 && stat.Nlink == 1 {
+			data, readErr := os.ReadFile(awgReady)
+			if readErr == nil && string(data) == "ready\n" {
+				return nil
+			}
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-timer.C:
+			return errors.New("AWG service did not confirm its bound egress probe")
+		case <-deadline.C:
+		}
+	}
+}
+
+// waitForAWGReady delegates readiness checks to a fakeable boundary while production requires the private service marker.
+func (e Engine) waitForAWGReady(ctx context.Context) error {
+	if e.readyWait != nil {
+		return e.readyWait(ctx)
+	}
+	return waitAWGReady(ctx)
+}
+
+// ensureNoAWGRouteManifest refuses to continue a mutation when the runtime did not retire its owned route state.
+func ensureNoAWGRouteManifest() error {
+	info, err := os.Lstat(awgRoutes)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	if err != nil || info == nil || !info.Mode().IsRegular() || info.Mode().Perm() != 0600 || info.Mode()&os.ModeSymlink != 0 {
+		return ErrUnavailable
+	}
+	return ErrUnavailable
+}
+
+// clearAWGReadyMarker removes only a prior root-owned readiness file before starting a fresh connector generation.
+func clearAWGReadyMarker() error {
+	info, err := os.Lstat(awgReady)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	stat, ok := infoStat(info)
+	if err != nil || info == nil || !info.Mode().IsRegular() || info.Mode().Perm() != 0600 || !ok || int(stat.Uid) != 0 || stat.Nlink != 1 {
+		return ErrUnavailable
+	}
+	if err := os.Remove(awgReady); err != nil {
+		return ErrUnavailable
+	}
+	return nil
 }
 
 // Apply serializes updates with the installer, rejects stale bindings, and returns success only after live verification.
@@ -152,12 +304,18 @@ func (e Engine) apply(ctx context.Context, prepare func(string) error, check fun
 		return err
 	}
 	defer os.RemoveAll(stage)
-	if err := prepare(stage); err != nil {
+	if err := e.stageAWGTree(stage); err != nil {
 		return err
 	}
+	if err := prepare(stage); err != nil {
+		return fmt.Errorf("candidate preparation failed: %w", err)
+	}
 	next, err := os.ReadFile(filepath.Join(stage, "snapshot.json"))
-	if err != nil || check(next, true) != nil {
+	if err != nil {
 		return ErrUnavailable
+	}
+	if err := check(next, true); err != nil {
+		return fmt.Errorf("candidate snapshot is invalid: %w", err)
 	}
 	if err := e.run(ctx, backend, "check", "-c", filepath.Join(stage, "sing-box.json")); err != nil {
 		return err
@@ -225,9 +383,14 @@ func (e Engine) WatchPending(ctx context.Context) error {
 // Recover restores files from an interrupted write before systemd starts either routing service.
 // It must only run offline, when both services are stopped.
 func (e Engine) Recover(ctx context.Context) error {
-	// The installer may already hold the lock while bootstrapping the recovery unit.
 	if _, err := os.Lstat(filepath.Join(e.dir, pending)); errors.Is(err, os.ErrNotExist) {
-		return nil
+		if _, markerErr := os.Lstat(filepath.Join(e.dir, ".installer-managed")); errors.Is(markerErr, os.ErrNotExist) {
+			return nil
+		} else if markerErr != nil {
+			return ErrUnavailable
+		}
+	} else if err != nil {
+		return ErrUnavailable
 	}
 	lock, err := e.acquire(true)
 	if err != nil {
@@ -237,7 +400,38 @@ func (e Engine) Recover(ctx context.Context) error {
 	if err := e.validateInstallation(); err != nil {
 		return err
 	}
-	return e.recoverIfPending(ctx, false)
+	if err := e.recoverIfPending(ctx, false); err != nil {
+		return err
+	}
+	if err := e.validateGeneration(e.dir, true); err != nil {
+		return err
+	}
+	return e.startAWGForBoot(ctx)
+}
+
+// startAWGForBoot restores the committed connector's guarded route before systemd starts sing-box on a clean boot.
+func (e Engine) startAWGForBoot(ctx context.Context) error {
+	ready, err := e.hasReadyAWG(e.dir)
+	if err != nil {
+		return err
+	}
+	if !ready {
+		return ensureNoAWGRouteManifest()
+	}
+	if err := e.run(ctx, python, "-I", profile, "--validate-managed", e.dir); err != nil {
+		return ErrUnavailable
+	}
+	installed, err := e.awgUnitInstalled()
+	if err != nil || !installed {
+		return ErrUnavailable
+	}
+	if err := clearAWGReadyMarker(); err != nil {
+		return err
+	}
+	if err := e.run(ctx, systemctl, "start", awgUnit); err != nil {
+		return err
+	}
+	return e.waitForAWGReady(ctx)
 }
 
 // recoverIfPending restores every saved file under the exclusive lock and retains the journal on failure.

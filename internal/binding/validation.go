@@ -41,6 +41,9 @@ func (e Engine) managedInfo(dir, name string, installed bool) (os.FileInfo, erro
 // validateGeneration checks all managed files before the first privileged replacement.
 // A damaged payload or digest leaves the entire generation untouched.
 func (e Engine) validateGeneration(dir string, installed bool) error {
+	if err := validateAWGTree(filepath.Join(dir, awgTreeName)); err != nil {
+		return err
+	}
 	for _, name := range managedFiles {
 		if _, err := e.managedInfo(dir, name, installed); err != nil {
 			return err

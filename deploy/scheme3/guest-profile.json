@@ -1,0 +1,33 @@
+{
+  "version": 2,
+  "interfaces": [
+    {
+      "id": "keenetic-direct",
+      "type": "direct",
+      "bind_interface": "lima0"
+    }
+  ],
+  "connectors": [],
+  "groups": [
+    {
+      "id": "default",
+      "exits": ["keenetic-direct"],
+      "defaultExit": "keenetic-direct"
+    }
+  ],
+  "lists": [],
+  "healthy": {
+    "keenetic-direct": true
+  },
+  "inbounds": [
+    {
+      "type": "tun",
+      "tag": "wg-clients",
+      "interface_name": "hestia0",
+      "address": ["172.30.0.1/30"],
+      "mtu": 1400,
+      "auto_route": false,
+      "stack": "system"
+    }
+  ]
+}

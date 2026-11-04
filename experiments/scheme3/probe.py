@@ -9,14 +9,14 @@ import sys
 
 def guest(instance, *args):
     """Build a limactl command for one of the two scheme 3 guests."""
-    binary = os.environ.get("LIMACTL", "/private/tmp/hestia-vm-run/bin/limactl")
+    binary = os.environ.get("LIMACTL", "limactl")
     return [binary, "shell", instance, "--", *args]
 
 
-def probe(site):
+def probe(site, gateway_ip):
     """Pin a fresh IPv4 request to one resolved address and report observed TCP SYNs."""
-    client = "hestia-test-client"
-    gateway = "hestia-stage1"
+    client = os.environ["HESTIA_CLIENT_VM"]
+    gateway = os.environ["HESTIA_GATEWAY_VM"]
     records = subprocess.check_output(
         guest(client, "getent", "ahostsv4", site), text=True, timeout=10
     )
@@ -42,7 +42,7 @@ def probe(site):
             raise RuntimeError("capture incomplete")
     incoming = "wg-keenetic In" in packets
     outgoing = "lima0 Out" in packets and any(
-        "lima0 Out" in line and "192.168.1.133." in line for line in packets.splitlines()
+        "lima0 Out" in line and f"IP {gateway_ip}." in line for line in packets.splitlines()
     )
     http = request.stdout.strip()
     success = request.returncode == 0 and http[:1] in ("2", "3")
@@ -53,9 +53,15 @@ def probe(site):
 
 def main():
     """Run the fixed control requests and exit successfully only if both traverse Hestia."""
-    os.environ.setdefault("LIMA_HOME", "/private/tmp/hestia-vm-run/lima-state")
+    if not all(os.environ.get(key) for key in ("HESTIA_CLIENT_VM", "HESTIA_GATEWAY_VM")):
+        sys.exit("Set HESTIA_CLIENT_VM and HESTIA_GATEWAY_VM to two dedicated lab VMs.")
+    if os.environ["HESTIA_CLIENT_VM"] == os.environ["HESTIA_GATEWAY_VM"]:
+        sys.exit("The client and the gateway must be distinct VMs.")
+    raw = subprocess.check_output(guest(os.environ["HESTIA_GATEWAY_VM"], "ip", "-4", "-o", "addr",
+                                        "show", "dev", "lima0", "scope", "global"), text=True, timeout=10)
+    gateway_ip = ipaddress.IPv4Interface(raw.split()[3]).ip
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
-        results = list(pool.map(probe, ("ya.ru", "example.com")))
+        results = list(pool.map(probe, ("ya.ru", "example.com"), (gateway_ip, gateway_ip)))
     for report, _ in results:
         print(report)
     return 0 if all(ok for _, ok in results) else 1

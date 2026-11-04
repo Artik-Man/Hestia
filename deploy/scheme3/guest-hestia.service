@@ -1,0 +1,20 @@
+[Unit]
+Description=Hestia connection group controller
+Requires=hestia-sing-box.service
+After=hestia-sing-box.service
+
+[Service]
+Type=simple
+DynamicUser=yes
+SupplementaryGroups=hestia-snapshot
+ExecStart=/usr/local/bin/hestia -watch -config /etc/hestia/snapshot.json -interval 1s
+Restart=on-failure
+RestartSec=2s
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+CapabilityBoundingSet=
+
+[Install]
+WantedBy=multi-user.target

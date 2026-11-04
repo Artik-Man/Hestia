@@ -13,16 +13,17 @@ import (
 )
 
 type watcher struct {
-	client    *http.Client
-	base      string
-	desired   *Config
-	pinned    bool
-	confirmed map[string]string
+	client     *http.Client
+	base       string
+	desired    *Config
+	pinned     bool
+	confirmed  map[string]string
+	healthyAWG func(string) bool
 }
 
 // newWatcher starts reconciliation with no desired snapshot or confirmed targets.
 func newWatcher(client *http.Client, base string) *watcher {
-	return &watcher{client: client, base: base, confirmed: make(map[string]string)}
+	return &watcher{client: client, base: base, confirmed: make(map[string]string), healthyAWG: AWGHeartbeatHealthy}
 }
 
 // CheckSnapshot validates a candidate without connecting to sing-box.
@@ -71,11 +72,20 @@ func (w *watcher) sync(ctx context.Context) ([]Result, error) {
 	}
 	var results []Result
 	var failures []error
+	health := make(map[string]bool, len(w.desired.Healthy))
+	for id, available := range w.desired.Healthy {
+		health[id] = available
+	}
+	for id, kind := range w.desired.ConnectorKinds {
+		if kind == "awg" && !w.healthyAWG(id) {
+			health[id] = false
+		}
+	}
 	for _, g := range w.desired.Groups {
 		if ctx.Err() != nil {
 			break
 		}
-		exit, outcome := routing.SelectExit(g, w.desired.Healthy)
+		exit, outcome := routing.SelectExit(g, health)
 		target := exit
 		if outcome == routing.Block {
 			target = deny

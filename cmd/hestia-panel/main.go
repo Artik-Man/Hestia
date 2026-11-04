@@ -160,6 +160,7 @@ func registerPanelAPI(mux *http.ServeMux, snapshot, grafanaURL string, writes pa
 	})
 	registerBinding(api, writes.binding)
 	registerOrder(api, writes.order)
+	registerAWG(api, writes.awg)
 	return api
 }
 
@@ -250,6 +251,7 @@ func main() {
 	grafanaURL := flag.String("grafana-url", "", "optional trusted HTTPS URL for the Grafana menu link")
 	enableOrder := flag.Bool("enable-group-order", false, "enable confirmed group and exit ordering on the installed gateway")
 	enableBindings := flag.Bool("enable-bindings", false, "enable confirmed list binding changes on the installed gateway")
+	enableAWG := flag.Bool("enable-awg", false, "enable privileged AmneziaWG profile management on the installed gateway")
 	openapi := flag.String("openapi", "", "write the generated OpenAPI contract at this path and exit")
 	flag.Parse()
 	if *openapi != "" {
@@ -270,7 +272,7 @@ func main() {
 		log.Fatal(err)
 	}
 	var writes panelWrites
-	if (*enableBindings || *enableOrder) && *snapshot != installedSnapshot {
+	if (*enableBindings || *enableOrder || *enableAWG) && *snapshot != installedSnapshot {
 		log.Fatal("routing changes require /etc/hestia/snapshot.json")
 	}
 	if *enableBindings {
@@ -278,6 +280,9 @@ func main() {
 	}
 	if *enableOrder {
 		writes.order = applyInstalledOrder
+	}
+	if *enableAWG {
+		writes.awg = installedAWGWriter{}
 	}
 	h, err := localHandler(*listen, panelHandler(*snapshot, *grafanaURL, bundle, writes))
 	if err != nil {

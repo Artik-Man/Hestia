@@ -83,7 +83,11 @@ func TestApplyOrderReadsLatestTopology(t *testing.T) {
 				t.Fatal("wrong request", err)
 			}
 			for _, file := range managedFiles {
-				if err := os.WriteFile(filepath.Join(dir, file), []byte("new"), 0600); err != nil {
+				value := "new"
+				if file == "profile.json" {
+					value = `{"connectors":[]}`
+				}
+				if err := os.WriteFile(filepath.Join(dir, file), []byte(value), 0600); err != nil {
 					t.Fatal(err)
 				}
 			}

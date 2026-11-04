@@ -130,12 +130,22 @@ func (e Engine) publishJournal(stage string) error {
 			return err
 		}
 	}
+	if err := copyAWGTreeIfPresent(filepath.Join(e.dir, awgTreeName), filepath.Join(previous, awgTreeName)); err != nil {
+		return err
+	}
 	for _, dir := range []string{stage, previous} {
 		digest, err := snapshotDigest(dir)
 		if err != nil {
 			return err
 		}
 		if err := writeDurably(filepath.Join(dir, "snapshot.sha256"), digest); err != nil {
+			return err
+		}
+		awgDigest, err := awgTreeDigest(filepath.Join(dir, awgTreeName))
+		if err != nil {
+			return err
+		}
+		if err := writeDurably(filepath.Join(dir, "awg.sha256"), awgDigest); err != nil {
 			return err
 		}
 	}
@@ -175,6 +185,9 @@ func (e Engine) installFiles(from string) error {
 			return err
 		}
 	}
+	if err := verifyAWGTreeDigest(from); err != nil {
+		return err
+	}
 	for _, name := range managedFiles {
 		info, err := e.managedInfo(previous, name, true)
 		if err != nil {
@@ -183,6 +196,9 @@ func (e Engine) installFiles(from string) error {
 		if err := copyConfig(filepath.Join(from, name), filepath.Join(e.dir, name), info); err != nil {
 			return err
 		}
+	}
+	if err := e.installAWGTree(filepath.Join(from, awgTreeName)); err != nil {
+		return err
 	}
 	return syncDir(e.dir)
 }

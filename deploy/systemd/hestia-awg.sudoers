@@ -1,0 +1,2 @@
+# The panel may invoke only typed AmneziaWG helper modes through the installed binary.
+hestia-panel ALL=(root) NOPASSWD: /usr/local/bin/hestia -awg-check, /usr/local/bin/hestia -awg-create, /usr/local/bin/hestia -awg-update, /usr/local/bin/hestia -awg-list, /usr/local/bin/hestia -awg-delete

@@ -1,0 +1,23 @@
+[Unit]
+Description=Hestia sing-box traffic dataplane
+Wants=network-online.target
+After=network-online.target wg-quick@wg-keenetic.service
+Requires=wg-quick@wg-keenetic.service
+Requires=hestia-binding-watch.path
+After=hestia-binding-watch.path
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/sing-box run -c /etc/hestia/sing-box.json
+ExecStartPost=/bin/sh -c 'for n in $(seq 1 30); do ip link show hestia0 >/dev/null 2>&1 && break; sleep 0.1; done; ip link show hestia0 >/dev/null'
+ExecStartPost=/etc/hestia-scheme3/network tun-up
+Restart=on-failure
+RestartSec=2s
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_RAW
+
+[Install]
+WantedBy=multi-user.target

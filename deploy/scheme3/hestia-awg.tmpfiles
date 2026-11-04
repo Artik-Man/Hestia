@@ -1,0 +1,4 @@
+# Runtime marker stays root-only; the controller reads only the group-readable heartbeat.
+d /run/hestia-awg 0750 root hestia-snapshot -
+f /run/hestia-awg/health.json 0640 root hestia-snapshot -
+z /run/hestia-awg/health.json 0640 root hestia-snapshot -

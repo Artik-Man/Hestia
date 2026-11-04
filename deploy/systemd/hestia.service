@@ -4,6 +4,7 @@ Description=Hestia connection group controller
 [Service]
 Type=simple
 DynamicUser=yes
+SupplementaryGroups=hestia-snapshot
 ExecStart=/usr/local/bin/hestia -watch -config /etc/hestia/snapshot.json -interval 1s
 Restart=on-failure
 RestartSec=2s

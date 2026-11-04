@@ -1,0 +1,16 @@
+2026-11-04. Изолированная Debian 12 ARM64 Lima hestia-s3-verify-1627.
+Интерфейс lima0 был создан как dummy с адресом 192.168.1.199/24.
+Установка из рабочего дерева и последующее обновление через host.sh завершились успешно.
+systemctl is-active hestia-scheme3-policy wg-quick@wg-keenetic hestia-sing-box hestia hestia-panel
+active
+active
+active
+active
+active
+ip route get 10.253.241.1 from 8.8.8.8 iif hestia0
+10.253.241.1 from 8.8.8.8 dev wg-keenetic table 201
+ip route get 8.8.8.8 from 10.253.241.1 iif wg-keenetic
+8.8.8.8 from 10.253.241.1 dev hestia0 table 200
+GET /api/groups-and-rules
+{"groups":[{"id":"default","isDefault":true,"exits":[{"id":"keenetic-direct","available":true}]}],"lists":[]}
+Профиль Keenetic до и после обновления идентичен по SHA-256, права 0600.

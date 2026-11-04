@@ -1,0 +1,10 @@
+[Unit]
+Description=Scheme 3 IPv4 policy and forwarding guard
+Before=wg-quick@wg-keenetic.service
+StopWhenUnneeded=yes
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/etc/hestia-scheme3/network wg-up
+ExecStop=/etc/hestia-scheme3/network wg-down

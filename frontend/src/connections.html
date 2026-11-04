@@ -52,10 +52,86 @@
   }
 </section>
 
+<section aria-labelledby="awg-profiles-heading">
+  <h2 id="awg-profiles-heading">Профили WireGuard / AmneziaWG</h2>
+  @if (awgLoadError()) {
+    <p class="notice" role="status">{{ awgLoadError() }}</p>
+  }
+  @if (awgConnections().length) {
+    <div class="list-wrap">
+      <table>
+        <caption class="sr-only">
+          Сохранённые профили WireGuard и AmneziaWG
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Группа</th>
+            <th scope="col">Приоритет</th>
+            <th scope="col">Состояние</th>
+            <th scope="col">Действия</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (connection of awgConnections(); track connection.id) {
+            <tr>
+              <th scope="row">{{ connection.id }}</th>
+              <td>{{ connection.group }}</td>
+              <td>{{ connection.priority }}</td>
+              <td>
+                {{
+                  connection.status === "ready"
+                    ? "Подключён"
+                    : connection.status === "configured"
+                      ? "Сохранён · не подключён"
+                      : connection.status === "checking"
+                        ? "Проверяется"
+                        : "Ошибка"
+                }}
+              </td>
+              <td>
+                <button
+                  pButton
+                  type="button"
+                  class="p-button secondary"
+                  [disabled]="deleting() === connection.id"
+                  (click)="editConnection(connection)"
+                >
+                  Изменить
+                </button>
+                <button
+                  pButton
+                  type="button"
+                  class="p-button secondary"
+                  [disabled]="deleting() === connection.id"
+                  (click)="deleteConnection(connection)"
+                >
+                  {{ deleting() === connection.id ? "Удаление…" : "Удалить" }}
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>
+
 @if (creating()) {
-  <hestia-profile-draft [groups]="groups()" (closed)="creating.set(false)" />
+  <hestia-profile-draft
+    [groups]="groups()"
+    [connection]="editing()"
+    [existingIDs]="existingAWGIDs()"
+    (closed)="closeEditor()"
+    (saved)="addSavedConnection($event)"
+  />
 } @else {
-  <button type="button" class="refresh" (click)="creating.set(true)">
-    Добавить подключение · черновик
+  <button
+    pButton
+    type="button"
+    class="p-button refresh"
+    (click)="creating.set(true)"
+  >
+    Добавить WireGuard / AmneziaWG
   </button>
 }

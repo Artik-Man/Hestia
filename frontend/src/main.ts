@@ -46,12 +46,12 @@ void bootstrapApplication(Panel, {
         ...pages.map((page) => ({
           path: page.path,
           component: SnapshotScreen,
-          title: page.label + " · Гестия",
+          title: page.label + " · Hestia",
           data: { page },
         })),
         ...featurePages.map(({ path, label, loadComponent }) => ({
           path,
-          title: label + " · Гестия",
+          title: label + " · Hestia",
           loadComponent,
         })),
         { path: "**", redirectTo: pages[0].path },

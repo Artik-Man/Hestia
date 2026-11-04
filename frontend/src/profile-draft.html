@@ -1,104 +1,147 @@
 <section class="editor">
   <h2>
     {{
-      exit() ? "Черновик изменения подключения" : "Черновик нового подключения"
+      connection() || exit()
+        ? "Изменение профиля WireGuard / AmneziaWG"
+        : "Новый профиль WireGuard / AmneziaWG"
     }}
   </h2>
   <p class="note">
-    Профиль редактируется только в этой форме. Шлюз пока не предоставляет
-    настройки протокола и результат проверки туннеля. Закрытие формы удалит
-    введённые данные.
+    Загрузите WireGuard или AmneziaWG 3.1 в формате .conf. Проверка запускает
+    временный туннель. Сохранение применяет профиль, запускает подключение и
+    добавляет его в выбранную группу на указанной позиции. Порядок выходов
+    группы задаёт приоритет выбора.
   </p>
+  @if (exit() !== null) {
+    <p class="notice" role="status">
+      Загрузка профиля для уже настроенного выхода пока не поддерживается.
+      Добавить новый профиль можно на странице «Подключения».
+    </p>
+  }
   <form
     [formGroup]="form"
-    (ngSubmit)="check()"
+    (ngSubmit)="submit()"
     (input)="report.set('')"
     (change)="report.set('')"
     autocomplete="off"
     novalidate
   >
     <div class="fields">
-      <label
-        >Тип подключения<select
-          #type
-          [value]="protocol() ?? ''"
-          (change)="selectProtocol(type.value)"
-        >
-          <option value="">Выберите протокол</option>
-          @for (p of protocols; track p) {
-            <option [value]="p">{{ p }}</option>
-          }
-        </select></label
-      >
-      <label
-        >ID выхода<input formControlName="id" [readOnly]="exit() !== null"
-      /></label>
-      <label
-        >Группа<select formControlName="group">
-          <option value="">Выберите группу</option>
-          @for (group of groups(); track group.id) {
-            <option [value]="group.id">{{ group.id }}</option>
-          }
-        </select></label
-      >
-      <label
-        >Приоритет в группе<input
-          type="number"
+      <label>
+        Тип подключения
+        <input pInputText class="p-inputtext" value="WireGuard" readonly />
+      </label>
+      <label>
+        ID выхода
+        <input
+          pInputText
+          class="p-inputtext"
+          id="profile-id"
+          formControlName="id"
+          [readOnly]="exit() !== null || connection() !== null"
+        />
+      </label>
+      <label for="profile-group">
+        Группа
+        <p-select
+          formControlName="group"
+          inputId="profile-group"
+          [options]="groupOptions()"
+          optionLabel="id"
+          optionValue="id"
+          placeholder="Выберите группу"
+          appendTo="body"
+        />
+      </label>
+      <label for="profile-priority">
+        Приоритет в группе
+        <p-inputnumber
           formControlName="priority"
-          min="1"
-          step="1"
-      /></label>
-      <label>Адрес сервера<input formControlName="host" /></label
-      ><label
-        >Порт<input type="number" formControlName="port" min="1" max="65535"
-      /></label>
-      <label
-        >DNS-серверы (необязательно)<input
-          formControlName="dns"
-          placeholder="IP-адреса через запятую"
-      /></label>
-      <label
-        >Действие после проверки<select formControlName="desired">
-          <option value="">Не задано</option>
-          <option value="enable">Включить для трафика</option>
-          <option value="disable">Отключить для трафика</option>
-        </select></label
-      >
+          inputId="profile-priority"
+          [min]="1"
+          [max]="priorityLimit()"
+          [useGrouping]="false"
+          [showButtons]="true"
+          decrementButtonClass="p-button"
+          incrementButtonClass="p-button"
+        />
+      </label>
     </div>
-    <div class="fields">
-      @for (field of activeFields(); track protocol() + ":" + field.key) {
-        <label [for]="'profile-' + field.key">
-          {{ field.label }}
-          @if (field.options) {
-            <select
-              [id]="'profile-' + field.key"
-              [formControl]="extra.controls[field.key]"
-            >
-              @for (option of field.options; track option) {
-                <option [value]="option">{{ option }}</option>
-              }
-            </select>
-          } @else if (field.key === "obfuscation") {
-            <textarea
-              [id]="'profile-' + field.key"
-              [formControl]="extra.controls[field.key]"
-              rows="4"
-            ></textarea>
-          } @else {
-            <input
-              [type]="field.secret ? 'password' : 'text'"
-              [id]="'profile-' + field.key"
-              [formControl]="extra.controls[field.key]"
-              autocomplete="off"
-              spellcheck="false"
-            />
-          }
-        </label>
+    <div class="config-file">
+      <p class="field-label">Файл WireGuard / AmneziaWG (.conf)</p>
+      <p-fileupload
+        #configUpload
+        mode="basic"
+        name="config"
+        accept=".conf"
+        chooseLabel="Выбрать файл .conf"
+        [auto]="false"
+        [customUpload]="true"
+        [multiple]="false"
+        [fileLimit]="1"
+        [showUploadButton]="false"
+        [showCancelButton]="false"
+        [disabled]="submitting()"
+        ariaLabel="Выбрать файл конфигурации WireGuard или AmneziaWG с расширением .conf"
+        (onSelect)="selectConfig($event)"
+        (onClear)="clearSelectedConfig()"
+        (onRemove)="clearSelectedConfig()"
+      />
+      @if (selectedCandidate(); as file) {
+        <div class="selected-file">
+          <span>
+            {{ file.name }} · {{ fileSize(file.size) }}
+            @if (selectedConfig()) {
+              <span class="muted">Файл выбран локально</span>
+            }
+          </span>
+          <button
+            pButton
+            type="button"
+            class="p-button secondary"
+            [disabled]="submitting()"
+            (click)="clearConfig(configUpload)"
+          >
+            Удалить файл
+          </button>
+        </div>
+      }
+      @if (configError()) {
+        <p class="error" role="alert">{{ configError() }}</p>
       }
     </div>
     <div class="actions">
-      <button type="submit" class="primary">Проверить поля черновика</button
-      ><button type="button" (click)="closed.emit()">Закрыть черновик</button>
+      <button
+        pButton
+        type="button"
+        class="p-button secondary"
+        [disabled]="submitting() || !selectedConfig()"
+        (click)="check()"
+      >
+        {{ submitting() ? "Проверка…" : "Проверить профиль" }}
+      </button>
+      <button
+        pButton
+        type="submit"
+        class="p-button primary"
+        [disabled]="submitting() || !checked() || exit() !== null"
+      >
+        {{
+          submitting()
+            ? "Сохранение…"
+            : connection()
+              ? "Сохранить изменения и включить"
+              : "Сохранить и включить выход"
+        }}
+      </button>
+      <button
+        pButton
+        type="button"
+        class="p-button secondary"
+        (click)="closed.emit()"
+      >
+        Закрыть черновик
+      </button>
     </div>
     <p role="status" class="status">{{ report() }}</p>
   </form>

@@ -1,14 +1,19 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  ElementRef,
   input,
   signal,
-  ViewChild,
 } from "@angular/core";
+import { FormControl, ReactiveFormsModule } from "@angular/forms";
 import { RouterLink } from "@angular/router";
 import type { Group } from "./api/generated/model/group";
 import type { RuleList } from "./api/generated/model/ruleList";
+import { ButtonDirective } from "primeng/button";
+import { Dialog } from "primeng/dialog";
+import { InputText } from "primeng/inputtext";
+import { Popover } from "primeng/popover";
+import { Select } from "primeng/select";
+import { Textarea } from "primeng/textarea";
 
 interface ListDraft {
   readonly key: string;
@@ -41,7 +46,9 @@ function invalidMasks(value: string): readonly string[] {
       suffix.length > 253 ||
       !suffix
         .split(".")
-        .every((label) => /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/iu.test(label))
+        .every((label) =>
+          /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/iu.test(label),
+        )
     );
   });
   return [...new Set(invalid)];
@@ -50,7 +57,16 @@ function invalidMasks(value: string): readonly string[] {
 /** DomainLists shows gateway lists and explicitly local drafts in one editable list view. */
 @Component({
   selector: "hestia-domain-lists",
-  imports: [RouterLink],
+  imports: [
+    ButtonDirective,
+    Dialog,
+    InputText,
+    Popover,
+    ReactiveFormsModule,
+    RouterLink,
+    Select,
+    Textarea,
+  ],
   templateUrl: "./domain-lists.html",
   styleUrl: "./domain-lists.css",
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -61,8 +77,9 @@ export class DomainLists {
   protected readonly drafts = signal<readonly ListDraft[]>([]);
   protected readonly editor = signal<EditorValues | null>(null);
   protected readonly maskHelpOpen = signal(false);
-  protected readonly invalid = signal<readonly string[]>([]);
-  @ViewChild("editorDialog") private dialog?: ElementRef<HTMLDialogElement>;
+  protected readonly groupControl = new FormControl("", { nonNullable: true });
+  private draftSequence = 0;
+  private maskHelpHideTimer?: ReturnType<typeof setTimeout>;
 
   /** visibleLists overlays local edits on the gateway snapshot and appends new local-only drafts. */
   protected visibleLists(): readonly ListDraft[] {
@@ -78,6 +95,22 @@ export class DomainLists {
       ...gatewayLists,
       ...this.drafts().filter((draft) => draft.sourceId === null),
     ];
+  }
+
+  /** groupOptions builds the PrimeNG select choices, including an explicit unassigned option. */
+  protected groupOptions(): { label: string; value: string }[] {
+    return [
+      { label: "Группа не назначена", value: "" },
+      ...this.groups().map((group) => ({ label: group.id, value: group.id })),
+    ];
+  }
+
+  /** hasDraft reports whether a gateway list has a local replacement draft. */
+  protected hasDraft(sourceId: string | null): boolean {
+    return (
+      sourceId !== null &&
+      this.drafts().some((draft) => draft.sourceId === sourceId)
+    );
   }
 
   /** fromGateway combines one gateway record with its current local draft, if it has one. */
@@ -116,12 +149,11 @@ export class DomainLists {
     });
   }
 
-  /** open stores form values, clears prior validation and shows the native modal dialog. */
+  /** open stores form values and resets transient help state before PrimeNG displays the dialog. */
   private open(values: EditorValues): void {
     this.editor.set(values);
-    this.invalid.set([]);
+    this.groupControl.setValue(values.group);
     this.maskHelpOpen.set(false);
-    queueMicrotask(() => this.dialog?.nativeElement.showModal());
   }
 
   /** update changes one field in the current modal model without touching gateway data. */
@@ -136,10 +168,9 @@ export class DomainLists {
     const current = this.editor();
     if (!current) return;
     const invalid = invalidMasks(current.masks);
-    this.invalid.set(invalid);
     if (!current.name.trim() || invalid.length > 0) return;
     const sourceId = current.sourceId;
-    const key = sourceId ?? `draft-${crypto.randomUUID()}`;
+    const key = sourceId ?? `draft-${Date.now()}-${this.draftSequence++}`;
     const draft: ListDraft = {
       key,
       sourceId,
@@ -155,19 +186,81 @@ export class DomainLists {
       ...drafts.filter((existing) => existing.key !== key),
       draft,
     ]);
-    this.dialog?.nativeElement.close();
+    this.dismiss();
   }
 
-  /** dismiss closes the dialog and discards unsaved form changes without clearing saved local drafts. */
+  /** dismiss hides the PrimeNG dialog and discards unsaved edits without clearing saved local drafts. */
   protected dismiss(): void {
-    this.dialog?.nativeElement.close();
+    this.editor.set(null);
+    this.onDialogClose();
   }
 
-  /** onDialogClose clears transient editor and popover state after close, including Escape. */
+  /** onDialogVisibilityChange clears the editor state when PrimeNG hides the dialog, including Escape. */
+  protected onDialogVisibilityChange(visible: boolean): void {
+    if (!visible) this.onDialogClose();
+  }
+
+  /** onDialogClose clears transient editor and popover state after closing the dialog. */
   protected onDialogClose(): void {
+    this.cancelMaskHelpHide();
     this.editor.set(null);
     this.maskHelpOpen.set(false);
-    this.invalid.set([]);
+  }
+
+  /** showMaskHelp opens the examples popover at its icon for hover or keyboard focus. */
+  protected showMaskHelp(
+    event: Event,
+    popover: Popover,
+    target: HTMLButtonElement,
+  ): void {
+    this.cancelMaskHelpHide();
+    if (!this.maskHelpOpen()) popover.show(event, target);
+  }
+
+  /** hideMaskHelp closes the examples popover when its trigger loses hover or focus. */
+  protected hideMaskHelp(popover: Popover): void {
+    this.cancelMaskHelpHide();
+    popover.hide();
+  }
+
+  /** scheduleMaskHelpHide waits briefly so pointer travel from the icon to the portaled panel can finish. */
+  protected scheduleMaskHelpHide(popover: Popover): void {
+    this.cancelMaskHelpHide();
+    this.maskHelpHideTimer = setTimeout(() => {
+      this.maskHelpHideTimer = undefined;
+      popover.hide();
+    }, 350);
+  }
+
+  /** cancelMaskHelpHide keeps the panel open while the pointer enters its portaled content. */
+  protected cancelMaskHelpHide(): void {
+    if (this.maskHelpHideTimer !== undefined) {
+      clearTimeout(this.maskHelpHideTimer);
+      this.maskHelpHideTimer = undefined;
+    }
+  }
+
+  /** onMaskHelpHidden clears timer and accessible open state after PrimeNG dismisses the panel. */
+  protected onMaskHelpHidden(): void {
+    this.cancelMaskHelpHide();
+    this.maskHelpOpen.set(false);
+  }
+
+  /** openMaskHelp supports touch by opening the popover when its icon is tapped. */
+  protected openMaskHelp(
+    event: MouseEvent,
+    popover: Popover,
+    target: HTMLButtonElement,
+  ): void {
+    this.cancelMaskHelpHide();
+    if (!this.maskHelpOpen()) popover.show(event, target);
+  }
+
+  /** maskCount returns the nonempty lines currently entered in the modal. */
+  protected maskCount(): number {
+    return (this.editor()?.masks ?? "")
+      .split(/\r?\n/u)
+      .filter((line) => line.trim().length > 0).length;
   }
 
   /** draftMasks validates the currently edited text for the live form feedback. */

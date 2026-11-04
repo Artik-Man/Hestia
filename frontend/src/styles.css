@@ -492,3 +492,94 @@ main :where(button:not(:disabled), select:not(:disabled)) {
 main :where(fieldset) {
   min-width: 0;
 }
+.p-popover.mask-examples-popover {
+  max-width: min(320px, calc(100vw - 48px));
+  padding: 14px;
+  border: 1px solid #c5d4cf;
+  border-radius: 10px;
+  background: #fff;
+  color: #182f37;
+  box-shadow: 0 12px 32px #10272b26;
+}
+.p-dialog.list-editor {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  margin: 0;
+  width: min(660px, calc(100vw - 32px));
+  max-height: min(850px, calc(100dvh - 32px));
+  overflow: visible;
+  border: 1px solid #cbd8d4;
+  border-radius: 14px;
+  background: #fff;
+  color: #182f37;
+  box-shadow: 0 24px 80px #122a3040;
+}
+.p-dialog.list-editor .p-dialog-content {
+  flex: 1 1 auto;
+  box-sizing: border-box;
+  max-height: min(850px, calc(100dvh - 32px));
+  padding: 24px;
+  overflow: auto;
+  border-radius: inherit;
+  background: #fff;
+  color: inherit;
+}
+.p-dialog-mask:has(.p-dialog.list-editor) {
+  position: fixed !important;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 16px;
+  background: #10272bb3;
+  backdrop-filter: blur(2px);
+}
+.p-dialog.list-editor form {
+  max-height: min(850px, calc(100dvh - 80px));
+}
+.p-select-overlay {
+  z-index: 1300;
+  border: 1px solid #c5d4cf;
+  border-radius: 8px;
+  background: #fff;
+  color: #182f37;
+  box-shadow: 0 12px 32px #10272b26;
+}
+.p-select-overlay .p-select-option {
+  padding: 9px 12px;
+}
+.p-select-overlay .p-select-option:hover,
+.p-select-overlay .p-select-option.p-select-option-selected {
+  background: #e8f3ee;
+}
+.config-file p-fileupload {
+  display: inline-block;
+}
+.config-file [data-pc-name="pcchoosebutton"] {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid #17664f;
+  border-radius: 6px;
+  background: #17664f;
+  color: #fff;
+  font: inherit;
+  font-weight: 620;
+  cursor: pointer;
+}
+.config-file input[type="file"] {
+  position: relative;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  opacity: 0;
+  cursor: pointer;
+}

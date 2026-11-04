@@ -15,9 +15,10 @@ const deny = "deny"
 
 // Config describes a complete availability snapshot. Group and exit IDs are sing-box tags.
 type Config struct {
-	Groups  []routing.Group `json:"groups"`
-	Lists   []routing.List  `json:"lists"`
-	Healthy map[string]bool `json:"healthy"`
+	Groups         []routing.Group   `json:"groups"`
+	Lists          []routing.List    `json:"lists"`
+	Healthy        map[string]bool   `json:"healthy"`
+	ConnectorKinds map[string]string `json:"connectorKinds,omitempty"`
 }
 
 // Decode parses a single JSON snapshot and rejects unknown struct fields or
@@ -57,6 +58,11 @@ func (cfg Config) validate() error {
 	for e := range cfg.Healthy {
 		if !exits[e] {
 			return fmt.Errorf("unknown exit in availability: %q", e)
+		}
+	}
+	for e, kind := range cfg.ConnectorKinds {
+		if !exits[e] || kind != "awg" {
+			return fmt.Errorf("unknown or unsupported connector kind for exit %q", e)
 		}
 	}
 	ids := make(map[string]bool)

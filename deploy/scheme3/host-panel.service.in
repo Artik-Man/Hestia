@@ -1,0 +1,20 @@
+[Unit]
+Description=Hestia scheme 3 web panel
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=hestia-panel
+Group=hestia-panel
+SupplementaryGroups=hestia-snapshot
+ExecStart=/opt/hestia-scheme3-app/current/hestia-panel -listen @LAN_IP@:8080 -assets /opt/hestia-scheme3-app/current/browser -snapshot /etc/hestia/snapshot.json -enable-awg
+Restart=on-failure
+RestartSec=3
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/etc/hestia /run/hestia-awg /run/hestia-install.lock
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_SETUID CAP_SETGID CAP_CHOWN
+AmbientCapabilities=
+
+[Install]
+WantedBy=multi-user.target

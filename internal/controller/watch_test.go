@@ -1,13 +1,16 @@
 package controller
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
 // TestWatcherReconcilesOnlyDivergentSelectors checks that retries repair FI
@@ -91,5 +94,60 @@ func TestWatcherPinsTopologyOnlyAfterFirstConfirmation(t *testing.T) {
 	}
 	if _, err = w.step(context.Background(), snapshot("wrong")); err == nil || w.desired.Groups[0].ID != "ru" {
 		t.Fatal("accepted topology replacement")
+	}
+}
+
+// TestWatcherUsesAWGHeartbeatForFailover sends an unavailable AWG selector to its backup and restores it only after a fresh heartbeat.
+func TestWatcherUsesAWGHeartbeatForFailover(t *testing.T) {
+	transport := &selectorTransport{selected: "awg-test"}
+	watcher := newWatcher(&http.Client{Transport: transport}, "http://sing-box.test")
+	healthy := false
+	watcher.healthyAWG = func(id string) bool { return id == "awg-test" && healthy }
+	snapshot := []byte(`{"groups":[{"id":"default","exits":["awg-test","direct-test"]}],"lists":[],"healthy":{"awg-test":true,"direct-test":true},"connectorKinds":{"awg-test":"awg"}}`)
+	if _, err := watcher.step(context.Background(), snapshot); err != nil || transport.selected != "direct-test" {
+		t.Fatalf("missing heartbeat did not fail over: selected=%q err=%v", transport.selected, err)
+	}
+	healthy = true
+	if _, err := watcher.step(context.Background(), snapshot); err != nil || transport.selected != "awg-test" {
+		t.Fatalf("fresh heartbeat did not restore AWG: selected=%q err=%v", transport.selected, err)
+	}
+}
+
+type selectorTransport struct {
+	selected string
+}
+
+// RoundTrip simulates the local selector API in memory so the failover test needs no socket permissions.
+func (transport *selectorTransport) RoundTrip(request *http.Request) (*http.Response, error) {
+	status, payload := http.StatusNoContent, []byte(nil)
+	if request.Method == http.MethodGet {
+		status = http.StatusOK
+		payload, _ = json.Marshal(selector{Type: "Selector", Now: transport.selected, All: []string{"awg-test", "direct-test", "deny"}})
+	} else {
+		var body struct{ Name string }
+		if err := json.NewDecoder(request.Body).Decode(&body); err != nil {
+			return nil, err
+		}
+		transport.selected = body.Name
+	}
+	return &http.Response{StatusCode: status, Header: make(http.Header), Body: io.NopCloser(bytes.NewReader(payload)), Request: request}, nil
+}
+
+// TestAWGHealthRecordFreshness rejects wrong connector IDs, stale times and future-dated heartbeats.
+func TestAWGHealthRecordFreshness(t *testing.T) {
+	now := time.Date(2026, 11, 4, 12, 0, 0, 0, time.UTC)
+	base := awgHealthRecord{ID: "awg-test", UpdatedAt: now.Add(-time.Second), Status: "ready"}
+	if !validAWGHealthRecord(base, "awg-test", now) {
+		t.Fatal("fresh valid record rejected")
+	}
+	for _, record := range []awgHealthRecord{
+		{ID: "other", UpdatedAt: now, Status: "ready"},
+		{ID: "awg-test", UpdatedAt: now.Add(-awgHealthMaxAge - time.Second), Status: "ready"},
+		{ID: "awg-test", UpdatedAt: now.Add(2 * time.Second), Status: "ready"},
+		{ID: "awg-test", UpdatedAt: now, Status: "failed"},
+	} {
+		if validAWGHealthRecord(record, "awg-test", now) {
+			t.Fatalf("invalid record accepted: %+v", record)
+		}
 	}
 }

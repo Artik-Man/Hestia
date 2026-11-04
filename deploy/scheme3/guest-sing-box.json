@@ -1,0 +1,38 @@
+{
+  "experimental": {
+    "clash_api": {
+      "external_controller": "127.0.0.1:9090"
+    }
+  },
+  "inbounds": [
+    {
+      "type": "tun",
+      "tag": "wg-clients",
+      "interface_name": "hestia0",
+      "address": ["172.30.0.1/30"],
+      "mtu": 1400,
+      "auto_route": false,
+      "stack": "system"
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "selector",
+      "tag": "default",
+      "outbounds": ["keenetic-direct", "deny"],
+      "default": "keenetic-direct"
+    },
+    {
+      "type": "direct",
+      "tag": "keenetic-direct",
+      "bind_interface": "lima0"
+    },
+    {
+      "type": "block",
+      "tag": "deny"
+    }
+  ],
+  "route": {
+    "final": "default"
+  }
+}

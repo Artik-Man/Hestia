@@ -1,14 +1,20 @@
 <section aria-labelledby="lists-heading">
   <div class="section-heading">
     <h2 id="lists-heading">Доменные списки</h2>
-    <span class="count">{{ lists().length + drafts().filter(isNewDraft).length }}</span>
-    <button type="button" class="primary create-list" (click)="create()">
+    <span class="count">{{ visibleLists().length }}</span>
+    <button
+      pButton
+      type="button"
+      class="p-button create-list"
+      (click)="create()"
+    >
       Создать список
     </button>
   </div>
   @if (drafts().length) {
     <p class="notice draft-notice" role="status">
-      Локальные черновики не применены к шлюзу. Они исчезнут после обновления страницы.
+      Локальные черновики не применены к шлюзу. Они исчезнут после обновления
+      страницы.
     </p>
   }
   @if (visibleLists().length) {
@@ -26,9 +32,18 @@
         </thead>
         <tbody>
           @for (list of visibleLists(); track list.key) {
-            <tr [class.local-draft-row]="list.sourceId === null || hasDraft(list.sourceId)">
+            <tr
+              [class.local-draft-row]="
+                list.sourceId === null || hasDraft(list.sourceId)
+              "
+            >
               <th scope="row">
-                <button type="button" class="list-name" (click)="edit(list)">
+                <button
+                  pButton
+                  type="button"
+                  class="p-button list-name"
+                  (click)="edit(list)"
+                >
                   {{ list.name }}
                 </button>
                 @if (list.sourceId === null || hasDraft(list.sourceId)) {
@@ -68,17 +83,35 @@
   }
 </section>
 
-<dialog #editorDialog class="list-editor" (close)="onDialogClose()">
+<p-dialog
+  styleClass="list-editor"
+  [visible]="editor() !== null"
+  [modal]="true"
+  [showHeader]="false"
+  [closable]="false"
+  [closeOnEscape]="true"
+  [dismissableMask]="false"
+  [draggable]="false"
+  [resizable]="false"
+  [focusTrap]="true"
+  ariaLabelledBy="list-editor-title"
+  [baseZIndex]="1100"
+  [style]="{ width: 'min(660px, calc(100vw - 32px))' }"
+  (visibleChange)="onDialogVisibilityChange($event)"
+>
   @if (editor(); as values) {
     <form (submit)="$event.preventDefault(); save()">
       <div class="dialog-heading">
         <div>
           <p class="kicker"><span class="bar"></span> Локальный черновик</p>
-          <h2>{{ values.sourceId ? "Изменить список" : "Новый список" }}</h2>
+          <h2 id="list-editor-title">
+            {{ values.sourceId ? "Изменить список" : "Новый список" }}
+          </h2>
         </div>
         <button
+          pButton
           type="button"
-          class="icon-button"
+          class="p-button icon-button"
           aria-label="Закрыть редактор"
           (click)="dismiss()"
         >
@@ -89,55 +122,97 @@
         API шлюза пока не сохраняет название и маски. Черновик останется только
         в этой открытой странице и не изменит маршрутизацию.
       </p>
-      <label class="field">
+      <label class="field" for="list-name">
         Название списка
         <input
-          #nameField
+          pInputText
+          class="p-inputtext"
+          id="list-name"
           type="text"
-          maxlength="128"
           autocomplete="off"
           [value]="values.name"
-          (input)="update('name', nameField.value)"
+          (input)="update('name', $any($event.target).value)"
           required
         />
       </label>
-      <label class="field">
+      <label class="field" for="list-group">
         Группа подключений
-        <select
-          #groupField
-          [value]="values.group"
-          (change)="update('group', groupField.value)"
-        >
-          <option value="">Группа не назначена</option>
-          @for (group of groups(); track group.id) {
-            <option [value]="group.id">{{ group.id }}</option>
-          }
-        </select>
+        <p-select
+          [options]="groupOptions()"
+          inputId="list-group"
+          optionLabel="label"
+          optionValue="value"
+          [formControl]="groupControl"
+          (onChange)="update('group', $event.value ?? '')"
+          placeholder="Группа не назначена"
+          [panelStyle]="{ zIndex: 2300 }"
+          appendTo="body"
+        />
       </label>
       <div class="mask-label-row">
         <label for="list-masks">Маски, по одной в строке</label>
-        <button
-          class="info-button"
-          type="button"
-          aria-label="Примеры масок"
-          aria-controls="mask-examples"
-          [attr.aria-expanded]="maskHelpOpen()"
-          (click)="maskHelpOpen.update((open) => !open)"
+        <div
+          class="mask-help-control"
+          (mouseenter)="
+            showMaskHelp($event, maskExamplesPopover, maskInfoButton)
+          "
+          (mouseleave)="scheduleMaskHelpHide(maskExamplesPopover)"
+          (focusin)="showMaskHelp($event, maskExamplesPopover, maskInfoButton)"
+          (focusout)="hideMaskHelp(maskExamplesPopover)"
         >
-          info
-        </button>
-        @if (maskHelpOpen()) {
-          <div id="mask-examples" class="mask-popover" role="note">
-            <strong>Примеры масок</strong>
-            <code>*.example.org</code>
-            <span>Домен и все его поддомены.</span>
-            <code>*.deep.example.org</code>
-            <span>Более точное правило внутри example.org.</span>
-            <p>Строки должны начинаться с `*.`. Регистр не учитывается.</p>
-          </div>
-        }
+          <button
+            #maskInfoButton
+            pButton
+            type="button"
+            class="p-button mask-info-button"
+            aria-label="Примеры масок"
+            aria-haspopup="dialog"
+            [attr.aria-expanded]="maskHelpOpen()"
+            (click)="openMaskHelp($event, maskExamplesPopover, maskInfoButton)"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 11v5m0-8h.01" stroke-linecap="round" />
+            </svg>
+          </button>
+          <p-popover
+            #maskExamplesPopover
+            ariaLabel="Примеры доменных масок"
+            styleClass="p-popover mask-examples-popover"
+            [baseZIndex]="2400"
+            [dismissable]="true"
+            (onShow)="maskHelpOpen.set(true)"
+            (onHide)="onMaskHelpHidden()"
+          >
+            <div
+              class="mask-examples-content"
+              (mouseenter)="cancelMaskHelpHide()"
+              (mouseleave)="scheduleMaskHelpHide(maskExamplesPopover)"
+            >
+              <strong>Примеры масок</strong>
+              <code>*.example.org</code>
+              <span>Домен и все его поддомены.</span>
+              <code>*.deep.example.org</code>
+              <span>Более точное правило внутри example.org.</span>
+              <p>
+                Строки должны начинаться с <code>*.</code>. Регистр не
+                учитывается.
+              </p>
+            </div>
+          </p-popover>
+        </div>
       </div>
       <textarea
+        pTextarea
+        class="p-textarea"
         id="list-masks"
         rows="7"
         spellcheck="false"
@@ -147,24 +222,25 @@
       ></textarea>
       @if (draftMasks().length) {
         <p class="error" role="alert">
-          Некорректные маски: {{ draftMasks().join(", ") }}.
-          Используйте формат *.example.org.
+          Некорректные маски: {{ draftMasks().join(", ") }}. Используйте формат
+          *.example.org.
         </p>
       } @else {
-        <p class="hint" role="status">
-          Масок: {{ values.masks.split("\n").filter((line) => line.trim()).length }}
-        </p>
-      }
-      @if (invalid().length) {
-        <p class="error" role="alert">Укажите название списка.</p>
+        <p class="hint" role="status">Масок: {{ maskCount() }}</p>
       }
       <div class="dialog-actions">
-        <button type="button" class="secondary" (click)="dismiss()">
+        <button
+          pButton
+          type="button"
+          class="p-button secondary"
+          (click)="dismiss()"
+        >
           Отмена
         </button>
         <button
           type="submit"
-          class="primary"
+          pButton
+          class="p-button primary"
           [disabled]="!values.name.trim() || draftMasks().length > 0"
         >
           Сохранить черновик
@@ -172,4 +248,4 @@
       </div>
     </form>
   }
-</dialog>
+</p-dialog>

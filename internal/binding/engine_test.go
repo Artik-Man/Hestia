@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -53,6 +54,44 @@ func TestBindingTransaction(t *testing.T) {
 	}
 }
 
+// TestBindingRollbackRestoresAWGSecretTree verifies the durable generation rollback includes connector secrets.
+func TestBindingRollbackRestoresAWGSecretTree(t *testing.T) {
+	e := testEngine(t)
+	active := filepath.Join(e.dir, awgTreeName)
+	writeTestAWGTree(t, active)
+	original, err := os.ReadFile(filepath.Join(active, "conn", "profile.conf"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	baseRun := e.run
+	failed := false
+	e.run = func(ctx context.Context, name string, args ...string) error {
+		if name == python && args[1] == profile {
+			if err := baseRun(ctx, name, args...); err != nil {
+				return err
+			}
+			candidate := filepath.Join(args[4], awgTreeName, "conn", "profile.conf")
+			data := []byte(strings.Replace(treeTestProfile, "10.66.66.2/32", "10.66.66.3/32", 1))
+			if err := os.WriteFile(candidate, data, 0600); err != nil {
+				return err
+			}
+			return nil
+		}
+		if name == python && args[1] == smoke && !failed {
+			failed = true
+			return errors.New("candidate rejected")
+		}
+		return baseRun(ctx, name, args...)
+	}
+	if err := e.Apply(context.Background(), "com", "fi", "ru"); err == nil || !failed {
+		t.Fatalf("unconfirmed connector generation was accepted: %v", err)
+	}
+	restored, err := os.ReadFile(filepath.Join(active, "conn", "profile.conf"))
+	if err != nil || string(restored) != string(original) {
+		t.Fatalf("previous AWG secret tree was not restored: %v", err)
+	}
+}
+
 // testEngine creates a local profile and simulates only the external compiler and systemd operations.
 func testEngine(t *testing.T) Engine {
 	t.Helper()
@@ -70,7 +109,11 @@ func testEngine(t *testing.T) Engine {
 	}
 	write(filepath.Join(e.dir, ".installer-managed"), "1\n")
 	for _, name := range managedFiles {
-		write(filepath.Join(e.dir, name), "old")
+		value := "old"
+		if name == "profile.json" {
+			value = `{"connectors":[]}`
+		}
+		write(filepath.Join(e.dir, name), value)
 	}
 	sample := func(group string) string {
 		return `{"groups":[{"id":"fi"},{"id":"ru"}],"lists":[{"id":"com","group":"` + group + `","masks":["*.com"]}],"healthy":{}}`
@@ -83,7 +126,11 @@ func testEngine(t *testing.T) Engine {
 	e.run = func(_ context.Context, name string, args ...string) error {
 		if name == python && args[1] == profile {
 			for _, file := range managedFiles {
-				write(filepath.Join(args[4], file), "new")
+				value := "new"
+				if file == "profile.json" {
+					value = `{"connectors":[]}`
+				}
+				write(filepath.Join(args[4], file), value)
 			}
 			write(filepath.Join(args[4], "snapshot.json"), sample(args[6]))
 			writeTestDigests(t, args[4])
@@ -244,7 +291,7 @@ func TestUnsafeRecovery(t *testing.T) {
 				t.Fatalf("unsafe recovery: %v", err)
 			}
 			data, err := os.ReadFile(filepath.Join(e.dir, "profile.json"))
-			if err != nil || string(data) != "new" {
+			if err != nil || string(data) != `{"connectors":[]}` {
 				t.Fatal("partial restoration", err)
 			}
 			if _, err := e.readSnapshot(); !errors.Is(err, ErrUnavailable) {

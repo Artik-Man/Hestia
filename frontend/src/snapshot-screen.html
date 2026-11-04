@@ -67,7 +67,10 @@
     } @else if (page().path === "connections") {
       <hestia-connections [groups]="current.snapshot.groups" />
     } @else if (page().path === "domain-lists") {
-      <hestia-domain-lists [lists]="current.snapshot.lists" />
+      <hestia-domain-lists
+        [lists]="current.snapshot.lists"
+        [groups]="current.snapshot.groups"
+      />
     } @else {
       <hestia-groups [snapshot]="current.snapshot" />
     }

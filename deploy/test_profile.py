@@ -7,7 +7,7 @@ import shutil
 import tempfile
 import unittest
 from pathlib import Path
-from profile import compile_profile, stage_binding, stage_order
+from profile import compile_profile, managed_profile, semantically_equal_backend, stage_binding, stage_order
 
 EXAMPLES = Path(__file__).parent / "examples"
 
@@ -117,6 +117,179 @@ class ProfileTests(unittest.TestCase):
         )
         with self.assertRaises(ValueError):
             self.compile()
+
+    def test_amneziawg_connector_compiles_marked_ipv4_exit_and_dns(self):
+        """Compile a metadata-only AWG exit while keeping its private config out of sing-box output."""
+        connector = "awg-test"
+        directory = self.base / "awg" / connector
+        directory.mkdir(parents=True, mode=0o700)
+        metadata = {
+            "id": connector,
+            "group": "finland",
+            "priority": 2,
+            "status": "configured",
+            "ipv6Blocked": False,
+            "type": "amneziawg",
+            "ipv4Address": "10.66.66.2/32",
+            "dnsIPv4": "1.1.1.1",
+        }
+        (directory / "metadata.json").write_text(json.dumps(metadata))
+        (directory / "metadata.json").chmod(0o600)
+        (directory / "profile.conf").write_text("PrivateKey = secret-marker\n")
+        (directory / "profile.conf").chmod(0o600)
+        self.profile["version"] = 2
+        self.profile["connectors"] = [
+            {
+                "id": connector,
+                "type": "amneziawg",
+                "group": "finland",
+                "priority": 2,
+                "ipv6Blocked": False,
+                "status": "configured",
+            }
+        ]
+        self.profile["groups"][1]["exits"].append(connector)
+        snapshot, engine = self.compile()
+        self.assertEqual(snapshot["groups"][1]["exits"], ["fi-wg", connector])
+        self.assertEqual(snapshot["connectorKinds"], {connector: "awg"})
+        direct = next(item for item in engine["outbounds"] if item["tag"] == connector)
+        self.assertEqual(direct["type"], "direct")
+        self.assertEqual(direct["bind_interface"], "awg0")
+        self.assertEqual(direct["routing_mark"], 514)
+        self.assertEqual(
+            engine["dns"]["servers"][-1],
+            {"type": "udp", "tag": "dns-awg-test", "server": "1.1.1.1", "detour": connector},
+        )
+        self.assertNotIn("secret-marker", json.dumps(engine))
+
+    def test_ready_awg_connector_requires_healthy_snapshot(self):
+        """Reject a ready connector unless its snapshot records the completed health check."""
+        connector = "awg-test"
+        directory = self.base / "awg" / connector
+        directory.mkdir(parents=True, mode=0o700)
+        metadata = {
+            "id": connector,
+            "group": "finland",
+            "priority": 2,
+            "status": "ready",
+            "ipv6Blocked": False,
+            "type": "wireguard",
+            "ipv4Address": "10.66.66.2/32",
+            "dnsIPv4": "1.1.1.1",
+        }
+        (directory / "metadata.json").write_text(json.dumps(metadata))
+        (directory / "metadata.json").chmod(0o600)
+        (directory / "profile.conf").write_text("synthetic profile")
+        (directory / "profile.conf").chmod(0o600)
+        self.profile["version"] = 2
+        self.profile["connectors"] = [
+            {
+                "id": connector,
+                "type": "wireguard",
+                "group": "finland",
+                "priority": 2,
+                "ipv6Blocked": False,
+                "status": "ready",
+            }
+        ]
+        self.profile["groups"][1]["exits"].append(connector)
+        with self.assertRaises(ValueError):
+            self.compile()
+
+    def test_scheme3_managed_profile_preserves_tun_direct_and_default_exit(self):
+        """Compile the current scheme3 TUN/direct topology without changing any traffic path."""
+        current = json.loads(
+            (Path(__file__).parent / "scheme3" / "guest-sing-box.json").read_text()
+        )
+        profile = {
+            "version": 2,
+            "interfaces": [
+                {"id": "keenetic-direct", "type": "direct", "bind_interface": "lima0"}
+            ],
+            "connectors": [],
+            "groups": [
+                {
+                    "id": "default",
+                    "exits": ["keenetic-direct"],
+                    "defaultExit": "keenetic-direct",
+                }
+            ],
+            "lists": [],
+            "healthy": {"keenetic-direct": True},
+            "inbounds": [json.loads(json.dumps(current["inbounds"][0]))],
+        }
+        snapshot, candidate = compile_profile(profile, self.base)
+        self.assertTrue(semantically_equal_backend(candidate, current))
+        self.assertEqual(
+            snapshot,
+            {"groups": [{"id": "default", "exits": ["keenetic-direct"]}], "lists": [], "healthy": {"keenetic-direct": True}},
+        )
+        self.assertEqual(candidate["inbounds"], current["inbounds"])
+        self.assertEqual(candidate["outbounds"][0]["default"], "keenetic-direct")
+        self.assertEqual(candidate["route"]["final"], "default")
+
+    def test_scheme3_managed_profile_rejects_changed_bootstrap_path(self):
+        """Reject an adoption candidate whose initial exit or TUN address differs from the live path."""
+        current = json.loads(
+            (Path(__file__).parent / "scheme3" / "guest-sing-box.json").read_text()
+        )
+        self.profile = {
+            "version": 2,
+            "interfaces": [
+                {"id": "keenetic-direct", "type": "direct", "bind_interface": "lima0"}
+            ],
+            "connectors": [],
+            "groups": [
+                {"id": "default", "exits": ["keenetic-direct"], "defaultExit": "deny"}
+            ],
+            "lists": [],
+            "healthy": {"keenetic-direct": True},
+            "inbounds": [json.loads(json.dumps(current["inbounds"][0]))],
+        }
+        _, candidate = self.compile()
+        self.assertFalse(semantically_equal_backend(candidate, current))
+        self.profile["groups"][0]["defaultExit"] = "keenetic-direct"
+        self.profile["inbounds"][0]["address"] = ["172.30.0.5/30"]
+        _, changed = self.compile()
+        self.assertFalse(semantically_equal_backend(changed, current))
+
+    def test_managed_v2_verifies_full_scheme3_backend_semantics(self):
+        """Validate a managed profile only when its backend preserves the exact TUN and direct-egress semantics."""
+        backend = json.loads(
+            (Path(__file__).parent / "scheme3" / "guest-sing-box.json").read_text()
+        )
+        self.profile = {
+            "version": 2,
+            "interfaces": [
+                {"id": "keenetic-direct", "type": "direct", "bind_interface": "lima0"}
+            ],
+            "connectors": [],
+            "groups": [
+                {
+                    "id": "default",
+                    "exits": ["keenetic-direct"],
+                    "defaultExit": "keenetic-direct",
+                }
+            ],
+            "lists": [],
+            "healthy": {"keenetic-direct": True},
+            "inbounds": [json.loads(json.dumps(backend["inbounds"][0]))],
+        }
+        snapshot, _ = self.compile()
+        for name, content in (("profile", self.profile), ("sing-box", backend), ("snapshot", snapshot)):
+            raw = json.dumps(content).encode()
+            (self.base / f"{name}.json").write_bytes(raw)
+            if name != "snapshot":
+                sidecar = "profile-source" if name == "profile" else "profile-backend"
+                (self.base / f"{sidecar}.sha256").write_text(hashlib.sha256(raw).hexdigest())
+        managed_profile(self.base)
+        changed = dict(backend)
+        changed["inbounds"] = [dict(backend["inbounds"][0], address=["172.30.0.9/30"])]
+        raw = json.dumps(changed).encode()
+        (self.base / "sing-box.json").write_bytes(raw)
+        (self.base / "profile-backend.sha256").write_text(hashlib.sha256(raw).hexdigest())
+        with self.assertRaises(ValueError):
+            managed_profile(self.base)
 
 
 class BindingTests(unittest.TestCase):

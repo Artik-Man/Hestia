@@ -16,6 +16,7 @@ type orderWriter func(context.Context, panelmodel.GroupOrderChange) error
 type panelWrites struct {
 	binding bindingWriter
 	order   orderWriter
+	awg     awgWriter
 }
 
 type orderInput struct{ Body panelmodel.GroupOrderChange }
