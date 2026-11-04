@@ -1,0 +1,6 @@
+{"event": "ready", "ns": 4810703501}
+{"event": "peer", "ns": 5348862251, "token": "client-initial-moving.lab.test-udp", "group": "ru", "ip": "203.0.113.11", "source": "10.85.1.1", "proto": "udp"}
+{"event": "peer", "ns": 5349435126, "token": "client-initial-moving.lab.test-tcp", "group": "ru", "ip": "203.0.113.11", "source": "10.85.1.1", "proto": "tcp"}
+{"event": "authority", "ns": 5361424501, "group": "ru", "domain": "moving.lab.test", "ip": "203.0.113.11", "ttl": 4, "source": "10.85.1.1"}
+{"event": "peer", "ns": 5374198751, "token": "client-warm-moving.lab.test-tcp", "group": "ru", "ip": "203.0.113.11", "source": "10.85.1.1", "proto": "tcp"}
+{"event": "peer", "ns": 5375371043, "token": "client-warm-moving.lab.test-udp", "group": "ru", "ip": "203.0.113.11", "source": "10.85.1.1", "proto": "udp"}

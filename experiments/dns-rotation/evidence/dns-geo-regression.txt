@@ -1,0 +1,9 @@
+PASS fast-fi: selected fi/203.0.113.11, data via ru, DNS 34.01 ms
+PASS fast-ru: selected ru/203.0.113.22, data via fi, DNS 34.74 ms
+PASS negative: selected fi/203.0.113.11, data via ru, DNS 188.78 ms
+PASS explicit: selected fi/203.0.113.11, data via fi, DNS 32.50 ms
+PASS unknown: selected fi/203.0.113.33, data via ru, DNS 35.01 ms
+PASS warm: selected fi/203.0.113.11, data via ru, DNS 1.25 ms
+PASS ru-control: selected ru/203.0.113.11, data via ru, DNS 760.67 ms
+PASS apex: selected fi/203.0.113.11, data via fi, DNS 33.20 ms
+PASS unavailable FI: fresh DNS SERVFAIL; cached FakeIP data absent on both exits, RU control succeeded

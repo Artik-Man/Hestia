@@ -1,0 +1,7 @@
+{"event": "ready", "ns": 4808600793}
+{"event": "authority", "ns": 5316980085, "group": "fi", "domain": "moving.lab.test", "ip": "203.0.113.11", "ttl": 4, "source": "10.85.2.1"}
+{"event": "authority", "ns": 5341163751, "group": "fi", "domain": "pinned.only-fi.lab.test", "ip": "203.0.113.11", "ttl": 4, "source": "10.85.2.1"}
+{"event": "peer", "ns": 5349187876, "token": "client-initial-pinned.only-fi.lab.test-udp", "group": "fi", "ip": "203.0.113.11", "source": "10.85.2.1", "proto": "udp"}
+{"event": "peer", "ns": 5349918751, "token": "client-initial-pinned.only-fi.lab.test-tcp", "group": "fi", "ip": "203.0.113.11", "source": "10.85.2.1", "proto": "tcp"}
+{"event": "peer", "ns": 5374382710, "token": "client-warm-pinned.only-fi.lab.test-udp", "group": "fi", "ip": "203.0.113.11", "source": "10.85.2.1", "proto": "udp"}
+{"event": "peer", "ns": 5374464751, "token": "client-warm-pinned.only-fi.lab.test-tcp", "group": "fi", "ip": "203.0.113.11", "source": "10.85.2.1", "proto": "tcp"}

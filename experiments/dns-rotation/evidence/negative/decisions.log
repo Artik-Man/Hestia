@@ -1,0 +1,31 @@
+{"event": "ready", "ns": 5055464585}
+{"event": "start", "ns": 5299035460, "domain": "moving.lab.test", "group": "ru"}
+{"event": "start", "ns": 5299205085, "domain": "moving.lab.test", "group": "fi"}
+{"event": "finish", "ns": 5317809751, "domain": "moving.lab.test", "group": "fi", "ip": "203.0.113.11", "code": 0, "ttl": 4}
+{"event": "selected", "ns": 5317855293, "domain": "moving.lab.test", "group": "fi", "ip": "203.0.113.11"}
+{"event": "serve", "ns": 5323519585, "domain": "moving.lab.test", "ip": "203.0.113.11", "fake": "198.18.0.2"}
+{"event": "start", "ns": 5325045876, "domain": "pinned.only-fi.lab.test", "group": "fi"}
+{"event": "finish", "ns": 5341422210, "domain": "pinned.only-fi.lab.test", "group": "fi", "ip": "203.0.113.11", "code": 0, "ttl": 4}
+{"event": "selected", "ns": 5341455501, "domain": "pinned.only-fi.lab.test", "group": "fi", "ip": "203.0.113.11"}
+{"event": "serve", "ns": 5341841126, "domain": "pinned.only-fi.lab.test", "ip": "203.0.113.11", "fake": "198.18.0.3"}
+{"event": "real", "ns": 5345866293, "domain": "moving.lab.test", "ip": "203.0.113.11"}
+{"event": "real", "ns": 5346522960, "domain": "moving.lab.test", "ip": "203.0.113.11"}
+{"event": "real", "ns": 5347360668, "domain": "moving.lab.test", "ip": "203.0.113.11"}
+{"event": "real", "ns": 5347519918, "domain": "moving.lab.test", "ip": "203.0.113.11"}
+{"event": "real", "ns": 5347706085, "domain": "pinned.only-fi.lab.test", "ip": "203.0.113.11"}
+{"event": "real", "ns": 5347855710, "domain": "pinned.only-fi.lab.test", "ip": "203.0.113.11"}
+{"event": "finish", "ns": 5361774543, "domain": "moving.lab.test", "group": "ru", "ip": "203.0.113.11", "code": 0, "ttl": 4}
+{"event": "real", "ns": 5372779168, "domain": "moving.lab.test", "ip": "203.0.113.11"}
+{"event": "real", "ns": 5373454126, "domain": "pinned.only-fi.lab.test", "ip": "203.0.113.11"}
+{"event": "real", "ns": 5373626835, "domain": "moving.lab.test", "ip": "203.0.113.11"}
+{"event": "real", "ns": 5373755585, "domain": "pinned.only-fi.lab.test", "ip": "203.0.113.11"}
+{"event": "real", "ns": 5374575376, "domain": "moving.lab.test", "ip": "203.0.113.11"}
+{"event": "real", "ns": 5374905835, "domain": "moving.lab.test", "ip": "203.0.113.11"}
+{"event": "real", "ns": 9582860128, "domain": "moving.lab.test", "ip": null}
+{"event": "real", "ns": 9584614628, "domain": "moving.lab.test", "ip": null}
+{"event": "real", "ns": 9585739669, "domain": "pinned.only-fi.lab.test", "ip": null}
+{"event": "real", "ns": 9586718419, "domain": "pinned.only-fi.lab.test", "ip": null}
+{"event": "real", "ns": 10389849920, "domain": "moving.lab.test", "ip": null}
+{"event": "real", "ns": 10390831003, "domain": "pinned.only-fi.lab.test", "ip": null}
+{"event": "real", "ns": 10391119420, "domain": "pinned.only-fi.lab.test", "ip": null}
+{"event": "real", "ns": 10391372545, "domain": "moving.lab.test", "ip": null}

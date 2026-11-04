@@ -1,0 +1,2 @@
+PASS old: 16 fresh flows, reused exactly one FakeIP per domain, LAN DNS=A once each
+PASS negative control: no external refresh; post-expiry TCP/UDP attempts to original FakeIPs failed

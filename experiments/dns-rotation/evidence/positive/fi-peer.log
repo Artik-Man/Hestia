@@ -1,0 +1,17 @@
+{"event": "ready", "ns": 11664330420}
+{"event": "authority", "ns": 12037390337, "group": "fi", "domain": "moving.lab.test", "ip": "203.0.113.11", "ttl": 4, "source": "10.85.2.1"}
+{"event": "authority", "ns": 12056095337, "group": "fi", "domain": "pinned.only-fi.lab.test", "ip": "203.0.113.11", "ttl": 4, "source": "10.85.2.1"}
+{"event": "peer", "ns": 12062771962, "token": "client-initial-pinned.only-fi.lab.test-udp", "group": "fi", "ip": "203.0.113.11", "source": "10.85.2.1", "proto": "udp"}
+{"event": "peer", "ns": 12062900337, "token": "client-initial-pinned.only-fi.lab.test-tcp", "group": "fi", "ip": "203.0.113.11", "source": "10.85.2.1", "proto": "tcp"}
+{"event": "peer", "ns": 12086421629, "token": "client-warm-pinned.only-fi.lab.test-udp", "group": "fi", "ip": "203.0.113.11", "source": "10.85.2.1", "proto": "udp"}
+{"event": "peer", "ns": 12087042587, "token": "client-warm-pinned.only-fi.lab.test-tcp", "group": "fi", "ip": "203.0.113.11", "source": "10.85.2.1", "proto": "tcp"}
+{"event": "authority", "ns": 16312625839, "group": "fi", "domain": "pinned.only-fi.lab.test", "ip": "203.0.113.22", "ttl": 4, "source": "10.85.2.1"}
+{"event": "authority", "ns": 16312861381, "group": "fi", "domain": "moving.lab.test", "ip": "203.0.113.22", "ttl": 4, "source": "10.85.2.1"}
+{"event": "peer", "ns": 16313925714, "token": "client-expired-pinned.only-fi.lab.test-tcp", "group": "fi", "ip": "203.0.113.22", "source": "10.85.2.1", "proto": "tcp"}
+{"event": "peer", "ns": 16315328131, "token": "client-expired-pinned.only-fi.lab.test-udp", "group": "fi", "ip": "203.0.113.22", "source": "10.85.2.1", "proto": "udp"}
+{"event": "peer", "ns": 16315629881, "token": "client-expired-moving.lab.test-udp", "group": "fi", "ip": "203.0.113.22", "source": "10.85.2.1", "proto": "udp"}
+{"event": "peer", "ns": 16316506547, "token": "client-expired-moving.lab.test-tcp", "group": "fi", "ip": "203.0.113.22", "source": "10.85.2.1", "proto": "tcp"}
+{"event": "peer", "ns": 16319195839, "token": "client-post-hit-moving.lab.test-udp", "group": "fi", "ip": "203.0.113.22", "source": "10.85.2.1", "proto": "udp"}
+{"event": "peer", "ns": 16320241797, "token": "client-post-hit-pinned.only-fi.lab.test-udp", "group": "fi", "ip": "203.0.113.22", "source": "10.85.2.1", "proto": "udp"}
+{"event": "peer", "ns": 16320527839, "token": "client-post-hit-moving.lab.test-tcp", "group": "fi", "ip": "203.0.113.22", "source": "10.85.2.1", "proto": "tcp"}
+{"event": "peer", "ns": 16321100631, "token": "client-post-hit-pinned.only-fi.lab.test-tcp", "group": "fi", "ip": "203.0.113.22", "source": "10.85.2.1", "proto": "tcp"}

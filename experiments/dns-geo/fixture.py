@@ -115,8 +115,11 @@ async def ask(query, addr, port=53, group=None):
         loop = asyncio.get_running_loop()
         await loop.sock_sendto(s, query.to_wire(), (addr, port))
         wire, origin = await asyncio.wait_for(loop.sock_recvfrom(s, 4096), 2)
+        if origin != (addr, port):
+            raise OSError("DNS reply arrived from an unexpected endpoint")
         reply = dns.message.from_wire(wire)
-        assert origin == (addr, port) and query.is_response(reply)
+        if not query.is_response(reply):
+            raise OSError("DNS reply does not match the request")
         return reply
 
 
