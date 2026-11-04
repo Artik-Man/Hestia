@@ -1,9 +1,17 @@
 <section aria-labelledby="lists-heading">
   <div class="section-heading">
     <h2 id="lists-heading">Доменные списки</h2>
-    <span class="count">{{ lists().length }}</span>
+    <span class="count">{{ lists().length + drafts().filter(isNewDraft).length }}</span>
+    <button type="button" class="primary create-list" (click)="create()">
+      Создать список
+    </button>
   </div>
-  @if (lists().length) {
+  @if (drafts().length) {
+    <p class="notice draft-notice" role="status">
+      Локальные черновики не применены к шлюзу. Они исчезнут после обновления страницы.
+    </p>
+  }
+  @if (visibleLists().length) {
     <div class="list-wrap">
       <table>
         <caption class="sr-only">
@@ -17,15 +25,16 @@
           </tr>
         </thead>
         <tbody>
-          @for (list of lists(); track list.id) {
-            <tr>
+          @for (list of visibleLists(); track list.key) {
+            <tr [class.local-draft-row]="list.sourceId === null || hasDraft(list.sourceId)">
               <th scope="row">
-                <a
-                  class="list-id"
-                  routerLink="/domain-lists"
-                  [queryParams]="{ list: list.id }"
-                  >{{ list.id }}</a
-                ><span class="masks">
+                <button type="button" class="list-name" (click)="edit(list)">
+                  {{ list.name }}
+                </button>
+                @if (list.sourceId === null || hasDraft(list.sourceId)) {
+                  <span class="draft-tag">Черновик</span>
+                }
+                <span class="masks">
                   @for (mask of list.masks; track $index) {
                     <code>{{ mask }}</code>
                   } @empty {
@@ -58,3 +67,109 @@
     <p class="notice">Нет доменных списков</p>
   }
 </section>
+
+<dialog #editorDialog class="list-editor" (close)="onDialogClose()">
+  @if (editor(); as values) {
+    <form (submit)="$event.preventDefault(); save()">
+      <div class="dialog-heading">
+        <div>
+          <p class="kicker"><span class="bar"></span> Локальный черновик</p>
+          <h2>{{ values.sourceId ? "Изменить список" : "Новый список" }}</h2>
+        </div>
+        <button
+          type="button"
+          class="icon-button"
+          aria-label="Закрыть редактор"
+          (click)="dismiss()"
+        >
+          <span aria-hidden="true">×</span>
+        </button>
+      </div>
+      <p class="note">
+        API шлюза пока не сохраняет название и маски. Черновик останется только
+        в этой открытой странице и не изменит маршрутизацию.
+      </p>
+      <label class="field">
+        Название списка
+        <input
+          #nameField
+          type="text"
+          maxlength="128"
+          autocomplete="off"
+          [value]="values.name"
+          (input)="update('name', nameField.value)"
+          required
+        />
+      </label>
+      <label class="field">
+        Группа подключений
+        <select
+          #groupField
+          [value]="values.group"
+          (change)="update('group', groupField.value)"
+        >
+          <option value="">Группа не назначена</option>
+          @for (group of groups(); track group.id) {
+            <option [value]="group.id">{{ group.id }}</option>
+          }
+        </select>
+      </label>
+      <div class="mask-label-row">
+        <label for="list-masks">Маски, по одной в строке</label>
+        <button
+          class="info-button"
+          type="button"
+          aria-label="Примеры масок"
+          aria-controls="mask-examples"
+          [attr.aria-expanded]="maskHelpOpen()"
+          (click)="maskHelpOpen.update((open) => !open)"
+        >
+          info
+        </button>
+        @if (maskHelpOpen()) {
+          <div id="mask-examples" class="mask-popover" role="note">
+            <strong>Примеры масок</strong>
+            <code>*.example.org</code>
+            <span>Домен и все его поддомены.</span>
+            <code>*.deep.example.org</code>
+            <span>Более точное правило внутри example.org.</span>
+            <p>Строки должны начинаться с `*.`. Регистр не учитывается.</p>
+          </div>
+        }
+      </div>
+      <textarea
+        id="list-masks"
+        rows="7"
+        spellcheck="false"
+        [value]="values.masks"
+        (input)="update('masks', $any($event.target).value)"
+        placeholder="*.example.org"
+      ></textarea>
+      @if (draftMasks().length) {
+        <p class="error" role="alert">
+          Некорректные маски: {{ draftMasks().join(", ") }}.
+          Используйте формат *.example.org.
+        </p>
+      } @else {
+        <p class="hint" role="status">
+          Масок: {{ values.masks.split("\n").filter((line) => line.trim()).length }}
+        </p>
+      }
+      @if (invalid().length) {
+        <p class="error" role="alert">Укажите название списка.</p>
+      }
+      <div class="dialog-actions">
+        <button type="button" class="secondary" (click)="dismiss()">
+          Отмена
+        </button>
+        <button
+          type="submit"
+          class="primary"
+          [disabled]="!values.name.trim() || draftMasks().length > 0"
+        >
+          Сохранить черновик
+        </button>
+      </div>
+    </form>
+  }
+</dialog>
