@@ -1,0 +1,4 @@
+PASS 764 real rounds in 3815.02s; window=60m, 4584 wire-verified probes
+PASS FI1 UDP/X lost 12 probes; all other path/target pairs returned every probe
+PASS UDP/X recommended FI2 once, after 14.94s; held FI2 at equal quality after expiry
+PASS nine LAN control flows stayed on FI1; routes and policy rules identical
