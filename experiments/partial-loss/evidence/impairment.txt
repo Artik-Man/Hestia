@@ -1,0 +1,8 @@
+burst
+Chain INPUT (policy ACCEPT 0 packets, 0 bytes)
+    pkts      bytes target     prot opt in     out     source               destination         
+       3      132 DROP       17   --  via-fi1 *       0.0.0.0/0            203.0.113.77         udp dpt:19091
+partial
+Chain INPUT (policy ACCEPT 0 packets, 0 bytes)
+    pkts      bytes target     prot opt in     out     source               destination         
+      22      968 DROP       17   --  via-fi1 *       0.0.0.0/0            203.0.113.77         udp dpt:19091 statistic mode nth every 10

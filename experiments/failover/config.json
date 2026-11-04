@@ -1,0 +1,37 @@
+{
+  "log": { "level": "debug", "timestamp": true },
+  "experimental": { "clash_api": { "external_controller": "127.0.0.1:9090" } },
+  "dns": {
+    "servers": [
+      { "type": "fakeip", "tag": "virtual", "inet4_range": "198.18.0.0/15" },
+      { "type": "udp", "tag": "dns-ru", "server": "203.0.113.77", "bind_interface": "ru0" },
+      { "type": "udp", "tag": "dns-fi1", "server": "203.0.113.77", "bind_interface": "fi1" },
+      { "type": "udp", "tag": "dns-fi2", "server": "203.0.113.77", "bind_interface": "fi2" },
+      { "type": "udp", "tag": "dns-deny", "server": "203.0.113.77", "bind_interface": "deny0" }
+    ],
+    "rules": [
+      { "inbound": "lan-tun", "domain_suffix": "lab.test", "query_type": "A", "action": "route", "server": "virtual" }
+    ],
+    "final": "dns-deny",
+    "strategy": "ipv4_only"
+  },
+  "inbounds": [
+    { "type": "tun", "tag": "lan-tun", "interface_name": "hestia0", "address": "172.19.0.1/30", "auto_route": false, "stack": "system" }
+  ],
+  "outbounds": [
+    { "type": "direct", "tag": "ru", "bind_interface": "ru0", "domain_resolver": "dns-ru" },
+    { "type": "direct", "tag": "fi1-out", "bind_interface": "fi1", "domain_resolver": "dns-fi1" },
+    { "type": "direct", "tag": "fi2-out", "bind_interface": "fi2", "domain_resolver": "dns-fi2" },
+    { "type": "direct", "tag": "deny", "bind_interface": "deny0", "domain_resolver": "dns-deny" },
+    { "type": "selector", "tag": "finland", "outbounds": ["fi1-out", "fi2-out", "deny"], "interrupt_exist_connections": true }
+  ],
+  "route": {
+    "default_domain_resolver": "dns-deny",
+    "rules": [
+      { "port": 53, "action": "hijack-dns" },
+      { "domain_suffix": "fi.lab.test", "action": "route", "outbound": "finland" },
+      { "domain": "ru.lab.test", "action": "route", "outbound": "ru" },
+      { "action": "reject" }
+    ]
+  }
+}

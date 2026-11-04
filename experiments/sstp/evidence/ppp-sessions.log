@@ -1,0 +1,10 @@
+Nov 04 10:44:29 lima-hestia-stage1 pppd[2374]: Using interface hs1
+Nov 04 10:44:29 lima-hestia-stage1 pppd[2374]: Connect: hs1 <--> /dev/pts/1
+Nov 04 10:44:30 lima-hestia-stage1 pppd[2374]: CHAP authentication succeeded
+Nov 04 10:44:30 lima-hestia-stage1 pppd[2374]: local  IP address 172.16.3.33
+Nov 04 10:44:30 lima-hestia-stage1 pppd[2374]: remote IP address 172.16.3.1
+Nov 04 10:44:30 lima-hestia-stage1 pppd[2442]: Using interface hs2
+Nov 04 10:44:30 lima-hestia-stage1 pppd[2442]: Connect: hs2 <--> /dev/pts/3
+Nov 04 10:44:30 lima-hestia-stage1 pppd[2442]: CHAP authentication succeeded
+Nov 04 10:44:30 lima-hestia-stage1 pppd[2442]: local  IP address 172.16.3.33
+Nov 04 10:44:30 lima-hestia-stage1 pppd[2442]: remote IP address 172.16.3.1

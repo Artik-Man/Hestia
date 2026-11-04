@@ -1,0 +1,6 @@
+0:	from all lookup local
+50:	from all oif fi0 prohibit
+32764:	from all oif fi0 lookup 102
+32765:	from all oif ru0 lookup 101
+32766:	from all lookup main
+32767:	from all lookup default

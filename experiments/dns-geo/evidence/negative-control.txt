@@ -1,0 +1,6 @@
+table 102 and ip route get 203.0.113.11 oif fi0
+prohibit 203.0.113.0/24 
+203.0.113.11 dev fi0 src 10.85.2.1 uid 0 
+    cache 
+{"event": "client", "ns": 271918958977, "case": "cached-down", "domain": "fixed.only-fi.lab.test", "token": "probe-cached-down", "fake": "198.18.0.5", "code": null, "response": {"group": "fi", "ip": "203.0.113.11", "token": "probe-cached-down", "source": "10.85.2.1"}, "dns_ms": 0.000417, "dns_done_ns": 271917550787}
+{"event": "echo", "ns": 271918805336, "group": "fi", "peer": "10.85.2.1", "ip": "203.0.113.11", "token": "probe-cached-down"}

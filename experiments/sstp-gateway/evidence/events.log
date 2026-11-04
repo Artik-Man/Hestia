@@ -1,0 +1,4 @@
+2026-11-04T07:53:19,882144687+00:00 selector=fi1-out primary=up reserve=up
+2026-11-04T07:53:19,954456745+00:00 terminate FI1 SSTP client
+2026-11-04T07:53:19,984976224+00:00 primary PPP disappeared, reserve PPP present, selector=fi1-out
+2026-11-04T07:53:22,057205190+00:00 selector=fi2-out reason=primary_ppp_down

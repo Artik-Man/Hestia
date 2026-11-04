@@ -1,0 +1,5 @@
+2026-11-04T07:32:39,705561857+00:00 phase=baseline group=fi1-out udp_x=fi1-out
+2026-11-04T07:32:39,743139317+00:00 impairment=drop protocol=udp destination=203.0.113.77 input=via-fi1
+2026-11-04T07:32:39,765487810+00:00 phase=impaired group=fi1-out udp_x=fi1-out
+2026-11-04T07:32:43,140474272+00:00 decision=fi2-out selector=udp-x reason=measured_udp_loss destination=203.0.113.77 data=impaired-measure.json
+2026-11-04T07:32:43,167464417+00:00 phase=switched group=fi1-out udp_x=fi2-out

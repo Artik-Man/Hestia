@@ -1,0 +1,6 @@
+{"phase": "baseline", "index": 100, "event": "phase_end", "selected": "fi1", "reason": "hold_no_advantage", "pairs": 100, "losses": {"fi1": 0, "fi2": 0}, "paired_p": 1.0, "window_s": 3600, "ts": 1793779184.5624826}
+{"phase": "burst", "index": 3, "event": "phase_end", "selected": "fi1", "reason": "hold_margin", "pairs": 103, "losses": {"fi1": 3, "fi2": 0}, "paired_p": 0.25, "window_s": 3600, "ts": 1793779184.829231}
+{"phase": "clean", "index": 17, "event": "phase_end", "selected": "fi1", "reason": "hold_margin", "pairs": 120, "losses": {"fi1": 3, "fi2": 0}, "paired_p": 0.25, "window_s": 3600, "ts": 1793779186.8616776}
+{"phase": "partial", "index": 51, "event": "switch", "selected": "fi2", "reason": "better_delivery", "pairs": 171, "losses": {"fi1": 9, "fi2": 0}, "paired_p": 0.00390625, "window_s": 3600, "ts": 1793779192.8809626}
+{"phase": "partial", "index": 220, "event": "phase_end", "selected": "fi2", "reason": "hold_no_advantage", "pairs": 340, "losses": {"fi1": 25, "fi2": 0}, "paired_p": 5.960464477539063e-08, "window_s": 3600, "ts": 1793779213.1650279}
+{"phase": "recovered", "index": 100, "event": "phase_end", "selected": "fi2", "reason": "hold_no_advantage", "pairs": 440, "losses": {"fi1": 25, "fi2": 0}, "paired_p": 5.960464477539063e-08, "window_s": 3600, "ts": 1793779225.1339955}

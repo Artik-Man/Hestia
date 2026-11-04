@@ -1,0 +1,2 @@
+{"phase": "baseline", "proto": "tcp", "token": "baseline-tcp-83525e080c8115c9", "fake": "198.18.0.2", "source_port": 33100, "reply": {"proto": "tcp", "peer": "172.16.3.33", "target": "203.0.113.77", "token": "baseline-tcp-83525e080c8115c9", "server": "FI1"}}
+{"phase": "baseline", "proto": "udp", "token": "baseline-udp-538dc64854918371", "fake": "198.18.0.2", "source_port": 33101, "reply": {"proto": "udp", "peer": "172.16.3.33", "target": "203.0.113.77", "token": "baseline-udp-538dc64854918371", "server": "FI1"}}

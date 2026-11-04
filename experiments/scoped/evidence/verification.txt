@@ -1,0 +1,5 @@
+PASS baseline health: both interfaces sampled, selected fi1-out
+PASS impaired health: both interfaces sampled, selected fi2-out
+PASS baseline: 10 new flows verified by server and captures
+PASS impaired: 10 new flows verified by server and captures
+PASS switched: 10 new flows verified by server and captures

@@ -1,0 +1,3 @@
+READY
+{"proto": "udp", "peer": "172.16.3.33", "target": "203.0.113.77", "token": "failover-udp-1d937938a6a595f3", "server": "FI2"}
+{"proto": "tcp", "peer": "172.16.3.33", "target": "203.0.113.77", "token": "failover-tcp-6bc97f6f3ec66297", "server": "FI2"}

@@ -1,0 +1,38 @@
+[
+  {
+    "group": "RU",
+    "domain": "ru.lab.test",
+    "fake": "198.18.0.2",
+    "proto": "tcp",
+    "peer": "10.88.1.1",
+    "target": "203.0.113.77",
+    "token": "RU-tcp-f067ca448bc2"
+  },
+  {
+    "group": "RU",
+    "domain": "ru.lab.test",
+    "fake": "198.18.0.2",
+    "proto": "udp",
+    "peer": "10.88.1.1",
+    "target": "203.0.113.77",
+    "token": "RU-udp-0692a1e31c32"
+  },
+  {
+    "group": "FI",
+    "domain": "fi.lab.test",
+    "fake": "198.18.0.3",
+    "proto": "tcp",
+    "peer": "10.88.2.1",
+    "target": "203.0.113.77",
+    "token": "FI-tcp-f975708629f2"
+  },
+  {
+    "group": "FI",
+    "domain": "fi.lab.test",
+    "fake": "198.18.0.3",
+    "proto": "udp",
+    "peer": "10.88.2.1",
+    "target": "203.0.113.77",
+    "token": "FI-udp-bd001b97e85a"
+  }
+]

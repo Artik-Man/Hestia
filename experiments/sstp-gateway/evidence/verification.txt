@@ -1,0 +1,4 @@
+PASS baseline: TCP and UDP used FI1, original FakeIP 198.18.0.2
+PASS disconnected: TCP and UDP used no exit, original FakeIP 198.18.0.2
+PASS failover: TCP and UDP used FI2, original FakeIP 198.18.0.2
+PASS: one client DNS query; each marker reached only its selected SSTP server

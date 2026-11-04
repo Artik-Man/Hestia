@@ -1,0 +1,37 @@
+{
+  "log": { "level": "debug", "timestamp": true },
+  "experimental": { "clash_api": { "external_controller": "127.0.0.1:9090" } },
+  "dns": {
+    "servers": [
+      { "type": "fakeip", "tag": "virtual", "inet4_range": "198.18.0.0/15" },
+      { "type": "hosts", "tag": "records", "predefined": {
+        "x.lab.test": "203.0.113.77", "ru.lab.test": "203.0.113.77", "y.lab.test": "203.0.113.78", "z.lab.test": "203.0.113.79"
+      } }
+    ],
+    "rules": [
+      { "inbound": "lan-tun", "domain_suffix": "lab.test", "query_type": "A", "action": "route", "server": "virtual" }
+    ],
+    "final": "records"
+  },
+  "inbounds": [
+    { "type": "tun", "tag": "lan-tun", "interface_name": "hestia0", "address": "172.19.0.1/30", "auto_route": false, "stack": "system" }
+  ],
+  "outbounds": [
+    { "type": "direct", "tag": "fi1-out", "bind_interface": "fi1", "domain_resolver": "records" },
+    { "type": "direct", "tag": "fi2-out", "bind_interface": "fi2", "domain_resolver": "records" },
+    { "type": "direct", "tag": "ru-out", "bind_interface": "ru0", "domain_resolver": "records" },
+    { "type": "selector", "tag": "finland", "outbounds": ["fi1-out", "fi2-out"] },
+    { "type": "selector", "tag": "udp-x", "outbounds": ["fi1-out", "fi2-out"] }
+  ],
+  "route": {
+    "default_domain_resolver": "records",
+    "rules": [
+      { "port": 53, "action": "hijack-dns" },
+      { "domain": "ru.lab.test", "action": "route", "outbound": "ru-out" },
+      { "domain_suffix": "lab.test", "action": "resolve", "server": "records", "strategy": "ipv4_only" },
+      { "network": "udp", "ip_cidr": "203.0.113.77/32", "action": "route", "outbound": "udp-x" },
+      { "ip_cidr": ["203.0.113.77/32", "203.0.113.78/32", "203.0.113.79/32"], "action": "route", "outbound": "finland" },
+      { "action": "reject" }
+    ]
+  }
+}

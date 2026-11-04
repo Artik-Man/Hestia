@@ -1,0 +1,210 @@
++0300 2026-11-04 11:03:11 [36mINFO[0m inbound/direct[issuer]: udp server started at 127.0.0.1:1054
++0300 2026-11-04 11:03:11 [36mINFO[0m inbound/tun[lan]: started at hestia0
++0300 2026-11-04 11:03:11 [36mINFO[0m network: updated default interface ru0, index 3
++0300 2026-11-04 11:03:11 [36mINFO[0m network: updated network environment: gateway 10.85.1.2
++0300 2026-11-04 11:03:11 [36mINFO[0m sing-box started (0.00s)
++0300 2026-11-04 11:03:11 [36mINFO[0m [[38;5;225m2769968093[0m 0ms] inbound/direct[issuer]: inbound packet connection from 127.0.0.1:36500
++0300 2026-11-04 11:03:11 [36mINFO[0m [[38;5;225m2769968093[0m 0ms] inbound/direct[issuer]: inbound packet connection to 127.0.0.1:1054
++0300 2026-11-04 11:03:11 [37mDEBUG[0m [[38;5;225m2769968093[0m 0ms] router: match[0] inbound=issuer => hijack-dns
++0300 2026-11-04 11:03:11 [37mDEBUG[0m [[38;5;225m2769968093[0m 0ms] dns: exchange fast-fi.lab.test. IN A
++0300 2026-11-04 11:03:11 [37mDEBUG[0m [[38;5;225m2769968093[0m 0ms] dns: match[0] inbound=issuer query_type=A => route(virtual)
++0300 2026-11-04 11:03:11 [37mDEBUG[0m [[38;5;225m2769968093[0m 1ms] dns: exchanged fast-fi.lab.test NOERROR 600
++0300 2026-11-04 11:03:11 [36mINFO[0m [[38;5;225m2769968093[0m 1ms] dns: exchanged A fast-fi.lab.test. 600 IN A 198.18.0.2
++0300 2026-11-04 11:03:11 [37mDEBUG[0m [[38;5;187m2790474284[0m 0ms] router: found fakeip domain: fast-fi.lab.test
++0300 2026-11-04 11:03:11 [37mDEBUG[0m [[38;5;187m2790474284[0m 0ms] router: pre-match[2] domain_suffix=lab.test => resolve(winner,ipv4_only)
++0300 2026-11-04 11:03:11 [37mDEBUG[0m [[38;5;187m2790474284[0m 0ms] dns: lookup domain fast-fi.lab.test
++0300 2026-11-04 11:03:11 [37mDEBUG[0m [[38;5;187m2790474284[0m 0ms] dns: exchanged fast-fi.lab.test NOERROR 44
++0300 2026-11-04 11:03:11 [36mINFO[0m [[38;5;187m2790474284[0m 0ms] dns: exchanged A fast-fi.lab.test. 44 IN A 203.0.113.11
++0300 2026-11-04 11:03:11 [36mINFO[0m [[38;5;187m2790474284[0m 0ms] dns: lookup succeed for fast-fi.lab.test: 203.0.113.11
++0300 2026-11-04 11:03:11 [37mDEBUG[0m [[38;5;187m2790474284[0m 0ms] router: resolved [203.0.113.11]
++0300 2026-11-04 11:03:11 [37mDEBUG[0m [[38;5;187m2790474284[0m 0ms] router: pre-match[4] ip_cidr=203.0.113.11/32 => route(ru-out)
++0300 2026-11-04 11:03:11 [36mINFO[0m [[38;5;28m1375533836[0m 0ms] inbound/tun[lan]: inbound packet connection from 10.85.0.2:49616
++0300 2026-11-04 11:03:11 [36mINFO[0m [[38;5;28m1375533836[0m 0ms] inbound/tun[lan]: inbound packet connection to 198.18.0.2:19091
++0300 2026-11-04 11:03:11 [37mDEBUG[0m [[38;5;28m1375533836[0m 0ms] router: found fakeip domain: fast-fi.lab.test
++0300 2026-11-04 11:03:11 [37mDEBUG[0m [[38;5;28m1375533836[0m 0ms] router: match[2] domain_suffix=lab.test => resolve(winner,ipv4_only)
++0300 2026-11-04 11:03:11 [37mDEBUG[0m [[38;5;28m1375533836[0m 0ms] dns: lookup domain fast-fi.lab.test
++0300 2026-11-04 11:03:11 [37mDEBUG[0m [[38;5;28m1375533836[0m 0ms] dns: exchanged fast-fi.lab.test NOERROR 44
++0300 2026-11-04 11:03:11 [36mINFO[0m [[38;5;28m1375533836[0m 0ms] dns: exchanged A fast-fi.lab.test. 44 IN A 203.0.113.11
++0300 2026-11-04 11:03:11 [36mINFO[0m [[38;5;28m1375533836[0m 0ms] dns: lookup succeed for fast-fi.lab.test: 203.0.113.11
++0300 2026-11-04 11:03:11 [37mDEBUG[0m [[38;5;28m1375533836[0m 0ms] router: resolved [203.0.113.11]
++0300 2026-11-04 11:03:11 [37mDEBUG[0m [[38;5;28m1375533836[0m 0ms] router: match[4] ip_cidr=203.0.113.11/32 => route(ru-out)
++0300 2026-11-04 11:03:11 [36mINFO[0m [[38;5;28m1375533836[0m 0ms] outbound/direct[ru-out]: outbound packet connection
++0300 2026-11-04 11:03:11 [36mINFO[0m [[38;5;31m3244704015[0m 0ms] inbound/direct[issuer]: inbound packet connection from 127.0.0.1:33273
++0300 2026-11-04 11:03:11 [36mINFO[0m [[38;5;31m3244704015[0m 0ms] inbound/direct[issuer]: inbound packet connection to 127.0.0.1:1054
++0300 2026-11-04 11:03:11 [37mDEBUG[0m [[38;5;31m3244704015[0m 0ms] router: match[0] inbound=issuer => hijack-dns
++0300 2026-11-04 11:03:11 [37mDEBUG[0m [[38;5;31m3244704015[0m 0ms] dns: exchange fast-ru.lab.test. IN A
++0300 2026-11-04 11:03:11 [37mDEBUG[0m [[38;5;31m3244704015[0m 0ms] dns: match[0] inbound=issuer query_type=A => route(virtual)
++0300 2026-11-04 11:03:11 [37mDEBUG[0m [[38;5;31m3244704015[0m 0ms] dns: exchanged fast-ru.lab.test NOERROR 600
++0300 2026-11-04 11:03:11 [36mINFO[0m [[38;5;31m3244704015[0m 0ms] dns: exchanged A fast-ru.lab.test. 600 IN A 198.18.0.3
++0300 2026-11-04 11:03:11 [37mDEBUG[0m [[38;5;158m3025193870[0m 0ms] router: found fakeip domain: fast-ru.lab.test
++0300 2026-11-04 11:03:11 [37mDEBUG[0m [[38;5;158m3025193870[0m 0ms] router: pre-match[2] domain_suffix=lab.test => resolve(winner,ipv4_only)
++0300 2026-11-04 11:03:11 [37mDEBUG[0m [[38;5;158m3025193870[0m 0ms] dns: lookup domain fast-ru.lab.test
++0300 2026-11-04 11:03:11 [37mDEBUG[0m [[38;5;158m3025193870[0m 0ms] dns: exchanged fast-ru.lab.test NOERROR 44
++0300 2026-11-04 11:03:11 [36mINFO[0m [[38;5;158m3025193870[0m 0ms] dns: exchanged A fast-ru.lab.test. 44 IN A 203.0.113.22
++0300 2026-11-04 11:03:11 [36mINFO[0m [[38;5;158m3025193870[0m 0ms] dns: lookup succeed for fast-ru.lab.test: 203.0.113.22
++0300 2026-11-04 11:03:11 [37mDEBUG[0m [[38;5;158m3025193870[0m 0ms] router: resolved [203.0.113.22]
++0300 2026-11-04 11:03:11 [37mDEBUG[0m [[38;5;158m3025193870[0m 0ms] router: pre-match[3] ip_cidr=203.0.113.22/32 => route(fi-out)
++0300 2026-11-04 11:03:11 [36mINFO[0m [[38;5;122m2058861165[0m 0ms] inbound/tun[lan]: inbound packet connection from 10.85.0.2:47616
++0300 2026-11-04 11:03:11 [36mINFO[0m [[38;5;122m2058861165[0m 0ms] inbound/tun[lan]: inbound packet connection to 198.18.0.3:19091
++0300 2026-11-04 11:03:11 [37mDEBUG[0m [[38;5;122m2058861165[0m 0ms] router: found fakeip domain: fast-ru.lab.test
++0300 2026-11-04 11:03:11 [37mDEBUG[0m [[38;5;122m2058861165[0m 0ms] router: match[2] domain_suffix=lab.test => resolve(winner,ipv4_only)
++0300 2026-11-04 11:03:11 [37mDEBUG[0m [[38;5;122m2058861165[0m 0ms] dns: lookup domain fast-ru.lab.test
++0300 2026-11-04 11:03:11 [37mDEBUG[0m [[38;5;122m2058861165[0m 0ms] dns: exchanged fast-ru.lab.test NOERROR 44
++0300 2026-11-04 11:03:11 [36mINFO[0m [[38;5;122m2058861165[0m 0ms] dns: exchanged A fast-ru.lab.test. 44 IN A 203.0.113.22
++0300 2026-11-04 11:03:11 [36mINFO[0m [[38;5;122m2058861165[0m 0ms] dns: lookup succeed for fast-ru.lab.test: 203.0.113.22
++0300 2026-11-04 11:03:11 [37mDEBUG[0m [[38;5;122m2058861165[0m 0ms] router: resolved [203.0.113.22]
++0300 2026-11-04 11:03:11 [37mDEBUG[0m [[38;5;122m2058861165[0m 0ms] router: match[3] ip_cidr=203.0.113.22/32 => route(fi-out)
++0300 2026-11-04 11:03:11 [36mINFO[0m [[38;5;122m2058861165[0m 0ms] outbound/direct[fi-out]: outbound packet connection
++0300 2026-11-04 11:03:12 [36mINFO[0m [[38;5;229m2246443522[0m 0ms] inbound/direct[issuer]: inbound packet connection from 127.0.0.1:45113
++0300 2026-11-04 11:03:12 [36mINFO[0m [[38;5;229m2246443522[0m 0ms] inbound/direct[issuer]: inbound packet connection to 127.0.0.1:1054
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;229m2246443522[0m 0ms] router: match[0] inbound=issuer => hijack-dns
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;229m2246443522[0m 0ms] dns: exchange negative.lab.test. IN A
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;229m2246443522[0m 0ms] dns: match[0] inbound=issuer query_type=A => route(virtual)
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;229m2246443522[0m 0ms] dns: exchanged negative.lab.test NOERROR 600
++0300 2026-11-04 11:03:12 [36mINFO[0m [[38;5;229m2246443522[0m 0ms] dns: exchanged A negative.lab.test. 600 IN A 198.18.0.4
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;40m731439640[0m 0ms] router: found fakeip domain: negative.lab.test
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;40m731439640[0m 0ms] router: pre-match[2] domain_suffix=lab.test => resolve(winner,ipv4_only)
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;40m731439640[0m 0ms] dns: lookup domain negative.lab.test
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;40m731439640[0m 0ms] dns: exchanged negative.lab.test NOERROR 44
++0300 2026-11-04 11:03:12 [36mINFO[0m [[38;5;40m731439640[0m 0ms] dns: exchanged A negative.lab.test. 44 IN A 203.0.113.11
++0300 2026-11-04 11:03:12 [36mINFO[0m [[38;5;40m731439640[0m 0ms] dns: lookup succeed for negative.lab.test: 203.0.113.11
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;40m731439640[0m 0ms] router: resolved [203.0.113.11]
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;40m731439640[0m 0ms] router: pre-match[4] ip_cidr=203.0.113.11/32 => route(ru-out)
++0300 2026-11-04 11:03:12 [36mINFO[0m [[38;5;217m82870217[0m 0ms] inbound/tun[lan]: inbound packet connection from 10.85.0.2:59955
++0300 2026-11-04 11:03:12 [36mINFO[0m [[38;5;217m82870217[0m 0ms] inbound/tun[lan]: inbound packet connection to 198.18.0.4:19091
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;217m82870217[0m 0ms] router: found fakeip domain: negative.lab.test
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;217m82870217[0m 0ms] router: match[2] domain_suffix=lab.test => resolve(winner,ipv4_only)
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;217m82870217[0m 0ms] dns: lookup domain negative.lab.test
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;217m82870217[0m 0ms] dns: exchanged negative.lab.test NOERROR 44
++0300 2026-11-04 11:03:12 [36mINFO[0m [[38;5;217m82870217[0m 0ms] dns: exchanged A negative.lab.test. 44 IN A 203.0.113.11
++0300 2026-11-04 11:03:12 [36mINFO[0m [[38;5;217m82870217[0m 0ms] dns: lookup succeed for negative.lab.test: 203.0.113.11
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;217m82870217[0m 0ms] router: resolved [203.0.113.11]
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;217m82870217[0m 0ms] router: match[4] ip_cidr=203.0.113.11/32 => route(ru-out)
++0300 2026-11-04 11:03:12 [36mINFO[0m [[38;5;217m82870217[0m 0ms] outbound/direct[ru-out]: outbound packet connection
++0300 2026-11-04 11:03:12 [36mINFO[0m [[38;5;155m572523596[0m 0ms] inbound/direct[issuer]: inbound packet connection from 127.0.0.1:46447
++0300 2026-11-04 11:03:12 [36mINFO[0m [[38;5;155m572523596[0m 0ms] inbound/direct[issuer]: inbound packet connection to 127.0.0.1:1054
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;155m572523596[0m 0ms] router: match[0] inbound=issuer => hijack-dns
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;155m572523596[0m 0ms] dns: exchange fixed.only-fi.lab.test. IN A
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;155m572523596[0m 0ms] dns: match[0] inbound=issuer query_type=A => route(virtual)
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;155m572523596[0m 0ms] dns: exchanged fixed.only-fi.lab.test NOERROR 600
++0300 2026-11-04 11:03:12 [36mINFO[0m [[38;5;155m572523596[0m 0ms] dns: exchanged A fixed.only-fi.lab.test. 600 IN A 198.18.0.5
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;115m3800397923[0m 0ms] router: found fakeip domain: fixed.only-fi.lab.test
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;115m3800397923[0m 0ms] router: pre-match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 11:03:12 [36mINFO[0m [[38;5;214m68534726[0m 0ms] inbound/tun[lan]: inbound packet connection from 10.85.0.2:57758
++0300 2026-11-04 11:03:12 [36mINFO[0m [[38;5;214m68534726[0m 0ms] inbound/tun[lan]: inbound packet connection to 198.18.0.5:19091
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;214m68534726[0m 0ms] router: found fakeip domain: fixed.only-fi.lab.test
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;214m68534726[0m 0ms] router: match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 11:03:12 [36mINFO[0m [[38;5;214m68534726[0m 0ms] outbound/direct[fi-out]: outbound packet connection
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;214m68534726[0m 0ms] dns: lookup domain fixed.only-fi.lab.test
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;214m68534726[0m 0ms] dns: exchanged fixed.only-fi.lab.test NOERROR 44
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;214m68534726[0m 0ms] dns: exchanged A fixed.only-fi.lab.test. 44 IN A 203.0.113.11
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;214m68534726[0m 0ms] dns: lookup succeed for fixed.only-fi.lab.test: 203.0.113.11
++0300 2026-11-04 11:03:12 [36mINFO[0m [[38;5;47m3470297631[0m 0ms] inbound/direct[issuer]: inbound packet connection from 127.0.0.1:52539
++0300 2026-11-04 11:03:12 [36mINFO[0m [[38;5;47m3470297631[0m 0ms] inbound/direct[issuer]: inbound packet connection to 127.0.0.1:1054
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;47m3470297631[0m 0ms] router: match[0] inbound=issuer => hijack-dns
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;47m3470297631[0m 0ms] dns: exchange ONLY-FI.LAB.TEST. IN A
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;47m3470297631[0m 0ms] dns: match[0] inbound=issuer query_type=A => route(virtual)
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;47m3470297631[0m 0ms] dns: exchanged ONLY-FI.LAB.TEST NOERROR 600
++0300 2026-11-04 11:03:12 [36mINFO[0m [[38;5;47m3470297631[0m 0ms] dns: exchanged A ONLY-FI.LAB.TEST. 600 IN A 198.18.0.6
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;40m3586254575[0m 0ms] router: found fakeip domain: ONLY-FI.LAB.TEST
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;40m3586254575[0m 0ms] router: pre-match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 11:03:12 [36mINFO[0m [[38;5;220m243392523[0m 0ms] inbound/tun[lan]: inbound packet connection from 10.85.0.2:54915
++0300 2026-11-04 11:03:12 [36mINFO[0m [[38;5;220m243392523[0m 0ms] inbound/tun[lan]: inbound packet connection to 198.18.0.6:19091
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;220m243392523[0m 0ms] router: found fakeip domain: ONLY-FI.LAB.TEST
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;220m243392523[0m 0ms] router: match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 11:03:12 [36mINFO[0m [[38;5;220m243392523[0m 0ms] outbound/direct[fi-out]: outbound packet connection
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;220m243392523[0m 0ms] dns: lookup domain ONLY-FI.LAB.TEST
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;220m243392523[0m 0ms] dns: exchanged ONLY-FI.LAB.TEST NOERROR 44
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;220m243392523[0m 0ms] dns: exchanged A ONLY-FI.LAB.TEST. 44 IN A 203.0.113.11
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;220m243392523[0m 0ms] dns: lookup succeed for ONLY-FI.LAB.TEST: 203.0.113.11
++0300 2026-11-04 11:03:12 [36mINFO[0m [[38;5;179m1716598179[0m 0ms] inbound/direct[issuer]: inbound packet connection from 127.0.0.1:58288
++0300 2026-11-04 11:03:12 [36mINFO[0m [[38;5;179m1716598179[0m 0ms] inbound/direct[issuer]: inbound packet connection to 127.0.0.1:1054
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;179m1716598179[0m 0ms] router: match[0] inbound=issuer => hijack-dns
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;179m1716598179[0m 0ms] dns: exchange unknown.lab.test. IN A
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;179m1716598179[0m 0ms] dns: match[0] inbound=issuer query_type=A => route(virtual)
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;179m1716598179[0m 0ms] dns: exchanged unknown.lab.test NOERROR 600
++0300 2026-11-04 11:03:12 [36mINFO[0m [[38;5;179m1716598179[0m 0ms] dns: exchanged A unknown.lab.test. 600 IN A 198.18.0.7
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;86m2977770054[0m 0ms] router: found fakeip domain: unknown.lab.test
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;86m2977770054[0m 0ms] router: pre-match[2] domain_suffix=lab.test => resolve(winner,ipv4_only)
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;86m2977770054[0m 0ms] dns: lookup domain unknown.lab.test
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;86m2977770054[0m 0ms] dns: exchanged unknown.lab.test NOERROR 44
++0300 2026-11-04 11:03:12 [36mINFO[0m [[38;5;86m2977770054[0m 0ms] dns: exchanged A unknown.lab.test. 44 IN A 203.0.113.33
++0300 2026-11-04 11:03:12 [36mINFO[0m [[38;5;86m2977770054[0m 0ms] dns: lookup succeed for unknown.lab.test: 203.0.113.33
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;86m2977770054[0m 0ms] router: resolved [203.0.113.33]
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;86m2977770054[0m 0ms] router: pre-match[5] ip_cidr=203.0.113.0/24 => route(ru-out)
++0300 2026-11-04 11:03:12 [36mINFO[0m [[38;5;148m1417043332[0m 0ms] inbound/tun[lan]: inbound packet connection from 10.85.0.2:41369
++0300 2026-11-04 11:03:12 [36mINFO[0m [[38;5;148m1417043332[0m 0ms] inbound/tun[lan]: inbound packet connection to 198.18.0.7:19091
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;148m1417043332[0m 0ms] router: found fakeip domain: unknown.lab.test
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;148m1417043332[0m 0ms] router: match[2] domain_suffix=lab.test => resolve(winner,ipv4_only)
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;148m1417043332[0m 0ms] dns: lookup domain unknown.lab.test
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;148m1417043332[0m 0ms] dns: exchanged unknown.lab.test NOERROR 44
++0300 2026-11-04 11:03:12 [36mINFO[0m [[38;5;148m1417043332[0m 0ms] dns: exchanged A unknown.lab.test. 44 IN A 203.0.113.33
++0300 2026-11-04 11:03:12 [36mINFO[0m [[38;5;148m1417043332[0m 0ms] dns: lookup succeed for unknown.lab.test: 203.0.113.33
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;148m1417043332[0m 0ms] router: resolved [203.0.113.33]
++0300 2026-11-04 11:03:12 [37mDEBUG[0m [[38;5;148m1417043332[0m 0ms] router: match[5] ip_cidr=203.0.113.0/24 => route(ru-out)
++0300 2026-11-04 11:03:12 [36mINFO[0m [[38;5;148m1417043332[0m 0ms] outbound/direct[ru-out]: outbound packet connection
++0300 2026-11-04 11:03:12 [36mINFO[0m network: updated network environment: gateway 10.85.1.2, gateway_mac 8e:74:40:09:ea:d2
++0300 2026-11-04 11:03:13 [36mINFO[0m [[38;5;206m2982530238[0m 0ms] inbound/direct[issuer]: inbound packet connection from 127.0.0.1:56525
++0300 2026-11-04 11:03:13 [36mINFO[0m [[38;5;206m2982530238[0m 0ms] inbound/direct[issuer]: inbound packet connection to 127.0.0.1:1054
++0300 2026-11-04 11:03:13 [37mDEBUG[0m [[38;5;206m2982530238[0m 0ms] router: match[0] inbound=issuer => hijack-dns
++0300 2026-11-04 11:03:13 [37mDEBUG[0m [[38;5;206m2982530238[0m 0ms] dns: exchange fast-fi.lab.test. IN A
++0300 2026-11-04 11:03:13 [37mDEBUG[0m [[38;5;206m2982530238[0m 0ms] dns: match[0] inbound=issuer query_type=A => route(virtual)
++0300 2026-11-04 11:03:13 [37mDEBUG[0m [[38;5;206m2982530238[0m 0ms] dns: exchanged fast-fi.lab.test NOERROR 600
++0300 2026-11-04 11:03:13 [36mINFO[0m [[38;5;206m2982530238[0m 0ms] dns: exchanged A fast-fi.lab.test. 600 IN A 198.18.0.2
++0300 2026-11-04 11:03:13 [37mDEBUG[0m [[38;5;64m658257456[0m 0ms] router: found fakeip domain: fast-fi.lab.test
++0300 2026-11-04 11:03:13 [37mDEBUG[0m [[38;5;64m658257456[0m 0ms] router: pre-match[2] domain_suffix=lab.test => resolve(winner,ipv4_only)
++0300 2026-11-04 11:03:13 [37mDEBUG[0m [[38;5;64m658257456[0m 0ms] dns: lookup domain fast-fi.lab.test
++0300 2026-11-04 11:03:13 [37mDEBUG[0m [[38;5;64m658257456[0m 0ms] dns: exchanged fast-fi.lab.test NOERROR 43
++0300 2026-11-04 11:03:13 [36mINFO[0m [[38;5;64m658257456[0m 0ms] dns: exchanged A fast-fi.lab.test. 43 IN A 203.0.113.11
++0300 2026-11-04 11:03:13 [36mINFO[0m [[38;5;64m658257456[0m 0ms] dns: lookup succeed for fast-fi.lab.test: 203.0.113.11
++0300 2026-11-04 11:03:13 [37mDEBUG[0m [[38;5;64m658257456[0m 0ms] router: resolved [203.0.113.11]
++0300 2026-11-04 11:03:13 [37mDEBUG[0m [[38;5;64m658257456[0m 0ms] router: pre-match[4] ip_cidr=203.0.113.11/32 => route(ru-out)
++0300 2026-11-04 11:03:13 [36mINFO[0m [[38;5;169m4061869721[0m 0ms] inbound/tun[lan]: inbound packet connection from 10.85.0.2:39245
++0300 2026-11-04 11:03:13 [36mINFO[0m [[38;5;169m4061869721[0m 0ms] inbound/tun[lan]: inbound packet connection to 198.18.0.2:19091
++0300 2026-11-04 11:03:13 [37mDEBUG[0m [[38;5;169m4061869721[0m 0ms] router: found fakeip domain: fast-fi.lab.test
++0300 2026-11-04 11:03:13 [37mDEBUG[0m [[38;5;169m4061869721[0m 0ms] router: match[2] domain_suffix=lab.test => resolve(winner,ipv4_only)
++0300 2026-11-04 11:03:13 [37mDEBUG[0m [[38;5;169m4061869721[0m 0ms] dns: lookup domain fast-fi.lab.test
++0300 2026-11-04 11:03:13 [37mDEBUG[0m [[38;5;169m4061869721[0m 0ms] dns: exchanged fast-fi.lab.test NOERROR 43
++0300 2026-11-04 11:03:13 [36mINFO[0m [[38;5;169m4061869721[0m 0ms] dns: exchanged A fast-fi.lab.test. 43 IN A 203.0.113.11
++0300 2026-11-04 11:03:13 [36mINFO[0m [[38;5;169m4061869721[0m 0ms] dns: lookup succeed for fast-fi.lab.test: 203.0.113.11
++0300 2026-11-04 11:03:13 [37mDEBUG[0m [[38;5;169m4061869721[0m 0ms] router: resolved [203.0.113.11]
++0300 2026-11-04 11:03:13 [37mDEBUG[0m [[38;5;169m4061869721[0m 0ms] router: match[4] ip_cidr=203.0.113.11/32 => route(ru-out)
++0300 2026-11-04 11:03:13 [36mINFO[0m [[38;5;169m4061869721[0m 0ms] outbound/direct[ru-out]: outbound packet connection
++0300 2026-11-04 11:03:13 [37mDEBUG[0m [[38;5;220m3712813067[0m 0ms] router: found fakeip domain: fixed.only-fi.lab.test
++0300 2026-11-04 11:03:13 [37mDEBUG[0m [[38;5;220m3712813067[0m 0ms] router: pre-match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 11:03:13 [36mINFO[0m [[38;5;222m3697462990[0m 0ms] inbound/tun[lan]: inbound packet connection from 10.85.0.2:43759
++0300 2026-11-04 11:03:13 [36mINFO[0m [[38;5;222m3697462990[0m 0ms] inbound/tun[lan]: inbound packet connection to 198.18.0.5:19091
++0300 2026-11-04 11:03:13 [37mDEBUG[0m [[38;5;222m3697462990[0m 0ms] router: found fakeip domain: fixed.only-fi.lab.test
++0300 2026-11-04 11:03:13 [37mDEBUG[0m [[38;5;222m3697462990[0m 0ms] router: match[1] domain_suffix=only-fi.lab.test => route(fi-out)
++0300 2026-11-04 11:03:13 [36mINFO[0m [[38;5;222m3697462990[0m 0ms] outbound/direct[fi-out]: outbound packet connection
++0300 2026-11-04 11:03:13 [37mDEBUG[0m [[38;5;222m3697462990[0m 0ms] dns: lookup domain fixed.only-fi.lab.test
++0300 2026-11-04 11:03:13 [37mDEBUG[0m [[38;5;222m3697462990[0m 0ms] dns: exchanged fixed.only-fi.lab.test NOERROR 43
++0300 2026-11-04 11:03:13 [37mDEBUG[0m [[38;5;222m3697462990[0m 0ms] dns: exchanged A fixed.only-fi.lab.test. 43 IN A 203.0.113.11
++0300 2026-11-04 11:03:13 [37mDEBUG[0m [[38;5;222m3697462990[0m 0ms] dns: lookup succeed for fixed.only-fi.lab.test: 203.0.113.11
++0300 2026-11-04 11:03:13 [37mDEBUG[0m [[38;5;222m3697462990[0m 0ms] connection: packet upload closed: write udp4 0.0.0.0:38197->203.0.113.11:19091: sendto: operation not permitted
++0300 2026-11-04 11:03:14 [36mINFO[0m [[38;5;69m2922653237[0m 0ms] inbound/direct[issuer]: inbound packet connection from 127.0.0.1:36649
++0300 2026-11-04 11:03:14 [36mINFO[0m [[38;5;69m2922653237[0m 0ms] inbound/direct[issuer]: inbound packet connection to 127.0.0.1:1054
++0300 2026-11-04 11:03:14 [37mDEBUG[0m [[38;5;69m2922653237[0m 0ms] router: match[0] inbound=issuer => hijack-dns
++0300 2026-11-04 11:03:14 [37mDEBUG[0m [[38;5;69m2922653237[0m 0ms] dns: exchange ru-control.lab.test. IN A
++0300 2026-11-04 11:03:14 [37mDEBUG[0m [[38;5;69m2922653237[0m 0ms] dns: match[0] inbound=issuer query_type=A => route(virtual)
++0300 2026-11-04 11:03:14 [37mDEBUG[0m [[38;5;69m2922653237[0m 0ms] dns: exchanged ru-control.lab.test NOERROR 600
++0300 2026-11-04 11:03:14 [36mINFO[0m [[38;5;69m2922653237[0m 0ms] dns: exchanged A ru-control.lab.test. 600 IN A 198.18.0.8
++0300 2026-11-04 11:03:14 [37mDEBUG[0m [[38;5;144m484068736[0m 0ms] router: found fakeip domain: ru-control.lab.test
++0300 2026-11-04 11:03:14 [37mDEBUG[0m [[38;5;144m484068736[0m 0ms] router: pre-match[2] domain_suffix=lab.test => resolve(winner,ipv4_only)
++0300 2026-11-04 11:03:14 [37mDEBUG[0m [[38;5;144m484068736[0m 0ms] dns: lookup domain ru-control.lab.test
++0300 2026-11-04 11:03:14 [37mDEBUG[0m [[38;5;144m484068736[0m 0ms] dns: exchanged ru-control.lab.test NOERROR 44
++0300 2026-11-04 11:03:14 [36mINFO[0m [[38;5;144m484068736[0m 0ms] dns: exchanged A ru-control.lab.test. 44 IN A 203.0.113.11
++0300 2026-11-04 11:03:14 [36mINFO[0m [[38;5;144m484068736[0m 0ms] dns: lookup succeed for ru-control.lab.test: 203.0.113.11
++0300 2026-11-04 11:03:14 [37mDEBUG[0m [[38;5;144m484068736[0m 0ms] router: resolved [203.0.113.11]
++0300 2026-11-04 11:03:14 [37mDEBUG[0m [[38;5;144m484068736[0m 0ms] router: pre-match[4] ip_cidr=203.0.113.11/32 => route(ru-out)
++0300 2026-11-04 11:03:14 [36mINFO[0m [[38;5;150m793030278[0m 0ms] inbound/tun[lan]: inbound packet connection from 10.85.0.2:53771
++0300 2026-11-04 11:03:14 [36mINFO[0m [[38;5;150m793030278[0m 0ms] inbound/tun[lan]: inbound packet connection to 198.18.0.8:19091
++0300 2026-11-04 11:03:14 [37mDEBUG[0m [[38;5;150m793030278[0m 0ms] router: found fakeip domain: ru-control.lab.test
++0300 2026-11-04 11:03:14 [37mDEBUG[0m [[38;5;150m793030278[0m 0ms] router: match[2] domain_suffix=lab.test => resolve(winner,ipv4_only)
++0300 2026-11-04 11:03:14 [37mDEBUG[0m [[38;5;150m793030278[0m 0ms] dns: lookup domain ru-control.lab.test
++0300 2026-11-04 11:03:14 [37mDEBUG[0m [[38;5;150m793030278[0m 0ms] dns: exchanged ru-control.lab.test NOERROR 44
++0300 2026-11-04 11:03:14 [36mINFO[0m [[38;5;150m793030278[0m 0ms] dns: exchanged A ru-control.lab.test. 44 IN A 203.0.113.11
++0300 2026-11-04 11:03:14 [36mINFO[0m [[38;5;150m793030278[0m 0ms] dns: lookup succeed for ru-control.lab.test: 203.0.113.11
++0300 2026-11-04 11:03:14 [37mDEBUG[0m [[38;5;150m793030278[0m 0ms] router: resolved [203.0.113.11]
++0300 2026-11-04 11:03:14 [37mDEBUG[0m [[38;5;150m793030278[0m 0ms] router: match[4] ip_cidr=203.0.113.11/32 => route(ru-out)
++0300 2026-11-04 11:03:14 [36mINFO[0m [[38;5;150m793030278[0m 0ms] outbound/direct[ru-out]: outbound packet connection

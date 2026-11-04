@@ -1,0 +1,12 @@
+lo               UNKNOWN        00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP> 
+wan@if2          UP             0a:d8:c4:b1:07:35 <BROADCAST,MULTICAST,UP,LOWER_UP> 
+from-gw@if3      UP             5a:e7:af:eb:cd:bf <BROADCAST,MULTICAST,UP,LOWER_UP> 
+10.83.1.0/30 dev wan proto kernel scope link src 10.83.1.1 
+10.88.1.0/30 dev from-gw proto kernel scope link src 10.88.1.2 
+State Recv-Q Send-Q Local Address:Port Peer Address:PortProcess
+lo               UNKNOWN        127.0.0.1/8 ::1/128 
+wan@if2          UP             10.83.2.1/30 fe80::90f8:6fff:fe78:e7bd/64 
+hs2              UNKNOWN        172.16.3.33 peer 172.16.3.1/32 
+from-gw@if4      UP             10.88.2.2/30 fe80::4b3:51ff:fef6:8185/64 
+State Recv-Q Send-Q Local Address:Port  Peer Address:PortProcess
+ESTAB 0      0          10.83.2.1:54044    10.83.2.2:443        

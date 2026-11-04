@@ -1,0 +1,7 @@
+PASS baseline: 7 client flows and rule-set checked
+PASS automatic: 7 client flows and rule-set checked
+PASS retired: 7 client flows and rule-set checked
+PASS preexisting FakeIPs; same process; previously unseen exception learned on wire
+PASS equal: 20 measured pairs, cumulative losses {'fi1': 0, 'fi2': 0}, fi1
+PASS loss: 120 measured pairs, cumulative losses {'fi1': 12, 'fi2': 0}, fi2
+PASS reverse: 100 measured pairs, cumulative losses {'fi1': 12, 'fi2': 50}, fi1

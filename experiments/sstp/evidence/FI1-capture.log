@@ -1,0 +1,4 @@
+tcpdump: listening on hs1, link-type LINUX_SLL (Linux cooked v1), snapshot length 262144 bytes
+25 packets captured
+25 packets received by filter
+0 packets dropped by kernel

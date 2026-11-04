@@ -1,0 +1,11 @@
+READY
+{"token": "baseline-FI1-0-586003739d8a64eb", "server": "FI1", "source": "172.16.3.33", "source_port": 34000, "target": "203.0.113.77"}
+{"token": "baseline-FI1-1-7e321fdc8f6b0de8", "server": "FI1", "source": "172.16.3.33", "source_port": 34000, "target": "203.0.113.77"}
+{"token": "baseline-FI1-2-d83e1562d3819ed7", "server": "FI1", "source": "172.16.3.33", "source_port": 34000, "target": "203.0.113.77"}
+{"token": "baseline-FI1-3-adb173042b1d9725", "server": "FI1", "source": "172.16.3.33", "source_port": 34000, "target": "203.0.113.77"}
+{"token": "baseline-FI1-4-1bf843b615130552", "server": "FI1", "source": "172.16.3.33", "source_port": 34000, "target": "203.0.113.77"}
+{"token": "recovery-FI1-0-6840adbc7a0a4c77", "server": "FI1", "source": "172.16.3.33", "source_port": 34000, "target": "203.0.113.77"}
+{"token": "recovery-FI1-1-b1f957be10a94fdb", "server": "FI1", "source": "172.16.3.33", "source_port": 34000, "target": "203.0.113.77"}
+{"token": "recovery-FI1-2-ca06f06e8c7bc7c5", "server": "FI1", "source": "172.16.3.33", "source_port": 34000, "target": "203.0.113.77"}
+{"token": "recovery-FI1-3-94ee3d2ba59bd4f1", "server": "FI1", "source": "172.16.3.33", "source_port": 34000, "target": "203.0.113.77"}
+{"token": "recovery-FI1-4-4fc83fd0240f2602", "server": "FI1", "source": "172.16.3.33", "source_port": 34000, "target": "203.0.113.77"}

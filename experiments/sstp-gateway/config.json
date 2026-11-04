@@ -1,0 +1,23 @@
+{
+  "log": {"level":"debug","timestamp":true},
+  "experimental": {"clash_api":{"external_controller":"127.0.0.1:9090"}},
+  "dns": {
+    "servers": [
+      {"type":"fakeip","tag":"virtual","inet4_range":"198.18.0.0/15"},
+      {"type":"hosts","tag":"records","predefined":{"fi.lab.test":"203.0.113.77"}}
+    ],
+    "rules": [{"inbound":"lan-tun","domain":"fi.lab.test","query_type":"A","action":"route","server":"virtual"}],
+    "final":"records"
+  },
+  "inbounds":[{"type":"tun","tag":"lan-tun","interface_name":"hestia0","address":"172.19.0.1/30","auto_route":false,"stack":"system"}],
+  "outbounds":[
+    {"type":"direct","tag":"fi1-out","bind_interface":"fi1","domain_resolver":"records"},
+    {"type":"direct","tag":"fi2-out","bind_interface":"fi2","domain_resolver":"records"},
+    {"type":"selector","tag":"finland","outbounds":["fi1-out","fi2-out"],"interrupt_exist_connections":true}
+  ],
+  "route":{"default_domain_resolver":"records","rules":[
+    {"port":53,"action":"hijack-dns"},
+    {"domain":"fi.lab.test","action":"route","outbound":"finland"},
+    {"action":"reject"}
+  ]}
+}

@@ -33,3 +33,39 @@ sudo env SING_BOX="$(command -v sing-box)" bash lab.sh "$(mktemp -d)"
 - Debian 13.7 ARM64, ядро `6.12.111+deb13-cloud-arm64`, sing-box 1.14.4. [Ответы клиента](evidence/debian13/client.json), [журнал сервера](evidence/debian13/server.log), [RU PCAP](evidence/debian13/ru.pcap), [FI PCAP](evidence/debian13/fi.pcap).
 
 Собственный модуль ядра не используется. Процесс sing-box работает в userspace; туннельный интерфейс, veth, network namespaces, системные сокеты и policy routing предоставляет ядро Linux. У [официального образа ROCK 5T](https://docs.radxa.com/en/rock5/rock5t/download) своя сборка Debian Bookworm с ядром 6.1. На плате нужно проверить наличие тех же возможностей ядра и реальные Ethernet-интерфейсы.
+
+## Чистый стенд на macOS с Apple Silicon
+
+Конфигурация Lima фиксирует Debian 12 ARM64 и SHA-512 образа. Для запуска нужны Lima (проверено на 2.2.1), 2 ГиБ RAM, место для виртуального диска до 7 ГиБ и доступ к источникам Debian и GitHub. У гостя собственный диск, каталоги хоста не монтируются. Версии дополнительных пакетов выбирает репозиторий Debian на момент подготовки.
+
+Из каталога `experiments/fakeip` на хосте создайте отдельную ВМ. Для чистого запуска имя должно быть свободно. Архив sing-box проверяется по закреплённому SHA-256 внутри гостя перед установкой.
+
+```sh
+vm=hestia-stage1
+archive_dir=$(mktemp -d)
+curl --fail --location --output "$archive_dir/sing-box.tgz" \
+  https://github.com/SagerNet/sing-box/releases/download/v1.14.4/sing-box-1.14.4-linux-arm64.tar.gz
+limactl start --name "$vm" --tty=false vm/lima.yaml
+limactl copy config.json lab.sh traffic.py vm/provision.sh "$archive_dir/sing-box.tgz" "$vm:/tmp/"
+```
+
+Дважды примените подготовку и после каждого применения запустите тест. Команда сравнивает список версий установленных пакетов и атрибуты бинарного файла sing-box между прогонами. Для очередного запуска создаётся новый каталог результатов.
+
+```sh
+limactl shell --workdir=/tmp "$vm" -- bash -c '
+  set -euo pipefail
+  work=$(mktemp -d)
+  for pass in 1 2; do
+    sudo bash provision.sh sing-box.tgz
+    dpkg-query -W | sha256sum > "$work/packages-$pass"
+    stat -c "%a %Y %i" /usr/local/bin/sing-box > "$work/binary-$pass"
+    sudo bash lab.sh "$work/pass-$pass"
+    test -z "$(sudo ip netns list)"
+  done
+  cmp "$work/packages-1" "$work/packages-2"
+  cmp "$work/binary-1" "$work/binary-2"
+'
+limactl stop "$vm"
+```
+
+4 ноября 2026 года на новой Debian 12.15 с ядром `6.1.0-53-cloud-arm64` оба прогона подтвердили четыре маршрута по TCP и UDP. Повторная подготовка сохранила состав пакетов, inode, режим и время модификации sing-box. После каждого теста гостевой список сетевых пространств был пуст. [Протокол](evidence/stage1/verification.txt), ответы и захваты [первого](evidence/stage1/pass-1/) и [второго](evidence/stage1/pass-2/) прогонов.

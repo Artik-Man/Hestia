@@ -1,0 +1,2 @@
+{"phase": "disconnected", "proto": "tcp", "token": "disconnected-tcp-25d7283828261fff", "fake": "198.18.0.2", "source_port": 33110, "reply": null}
+{"phase": "disconnected", "proto": "udp", "token": "disconnected-udp-93858eaa7485b8a5", "fake": "198.18.0.2", "source_port": 33111, "reply": null}

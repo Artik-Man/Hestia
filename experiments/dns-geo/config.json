@@ -1,0 +1,31 @@
+{
+  "log": {"level": "debug", "timestamp": true},
+  "dns": {
+    "servers": [
+      {"type": "fakeip", "tag": "virtual", "inet4_range": "198.18.0.0/15"},
+      {"type": "udp", "tag": "winner", "server": "127.0.0.1", "server_port": 1055}
+    ],
+    "rules": [{"inbound": "issuer", "query_type": "A", "action": "route", "server": "virtual"}],
+    "strategy": "ipv4_only", "disable_cache": true, "final": "winner"
+  },
+  "inbounds": [
+    {"type": "direct", "tag": "issuer", "listen": "127.0.0.1", "listen_port": 1054, "network": "udp"},
+    {"type": "tun", "tag": "lan", "interface_name": "hestia0", "address": "172.19.0.1/30", "auto_route": false, "stack": "system"}
+  ],
+  "outbounds": [
+    {"type": "direct", "tag": "ru-out", "bind_interface": "ru0", "domain_resolver": "winner"},
+    {"type": "direct", "tag": "fi-out", "bind_interface": "fi0", "domain_resolver": "winner"}
+  ],
+  "route": {
+    "default_domain_resolver": "winner",
+    "rules": [
+      {"inbound": "issuer", "action": "hijack-dns"},
+      {"domain_suffix": "only-fi.lab.test", "action": "route", "outbound": "fi-out"},
+      {"domain_suffix": "lab.test", "action": "resolve", "server": "winner", "strategy": "ipv4_only"},
+      {"ip_cidr": "203.0.113.22/32", "action": "route", "outbound": "fi-out"},
+      {"ip_cidr": "203.0.113.11/32", "action": "route", "outbound": "ru-out"},
+      {"ip_cidr": "203.0.113.0/24", "action": "route", "outbound": "ru-out"},
+      {"action": "reject"}
+    ]
+  }
+}

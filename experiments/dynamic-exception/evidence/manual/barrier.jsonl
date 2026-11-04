@@ -1,0 +1,8 @@
+{"token": "barrier-8245cfb23a094b5b", "elapsed_ms": 1, "reply": {"token": "barrier-8245cfb23a094b5b", "peer": "10.88.2.1", "target": "203.0.113.103", "proto": "udp"}}
+{"token": "barrier-a8b9324428c29639", "elapsed_ms": 28, "reply": {"token": "barrier-a8b9324428c29639", "peer": "10.88.2.1", "target": "203.0.113.103", "proto": "udp"}}
+{"token": "barrier-8afe2af8f5f78f3b", "elapsed_ms": 53, "reply": {"token": "barrier-8afe2af8f5f78f3b", "peer": "10.88.2.1", "target": "203.0.113.103", "proto": "udp"}}
+{"token": "barrier-93c9b08f5272ae51", "elapsed_ms": 80, "reply": {"token": "barrier-93c9b08f5272ae51", "peer": "10.88.3.1", "target": "203.0.113.103", "proto": "udp"}}
+{"token": "barrier-2d40a8acad72e248", "elapsed_ms": 1, "reply": {"token": "barrier-2d40a8acad72e248", "peer": "10.88.3.1", "target": "203.0.113.103", "proto": "udp"}}
+{"token": "barrier-dc5e0a144433f07b", "elapsed_ms": 26, "reply": {"token": "barrier-dc5e0a144433f07b", "peer": "10.88.3.1", "target": "203.0.113.103", "proto": "udp"}}
+{"token": "barrier-7b873d9189c06d23", "elapsed_ms": 52, "reply": {"token": "barrier-7b873d9189c06d23", "peer": "10.88.3.1", "target": "203.0.113.103", "proto": "udp"}}
+{"token": "barrier-b496e20a2736f235", "elapsed_ms": 79, "reply": {"token": "barrier-b496e20a2736f235", "peer": "10.88.2.1", "target": "203.0.113.103", "proto": "udp"}}

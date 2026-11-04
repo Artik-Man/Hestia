@@ -1,0 +1,8 @@
+lo               UNKNOWN        127.0.0.1/8 ::1/128 
+wan@if2          UP             10.83.2.1/30 fe80::90f8:6fff:fe78:e7bd/64 
+hs2              UNKNOWN        172.16.3.33 peer 172.16.3.1/32 
+from-gw@if4      UP             10.88.2.2/30 fe80::4b3:51ff:fef6:8185/64 
+203.0.113.77 dev hs2 src 172.16.3.33 uid 0 
+    cache 
+State Recv-Q Send-Q Local Address:Port  Peer Address:PortProcess
+ESTAB 0      0          10.83.2.1:54044    10.83.2.2:443        

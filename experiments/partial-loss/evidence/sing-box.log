@@ -1,0 +1,56 @@
++0300 2026-11-04 10:59:32 [36mINFO[0m inbound/tun[lan-tun]: started at hestia0
++0300 2026-11-04 10:59:32 [36mINFO[0m network: updated default interface ru0, index 3
++0300 2026-11-04 10:59:32 [36mINFO[0m network: updated network environment: gateway 10.88.1.2
++0300 2026-11-04 10:59:32 [36mINFO[0m clash-api: restful api listening at 127.0.0.1:9090
++0300 2026-11-04 10:59:32 [36mINFO[0m sing-box started (0.01s)
++0300 2026-11-04 10:59:32 [37mDEBUG[0m [[38;5;117m3664056677[0m 0ms] router: pre-match[3] network=udp ip_cidr=203.0.113.77/32 => route(udp-x)
++0300 2026-11-04 10:59:32 [36mINFO[0m [[38;5;171m2238008475[0m 0ms] inbound/tun[lan-tun]: inbound packet connection from 10.88.0.2:34729
++0300 2026-11-04 10:59:32 [36mINFO[0m [[38;5;171m2238008475[0m 0ms] inbound/tun[lan-tun]: inbound packet connection to 203.0.113.77:19091
++0300 2026-11-04 10:59:32 [37mDEBUG[0m [[38;5;171m2238008475[0m 0ms] router: match[3] network=udp ip_cidr=203.0.113.77/32 => route(udp-x)
++0300 2026-11-04 10:59:32 [36mINFO[0m [[38;5;171m2238008475[0m 0ms] outbound/direct[fi1-out]: outbound packet connection
++0300 2026-11-04 10:59:32 [37mDEBUG[0m [[38;5;194m4199712549[0m 0ms] router: pre-match[4] ip_cidr=[203.0.113.77/32 203.0.113.78/32 203.0.113.79/32] => route(finland)
++0300 2026-11-04 10:59:32 [36mINFO[0m [[38;5;97m1340435793[0m 0ms] inbound/tun[lan-tun]: inbound connection from 10.88.0.2:56759
++0300 2026-11-04 10:59:32 [36mINFO[0m [[38;5;97m1340435793[0m 0ms] inbound/tun[lan-tun]: inbound connection to 203.0.113.77:19091
++0300 2026-11-04 10:59:32 [37mDEBUG[0m [[38;5;97m1340435793[0m 0ms] router: match[4] ip_cidr=[203.0.113.77/32 203.0.113.78/32 203.0.113.79/32] => route(finland)
++0300 2026-11-04 10:59:32 [36mINFO[0m [[38;5;97m1340435793[0m 0ms] outbound/direct[fi1-out]: outbound connection to 203.0.113.77:19091
++0300 2026-11-04 10:59:32 [37mDEBUG[0m [[38;5;97m1340435793[0m 0ms] connection: connection download finished
++0300 2026-11-04 10:59:32 [37mDEBUG[0m [[38;5;97m1340435793[0m 0ms] connection: connection upload finished
++0300 2026-11-04 10:59:32 [37mDEBUG[0m [[38;5;114m4102456418[0m 0ms] router: pre-match[4] ip_cidr=[203.0.113.77/32 203.0.113.78/32 203.0.113.79/32] => route(finland)
++0300 2026-11-04 10:59:32 [36mINFO[0m [[38;5;32m3537850640[0m 0ms] inbound/tun[lan-tun]: inbound packet connection from 10.88.0.2:48378
++0300 2026-11-04 10:59:32 [36mINFO[0m [[38;5;32m3537850640[0m 0ms] inbound/tun[lan-tun]: inbound packet connection to 203.0.113.78:19091
++0300 2026-11-04 10:59:32 [37mDEBUG[0m [[38;5;32m3537850640[0m 0ms] router: match[4] ip_cidr=[203.0.113.77/32 203.0.113.78/32 203.0.113.79/32] => route(finland)
++0300 2026-11-04 10:59:32 [36mINFO[0m [[38;5;32m3537850640[0m 0ms] outbound/direct[fi1-out]: outbound packet connection
++0300 2026-11-04 11:00:13 [37mDEBUG[0m [[38;5;39m2000985070[0m 0ms] router: pre-match[3] network=udp ip_cidr=203.0.113.77/32 => route(udp-x)
++0300 2026-11-04 11:00:13 [36mINFO[0m [[38;5;73m3838719801[0m 0ms] inbound/tun[lan-tun]: inbound packet connection from 10.88.0.2:40718
++0300 2026-11-04 11:00:13 [36mINFO[0m [[38;5;73m3838719801[0m 0ms] inbound/tun[lan-tun]: inbound packet connection to 203.0.113.77:19091
++0300 2026-11-04 11:00:13 [37mDEBUG[0m [[38;5;73m3838719801[0m 0ms] router: match[3] network=udp ip_cidr=203.0.113.77/32 => route(udp-x)
++0300 2026-11-04 11:00:13 [36mINFO[0m [[38;5;73m3838719801[0m 0ms] outbound/direct[fi2-out]: outbound packet connection
++0300 2026-11-04 11:00:13 [37mDEBUG[0m [[38;5;192m2845302270[0m 0ms] router: pre-match[4] ip_cidr=[203.0.113.77/32 203.0.113.78/32 203.0.113.79/32] => route(finland)
++0300 2026-11-04 11:00:13 [36mINFO[0m [[38;5;68m3631248436[0m 0ms] inbound/tun[lan-tun]: inbound connection from 10.88.0.2:55117
++0300 2026-11-04 11:00:13 [36mINFO[0m [[38;5;68m3631248436[0m 0ms] inbound/tun[lan-tun]: inbound connection to 203.0.113.77:19091
++0300 2026-11-04 11:00:13 [37mDEBUG[0m [[38;5;68m3631248436[0m 0ms] router: match[4] ip_cidr=[203.0.113.77/32 203.0.113.78/32 203.0.113.79/32] => route(finland)
++0300 2026-11-04 11:00:13 [36mINFO[0m [[38;5;68m3631248436[0m 0ms] outbound/direct[fi1-out]: outbound connection to 203.0.113.77:19091
++0300 2026-11-04 11:00:13 [37mDEBUG[0m [[38;5;68m3631248436[0m 0ms] connection: connection download finished
++0300 2026-11-04 11:00:13 [37mDEBUG[0m [[38;5;68m3631248436[0m 0ms] connection: connection upload finished
++0300 2026-11-04 11:00:13 [37mDEBUG[0m [[38;5;194m1829005234[0m 0ms] router: pre-match[4] ip_cidr=[203.0.113.77/32 203.0.113.78/32 203.0.113.79/32] => route(finland)
++0300 2026-11-04 11:00:13 [36mINFO[0m [[38;5;229m1757566978[0m 0ms] inbound/tun[lan-tun]: inbound packet connection from 10.88.0.2:34958
++0300 2026-11-04 11:00:13 [36mINFO[0m [[38;5;229m1757566978[0m 0ms] inbound/tun[lan-tun]: inbound packet connection to 203.0.113.78:19091
++0300 2026-11-04 11:00:13 [37mDEBUG[0m [[38;5;229m1757566978[0m 0ms] router: match[4] ip_cidr=[203.0.113.77/32 203.0.113.78/32 203.0.113.79/32] => route(finland)
++0300 2026-11-04 11:00:13 [36mINFO[0m [[38;5;229m1757566978[0m 0ms] outbound/direct[fi1-out]: outbound packet connection
++0300 2026-11-04 11:00:25 [37mDEBUG[0m [[38;5;35m1988030186[0m 0ms] router: pre-match[3] network=udp ip_cidr=203.0.113.77/32 => route(udp-x)
++0300 2026-11-04 11:00:25 [36mINFO[0m [[38;5;226m4020390876[0m 0ms] inbound/tun[lan-tun]: inbound packet connection from 10.88.0.2:33968
++0300 2026-11-04 11:00:25 [36mINFO[0m [[38;5;226m4020390876[0m 0ms] inbound/tun[lan-tun]: inbound packet connection to 203.0.113.77:19091
++0300 2026-11-04 11:00:25 [37mDEBUG[0m [[38;5;226m4020390876[0m 0ms] router: match[3] network=udp ip_cidr=203.0.113.77/32 => route(udp-x)
++0300 2026-11-04 11:00:25 [36mINFO[0m [[38;5;226m4020390876[0m 0ms] outbound/direct[fi2-out]: outbound packet connection
++0300 2026-11-04 11:00:25 [37mDEBUG[0m [[38;5;108m3116243804[0m 0ms] router: pre-match[4] ip_cidr=[203.0.113.77/32 203.0.113.78/32 203.0.113.79/32] => route(finland)
++0300 2026-11-04 11:00:25 [36mINFO[0m [[38;5;114m720299362[0m 0ms] inbound/tun[lan-tun]: inbound connection from 10.88.0.2:35581
++0300 2026-11-04 11:00:25 [36mINFO[0m [[38;5;114m720299362[0m 0ms] inbound/tun[lan-tun]: inbound connection to 203.0.113.77:19091
++0300 2026-11-04 11:00:25 [37mDEBUG[0m [[38;5;114m720299362[0m 0ms] router: match[4] ip_cidr=[203.0.113.77/32 203.0.113.78/32 203.0.113.79/32] => route(finland)
++0300 2026-11-04 11:00:25 [36mINFO[0m [[38;5;114m720299362[0m 0ms] outbound/direct[fi1-out]: outbound connection to 203.0.113.77:19091
++0300 2026-11-04 11:00:25 [37mDEBUG[0m [[38;5;114m720299362[0m 0ms] connection: connection download finished
++0300 2026-11-04 11:00:25 [37mDEBUG[0m [[38;5;114m720299362[0m 0ms] connection: connection upload finished
++0300 2026-11-04 11:00:25 [37mDEBUG[0m [[38;5;230m860111064[0m 0ms] router: pre-match[4] ip_cidr=[203.0.113.77/32 203.0.113.78/32 203.0.113.79/32] => route(finland)
++0300 2026-11-04 11:00:25 [36mINFO[0m [[38;5;68m3717920564[0m 0ms] inbound/tun[lan-tun]: inbound packet connection from 10.88.0.2:46778
++0300 2026-11-04 11:00:25 [36mINFO[0m [[38;5;68m3717920564[0m 0ms] inbound/tun[lan-tun]: inbound packet connection to 203.0.113.78:19091
++0300 2026-11-04 11:00:25 [37mDEBUG[0m [[38;5;68m3717920564[0m 0ms] router: match[4] ip_cidr=[203.0.113.77/32 203.0.113.78/32 203.0.113.79/32] => route(finland)
++0300 2026-11-04 11:00:25 [36mINFO[0m [[38;5;68m3717920564[0m 0ms] outbound/direct[fi1-out]: outbound packet connection

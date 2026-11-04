@@ -1,0 +1,23 @@
+2026-11-04T07:26:47,825639719+00:00 select requested=fi1-out reason=initial_priority
+2026-11-04T07:26:47,842089692+00:00 select applied=fi1-out
+2026-11-04T07:26:48,005810174+00:00 begin phase=warm
+2026-11-04T07:26:48,054384936+00:00 end phase=warm
+2026-11-04T07:26:48,095794786+00:00 peer=fi1 state=down
+2026-11-04T07:26:48,096365491+00:00 select requested=fi2-out reason=primary_unavailable
+2026-11-04T07:26:48,112677758+00:00 select applied=fi2-out
+2026-11-04T07:26:48,283235961+00:00 begin phase=failover
+2026-11-04T07:26:48,333980917+00:00 end phase=failover
+2026-11-04T07:26:48,371751417+00:00 peer=fi2 state=down
+2026-11-04T07:26:48,372327788+00:00 select requested=deny reason=group_unavailable
+2026-11-04T07:26:48,389064135+00:00 select applied=deny
+2026-11-04T07:26:48,556458235+00:00 begin phase=blocked
+2026-11-04T07:26:52,623272761+00:00 end phase=blocked
+2026-11-04T07:26:52,838793082+00:00 begin phase=control
+2026-11-04T07:26:52,891201213+00:00 end phase=control
+2026-11-04T07:26:52,931365629+00:00 peer=fi2 state=up
+2026-11-04T07:26:53,101624324+00:00 begin phase=gate
+2026-11-04T07:26:57,166982672+00:00 end phase=gate
+2026-11-04T07:26:57,213490234+00:00 select requested=fi2-out reason=reserve_recovered
+2026-11-04T07:26:57,240834449+00:00 select applied=fi2-out
+2026-11-04T07:26:57,411726911+00:00 begin phase=recovery
+2026-11-04T07:26:57,460327836+00:00 end phase=recovery

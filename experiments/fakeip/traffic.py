@@ -43,7 +43,7 @@ def fake_address(name):
     return str(value)
 
 
-def server():
+def server(path=None):
     with socket.socket() as tcp, socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp:
         tcp.bind((REAL, PORT))
         tcp.listen()
@@ -56,14 +56,16 @@ def server():
                     with conn:
                         conn.settimeout(4)
                         data = conn.makefile("rb").readline(256)
-                        conn.sendall(response(peer, data, 'tcp'))
+                        conn.sendall(response(peer, data, 'tcp', path))
                 else:
                     data, peer = udp.recvfrom(256)
-                    udp.sendto(response(peer, data, 'udp'), peer)
+                    udp.sendto(response(peer, data, 'udp', path), peer)
 
 
-def response(peer, data, proto):
+def response(peer, data, proto, path=None):
     result = dict(proto=proto, peer=peer[0], target=REAL, token=data.decode().strip())
+    if path is not None:
+        result["server"] = path
     print(json.dumps(result), flush=True)
     return (json.dumps(result) + "\n").encode()
 

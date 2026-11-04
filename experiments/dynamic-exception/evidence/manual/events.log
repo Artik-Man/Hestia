@@ -1,0 +1,8 @@
+2026-11-04T08:00:15,628378758+00:00 discovered group=FI proto=UDP dst=203.0.113.103 source=fi1-capture
+2026-11-04T08:00:15,663805974+00:00 confirmed phase=baseline via client and server
+2026-11-04T08:00:15,687482218+00:00 rule-file target=203.0.113.103
+2026-11-04T08:00:15,792526650+00:00 rule-confirmed peer=fi2
+2026-11-04T08:00:15,823324139+00:00 confirmed phase=added via client and server
+2026-11-04T08:00:15,846887795+00:00 rule-file target=empty
+2026-11-04T08:00:15,951904601+00:00 rule-confirmed peer=fi1
+2026-11-04T08:00:15,986167771+00:00 confirmed phase=removed via client and server

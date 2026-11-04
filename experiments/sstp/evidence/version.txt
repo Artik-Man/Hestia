@@ -1,0 +1,4 @@
+Linux 6.1.0-54-arm64 aarch64 GNU/Linux
+ppp	2.4.9-1+1.1+b1
+sstp-client	1.0.18-1
+accel-ppp 1.15.0

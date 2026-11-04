@@ -1,0 +1,11 @@
+{"event": "ready", "ns": 24656271968}
+{"event": "echo", "ns": 25103929968, "group": "ru", "peer": "10.85.1.1", "ip": "203.0.113.11", "token": "probe-fast-fi"}
+{"event": "resolver", "ns": 25185640760, "domain": "fast-ru.lab.test", "group": "ru", "ip": "203.0.113.22", "peer": "10.85.1.1"}
+{"event": "resolver", "ns": 25270384302, "domain": "negative.lab.test", "group": "ru", "ip": null, "peer": "10.85.1.1"}
+{"event": "echo", "ns": 25429563677, "group": "ru", "peer": "10.85.1.1", "ip": "203.0.113.11", "token": "probe-negative"}
+{"event": "echo", "ns": 25693393469, "group": "ru", "peer": "10.85.1.1", "ip": "203.0.113.33", "token": "probe-unknown"}
+{"event": "resolver", "ns": 25817133719, "domain": "fast-fi.lab.test", "group": "ru", "ip": "203.0.113.22", "peer": "10.85.1.1"}
+{"event": "resolver", "ns": 26412383052, "domain": "unknown.lab.test", "group": "ru", "ip": "203.0.113.33", "peer": "10.85.1.1"}
+{"event": "echo", "ns": 26569450261, "group": "ru", "peer": "10.85.1.1", "ip": "203.0.113.11", "token": "probe-warm"}
+{"event": "resolver", "ns": 28231854595, "domain": "ru-control.lab.test", "group": "ru", "ip": "203.0.113.11", "peer": "10.85.1.1"}
+{"event": "echo", "ns": 28242854803, "group": "ru", "peer": "10.85.1.1", "ip": "203.0.113.11", "token": "probe-ru-control"}

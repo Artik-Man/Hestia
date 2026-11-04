@@ -1,0 +1,3 @@
+PASS baseline: FI1 5/5, FI2 5/5; same five-tuple, overlapping samples
+PASS impaired: FI1 0/5, FI2 5/5; same five-tuple, overlapping samples
+PASS recovery: FI1 5/5, FI2 5/5; same five-tuple, overlapping samples

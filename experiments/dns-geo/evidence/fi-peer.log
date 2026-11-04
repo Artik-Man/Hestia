@@ -1,0 +1,10 @@
+{"event": "ready", "ns": 24650256635}
+{"event": "resolver", "ns": 25097990968, "domain": "fast-fi.lab.test", "group": "fi", "ip": "203.0.113.11", "peer": "10.85.2.1"}
+{"event": "echo", "ns": 25189204677, "group": "fi", "peer": "10.85.2.1", "ip": "203.0.113.22", "token": "probe-fast-ru"}
+{"event": "resolver", "ns": 25422500760, "domain": "negative.lab.test", "group": "fi", "ip": "203.0.113.11", "peer": "10.85.2.1"}
+{"event": "resolver", "ns": 25523402135, "domain": "fixed.only-fi.lab.test", "group": "fi", "ip": "203.0.113.11", "peer": "10.85.2.1"}
+{"event": "echo", "ns": 25525491885, "group": "fi", "peer": "10.85.2.1", "ip": "203.0.113.11", "token": "probe-explicit"}
+{"event": "resolver", "ns": 25600991677, "domain": "only-fi.lab.test", "group": "fi", "ip": "203.0.113.11", "peer": "10.85.2.1"}
+{"event": "echo", "ns": 25603967135, "group": "fi", "peer": "10.85.2.1", "ip": "203.0.113.11", "token": "probe-apex"}
+{"event": "resolver", "ns": 25690182677, "domain": "unknown.lab.test", "group": "fi", "ip": "203.0.113.33", "peer": "10.85.2.1"}
+{"event": "resolver", "ns": 25904326385, "domain": "fast-ru.lab.test", "group": "fi", "ip": "203.0.113.11", "peer": "10.85.2.1"}
