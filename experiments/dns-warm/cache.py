@@ -189,6 +189,10 @@ class WarmCache(rotation.WinnerCache):
         entry = self.history.entries.get(key)
         if entry is None:
             return
+        domain = key[0]
+        for view, current in list(self.winners.items()):
+            if view[0] == domain and current.group == value.group:
+                self.winners[view] = value
         ttl = value.expires - now
         entry.sources[value.group] = Source(
             value,
@@ -264,8 +268,12 @@ class WarmCache(rotation.WinnerCache):
         """Perform ordinary rotation arbitration and register a source only for the initiating LAN visit."""
         key = (rotation.name(query), "A")
         value, current = await self.fetch(query, group, False)
-        if value and current and self.origin.get() is self.history.entries.get(key):
-            self.remember(key, value, self.clock())
+        entry = self.history.entries.get(key)
+        if value and entry is not None:
+            if not current:
+                return None
+            if self.origin.get() is entry or group in entry.sources:
+                self.remember(key, value, self.clock())
         return value
 
     def tick(self):
@@ -330,10 +338,7 @@ class WarmCache(rotation.WinnerCache):
             and self.allowed(query) == allowed
         ):
             self.remember(key, value, now)
-            winner = self.winners.get((key[0], allowed))
-            if winner and winner.group == group:
-                self.winners[key[0], allowed] = value
-                applied = True
+            applied = self.winners.get((key[0], allowed)) is value
         rotation.log(
             "warm-finish",
             domain=key[0],

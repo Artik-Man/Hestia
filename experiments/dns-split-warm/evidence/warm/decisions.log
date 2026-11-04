@@ -1,0 +1,186 @@
+{"event": "ready", "ns": 280385472654}
+{"event": "visit", "ns": 280631039489, "domain": "split.lab.test", "count": 1, "counted": true}
+{"event": "start", "ns": 280631967637, "domain": "split.lab.test", "group": "ru"}
+{"event": "start", "ns": 280632237228, "domain": "split.lab.test", "group": "fi"}
+{"event": "finish", "ns": 280647619271, "domain": "split.lab.test", "group": "fi", "code": 0, "ip": "203.0.113.22", "ttl": 16}
+{"event": "selected", "ns": 280647717596, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "serve", "ns": 280648583014, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22", "fake": "198.18.0.2"}
+{"event": "visit", "ns": 280650199979, "domain": "pinned.only-fi.lab.test", "count": 1, "counted": true}
+{"event": "start", "ns": 280650342069, "domain": "pinned.only-fi.lab.test", "group": "fi"}
+{"event": "finish", "ns": 280664138324, "domain": "pinned.only-fi.lab.test", "group": "fi", "code": 0, "ip": "203.0.113.22", "ttl": 16}
+{"event": "selected", "ns": 280664226771, "domain": "pinned.only-fi.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "serve", "ns": 280664715270, "domain": "pinned.only-fi.lab.test", "group": "fi", "ip": "203.0.113.22", "fake": "198.18.0.3"}
+{"event": "visit", "ns": 280665916093, "domain": "cold.lab.test", "count": 1, "counted": true}
+{"event": "start", "ns": 280666067811, "domain": "cold.lab.test", "group": "ru"}
+{"event": "start", "ns": 280666169929, "domain": "cold.lab.test", "group": "fi"}
+{"event": "finish", "ns": 280679449260, "domain": "cold.lab.test", "group": "fi", "code": 0, "ip": "203.0.113.22", "ttl": 16}
+{"event": "selected", "ns": 280679541041, "domain": "cold.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "serve", "ns": 280680113068, "domain": "cold.lab.test", "group": "fi", "ip": "203.0.113.22", "fake": "198.18.0.4"}
+{"event": "visit", "ns": 280680748450, "domain": "split.lab.test", "count": 2, "counted": true}
+{"event": "hit", "ns": 280680787963, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "serve", "ns": 280681047635, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22", "fake": "198.18.0.2"}
+{"event": "visit", "ns": 280681473487, "domain": "pinned.only-fi.lab.test", "count": 2, "counted": true}
+{"event": "hit", "ns": 280681521337, "domain": "pinned.only-fi.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "serve", "ns": 280681839945, "domain": "pinned.only-fi.lab.test", "group": "fi", "ip": "203.0.113.22", "fake": "198.18.0.3"}
+{"event": "visit", "ns": 280682229035, "domain": "split.lab.test", "count": 3, "counted": true}
+{"event": "hit", "ns": 280682267089, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "serve", "ns": 280682481037, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22", "fake": "198.18.0.2"}
+{"event": "visit", "ns": 280682828321, "domain": "pinned.only-fi.lab.test", "count": 3, "counted": true}
+{"event": "hit", "ns": 280682864292, "domain": "pinned.only-fi.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "serve", "ns": 280683105707, "domain": "pinned.only-fi.lab.test", "group": "fi", "ip": "203.0.113.22", "fake": "198.18.0.3"}
+{"event": "hit", "ns": 280684635433, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "real", "ns": 280684657149, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "hit", "ns": 280685200458, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "real", "ns": 280685220048, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "hit", "ns": 280688422049, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "real", "ns": 280688444348, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "hit", "ns": 280688809930, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "real", "ns": 280688828770, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "hit", "ns": 280689573564, "domain": "pinned.only-fi.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "real", "ns": 280689596697, "domain": "pinned.only-fi.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "hit", "ns": 280690620669, "domain": "pinned.only-fi.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "real", "ns": 280690644177, "domain": "pinned.only-fi.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "hit", "ns": 280691115294, "domain": "cold.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "real", "ns": 280691133259, "domain": "cold.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "hit", "ns": 280691796233, "domain": "cold.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "real", "ns": 280691821284, "domain": "cold.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "hit", "ns": 280693007477, "domain": "cold.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "real", "ns": 280693032736, "domain": "cold.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "hit", "ns": 280693489307, "domain": "cold.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "real", "ns": 280693518025, "domain": "cold.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "finish", "ns": 280701453713, "domain": "split.lab.test", "group": "ru", "code": 0, "ip": "203.0.113.33", "ttl": 4}
+{"event": "finish", "ns": 280733503609, "domain": "cold.lab.test", "group": "ru", "code": 0, "ip": "203.0.113.33", "ttl": 4}
+{"event": "warm-start", "ns": 281722340789, "domain": "split.lab.test", "group": "fi", "count": 3}
+{"event": "start", "ns": 281722542398, "domain": "split.lab.test", "group": "fi"}
+{"event": "warm-start", "ns": 281724320576, "domain": "pinned.only-fi.lab.test", "group": "fi", "count": 3}
+{"event": "start", "ns": 281724416525, "domain": "pinned.only-fi.lab.test", "group": "fi"}
+{"event": "warm-start", "ns": 281724916442, "domain": "split.lab.test", "group": "ru", "count": 3}
+{"event": "start", "ns": 281724975712, "domain": "split.lab.test", "group": "ru"}
+{"event": "finish", "ns": 281738539333, "domain": "split.lab.test", "group": "fi", "code": 0, "ip": "203.0.113.22", "ttl": 16}
+{"event": "finish", "ns": 281738708223, "domain": "pinned.only-fi.lab.test", "group": "fi", "code": 0, "ip": "203.0.113.22", "ttl": 16}
+{"event": "warm-finish", "ns": 281738857773, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22", "applied": true, "count": 3}
+{"event": "warm-finish", "ns": 281738923253, "domain": "pinned.only-fi.lab.test", "group": "fi", "ip": "203.0.113.22", "applied": true, "count": 3}
+{"event": "finish", "ns": 281797237511, "domain": "split.lab.test", "group": "ru", "code": 0, "ip": "203.0.113.11", "ttl": 4}
+{"event": "warm-finish", "ns": 281797643856, "domain": "split.lab.test", "group": "ru", "ip": "203.0.113.11", "applied": false, "count": 3}
+{"event": "warm-start", "ns": 282760544032, "domain": "split.lab.test", "group": "fi", "count": 3}
+{"event": "start", "ns": 282760613138, "domain": "split.lab.test", "group": "fi"}
+{"event": "warm-start", "ns": 282761011603, "domain": "pinned.only-fi.lab.test", "group": "fi", "count": 3}
+{"event": "start", "ns": 282761043572, "domain": "pinned.only-fi.lab.test", "group": "fi"}
+{"event": "finish", "ns": 282776039487, "domain": "split.lab.test", "group": "fi", "code": 0, "ip": "203.0.113.22", "ttl": 16}
+{"event": "finish", "ns": 282776148064, "domain": "pinned.only-fi.lab.test", "group": "fi", "code": 0, "ip": "203.0.113.22", "ttl": 16}
+{"event": "warm-finish", "ns": 282776226340, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22", "applied": true, "count": 3}
+{"event": "warm-finish", "ns": 282776271022, "domain": "pinned.only-fi.lab.test", "group": "fi", "ip": "203.0.113.22", "applied": true, "count": 3}
+{"event": "warm-start", "ns": 282862210844, "domain": "split.lab.test", "group": "ru", "count": 3}
+{"event": "start", "ns": 282862329341, "domain": "split.lab.test", "group": "ru"}
+{"event": "finish", "ns": 282931447353, "domain": "split.lab.test", "group": "ru", "code": 0, "ip": "203.0.113.11", "ttl": 4}
+{"event": "warm-finish", "ns": 282931610615, "domain": "split.lab.test", "group": "ru", "ip": "203.0.113.11", "applied": false, "count": 3}
+{"event": "warm-start", "ns": 283791651277, "domain": "split.lab.test", "group": "fi", "count": 3}
+{"event": "start", "ns": 283791778527, "domain": "split.lab.test", "group": "fi"}
+{"event": "warm-start", "ns": 283793011138, "domain": "pinned.only-fi.lab.test", "group": "fi", "count": 3}
+{"event": "start", "ns": 283793082661, "domain": "pinned.only-fi.lab.test", "group": "fi"}
+{"event": "finish", "ns": 283809910616, "domain": "split.lab.test", "group": "fi", "code": 0, "ip": "203.0.113.22", "ttl": 16}
+{"event": "finish", "ns": 283810029572, "domain": "pinned.only-fi.lab.test", "group": "fi", "code": 0, "ip": "203.0.113.22", "ttl": 16}
+{"event": "warm-finish", "ns": 283810126937, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22", "applied": true, "count": 3}
+{"event": "warm-finish", "ns": 283810170993, "domain": "pinned.only-fi.lab.test", "group": "fi", "ip": "203.0.113.22", "applied": true, "count": 3}
+{"event": "warm-start", "ns": 283996728513, "domain": "split.lab.test", "group": "ru", "count": 3}
+{"event": "start", "ns": 283996849386, "domain": "split.lab.test", "group": "ru"}
+{"event": "finish", "ns": 284066848750, "domain": "split.lab.test", "group": "ru", "code": 0, "ip": "203.0.113.11", "ttl": 4}
+{"event": "warm-finish", "ns": 284066926900, "domain": "split.lab.test", "group": "ru", "ip": "203.0.113.11", "applied": false, "count": 3}
+{"event": "warm-start", "ns": 284818120932, "domain": "split.lab.test", "group": "fi", "count": 3}
+{"event": "start", "ns": 284818189537, "domain": "split.lab.test", "group": "fi"}
+{"event": "warm-start", "ns": 284818511850, "domain": "pinned.only-fi.lab.test", "group": "fi", "count": 3}
+{"event": "start", "ns": 284818533940, "domain": "pinned.only-fi.lab.test", "group": "fi"}
+{"event": "finish", "ns": 284833045709, "domain": "split.lab.test", "group": "fi", "code": 0, "ip": "203.0.113.22", "ttl": 16}
+{"event": "finish", "ns": 284833179627, "domain": "pinned.only-fi.lab.test", "group": "fi", "code": 0, "ip": "203.0.113.22", "ttl": 16}
+{"event": "warm-finish", "ns": 284833248274, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22", "applied": true, "count": 3}
+{"event": "warm-finish", "ns": 284833281994, "domain": "pinned.only-fi.lab.test", "group": "fi", "ip": "203.0.113.22", "applied": true, "count": 3}
+{"event": "warm-start", "ns": 285120714963, "domain": "split.lab.test", "group": "ru", "count": 3}
+{"event": "start", "ns": 285120766980, "domain": "split.lab.test", "group": "ru"}
+{"event": "finish", "ns": 285186885286, "domain": "split.lab.test", "group": "ru", "code": 0, "ip": "203.0.113.11", "ttl": 4}
+{"event": "warm-finish", "ns": 285186982234, "domain": "split.lab.test", "group": "ru", "ip": "203.0.113.11", "applied": false, "count": 3}
+{"event": "visit", "ns": 285192337088, "domain": "split.lab.test", "count": 4, "counted": true}
+{"event": "hit", "ns": 285192402275, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "serve", "ns": 285193002219, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22", "fake": "198.18.0.2"}
+{"event": "hit", "ns": 285194204774, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "real", "ns": 285194235201, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "hit", "ns": 285194751367, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "real", "ns": 285194782210, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "hit", "ns": 285196213756, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "real", "ns": 285196248892, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "hit", "ns": 285196731090, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "real", "ns": 285196760641, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "reuse-candidate", "ns": 285279871433, "domain": "split.lab.test", "group": "ru", "ip": "203.0.113.11"}
+{"event": "hit", "ns": 285279931911, "domain": "split.lab.test", "group": "ru", "ip": "203.0.113.11"}
+{"event": "real", "ns": 285279957878, "domain": "split.lab.test", "group": "ru", "ip": "203.0.113.11"}
+{"event": "hit", "ns": 285280636347, "domain": "split.lab.test", "group": "ru", "ip": "203.0.113.11"}
+{"event": "real", "ns": 285280664856, "domain": "split.lab.test", "group": "ru", "ip": "203.0.113.11"}
+{"event": "hit", "ns": 285281903089, "domain": "split.lab.test", "group": "ru", "ip": "203.0.113.11"}
+{"event": "real", "ns": 285281931890, "domain": "split.lab.test", "group": "ru", "ip": "203.0.113.11"}
+{"event": "hit", "ns": 285282327559, "domain": "split.lab.test", "group": "ru", "ip": "203.0.113.11"}
+{"event": "real", "ns": 285282355610, "domain": "split.lab.test", "group": "ru", "ip": "203.0.113.11"}
+{"event": "visit", "ns": 285284356548, "domain": "split.lab.test", "count": 5, "counted": true}
+{"event": "hit", "ns": 285284444118, "domain": "split.lab.test", "group": "ru", "ip": "203.0.113.11"}
+{"event": "serve", "ns": 285284887969, "domain": "split.lab.test", "group": "ru", "ip": "203.0.113.11", "fake": "198.18.0.2"}
+{"event": "start", "ns": 285286195933, "domain": "cold.lab.test", "group": "ru"}
+{"event": "finish", "ns": 285357030093, "domain": "cold.lab.test", "group": "ru", "code": 0, "ip": "203.0.113.11", "ttl": 4}
+{"event": "selected", "ns": 285357111577, "domain": "cold.lab.test", "group": "ru", "ip": "203.0.113.11"}
+{"event": "real", "ns": 285357153132, "domain": "cold.lab.test", "group": "ru", "ip": "203.0.113.11"}
+{"event": "hit", "ns": 285357731150, "domain": "cold.lab.test", "group": "ru", "ip": "203.0.113.11"}
+{"event": "real", "ns": 285357787793, "domain": "cold.lab.test", "group": "ru", "ip": "203.0.113.11"}
+{"event": "hit", "ns": 285360145671, "domain": "cold.lab.test", "group": "ru", "ip": "203.0.113.11"}
+{"event": "real", "ns": 285360169678, "domain": "cold.lab.test", "group": "ru", "ip": "203.0.113.11"}
+{"event": "hit", "ns": 285360505535, "domain": "cold.lab.test", "group": "ru", "ip": "203.0.113.11"}
+{"event": "real", "ns": 285360525500, "domain": "cold.lab.test", "group": "ru", "ip": "203.0.113.11"}
+{"event": "visit", "ns": 285361495977, "domain": "cold.lab.test", "count": 2, "counted": true}
+{"event": "hit", "ns": 285361548785, "domain": "cold.lab.test", "group": "ru", "ip": "203.0.113.11"}
+{"event": "serve", "ns": 285361983716, "domain": "cold.lab.test", "group": "ru", "ip": "203.0.113.11", "fake": "198.18.0.4"}
+{"event": "visit", "ns": 285362452323, "domain": "pinned.only-fi.lab.test", "count": 4, "counted": true}
+{"event": "blocked", "ns": 285362506174, "domain": "pinned.only-fi.lab.test"}
+{"event": "blocked", "ns": 285363068854, "domain": "pinned.only-fi.lab.test"}
+{"event": "blocked", "ns": 285363521206, "domain": "pinned.only-fi.lab.test"}
+{"event": "warm-start", "ns": 286256680111, "domain": "split.lab.test", "group": "ru", "count": 5}
+{"event": "start", "ns": 286256781727, "domain": "split.lab.test", "group": "ru"}
+{"event": "finish", "ns": 286323643195, "domain": "split.lab.test", "group": "ru", "code": 0, "ip": "203.0.113.11", "ttl": 4}
+{"event": "warm-finish", "ns": 286323749937, "domain": "split.lab.test", "group": "ru", "ip": "203.0.113.11", "applied": true, "count": 5}
+{"event": "hit", "ns": 286326922492, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "real", "ns": 286326966131, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "hit", "ns": 286329064134, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "real", "ns": 286329105064, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "hit", "ns": 286330501593, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "real", "ns": 286330537229, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "hit", "ns": 286330877796, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "real", "ns": 286330905222, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "hit", "ns": 286331811844, "domain": "pinned.only-fi.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "real", "ns": 286331843980, "domain": "pinned.only-fi.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "hit", "ns": 286333671813, "domain": "pinned.only-fi.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "real", "ns": 286333705824, "domain": "pinned.only-fi.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "visit", "ns": 286334599526, "domain": "split.lab.test", "count": 6, "counted": true}
+{"event": "hit", "ns": 286334690221, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "serve", "ns": 286335095101, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22", "fake": "198.18.0.2"}
+{"event": "warm-start", "ns": 286357754924, "domain": "split.lab.test", "group": "fi", "count": 6}
+{"event": "start", "ns": 286357789643, "domain": "split.lab.test", "group": "fi"}
+{"event": "warm-start", "ns": 286358332064, "domain": "pinned.only-fi.lab.test", "group": "fi", "count": 4}
+{"event": "start", "ns": 286358365992, "domain": "pinned.only-fi.lab.test", "group": "fi"}
+{"event": "finish", "ns": 286371596543, "domain": "split.lab.test", "group": "fi", "code": 0, "ip": "203.0.113.22", "ttl": 16}
+{"event": "finish", "ns": 286371700785, "domain": "pinned.only-fi.lab.test", "group": "fi", "code": 0, "ip": "203.0.113.22", "ttl": 16}
+{"event": "warm-finish", "ns": 286371774516, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22", "applied": true, "count": 6}
+{"event": "warm-finish", "ns": 286371817572, "domain": "pinned.only-fi.lab.test", "group": "fi", "ip": "203.0.113.22", "applied": true, "count": 4}
+{"event": "warm-start", "ns": 287371886364, "domain": "split.lab.test", "group": "ru", "count": 6}
+{"event": "start", "ns": 287371982895, "domain": "split.lab.test", "group": "ru"}
+{"event": "finish", "ns": 287440298977, "domain": "split.lab.test", "group": "ru", "code": 0, "ip": "203.0.113.33", "ttl": 4}
+{"event": "warm-finish", "ns": 287440558766, "domain": "split.lab.test", "group": "ru", "ip": "203.0.113.33", "applied": false, "count": 6}
+{"event": "hit", "ns": 287443774229, "domain": "split.lab.test", "group": "ru", "ip": "203.0.113.33"}
+{"event": "real", "ns": 287443838124, "domain": "split.lab.test", "group": "ru", "ip": "203.0.113.33"}
+{"event": "hit", "ns": 287444719816, "domain": "split.lab.test", "group": "ru", "ip": "203.0.113.33"}
+{"event": "real", "ns": 287444756660, "domain": "split.lab.test", "group": "ru", "ip": "203.0.113.33"}
+{"event": "hit", "ns": 287446513417, "domain": "split.lab.test", "group": "ru", "ip": "203.0.113.33"}
+{"event": "real", "ns": 287446551721, "domain": "split.lab.test", "group": "ru", "ip": "203.0.113.33"}
+{"event": "hit", "ns": 287447172373, "domain": "split.lab.test", "group": "ru", "ip": "203.0.113.33"}
+{"event": "real", "ns": 287447202299, "domain": "split.lab.test", "group": "ru", "ip": "203.0.113.33"}
+{"event": "visit", "ns": 287448175353, "domain": "split.lab.test", "count": 7, "counted": true}
+{"event": "hit", "ns": 287448270716, "domain": "split.lab.test", "group": "ru", "ip": "203.0.113.33"}
+{"event": "serve", "ns": 287448809801, "domain": "split.lab.test", "group": "ru", "ip": "203.0.113.33", "fake": "198.18.0.2"}
+{"event": "visit", "ns": 287449395526, "domain": "pinned.only-fi.lab.test", "count": 5, "counted": true}
+{"event": "blocked", "ns": 287449453294, "domain": "pinned.only-fi.lab.test"}
+{"event": "blocked", "ns": 287450389419, "domain": "pinned.only-fi.lab.test"}
+{"event": "blocked", "ns": 287450962390, "domain": "pinned.only-fi.lab.test"}

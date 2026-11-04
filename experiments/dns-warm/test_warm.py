@@ -239,3 +239,95 @@ class WarmTests(unittest.IsolatedAsyncioTestCase):
                 )
                 self.assertEqual(send.await_count, 1)
                 self.assertEqual(cache.history.count(key, now[0]), 1)
+
+    async def test_same_source_refresh_updates_older_eligible_views(self):
+        """After re-entering an earlier allowed set, use the newest answer of that source until its own TTL."""
+        now = [10.0]
+        key = ("split.lab.test", "A")
+        query = dns.message.make_query(key[0], "A")
+        with tempfile.TemporaryDirectory() as temp:
+            down = Path(temp) / "down"
+            cache = WarmCache(down, Config(2, 10, 1), clock=lambda: now[0])
+            cache.history.record(key, ("peer", 1, 1), 10)
+            cache.history.record(key, ("peer", 1, 2), 10)
+            fi = rotation.Winner("fi", "203.0.113.22", 20)
+            old_ru = rotation.Winner("ru", "203.0.113.11", 40)
+            new_ru = rotation.Winner("ru", "203.0.113.33", 13)
+            cache.remember(key, fi, 10)
+            cache.remember(key, old_ru, 10)
+            cache.winners[key[0], ("ru", "fi")] = fi
+            cache.winners[key[0], ("ru",)] = old_ru
+            now[0] = 11.5
+            with (
+                mock.patch.object(rotation, "monotonic", lambda: now[0]),
+                mock.patch.object(
+                    rotation.WinnerCache, "lookup", side_effect=[new_ru, None]
+                ) as upstream,
+            ):
+                await cache.refresh_source(key, "ru")
+                self.assertEqual(await cache.select(query), fi)
+                down.touch()
+                self.assertEqual(await cache.select(query), new_ru)
+                self.assertEqual(upstream.await_count, 1)
+                now[0] = 13
+                self.assertIsNone(await cache.select(query))
+                self.assertEqual(upstream.await_args.args[1], "ru")
+                self.assertEqual(upstream.await_count, 2)
+
+    async def test_winner_revoked_while_fakeip_is_issued(self):
+        """The actual LAN listener refuses its pending FI answer, then reuses eligible RU for a committed flow."""
+        key = ("split.lab.test", "A")
+        q = dns.message.make_query(key[0], "A")
+        handlers = {}
+        ready = asyncio.Event()
+
+        async def bind(addr, port, callback):
+            """Capture the real gateway listener callbacks for a controlled dispatch."""
+            handlers[port] = callback
+            if port == 1055:
+                ready.set()
+            return mock.Mock(), None
+
+        with tempfile.TemporaryDirectory() as temp:
+            down = Path(temp) / "down"
+            cache = WarmCache(down, Config(2, 10, 1), clock=lambda: 10.0)
+            cache.history.record(key, ("peer", 1, 1), 10)
+            fi = rotation.Winner("fi", "203.0.113.22", 20)
+            ru = rotation.Winner("ru", "203.0.113.11", 14)
+            cache.remember(key, fi, 10)
+            cache.remember(key, ru, 10)
+            cache.winners[key[0], ("ru", "fi")] = fi
+
+            async def issuer(query, addr, port):
+                """Change FI eligibility after a candidate was chosen, before encoding the FakeIP reply."""
+                self.assertEqual((addr, port), ("127.0.0.1", 1054))
+                down.touch()
+                return rotation.answer(query, "198.18.0.1")
+
+            with (
+                mock.patch.object(rotation, "monotonic", lambda: 10.0),
+                mock.patch.object(rotation, "bind", side_effect=bind),
+                mock.patch.object(rotation, "ask", side_effect=issuer),
+                mock.patch.object(
+                    rotation.WinnerCache, "lookup", new_callable=mock.AsyncMock
+                ) as send,
+            ):
+                service = asyncio.create_task(
+                    rotation.gateway(down, cache, cache.client_select)
+                )
+                try:
+                    await asyncio.wait_for(ready.wait(), 1)
+                    lan = dns.message.from_wire(
+                        await handlers[53](q.to_wire(), ("peer", 1234))
+                    )
+                    self.assertEqual(lan.rcode(), dns.rcode.SERVFAIL)
+                    self.assertFalse(lan.answer)
+                    flow = dns.message.from_wire(
+                        await handlers[1055](q.to_wire(), ("local", 1234))
+                    )
+                    self.assertEqual(rotation.unpack(flow), ru.ip)
+                    self.assertEqual(flow.answer[0].ttl, 4)
+                    send.assert_not_awaited()
+                finally:
+                    service.cancel()
+                    await asyncio.gather(service, return_exceptions=True)

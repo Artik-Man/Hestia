@@ -1,0 +1,16 @@
+{"event": "ready", "ns": 279988796988}
+{"event": "authority", "ns": 280683920108, "source": "10.85.1.1", "group": "ru", "domain": "split.lab.test", "ip": "203.0.113.33", "ttl": 4, "generation": "first"}
+{"event": "authority", "ns": 280718728855, "source": "10.85.1.1", "group": "ru", "domain": "cold.lab.test", "ip": "203.0.113.33", "ttl": 4, "generation": "first"}
+{"event": "authority", "ns": 281797763771, "source": "10.85.1.1", "group": "ru", "domain": "split.lab.test", "ip": "203.0.113.11", "ttl": 4, "generation": "second"}
+{"event": "authority", "ns": 282929668723, "source": "10.85.1.1", "group": "ru", "domain": "split.lab.test", "ip": "203.0.113.11", "ttl": 4, "generation": "second"}
+{"event": "authority", "ns": 284066013435, "source": "10.85.1.1", "group": "ru", "domain": "split.lab.test", "ip": "203.0.113.11", "ttl": 4, "generation": "second"}
+{"event": "authority", "ns": 285189566068, "source": "10.85.1.1", "group": "ru", "domain": "split.lab.test", "ip": "203.0.113.11", "ttl": 4, "generation": "second"}
+{"event": "peer", "ns": 285285366082, "token": "down1-hot-split.lab.test-tcp", "group": "ru", "ip": "203.0.113.11", "source": "10.85.1.1", "proto": "tcp"}
+{"event": "peer", "ns": 285288056534, "token": "down1-hot-split.lab.test-udp", "group": "ru", "ip": "203.0.113.11", "source": "10.85.1.1", "proto": "udp"}
+{"event": "authority", "ns": 285356634050, "source": "10.85.1.1", "group": "ru", "domain": "cold.lab.test", "ip": "203.0.113.11", "ttl": 4, "generation": "second"}
+{"event": "peer", "ns": 285358293538, "token": "down1-cold-cold.lab.test-tcp", "group": "ru", "ip": "203.0.113.11", "source": "10.85.1.1", "proto": "tcp"}
+{"event": "peer", "ns": 285359921807, "token": "down1-cold-cold.lab.test-udp", "group": "ru", "ip": "203.0.113.11", "source": "10.85.1.1", "proto": "udp"}
+{"event": "authority", "ns": 286323131907, "source": "10.85.1.1", "group": "ru", "domain": "split.lab.test", "ip": "203.0.113.11", "ttl": 4, "generation": "second"}
+{"event": "authority", "ns": 287437666947, "source": "10.85.1.1", "group": "ru", "domain": "split.lab.test", "ip": "203.0.113.33", "ttl": 4, "generation": "third"}
+{"event": "peer", "ns": 287446191859, "token": "down2-hot-split.lab.test-tcp", "group": "ru", "ip": "203.0.113.11", "source": "10.85.1.1", "proto": "tcp"}
+{"event": "peer", "ns": 287450094619, "token": "down2-hot-split.lab.test-udp", "group": "ru", "ip": "203.0.113.11", "source": "10.85.1.1", "proto": "udp"}

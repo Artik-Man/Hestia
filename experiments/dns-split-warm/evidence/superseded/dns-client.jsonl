@@ -1,0 +1,14 @@
+{"ns": 280636664520, "wall": 1793793315304762208, "domain": "split.lab.test", "phase": "seed", "code": 0, "fake": "198.18.0.2", "ttl": 15, "start_wall": 1793793315283844832, "txid": 45167}
+{"ns": 280651358830, "wall": 1793793315319456226, "domain": "pinned.only-fi.lab.test", "phase": "seed", "code": 0, "fake": "198.18.0.3", "ttl": 15, "start_wall": 1793793315304876163, "txid": 34305}
+{"ns": 280667002920, "wall": 1793793315335100483, "domain": "cold.lab.test", "phase": "seed", "code": 0, "fake": "198.18.0.4", "ttl": 15, "start_wall": 1793793315319543964, "txid": 21874}
+{"ns": 280667853166, "wall": 1793793315335950354, "domain": "split.lab.test", "phase": "frequency", "code": 0, "fake": "198.18.0.2", "ttl": 15, "start_wall": 1793793315335253994, "txid": 21785}
+{"ns": 280668498343, "wall": 1793793315336595490, "domain": "pinned.only-fi.lab.test", "phase": "frequency", "code": 0, "fake": "198.18.0.3", "ttl": 15, "start_wall": 1793793315336001955, "txid": 45632}
+{"ns": 280669019436, "wall": 1793793315337116541, "domain": "split.lab.test", "phase": "frequency", "code": 0, "fake": "198.18.0.2", "ttl": 15, "start_wall": 1793793315336631919, "txid": 44750}
+{"ns": 280669594923, "wall": 1793793315337692069, "domain": "pinned.only-fi.lab.test", "phase": "frequency", "code": 0, "fake": "198.18.0.3", "ttl": 15, "start_wall": 1793793315337171810, "txid": 45086}
+{"ns": 285197822317, "wall": 1793793319865919547, "domain": "split.lab.test", "phase": "before-first-down", "code": 0, "fake": "198.18.0.2", "ttl": 15, "start_wall": 1793793319864021268, "txid": 21106}
+{"ns": 285289318317, "wall": 1793793319957415463, "domain": "split.lab.test", "phase": "down1-hot", "code": 0, "fake": "198.18.0.2", "ttl": 3, "start_wall": 1793793319956408055, "txid": 9905}
+{"ns": 285361105477, "wall": 1793793320029202624, "domain": "cold.lab.test", "phase": "down1-cold", "code": 0, "fake": "198.18.0.4", "ttl": 3, "start_wall": 1793793320028300252, "txid": 47502}
+{"ns": 285361416618, "wall": 1793793320029513723, "domain": "pinned.only-fi.lab.test", "phase": "down1-denied", "code": 2, "fake": null, "ttl": null, "start_wall": 1793793320029247096, "txid": 6145}
+{"ns": 286338583830, "wall": 1793793321006681060, "domain": "split.lab.test", "phase": "restored", "code": 0, "fake": "198.18.0.2", "ttl": 14, "start_wall": 1793793321005404282, "txid": 53323}
+{"ns": 287451984334, "wall": 1793793322120081564, "domain": "split.lab.test", "phase": "down2-hot", "code": 0, "fake": "198.18.0.2", "ttl": 2, "start_wall": 1793793322118585347, "txid": 62385}
+{"ns": 287452415427, "wall": 1793793322120512615, "domain": "pinned.only-fi.lab.test", "phase": "down2-denied", "code": 2, "fake": null, "ttl": null, "start_wall": 1793793322120146834, "txid": 14123}

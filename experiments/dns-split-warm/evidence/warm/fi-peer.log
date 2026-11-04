@@ -1,0 +1,26 @@
+{"event": "ready", "ns": 279953081197}
+{"event": "authority", "ns": 280646543782, "source": "10.85.2.1", "group": "fi", "domain": "split.lab.test", "ip": "203.0.113.22", "ttl": 16, "generation": "first"}
+{"event": "authority", "ns": 280663665414, "source": "10.85.2.1", "group": "fi", "domain": "pinned.only-fi.lab.test", "ip": "203.0.113.22", "ttl": 16, "generation": "first"}
+{"event": "authority", "ns": 280679059128, "source": "10.85.2.1", "group": "fi", "domain": "cold.lab.test", "ip": "203.0.113.22", "ttl": 16, "generation": "first"}
+{"event": "peer", "ns": 280685690624, "token": "initial-split.lab.test-tcp", "group": "fi", "ip": "203.0.113.22", "source": "10.85.2.1", "proto": "tcp"}
+{"event": "peer", "ns": 280689102238, "token": "initial-split.lab.test-udp", "group": "fi", "ip": "203.0.113.22", "source": "10.85.2.1", "proto": "udp"}
+{"event": "peer", "ns": 280689969573, "token": "initial-pinned.only-fi.lab.test-tcp", "group": "fi", "ip": "203.0.113.22", "source": "10.85.2.1", "proto": "tcp"}
+{"event": "peer", "ns": 280690844244, "token": "initial-pinned.only-fi.lab.test-udp", "group": "fi", "ip": "203.0.113.22", "source": "10.85.2.1", "proto": "udp"}
+{"event": "peer", "ns": 280692290984, "token": "initial-cold.lab.test-tcp", "group": "fi", "ip": "203.0.113.22", "source": "10.85.2.1", "proto": "tcp"}
+{"event": "peer", "ns": 280694202465, "token": "initial-cold.lab.test-udp", "group": "fi", "ip": "203.0.113.22", "source": "10.85.2.1", "proto": "udp"}
+{"event": "authority", "ns": 281737523993, "source": "10.85.2.1", "group": "fi", "domain": "split.lab.test", "ip": "203.0.113.22", "ttl": 16, "generation": "second"}
+{"event": "authority", "ns": 281737907163, "source": "10.85.2.1", "group": "fi", "domain": "pinned.only-fi.lab.test", "ip": "203.0.113.22", "ttl": 16, "generation": "second"}
+{"event": "authority", "ns": 282775424409, "source": "10.85.2.1", "group": "fi", "domain": "split.lab.test", "ip": "203.0.113.22", "ttl": 16, "generation": "second"}
+{"event": "authority", "ns": 282775649816, "source": "10.85.2.1", "group": "fi", "domain": "pinned.only-fi.lab.test", "ip": "203.0.113.22", "ttl": 16, "generation": "second"}
+{"event": "authority", "ns": 283808279375, "source": "10.85.2.1", "group": "fi", "domain": "split.lab.test", "ip": "203.0.113.22", "ttl": 16, "generation": "second"}
+{"event": "authority", "ns": 283808547004, "source": "10.85.2.1", "group": "fi", "domain": "pinned.only-fi.lab.test", "ip": "203.0.113.22", "ttl": 16, "generation": "second"}
+{"event": "authority", "ns": 284832480860, "source": "10.85.2.1", "group": "fi", "domain": "split.lab.test", "ip": "203.0.113.22", "ttl": 16, "generation": "second"}
+{"event": "authority", "ns": 284832693970, "source": "10.85.2.1", "group": "fi", "domain": "pinned.only-fi.lab.test", "ip": "203.0.113.22", "ttl": 16, "generation": "second"}
+{"event": "peer", "ns": 285195319634, "token": "before-first-down-split.lab.test-tcp", "group": "fi", "ip": "203.0.113.22", "source": "10.85.2.1", "proto": "tcp"}
+{"event": "peer", "ns": 285197462326, "token": "before-first-down-split.lab.test-udp", "group": "fi", "ip": "203.0.113.22", "source": "10.85.2.1", "proto": "udp"}
+{"event": "peer", "ns": 286329812248, "token": "restored-split.lab.test-tcp", "group": "fi", "ip": "203.0.113.22", "source": "10.85.2.1", "proto": "tcp"}
+{"event": "peer", "ns": 286331195981, "token": "restored-split.lab.test-udp", "group": "fi", "ip": "203.0.113.22", "source": "10.85.2.1", "proto": "udp"}
+{"event": "peer", "ns": 286332967380, "token": "restored-pinned.only-fi.lab.test-tcp", "group": "fi", "ip": "203.0.113.22", "source": "10.85.2.1", "proto": "tcp"}
+{"event": "peer", "ns": 286334164970, "token": "restored-pinned.only-fi.lab.test-udp", "group": "fi", "ip": "203.0.113.22", "source": "10.85.2.1", "proto": "udp"}
+{"event": "authority", "ns": 286370919621, "source": "10.85.2.1", "group": "fi", "domain": "split.lab.test", "ip": "203.0.113.22", "ttl": 16, "generation": "third"}
+{"event": "authority", "ns": 286371135856, "source": "10.85.2.1", "group": "fi", "domain": "pinned.only-fi.lab.test", "ip": "203.0.113.22", "ttl": 16, "generation": "third"}

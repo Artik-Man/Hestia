@@ -1,0 +1,4 @@
+PASS superseded: 22 new TCP/UDP flows wire-checked, original FakeIPs; zero FI DNS/data in both prohibitions
+PASS source TTL RU=4 FI=16; phase,wire LAN TTL, remaining at actual egress receipt: [('before-first-down', 15, 15.64), ('down1-hot', 3, 3.9), ('restored', 14, 14.49), ('down2-hot', 2, 2.87)]
+PASS winner FI to eligible RU, cold RU refreshed after its own deadline, FI-only member denied; FI restored
+PASS RU-only view reused before former RU deadline: delivered 203.0.113.11
