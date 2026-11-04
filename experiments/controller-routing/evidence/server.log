@@ -1,0 +1,17 @@
+READY
+{"proto": "tcp", "peer": "10.88.1.1", "target": "203.0.113.77", "token": "warm-tcp-620ddae59c637e19"}
+{"proto": "udp", "peer": "10.88.1.1", "target": "203.0.113.77", "token": "warm-udp-9b8303ecabfb0f95"}
+{"proto": "tcp", "peer": "10.88.2.1", "target": "203.0.113.77", "token": "warm-tcp-bc5d104946bdabeb"}
+{"proto": "udp", "peer": "10.88.2.1", "target": "203.0.113.77", "token": "warm-udp-2c7616127303ed44"}
+{"proto": "udp", "peer": "10.88.2.1", "target": "203.0.113.77", "token": "warm-udp-00a2a4dd6bfb13b9"}
+{"proto": "tcp", "peer": "10.88.2.1", "target": "203.0.113.77", "token": "warm-tcp-5b091043ce38c3cc"}
+{"proto": "tcp", "peer": "10.88.3.1", "target": "203.0.113.77", "token": "failover-tcp-d49d190d71380d51"}
+{"proto": "udp", "peer": "10.88.1.1", "target": "203.0.113.77", "token": "failover-udp-81c0e926979016ec"}
+{"proto": "tcp", "peer": "10.88.1.1", "target": "203.0.113.77", "token": "failover-tcp-dcf6c24ef09d7bb5"}
+{"proto": "udp", "peer": "10.88.3.1", "target": "203.0.113.77", "token": "failover-udp-289ada44c227351b"}
+{"proto": "tcp", "peer": "10.88.1.1", "target": "203.0.113.77", "token": "control-tcp-94bf1bb7e3e82f31"}
+{"proto": "udp", "peer": "10.88.1.1", "target": "203.0.113.77", "token": "control-udp-1890fe31c2937325"}
+{"proto": "tcp", "peer": "10.88.3.1", "target": "203.0.113.77", "token": "recovery-tcp-05b6d8ea1128f390"}
+{"proto": "tcp", "peer": "10.88.1.1", "target": "203.0.113.77", "token": "recovery-tcp-2984be04af3ad3a1"}
+{"proto": "udp", "peer": "10.88.1.1", "target": "203.0.113.77", "token": "recovery-udp-fa43b0a77170f37b"}
+{"proto": "udp", "peer": "10.88.3.1", "target": "203.0.113.77", "token": "recovery-udp-c5556a69f23f83de"}

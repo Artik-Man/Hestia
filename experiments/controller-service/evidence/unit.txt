@@ -1,0 +1,29 @@
+# /run/systemd/system/hestia-svc-WjIIkf.service
+[Unit]
+Description=Hestia connection group controller
+Wants=sing-box.service
+After=sing-box.service
+
+[Service]
+Type=simple
+DynamicUser=yes
+ExecStart=/usr/local/bin/hestia -watch -config /etc/hestia/snapshot.json -interval 1s
+Restart=on-failure
+RestartSec=2s
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+CapabilityBoundingSet=
+
+[Install]
+WantedBy=multi-user.target
+
+# /run/systemd/system/hestia-svc-WjIIkf.service.d/lab.conf
+[Unit]
+After=
+Wants=
+[Service]
+NetworkNamespacePath=/run/netns/hf-g-1446
+ExecStart=
+ExecStart=/usr/local/lib/hestia-svc-z2xQMV/hestia -watch -config /run/hestia-svc-WjIIkf/snapshot.json -interval 200ms

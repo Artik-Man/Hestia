@@ -26,10 +26,12 @@ PROBES += [("ru", "tcp", "fake"), ("ru", "udp", "fake")]
 
 
 def emit(record):
+    """Write one flushed JSON record so the lab can correlate observations while captures are active."""
     print(json.dumps(record), flush=True)
 
 
 def server():
+    """Listen at each real test address over TCP and UDP and echo address, token and observed source."""
     with contextlib.ExitStack() as stack:
         poll = stack.enter_context(selectors.DefaultSelector())
         for address in TARGETS.values():
@@ -64,6 +66,7 @@ def server():
 
 
 def exchange(token, address, proto, *, iface=None, port=0, timeout=1.5):
+    """Send a marked TCP or UDP request, optionally pin its interface and port, then decode its reply."""
     kind = socket.SOCK_STREAM if proto == "tcp" else socket.SOCK_DGRAM
     with socket.socket(socket.AF_INET, kind) as sock:
         sock.settimeout(timeout)
@@ -81,6 +84,7 @@ def exchange(token, address, proto, *, iface=None, port=0, timeout=1.5):
 
 
 def expected(phase, name, proto):
+    """Return the required interface and delivery expectation for a phase, domain and protocol."""
     if name == "ru":
         return "ru0", True
     override = name == "x" and proto == "udp"
@@ -89,6 +93,7 @@ def expected(phase, name, proto):
 
 
 def probe(phase, state, index, name, proto, mode):
+    """Test one new raw-IP or FakeIP flow and record its unique port, marker and observed response."""
     real = DESTINATIONS[name]
     address = real if mode == "ip" else state[name]
     token = f"flow-{phase}-{mode}-{proto}-{secrets.token_hex(8)}"
@@ -106,6 +111,7 @@ def probe(phase, state, index, name, proto, mode):
 
 
 def sample(iface):
+    """Send comparable UDP probes to X on a single interface and collect sent and received markers."""
     tokens, received = [], []
     for i in range(5):
         token = f"health-{iface}-{i}-{secrets.token_hex(8)}"
@@ -120,6 +126,7 @@ def sample(iface):
 
 
 def choose(rows):
+    """Rank the two measured paths by lost probes, preferring the primary on ties."""
     losses = {}
     assert len(rows) == len(INTERFACES)
     for row in rows:
@@ -135,12 +142,14 @@ def choose(rows):
 
 
 def wires(out, iface, real, proto):
+    """Extract payload-bearing capture bytes for one real destination, protocol and interface."""
     expr = f"{proto} and dst host {real} and dst port {PORT}"
     return subprocess.check_output(["tcpdump", "-nn", "-A", "-r", str(out / f"continuous-{iface}.pcap"),
                                     expr], stderr=subprocess.PIPE)
 
 
 def verify(out):
+    """Replay measurements and client flows against server records and captures on FI and RU."""
     state = json.loads((out / "state.json").read_text())
     assert set(state) == set(DESTINATIONS) and len(set(state.values())) == len(DESTINATIONS)
     server_rows = [json.loads(line) for line in (out / "server.log").read_text().splitlines()
@@ -186,6 +195,7 @@ def verify(out):
 
 
 def main():
+    """Dispatch sample, selection, server, client phase and offline verification commands."""
     cli = argparse.ArgumentParser(description=__doc__)
     commands = cli.add_subparsers(dest="command", required=True)
     for cmd in ("server", "init", "measure"):

@@ -1,0 +1,13 @@
+{
+  "normalized_snapshot_sha256": "e05d6903966b186f30bff715746094d426a6dd0087ecc1ae2d9d1a323cc47add",
+  "smoke_seconds": 1,
+  "userspace_wireguard_endpoints": 2,
+  "missing_sibling_rejected_with_prior_config_intact": true,
+  "nested_rule_precedence_verified": true,
+  "export_latest_availability_and_external_file_references": true,
+  "export_refuses_overwrite": true,
+  "final_runtime_sha256": [
+    "63d20665473a901f643407f6a3fa131992b5f472aa035ce91138a048aaf863ed",
+    "a0870e16a5403f1647fcd59a365004a902099258f73c63cccc72da388a6e7bc7"
+  ]
+}

@@ -26,11 +26,13 @@ INTERFACES = {"ru0": RU, "fi1": FI1, "fi2": FI2}
 
 
 def report(**event):
+    """Write one timestamped JSON Lines record describing a probe or fixture event."""
     print(json.dumps(dict(at_ns=time.time_ns(), **event)), flush=True)
 
 
 def dns_answer(query):
     # This lab resolver accepts single uncompressed IN questions for our suffix.
+    """Parse a lab DNS question and encode its test A record, empty answer or NXDOMAIN response."""
     if len(query) < 17 or query[4:6] != b"\x00\x01":
         raise ValueError("expected one DNS question")
     end = 12
@@ -55,6 +57,7 @@ def dns_answer(query):
 
 
 def dns_server():
+    """Serve the test resolver on the real service address and log incoming DNS questions."""
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
         sock.bind((REAL, 53))
         print("READY", flush=True)
@@ -69,6 +72,7 @@ def dns_server():
 
 
 def initialize(path):
+    """Query and store the distinct RU and FI FakeIPs that the client will reuse after failover."""
     addresses = {name: fake_address(name) for name in ("ru.lab.test", "fi.lab.test")}
     assert len(set(addresses.values())) == 2, addresses
     with path.open("x") as stream:
@@ -77,6 +81,7 @@ def initialize(path):
 
 
 def probe(phase, domain, fake, proto, expected, port):
+    """Send a uniquely marked TCP or UDP flow and check delivery or expected blocking for one exit."""
     token = f"{phase}-{proto}-{secrets.token_hex(8)}"
     event = dict(phase=phase, domain=domain, fake=fake, proto=proto,
                  expected_peer=expected, token=token, source_port=port)
@@ -104,6 +109,7 @@ def probe(phase, domain, fake, proto, expected, port):
 
 
 def phase_probes(state, phase):
+    """Issue the phase's control and test flows, including fresh DNS queries in selected phases."""
     addresses = json.loads(state.read_text())
     if phase in DENIED:
         del addresses["ru.lab.test"]
@@ -127,6 +133,7 @@ def phase_probes(state, phase):
 
 def captured(path, expr, *, ascii=False):
     # -S retains original sequence numbers to distinguish independent TCP attempts.
+    """Read packets matching an expression from a saved capture, optionally including their payload."""
     args = ["tcpdump", "-nn", "-S", "-r", str(path)]
     if ascii:
         args.append("-A")
@@ -134,6 +141,7 @@ def captured(path, expr, *, ascii=False):
 
 
 def verify(out):
+    """Verify per-phase routing, blocked data and DNS, and RU control traffic against all three captures."""
     issued = json.loads((out / "state.json").read_text())
     assert set(issued) == {"ru.lab.test", "fi.lab.test"} and len(set(issued.values())) == 2
     seen_ports = set()
@@ -183,6 +191,7 @@ def verify(out):
 
 
 def main():
+    """Run a selected client, echo/DNS server, or saved-capture verification command."""
     parser = argparse.ArgumentParser(description=__doc__)
     subs = parser.add_subparsers(dest="command", required=True)
     subs.add_parser("dns-server")

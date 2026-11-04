@@ -1,0 +1,5 @@
+{"at_ns": 1793780669260036777, "phase": "blocked", "fresh_domain": "blocked-429a1575c786c2b7.fi.lab.test", "fake": "198.18.0.5"}
+{"at_ns": 1793780673271010989, "phase": "blocked", "domain": "fi.lab.test", "fake": "198.18.0.3", "proto": "udp", "expected_peer": null, "token": "blocked-udp-0d7c9c0386dd129a", "source_port": 24301, "outcome": "blocked", "error": "timed out"}
+{"at_ns": 1793780673271490463, "phase": "blocked", "domain": "fi.lab.test", "fake": "198.18.0.3", "proto": "tcp", "expected_peer": null, "token": "blocked-tcp-d47d41028cc73802", "source_port": 24300, "outcome": "blocked", "error": "timed out"}
+{"at_ns": 1793780673271814848, "phase": "blocked", "domain": "blocked-429a1575c786c2b7.fi.lab.test", "fake": "198.18.0.5", "proto": "tcp", "expected_peer": null, "token": "blocked-tcp-c59516897eb958ad", "source_port": 24302, "outcome": "blocked", "error": "timed out"}
+{"at_ns": 1793780673271877392, "phase": "blocked", "domain": "blocked-429a1575c786c2b7.fi.lab.test", "fake": "198.18.0.5", "proto": "udp", "expected_peer": null, "token": "blocked-udp-69da14b1b37aed8b", "source_port": 24303, "outcome": "blocked", "error": "timed out"}

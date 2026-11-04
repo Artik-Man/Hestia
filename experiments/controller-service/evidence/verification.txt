@@ -1,0 +1,9 @@
+PASS warm: verified 6 probe outcomes on three uplinks
+PASS gate: verified 4 probe outcomes on three uplinks
+PASS failover: verified 4 probe outcomes on three uplinks
+PASS blocked: verified 4 probe outcomes on three uplinks
+PASS control: verified 2 probe outcomes on three uplinks
+PASS recovery: verified 4 probe outcomes on three uplinks
+PASS single PID through health changes and invalid file, restart reload, RU selector written once
+PASS correlated service decisions and loopback API captures (FI 5 PUTs, RU 1 PUT)
+PASS initial LAN DNS queried once, blocked TCP/UDP attempted on LAN, DNS absent on external paths

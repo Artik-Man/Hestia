@@ -7,7 +7,9 @@ from pathlib import Path
 from policy import evaluate
 
 out=Path(sys.argv[1])
-def read(name): return [json.loads(l) for l in (out/name).read_text().splitlines()]
+def read(name):
+    """Read JSON Lines records for a named partial-loss evidence file."""
+    return [json.loads(l) for l in (out/name).read_text().splitlines()]
 rows=read("rounds.jsonl")
 controls=read("clients.jsonl")
 assert len(rows)==440 and len(controls)==9

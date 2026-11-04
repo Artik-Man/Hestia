@@ -1,0 +1,2 @@
+{"at_ns": 1793780326903211496, "phase": "control", "domain": "ru.lab.test", "fake": "198.18.0.2", "proto": "tcp", "expected_peer": "10.88.1.1", "token": "control-tcp-94bf1bb7e3e82f31", "source_port": 24400, "outcome": "echo", "peer": "10.88.1.1"}
+{"at_ns": 1793780326903287705, "phase": "control", "domain": "ru.lab.test", "fake": "198.18.0.2", "proto": "udp", "expected_peer": "10.88.1.1", "token": "control-udp-1890fe31c2937325", "source_port": 24401, "outcome": "echo", "peer": "10.88.1.1"}

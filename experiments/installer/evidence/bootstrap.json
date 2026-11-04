@@ -1,0 +1,11 @@
+{
+  "tampered_archive_rejected": true,
+  "first_smoke_seconds": 2,
+  "repeat_smoke_seconds": 1,
+  "invalid_runtime_failed_at_smoke": true,
+  "public_backend_config_refused_without_service_changes": true,
+  "customized_configs_unchanged_on_repeat_and_reboot": true,
+  "bootstrap_export_private_and_refuses_overwrite": true,
+  "loopback_proxy_verified_before_and_after_repeat_and_after_reboot": true,
+  "services_enabled_and_active_after_reboot": true
+}

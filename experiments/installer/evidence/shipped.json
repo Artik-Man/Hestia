@@ -1,0 +1,7 @@
+{
+  "artifact": "dist/hestia-arm64.run",
+  "sha256": "70a5c4f9c0b1aa9ef78617b96b6c321ec524af769f2358744d2e642f9cce21bc",
+  "config": "restored export with separately supplied ru-wg.conf and fi-wg.conf",
+  "api_targets": {"russia": "ru-wg", "finland": "deny"},
+  "smoke_seconds": 1
+}

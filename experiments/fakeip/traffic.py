@@ -17,6 +17,7 @@ DNS_ADDRESS = "192.0.2.53"
 
 
 def fake_address(name):
+    """Resolve a test domain and validate that its sole A record belongs to the FakeIP range."""
     transaction = secrets.token_bytes(2)
     labels = b"".join(bytes([len(part)]) + part.encode() for part in name.split("."))
     question = labels + b"\0" + struct.pack("!HH", 1, 1)
@@ -44,6 +45,7 @@ def fake_address(name):
 
 
 def server(path=None):
+    """Listen for TCP and UDP probes on the real service address and echo the observed path."""
     with socket.socket() as tcp, socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp:
         tcp.bind((REAL, PORT))
         tcp.listen()
@@ -63,6 +65,7 @@ def server(path=None):
 
 
 def response(peer, data, proto, path=None):
+    """Record the actual source and token, optionally add the labelled server path, and encode the echo."""
     result = dict(proto=proto, peer=peer[0], target=REAL, token=data.decode().strip())
     if path is not None:
         result["server"] = path
@@ -71,6 +74,7 @@ def response(peer, data, proto, path=None):
 
 
 def probe(group, address, proto):
+    """Send a tagged request to a FakeIP and verify the echo came from the expected group exit."""
     token = f"{group}-{proto}-{secrets.token_hex(6)}"
     kind = socket.SOCK_STREAM if proto == "tcp" else socket.SOCK_DGRAM
     with socket.socket(socket.AF_INET, kind) as sock:
@@ -85,6 +89,7 @@ def probe(group, address, proto):
 
 
 def client():
+    """Resolve both domains once, concurrently probe each FakeIP over TCP and UDP, and report replies."""
     addresses = {g: fake_address(f"{g.lower()}.lab.test") for g in GROUPS}
     assert len(set(addresses.values())) == len(GROUPS)
     with concurrent.futures.ThreadPoolExecutor() as pool:
@@ -95,6 +100,7 @@ def client():
 
 
 def verify(root):
+    """Require all four distinct markers on their assigned interfaces and absent on the opposite exits."""
     records = json.loads((root / "client.json").read_text())
     expected = {(group, proto) for group in GROUPS for proto in ("tcp", "udp")}
     assert len(records) == 4 and {(r["group"], r["proto"]) for r in records} == expected

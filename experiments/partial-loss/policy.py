@@ -5,6 +5,7 @@ import sys
 
 
 def evaluate(rows, current, window=3600):
+    """Compare paired UDP outcomes inside the time window and return the selected exit and reason."""
     if current not in ("fi1", "fi2") or not rows or window <= 0:
         raise ValueError("need a current FI interface, positive window and observations")
     now = rows[-1]["ts"]

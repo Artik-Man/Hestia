@@ -23,6 +23,7 @@ PROTOCOLS = ("tcp", "udp")
 
 
 def probe(phase, proto, fake):
+    """Start one tagged client flow to the saved FakeIP, recording delivery or timeout after teardown."""
     token = f"{phase}-{proto}-{secrets.token_hex(8)}"
     kind = socket.SOCK_STREAM if proto == "tcp" else socket.SOCK_DGRAM
     port = 33100 + list(PATHS).index(phase) * 10 + PROTOCOLS.index(proto)
@@ -45,11 +46,13 @@ def probe(phase, proto, fake):
 
 
 def read_pcap(path, expr):
+    """Extract packets matching the expression and include payloads for marker verification."""
     return subprocess.check_output(["tcpdump", "-nn", "-A", "-r", str(path), expr],
                                    stderr=subprocess.PIPE)
 
 
 def verify(out):
+    """Reconcile LAN attempts, PPP captures and server logs across baseline, disconnection and failover."""
     issued = json.loads((out / "state.json").read_text())
     fake = issued[NAME]
     assert ipaddress.ip_address(fake) in ipaddress.ip_network("198.18.0.0/15")
@@ -106,6 +109,7 @@ def verify(out):
 
 
 def main():
+    """Dispatch the labelled echo server, initial FakeIP lookup, client phase or evidence replay."""
     cli = argparse.ArgumentParser(description=__doc__)
     sub = cli.add_subparsers(dest="command", required=True)
     sub.add_parser("server").add_argument("path", choices=SERVERS)

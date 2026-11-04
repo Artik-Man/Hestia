@@ -1,0 +1,1 @@
+{"groups":[{"id":"russia","exits":["ru"]},{"id":"finland","exits":["fi1-out","fi2-out"]}],"lists":[{"id":"fi-domains","group":"finland","masks":["*.fi.lab.test"]}],"healthy":{"ru":true,"fi1-out":false,"fi2-out":true}}

@@ -12,6 +12,7 @@ from policy import evaluate
 from fixture import PEERS, PORT, capture
 
 def sweep(out, batch, count):
+    """Probe the discovered address concurrently on both interfaces and persist paired UDP outcomes."""
     target = str(ipaddress.IPv4Address((out/"discovered.txt").read_text().strip()))
     rows = []
     sockets = {}
@@ -46,6 +47,7 @@ def sweep(out, batch, count):
     return rows
 
 def verify(out):
+    """Replay paired measurements against packet and server records and recompute each switching decision."""
     target=(out/"discovered.txt").read_text().strip()
     pcaps={iface:capture(out/(iface+".pcap"),f"udp and dst host {target} and dst port {PORT}") for iface in PEERS}
     server={r["token"]:r for r in (json.loads(l) for l in (out/"server.log").read_text().splitlines() if l.startswith("{"))}

@@ -9,9 +9,11 @@ import sys
 
 o = Path(sys.argv[1])
 def rows(file):
+    """Read JSON Lines evidence from the selected DNS experiment output directory."""
     return [json.loads(line) for line in (o / file).read_text().splitlines()]
 
 def packets(iface, filt, ascii=False):
+    """Read matching packets from an interface capture, optionally including printable payloads."""
     args = ["tcpdump", "-nn", "-r", str(o / (iface + ".pcap"))]
     return subprocess.check_output([*args, *(["-A"] if ascii else []), filt], stderr=subprocess.PIPE)
 

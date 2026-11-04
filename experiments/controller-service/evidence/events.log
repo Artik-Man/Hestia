@@ -1,0 +1,29 @@
+2026-11-04T08:24:27,729732947+00:00 publish initial fi1=true fi2=true group=finland
+2026-11-04T08:24:27,812358698+00:00 stage=initial pid=1608 finland=fi1-out russia=ru
+2026-11-04T08:24:27,976425950+00:00 begin phase=warm
+2026-11-04T08:24:28,023391657+00:00 end phase=warm
+2026-11-04T08:24:28,058993098+00:00 peer=fi1 state=down
+2026-11-04T08:24:28,061899695+00:00 publish failover-snapshot fi1=false fi2=true group=finland
+2026-11-04T08:24:28,243947410+00:00 stage=failover pid=1608 finland=fi2-out russia=ru
+2026-11-04T08:24:28,247392317+00:00 publish invalid fi1=true fi2=true group=missing
+2026-11-04T08:24:28,524985728+00:00 stage=invalid pid=1608 finland=fi2-out russia=ru
+2026-11-04T08:24:28,690232965+00:00 begin phase=failover
+2026-11-04T08:24:28,735649984+00:00 end phase=failover
+2026-11-04T08:24:28,779522285+00:00 peer=fi2 state=down
+2026-11-04T08:24:28,782075120+00:00 publish outage fi1=false fi2=false group=finland
+2026-11-04T08:24:29,057684783+00:00 stage=outage pid=1608 finland=deny russia=ru
+2026-11-04T08:24:29,221439332+00:00 begin phase=blocked
+2026-11-04T08:24:33,287300425+00:00 end phase=blocked
+2026-11-04T08:24:33,497408629+00:00 begin phase=control
+2026-11-04T08:24:33,547319055+00:00 end phase=control
+2026-11-04T08:24:33,587878683+00:00 peer=fi1 state=up
+2026-11-04T08:24:33,589614780+00:00 peer=fi2 state=up
+2026-11-04T08:24:33,637245925+00:00 stage=gate pid=1608 finland=deny russia=ru
+2026-11-04T08:24:33,805422832+00:00 begin phase=gate
+2026-11-04T08:24:37,865693318+00:00 end phase=gate
+2026-11-04T08:24:37,904423554+00:00 publish restore fi1=false fi2=true group=finland
+2026-11-04T08:24:38,072836149+00:00 stage=recovery pid=1608 finland=fi2-out russia=ru
+2026-11-04T08:24:38,243807129+00:00 begin phase=recovery
+2026-11-04T08:24:38,292328405+00:00 end phase=recovery
+2026-11-04T08:24:38,347598637+00:00 publish while-stopped fi1=true fi2=true group=finland
+2026-11-04T08:24:38,426256335+00:00 stage=restart pid=1963 finland=fi1-out russia=ru

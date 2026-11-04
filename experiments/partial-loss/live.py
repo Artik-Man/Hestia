@@ -18,11 +18,13 @@ PHASES=[("baseline",100),("burst",3),("clean",17),("partial",220),("recovered",1
 
 
 def write(out, filename, item):
+    """Append one JSON record to the named file in the experiment's evidence directory."""
     with (out/filename).open("a") as f:
         print(json.dumps(item),file=f)
 
 
 def probe(seq, iface):
+    """Probe X through the specified FI interface and return delivery and RTT or a timeout."""
     token=f"health-{iface}-{seq:04}"
     start=time.monotonic()
     try:
@@ -34,6 +36,7 @@ def probe(seq, iface):
 
 
 def controls(phase, selector):
+    """Send UDP-X, TCP-X and UDP-Y controls and assert the real source expected in this phase."""
     for mode, proto, target in [("ux","udp","x"),("tx","tcp","x"),("uy","udp","y")]:
         token=f"user-{phase}-{mode}"
         reply=exchange(token,TARGETS[target],proto)
@@ -43,23 +46,28 @@ def controls(phase, selector):
 
 
 def main(out,client,server):
+    """Run paired measurements through loss phases and apply a scoped selector change when justified."""
     rows=[]
     current="fi1"
     switches=[]
     def check(phase):
+        """Run client controls inside the LAN namespace and append the resulting observations to evidence."""
         result=subprocess.check_output(["ip","netns","exec",client,sys.executable,__file__,"controls",phase,current],text=True)
         for line in result.splitlines(): write(out,"clients.jsonl",json.loads(line))
 
     def rule(op,phase):
+        """Add or remove the FI-1 server drop rule for a burst or periodic partial UDP loss."""
         args=["ip","netns","exec",server,"iptables",op,"INPUT","-i","via-fi1","-p","udp","-d",TARGETS["x"],"--dport","19091"]
         if phase=="partial": args += ["-m","statistic","--mode","nth","--every","10","--packet","0"]
         subprocess.run(args+["-j","DROP"],check=True)
 
     def selectors(tag):
+        """Return the loopback control API URL for a sing-box selector tag."""
         return "http://127.0.0.1:9090/proxies/"+tag
 
     opener=urllib.request.build_opener(urllib.request.ProxyHandler({}))
     def selected(tag):
+        """Read the selector's active outbound from the local control API."""
         with opener.open(selectors(tag),timeout=1) as f: return json.load(f)["now"]
 
     check("baseline")

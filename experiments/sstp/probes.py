@@ -19,10 +19,12 @@ INTERVAL_NS = 150_000_000
 
 
 def emit(record):
+    """Write a flushed JSON record for timing and later packet correlation."""
     print(json.dumps(record), flush=True)
 
 
 def server(path, target):
+    """Echo UDP markers from this SSTP server with its path ID and the observed client address."""
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
         sock.bind((target, PORT))
         print("READY", flush=True)
@@ -35,6 +37,7 @@ def server(path, target):
 
 
 def sample(phase, path, target):
+    """Send a fixed-cadence five-tuple on one SSTP path and match replies within a bounded window."""
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
         sock.bind((SOURCE, SOURCE_PORT))
         sock.connect((target, PORT))
@@ -61,6 +64,7 @@ def sample(phase, path, target):
 
 
 def read_capture(out, path, target, reply):
+    """Extract test requests or replies with the exact UDP five-tuple for one PPP capture."""
     source, sport, dest, dport = SOURCE, SOURCE_PORT, target, PORT
     if reply:
         source, sport, dest, dport = dest, dport, source, sport
@@ -70,6 +74,7 @@ def read_capture(out, path, target, reply):
 
 
 def verify(out, target):
+    """Prove both SSTP paths are distinguishable despite identical five-tuples and overlapping probes."""
     packets = {(path, reply): read_capture(out, path, target, reply) for path in PATHS for reply in (False, True)}
     servers = {}
     for path in PATHS:
@@ -110,6 +115,7 @@ def verify(out, target):
 
 
 def main():
+    """Run the SSTP server, sample one path, or replay a saved duplicate-address experiment."""
     cli = argparse.ArgumentParser(description=__doc__)
     cmds = cli.add_subparsers(dest="command", required=True)
     listener = cmds.add_parser("server")

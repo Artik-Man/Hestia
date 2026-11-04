@@ -1,0 +1,18 @@
+[Unit]
+Description=Hestia bootstrap sing-box backend
+
+[Service]
+Type=simple
+DynamicUser=yes
+LoadCredential=sing-box.json:/etc/hestia/sing-box.json
+ExecStart=/usr/local/lib/hestia/sing-box run -c %d/sing-box.json
+Restart=on-failure
+RestartSec=2s
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+CapabilityBoundingSet=
+
+[Install]
+WantedBy=multi-user.target

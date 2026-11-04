@@ -21,6 +21,7 @@ CASES = (("x","udp","fake"), ("x","udp","ip"), ("x","tcp","fake"), ("x","tcp","i
 STATES = {"baseline":"fi1", "added":"fi2", "removed":"fi1", "automatic":"fi2", "retired":"fi1"}
 
 def dns(records):
+    """Serve short-lived A records for dynamically selected lab addresses on the local resolver."""
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind(("127.0.0.1",15353))
     print("READY", flush=True)
@@ -41,6 +42,7 @@ def dns(records):
         sock.sendto(header + data[12:off+5] + answer, address)
 
 def flow(phase, index, name, proto, mode, records, state):
+    """Send one tagged direct-IP or FakeIP request and require the egress expected for this phase."""
     address = state[name] if mode == "fake" else records[name+".lab.test"]
     token = f"{phase}-{index}-{secrets.token_hex(5)}"
     number = list(STATES).index(phase)
@@ -51,9 +53,11 @@ def flow(phase, index, name, proto, mode, records, state):
     return dict(phase=phase,name=name,mode=mode,proto=proto,address=address,token=token,source_port=source_port,reply=reply)
 
 def capture(path, expr):
+    """Decode packets matching the supplied tcpdump expression, retaining payload bytes for marker checks."""
     return subprocess.check_output(["tcpdump","-nnA","-r",str(path),expr],stderr=subprocess.PIPE)
 
 def verify(out):
+    """Check original FakeIPs, rule-set contents, LAN delivery and exclusive egress of each test flow."""
     state = json.loads((out/"state.json").read_text())
     records = json.loads((out/"records.json").read_text())
     server = [json.loads(s) for s in (out/"server.log").read_text().splitlines() if s.startswith("{")]
@@ -91,15 +95,18 @@ def verify(out):
     print("PASS preexisting FakeIPs; same process; previously unseen exception learned on wire")
 
 def rules(addresses):
+    """Build a sing-box source rule-set containing one IPv4 host prefix for each supplied address."""
     return {"version":3,"rules":[{"ip_cidr":[ip+"/32"]} for ip in addresses]}
 
 def apply(path, target):
+    """Atomically replace the live rule-set with an empty set or the supplied IPv4 host exception."""
     value = [] if target == "empty" else [str(ipaddress.IPv4Address(target))]
     temp = path.with_name(path.name+".new")
     temp.write_text(json.dumps(rules(value))+"\n")
     temp.replace(path)
 
 def main():
+    """Dispatch rule updates, simulated DNS, client flow generation and offline evidence verification."""
     op, *args = sys.argv[1:]
     if op=="apply": apply(Path(args[0]),args[1]); return
     if op=="verify": verify(Path(args[0])); return

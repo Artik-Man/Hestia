@@ -1,0 +1,9 @@
+{
+  "experimental": {"clash_api": {"external_controller": "127.0.0.1:9090"}},
+  "inbounds": [],
+  "outbounds": [
+    {"type": "selector", "tag": "bootstrap", "outbounds": ["deny"], "default": "deny"},
+    {"type": "direct", "tag": "deny", "bind_interface": "lo"}
+  ],
+  "route": {"rules": [{"action": "reject"}]}
+}

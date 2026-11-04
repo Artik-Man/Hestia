@@ -1,0 +1,1 @@
+{"time":"2026-11-04T08:18:42.391484492Z","domain":"fi.lab.test","group":"finland","list":"fi-domains","mask":"*.fi.lab.test","reason":"domain_rule","outcome":"block_no_available_exit","selector_target":"deny"}

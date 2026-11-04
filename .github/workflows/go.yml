@@ -1,0 +1,21 @@
+name: Project checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.3'
+          cache: false
+      - name: Install shell tools
+        run: |
+          go install mvdan.cc/sh/v3/cmd/shfmt@v3.11.0
+          python3 -m venv "$RUNNER_TEMP/hestia-shellcheck"
+          "$RUNNER_TEMP/hestia-shellcheck/bin/pip" install shellcheck-py==0.11.0.1
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+          echo "$RUNNER_TEMP/hestia-shellcheck/bin" >> "$GITHUB_PATH"
+      - run: make check

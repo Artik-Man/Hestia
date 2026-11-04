@@ -1,0 +1,27 @@
+2026-11-04T08:18:41,804049530+00:00 controller stage=ru-default observed_selector=ru
+2026-11-04T08:18:41,815695075+00:00 controller stage=warm fi1=true fi2=true before=deny
+2026-11-04T08:18:41,830302256+00:00 controller stage=warm observed_selector=fi1-out
+2026-11-04T08:18:41,997664155+00:00 begin phase=warm
+2026-11-04T08:18:42,049064560+00:00 end phase=warm
+2026-11-04T08:18:42,093452271+00:00 peer=fi1 state=down
+2026-11-04T08:18:42,107172740+00:00 controller stage=failover fi1=false fi2=true before=fi1-out
+2026-11-04T08:18:42,121495462+00:00 controller stage=failover observed_selector=fi2-out
+2026-11-04T08:18:42,135450432+00:00 invalid config rejected; selector still fi2-out
+2026-11-04T08:18:42,300930480+00:00 begin phase=failover
+2026-11-04T08:18:42,347382240+00:00 end phase=failover
+2026-11-04T08:18:42,377281980+00:00 peer=fi2 state=down
+2026-11-04T08:18:42,389015316+00:00 controller stage=blocked fi1=false fi2=false before=fi2-out
+2026-11-04T08:18:42,403841748+00:00 controller stage=blocked observed_selector=deny
+2026-11-04T08:18:42,574038522+00:00 begin phase=blocked
+2026-11-04T08:18:46,637773376+00:00 end phase=blocked
+2026-11-04T08:18:46,849217177+00:00 begin phase=control
+2026-11-04T08:18:46,909445644+00:00 end phase=control
+2026-11-04T08:18:46,953626135+00:00 peer=fi1 state=up
+2026-11-04T08:18:46,955384642+00:00 peer=fi2 state=up
+2026-11-04T08:18:46,970370279+00:00 both FI carriers up while selector still deny
+2026-11-04T08:18:47,139572338+00:00 begin phase=gate
+2026-11-04T08:18:51,202975139+00:00 end phase=gate
+2026-11-04T08:18:51,263663551+00:00 controller stage=recovery fi1=false fi2=true before=deny
+2026-11-04T08:18:51,280797275+00:00 controller stage=recovery observed_selector=fi2-out
+2026-11-04T08:18:51,450571926+00:00 begin phase=recovery
+2026-11-04T08:18:51,496237537+00:00 end phase=recovery

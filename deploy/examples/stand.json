@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "socks_port": 1080,
+  "interfaces": [
+    {
+      "id": "ru-wg",
+      "type": "wireguard",
+      "config_file": "ru-wg.conf"
+    },
+    {
+      "id": "fi-wg",
+      "type": "wireguard",
+      "config_file": "fi-wg.conf"
+    }
+  ],
+  "groups": [
+    {
+      "id": "russia",
+      "exits": [
+        "ru-wg"
+      ]
+    },
+    {
+      "id": "finland",
+      "exits": [
+        "fi-wg"
+      ]
+    }
+  ],
+  "lists": [
+    {
+      "id": "com",
+      "group": "finland",
+      "masks": [
+        "*.com"
+      ]
+    },
+    {
+      "id": "exception",
+      "group": "russia",
+      "masks": [
+        "*.deepseek.com"
+      ]
+    },
+    {
+      "id": "unassigned",
+      "group": "",
+      "masks": [
+        "*.example.com"
+      ]
+    }
+  ],
+  "healthy": {}
+}

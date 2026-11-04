@@ -1,0 +1,5 @@
+READY
+{"at_ns": 1793780322040711112, "qname": "ru.lab.test", "qtype": 1, "peer": "10.88.1.1", "peer_port": 46696}
+{"at_ns": 1793780322042144492, "qname": "fi.lab.test", "qtype": 1, "peer": "10.88.2.1", "peer_port": 53142}
+{"at_ns": 1793780322043404830, "qname": "warm-cc870dc772f83a20.fi.lab.test", "qtype": 1, "peer": "10.88.2.1", "peer_port": 53142}
+{"at_ns": 1793780322341009424, "qname": "fi.lab.test", "qtype": 1, "peer": "10.88.3.1", "peer_port": 53845}

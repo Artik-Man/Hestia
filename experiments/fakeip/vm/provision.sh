@@ -6,7 +6,10 @@ set -euo pipefail
     echo "Expected root on Debian ARM64 with /dev/net/tun" >&2
     exit 1
 }
-[[ $# == 1 && -f $1 ]] || { echo "Usage: provision.sh PATH_TO_SING_BOX_ARCHIVE" >&2; exit 2; }
+[[ $# == 1 && -f $1 ]] || {
+    echo "Usage: provision.sh PATH_TO_SING_BOX_ARCHIVE" >&2
+    exit 2
+}
 tmp=$(mktemp -d)
 trap 'rm -rf -- "$tmp"' EXIT
 cp -- "$1" "$tmp/sing-box.tar.gz"
@@ -21,7 +24,7 @@ for package in bash iproute2 procps tcpdump python3; do
         missing+=("$package")
     fi
 done
-if (( ${#missing[@]} )); then
+if ((${#missing[@]})); then
     apt-get update -o APT::Update::Error-Mode=any
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends "${missing[@]}"
 fi

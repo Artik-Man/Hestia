@@ -1,0 +1,5 @@
+{"at_ns": 1793780327183286534, "phase": "gate", "fresh_domain": "gate-821e486390177c10.fi.lab.test", "fake": "198.18.0.6"}
+{"at_ns": 1793780331192156603, "phase": "gate", "domain": "fi.lab.test", "fake": "198.18.0.3", "proto": "udp", "expected_peer": null, "token": "gate-udp-215a597366de9e41", "source_port": 24101, "outcome": "blocked", "error": "timed out"}
+{"at_ns": 1793780331192331270, "phase": "gate", "domain": "fi.lab.test", "fake": "198.18.0.3", "proto": "tcp", "expected_peer": null, "token": "gate-tcp-56e177a60efe9fca", "source_port": 24100, "outcome": "blocked", "error": "timed out"}
+{"at_ns": 1793780331192489938, "phase": "gate", "domain": "gate-821e486390177c10.fi.lab.test", "fake": "198.18.0.6", "proto": "udp", "expected_peer": null, "token": "gate-udp-8fcdecc982b32d1d", "source_port": 24103, "outcome": "blocked", "error": "timed out"}
+{"at_ns": 1793780331192412979, "phase": "gate", "domain": "gate-821e486390177c10.fi.lab.test", "fake": "198.18.0.6", "proto": "tcp", "expected_peer": null, "token": "gate-tcp-cdb2a98a72555350", "source_port": 24102, "outcome": "blocked", "error": "timed out"}

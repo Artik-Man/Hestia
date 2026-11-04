@@ -1,0 +1,16 @@
+Started hestia-svc-WjIIkf.service - Hestia connection group controller.
+{"time":"2026-11-04T08:24:27.763855642Z","domain":"","group":"russia","exit":"ru","reason":"availability_snapshot","outcome":"forward","selector_target":"ru"}
+{"time":"2026-11-04T08:24:27.764077191Z","domain":"","group":"finland","exit":"fi1-out","reason":"availability_snapshot","outcome":"forward","selector_target":"fi1-out"}
+{"time":"2026-11-04T08:24:28.167069297Z","domain":"","group":"finland","exit":"fi2-out","reason":"availability_snapshot","outcome":"forward","selector_target":"fi2-out"}
+invalid routing configuration
+{"time":"2026-11-04T08:24:28.967828543Z","domain":"","group":"finland","reason":"availability_snapshot","outcome":"block_no_available_exit","selector_target":"deny"}
+{"time":"2026-11-04T08:24:37.968677786Z","domain":"","group":"finland","exit":"fi2-out","reason":"availability_snapshot","outcome":"forward","selector_target":"fi2-out"}
+Stopping hestia-svc-WjIIkf.service - Hestia connection group controller...
+hestia-svc-WjIIkf.service: Deactivated successfully.
+Stopped hestia-svc-WjIIkf.service - Hestia connection group controller.
+Started hestia-svc-WjIIkf.service - Hestia connection group controller.
+{"time":"2026-11-04T08:24:38.383117765Z","domain":"","group":"russia","exit":"ru","reason":"availability_snapshot","outcome":"forward","selector_target":"ru"}
+{"time":"2026-11-04T08:24:38.383439692Z","domain":"","group":"finland","exit":"fi1-out","reason":"availability_snapshot","outcome":"forward","selector_target":"fi1-out"}
+Stopping hestia-svc-WjIIkf.service - Hestia connection group controller...
+hestia-svc-WjIIkf.service: Deactivated successfully.
+Stopped hestia-svc-WjIIkf.service - Hestia connection group controller.

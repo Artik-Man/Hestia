@@ -1,0 +1,7 @@
+initial 1608 fi1-out ru
+failover 1608 fi2-out ru
+invalid 1608 fi2-out ru
+outage 1608 deny ru
+gate 1608 deny ru
+recovery 1608 fi2-out ru
+restart 1963 fi1-out ru
