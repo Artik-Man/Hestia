@@ -1,0 +1,39 @@
+{
+  "log": { "level": "debug", "timestamp": true },
+  "dns": {
+    "servers": [
+      { "type": "fakeip", "tag": "virtual", "inet4_range": "198.18.0.0/15" },
+      {
+        "type": "hosts",
+        "tag": "upstream",
+        "predefined": {
+          "ru.lab.test": "203.0.113.77",
+          "fi.lab.test": "203.0.113.77"
+        }
+      }
+    ],
+    "rules": [
+      { "inbound": "lan-tun", "domain_suffix": "lab.test", "query_type": "A", "action": "route", "server": "virtual" }
+    ],
+    "final": "upstream"
+  },
+  "inbounds": [
+    {
+      "type": "tun", "tag": "lan-tun", "interface_name": "hestia0",
+      "address": "172.19.0.1/30", "auto_route": false, "stack": "system"
+    }
+  ],
+  "outbounds": [
+    { "type": "direct", "tag": "ru", "bind_interface": "ru0", "domain_resolver": "upstream" },
+    { "type": "direct", "tag": "fi", "bind_interface": "fi0", "domain_resolver": "upstream" }
+  ],
+  "route": {
+    "default_domain_resolver": "upstream",
+    "rules": [
+      { "port": 53, "action": "hijack-dns" },
+      { "domain": "ru.lab.test", "action": "route", "outbound": "ru" },
+      { "domain": "fi.lab.test", "action": "route", "outbound": "fi" },
+      { "action": "reject" }
+    ]
+  }
+}

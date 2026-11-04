@@ -1,0 +1,63 @@
++0300 2026-11-04 09:57:55 [36mINFO[0m inbound/tun[lan-tun]: started at hestia0
++0300 2026-11-04 09:57:55 [31mERROR[0m network: missing default interface
++0300 2026-11-04 09:57:55 [36mINFO[0m sing-box started (0.01s)
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;155m61165707[0m 0ms] router: pre-match[0] port=53 => hijack-dns
++0300 2026-11-04 09:57:56 [36mINFO[0m [[38;5;120m2228760680[0m 0ms] inbound/tun[lan-tun]: inbound DNS packet from 10.88.0.2:56701
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;120m2228760680[0m 0ms] dns: exchange ru.lab.test. IN A
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;120m2228760680[0m 0ms] dns: match[0] inbound=lan-tun query_type=A domain_suffix=lab.test => route(virtual)
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;120m2228760680[0m 0ms] dns: exchanged ru.lab.test NOERROR 600
++0300 2026-11-04 09:57:56 [36mINFO[0m [[38;5;120m2228760680[0m 0ms] dns: exchanged A ru.lab.test. 600 IN A 198.18.0.2
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;203m2158568891[0m 0ms] router: pre-match[0] port=53 => hijack-dns
++0300 2026-11-04 09:57:56 [36mINFO[0m [[38;5;74m1021410362[0m 0ms] inbound/tun[lan-tun]: inbound DNS packet from 10.88.0.2:38416
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;74m1021410362[0m 0ms] dns: exchange fi.lab.test. IN A
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;74m1021410362[0m 0ms] dns: match[0] inbound=lan-tun query_type=A domain_suffix=lab.test => route(virtual)
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;74m1021410362[0m 0ms] dns: exchanged fi.lab.test NOERROR 600
++0300 2026-11-04 09:57:56 [36mINFO[0m [[38;5;74m1021410362[0m 0ms] dns: exchanged A fi.lab.test. 600 IN A 198.18.0.3
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;152m3094237064[0m 0ms] router: found fakeip domain: ru.lab.test
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;152m3094237064[0m 0ms] router: pre-match[1] domain=ru.lab.test => route(ru)
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;45m3712125725[0m 0ms] router: found fakeip domain: ru.lab.test
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;45m3712125725[0m 0ms] router: pre-match[1] domain=ru.lab.test => route(ru)
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;112m509088352[0m 0ms] router: found fakeip domain: fi.lab.test
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;112m509088352[0m 0ms] router: pre-match[2] domain=fi.lab.test => route(fi)
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;192m2014942503[0m 0ms] router: found fakeip domain: fi.lab.test
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;192m2014942503[0m 0ms] router: pre-match[2] domain=fi.lab.test => route(fi)
++0300 2026-11-04 09:57:56 [36mINFO[0m [[38;5;75m3697014587[0m 0ms] inbound/tun[lan-tun]: inbound packet connection from 10.88.0.2:55568
++0300 2026-11-04 09:57:56 [36mINFO[0m [[38;5;75m3697014587[0m 0ms] inbound/tun[lan-tun]: inbound packet connection to 198.18.0.3:19091
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;75m3697014587[0m 0ms] router: found fakeip domain: fi.lab.test
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;75m3697014587[0m 0ms] router: match[2] domain=fi.lab.test => route(fi)
++0300 2026-11-04 09:57:56 [36mINFO[0m [[38;5;75m3697014587[0m 0ms] outbound/direct[fi]: outbound packet connection
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;75m3697014587[0m 0ms] dns: lookup domain fi.lab.test
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;75m3697014587[0m 0ms] dns: exchanged fi.lab.test NOERROR 0
++0300 2026-11-04 09:57:56 [36mINFO[0m [[38;5;192m2859985328[0m 0ms] inbound/tun[lan-tun]: inbound packet connection from 10.88.0.2:53928
++0300 2026-11-04 09:57:56 [36mINFO[0m [[38;5;192m2859985328[0m 0ms] inbound/tun[lan-tun]: inbound packet connection to 198.18.0.2:19091
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;192m2859985328[0m 0ms] router: found fakeip domain: ru.lab.test
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;192m2859985328[0m 0ms] router: match[1] domain=ru.lab.test => route(ru)
++0300 2026-11-04 09:57:56 [36mINFO[0m [[38;5;192m2859985328[0m 0ms] outbound/direct[ru]: outbound packet connection
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;192m2859985328[0m 0ms] dns: lookup domain ru.lab.test
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;192m2859985328[0m 0ms] dns: exchanged ru.lab.test NOERROR 0
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;75m3697014587[0m 0ms] dns: exchanged fi.lab.test NOERROR 600
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;75m3697014587[0m 0ms] dns: exchanged A fi.lab.test. 600 IN A 203.0.113.77
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;75m3697014587[0m 0ms] dns: lookup succeed for fi.lab.test: 203.0.113.77
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;192m2859985328[0m 0ms] dns: exchanged ru.lab.test NOERROR 600
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;192m2859985328[0m 0ms] dns: exchanged A ru.lab.test. 600 IN A 203.0.113.77
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;192m2859985328[0m 0ms] dns: lookup succeed for ru.lab.test: 203.0.113.77
++0300 2026-11-04 09:57:56 [36mINFO[0m [[38;5;76m4213113404[0m 0ms] inbound/tun[lan-tun]: inbound connection from 10.88.0.2:37184
++0300 2026-11-04 09:57:56 [36mINFO[0m [[38;5;76m4213113404[0m 0ms] inbound/tun[lan-tun]: inbound connection to 198.18.0.3:19091
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;76m4213113404[0m 0ms] router: found fakeip domain: fi.lab.test
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;76m4213113404[0m 0ms] router: match[2] domain=fi.lab.test => route(fi)
++0300 2026-11-04 09:57:56 [36mINFO[0m [[38;5;76m4213113404[0m 0ms] outbound/direct[fi]: outbound connection to fi.lab.test:19091
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;76m4213113404[0m 0ms] dns: lookup domain fi.lab.test
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;76m4213113404[0m 0ms] dns: exchanged fi.lab.test NOERROR 0
++0300 2026-11-04 09:57:56 [36mINFO[0m [[38;5;189m1723047597[0m 0ms] inbound/tun[lan-tun]: inbound connection from 10.88.0.2:33614
++0300 2026-11-04 09:57:56 [36mINFO[0m [[38;5;189m1723047597[0m 0ms] inbound/tun[lan-tun]: inbound connection to 198.18.0.2:19091
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;189m1723047597[0m 0ms] router: found fakeip domain: ru.lab.test
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;189m1723047597[0m 0ms] router: match[1] domain=ru.lab.test => route(ru)
++0300 2026-11-04 09:57:56 [36mINFO[0m [[38;5;189m1723047597[0m 0ms] outbound/direct[ru]: outbound connection to ru.lab.test:19091
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;189m1723047597[0m 0ms] dns: lookup domain ru.lab.test
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;189m1723047597[0m 0ms] dns: exchanged ru.lab.test NOERROR 0
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;76m4213113404[0m 0ms] dns: lookup succeed for fi.lab.test: 203.0.113.77
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;189m1723047597[0m 0ms] dns: lookup succeed for ru.lab.test: 203.0.113.77
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;76m4213113404[0m 1ms] connection: connection download finished
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;76m4213113404[0m 1ms] connection: connection upload finished
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;189m1723047597[0m 1ms] connection: connection download finished
++0300 2026-11-04 09:57:56 [37mDEBUG[0m [[38;5;189m1723047597[0m 1ms] connection: connection upload finished
