@@ -1,0 +1,4 @@
+engine-persist: engine/cache PID+ticks ['3229 95747', '3249 95756'] -> ['3273 96613', '3249 95756']; old {'first.only-fi.lab.test': '198.18.0.2', 'hot.lab.test': '198.18.0.3'}; fresh {'new-control.lab.test': '198.18.0.4', 'hot.lab.test': '198.18.0.3'}
+TTL compared to actual source expiries: [('first.only-fi.lab.test', 'initial', 28, 28.99, '203.0.113.22'), ('first.only-fi.lab.test', 'frequent', 28, 28.98, '203.0.113.22'), ('hot.lab.test', 'initial', 28, 28.99, '203.0.113.22'), ('hot.lab.test', 'frequent', 28, 28.99, '203.0.113.22'), ('new-control.lab.test', 'reissued', 13, 13.98, '203.0.113.33'), ('hot.lab.test', 'reissued', 12, 12.84, '203.0.113.11'), ('hot.lab.test', 'after-ttl', 13, 13.99, '203.0.113.33')]
+20 tagged new TCP/UDP flows checked on LAN and both uplinks
+PASS explicit FI isolated, permitted RU verified before and after actual expiry

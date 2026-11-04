@@ -15,7 +15,9 @@
       type="button"
       class="refresh"
       (click)="state.reload()"
-      [disabled]="current.kind === 'loading'"
+      [disabled]="
+        current.kind === 'loading' || binding.pending() || order.pending()
+      "
     >
       <svg
         viewBox="0 0 24 24"
@@ -39,6 +41,16 @@
     <p class="lede">{{ page().description }}</p>
   }
 </header>
+@if (binding.result(); as outcome) {
+  @if (
+    selection && selection.kind === "list" && selection.id === outcome.listId
+  ) {
+    <p class="notice" role="status">{{ outcome.text }}</p>
+  }
+}
+@if (page().path === "groups" && !selection && order.notice()) {
+  <p class="notice" role="status">{{ order.notice() }}</p>
+}
 @switch (current.kind) {
   @case ("loading") {
     <p class="notice" role="status">Загружаем конфигурацию…</p>
@@ -54,6 +66,8 @@
       <hestia-details [selection]="selection" [snapshot]="current.snapshot" />
     } @else if (page().path === "connections") {
       <hestia-connections [groups]="current.snapshot.groups" />
+    } @else if (page().path === "domain-lists") {
+      <hestia-domain-lists [lists]="current.snapshot.lists" />
     } @else {
       <hestia-groups [snapshot]="current.snapshot" />
     }

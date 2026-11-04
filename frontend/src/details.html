@@ -29,10 +29,9 @@
       <ul class="detail-rows">
         @for (list of item.lists; track list.id) {
           <li>
-            <a
-              routerLink="/groups-and-rules"
-              [queryParams]="{ list: list.id }"
-              >{{ list.id }}</a
+            <a routerLink="/domain-lists" [queryParams]="{ list: list.id }">{{
+              list.id
+            }}</a
             ><span class="state" [class.on]="list.enabled">{{
               list.enabled ? "Включён" : "Выключен"
             }}</span>
@@ -42,6 +41,7 @@
         }
       </ul>
     </section>
+    <hestia-groups-removal [group]="item.group" [lists]="item.lists" />
   }
   @case ("list") {
     <section>
@@ -51,7 +51,7 @@
         <dd>
           @if (item.list.group) {
             <a
-              routerLink="/groups-and-rules"
+              routerLink="/groups"
               [queryParams]="{ group: item.list.group }"
               >{{ item.list.group }}</a
             >
@@ -79,6 +79,8 @@
         }
       </ul>
     </section>
+    <hestia-binding [list]="item.list" [groups]="snapshot().groups" />
+    <hestia-masks-draft [list]="item.list" />
   }
   @case ("exit") {
     <section>
@@ -86,11 +88,9 @@
       <dl class="facts">
         <dt>Группа</dt>
         <dd>
-          <a
-            routerLink="/groups-and-rules"
-            [queryParams]="{ group: item.group.id }"
-            >{{ item.group.id }}</a
-          >
+          <a routerLink="/groups" [queryParams]="{ group: item.group.id }">{{
+            item.group.id
+          }}</a>
         </dd>
         <dt>Приоритет в группе</dt>
         <dd>{{ item.priority }}</dd>
@@ -103,6 +103,21 @@
         </dd>
       </dl>
     </section>
+    @if (editingExit() === item.exit.id) {
+      <hestia-profile-draft
+        [groups]="snapshot().groups"
+        [exit]="item.exit.id"
+        (closed)="editingExit.set(null)"
+      />
+    } @else {
+      <button
+        class="refresh"
+        type="button"
+        (click)="editingExit.set(item.exit.id)"
+      >
+        Подготовить изменение профиля · черновик
+      </button>
+    }
   }
   @case ("missing") {
     <p class="notice" role="status">

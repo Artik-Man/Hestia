@@ -1,0 +1,8 @@
+{"wall": 1793794999202986319, "ns": 911056127407, "phase": "initial", "name": "first.only-fi.lab.test", "tx": 14074, "start": 1793794999183634969, "code": 0, "fake": "198.18.0.2", "ttl": 28}
+{"wall": 1793794999203832984, "ns": 911056971988, "phase": "frequent", "name": "first.only-fi.lab.test", "tx": 16930, "start": 1793794999203094246, "code": 0, "fake": "198.18.0.2", "ttl": 28}
+{"wall": 1793794999219125445, "ns": 911072264616, "phase": "initial", "name": "hot.lab.test", "tx": 3255, "start": 1793794999203874529, "code": 0, "fake": "198.18.0.3", "ttl": 28}
+{"wall": 1793794999219963442, "ns": 911073102488, "phase": "frequent", "name": "hot.lab.test", "tx": 57252, "start": 1793794999219215037, "code": 0, "fake": "198.18.0.3", "ttl": 28}
+{"wall": 1793795008536991861, "ns": 920390130990, "phase": "after-denied", "name": "first.only-fi.lab.test", "tx": 50360, "start": 1793795008535648734, "code": 2, "fake": null, "ttl": null}
+{"wall": 1793795008613040500, "ns": 920466181046, "phase": "reissued", "name": "new-control.lab.test", "tx": 2072, "start": 1793795008537078953, "code": 0, "fake": "198.18.0.4", "ttl": 13}
+{"wall": 1793795008614527974, "ns": 920467667103, "phase": "reissued", "name": "hot.lab.test", "tx": 1533, "start": 1793795008613191222, "code": 0, "fake": "198.18.0.3", "ttl": 13}
+{"wall": 1793795022016697335, "ns": 933869836423, "phase": "after-ttl", "name": "hot.lab.test", "tx": 33943, "start": 1793795022015379545, "code": 0, "fake": "198.18.0.3", "ttl": 13}

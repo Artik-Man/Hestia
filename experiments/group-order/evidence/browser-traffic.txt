@@ -1,0 +1,6 @@
+confirmed order=[{"id": "group-beta", "exits": ["exit-beta"]}, {"id": "group-alpha", "exits": ["exit-reserve", "exit-alpha"]}] hashes={"profile-backend.sha256": "87eada84a6c931354078a3fc53e8f2528bb8a672a95ad91fca65d3d26fccd9b6", "profile-source.sha256": "637cf666379a65d60bf30f3616df694a54589a4dec7e2dd988faacab8b5bf563", "profile.json": "1061bef47c2fb312d4d7c245f3cae401b69c82292fb2ed78862b3374bf6b96ad", "sing-box.json": "bf966b533533f4932647a92b1cbbe51b88cf02081649f5ae162e8520a1b394d4", "snapshot.json": "382fa5d95907c5375e895ef323d231a4a412c0c25acbb51b822c13f4d8396a3c"}
+TCP browser.default.lab.test -> beta
+TCP browser.tie.lab.test -> beta
+TCP browser.alpha.lab.test -> reserve
+TCP browser.beta.lab.test -> beta
+PASS

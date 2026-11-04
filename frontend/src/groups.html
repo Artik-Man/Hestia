@@ -1,101 +1,143 @@
 <section aria-labelledby="groups-heading">
-  <div class="section-heading">
-    <h2 id="groups-heading">Группы подключений</h2>
-    <span class="count">{{ snapshot().groups.length }}</span>
-  </div>
-  <p class="hint">Выходы перечислены в порядке приоритета.</p>
-  <div class="groups">
-    @for (group of snapshot().groups; track group.id) {
-      <article class="group">
-        <header class="card-head">
+  <header class="order-head">
+    <div>
+      <div class="section-heading">
+        <h2 id="groups-heading">Порядок групп</h2>
+        <span class="count">{{ order.draft().order.length }}</span
+        ><span class="badge">{{
+          order.dirty() ? "Есть несохранённые изменения" : "Порядок шлюза"
+        }}</span>
+      </div>
+      <p class="hint">
+        Первая группа используется по умолчанию. Перетаскивайте группы и выходы
+        за ручки. Для перемещения с клавиатуры используйте стрелки ↑ и ↓ на
+        ручке.
+      </p>
+    </div>
+  </header>
+  <ol
+    cdkDropList
+    cdkDropListLockAxis="y"
+    [cdkDropListDisabled]="order.pending() || order.draft().changedSource"
+    (cdkDropListDropped)="order.move($event.previousIndex, $event.currentIndex)"
+    class="order-list"
+    aria-label="Группы по приоритету"
+  >
+    @for (group of order.draft().order; track group.id; let i = $index) {
+      <li cdkDrag cdkDragLockAxis="y" class="order-group">
+        <header class="group-line">
+          <button
+            type="button"
+            cdkDragHandle
+            class="handle"
+            [disabled]="order.pending() || order.draft().changedSource"
+            aria-describedby="sort-help"
+            [attr.aria-label]="'Переместить группу ' + group.id"
+            (keydown)="keyboardMove($event, i)"
+          >
+            <span aria-hidden="true">⠿</span>
+          </button>
+          <span class="ordinal">{{ i + 1 }}</span>
           <h3>
-            <a
-              routerLink="/groups-and-rules"
-              [queryParams]="{ group: group.id }"
-              >{{ group.id }}</a
-            >
+            <a routerLink="/groups" [queryParams]="{ group: group.id }">{{
+              group.id
+            }}</a>
           </h3>
-          @if (group.isDefault) {
-            <span class="default">По умолчанию</span>
+          @if ($first) {
+            <span class="default">{{
+              order.dirty() ? "По умолчанию после сохранения" : "По умолчанию"
+            }}</span>
           }
         </header>
-        <ol class="exits">
-          @for (exit of group.exits; track exit.id; let i = $index) {
-            <li>
-              <span class="ordinal" aria-hidden="true">{{ i + 1 }}</span
-              ><strong>{{ exit.id }}</strong
-              ><span class="health" [class.up]="exit.available"
+        <ol
+          cdkDropList
+          cdkDropListLockAxis="y"
+          [cdkDropListDisabled]="order.pending() || order.draft().changedSource"
+          (cdkDropListDropped)="
+            order.move($event.previousIndex, $event.currentIndex, group.id)
+          "
+          class="order-exits"
+          [attr.aria-label]="'Выходы группы ' + group.id"
+        >
+          @for (exit of group.exits; track exit; let j = $index) {
+            <li cdkDrag cdkDragLockAxis="y" class="exit-line">
+              <button
+                type="button"
+                cdkDragHandle
+                class="handle"
+                [disabled]="order.pending() || order.draft().changedSource"
+                aria-describedby="sort-help"
+                [attr.aria-label]="'Переместить выход ' + exit"
+                (keydown)="keyboardMove($event, j, group.id)"
+              >
+                <span aria-hidden="true">⠿</span>
+              </button>
+              <span class="ordinal">{{ j + 1 }}</span
+              ><strong>{{ exit }}</strong
+              ><span class="health" [class.up]="health().get(exit)"
                 ><span class="dot"></span
-                >{{ exit.available ? "Доступен" : "Недоступен" }}</span
+                >{{
+                  !health().has(exit)
+                    ? "Нет в снимке"
+                    : health().get(exit)
+                      ? "Доступен"
+                      : "Недоступен"
+                }}</span
               >
             </li>
           } @empty {
-            <li class="muted">Нет настроенных выходов</li>
+            <li class="empty">Нет настроенных выходов</li>
           }
         </ol>
-      </article>
+      </li>
     } @empty {
-      <p class="notice">Нет настроенных групп</p>
+      <li class="empty">Нет настроенных групп</li>
     }
-  </div>
-</section>
-<section aria-labelledby="lists-heading">
-  <div class="section-heading">
-    <h2 id="lists-heading">Доменные списки</h2>
-    <span class="count">{{ snapshot().lists.length }}</span>
-  </div>
-  @if (snapshot().lists.length) {
-    <div class="list-wrap">
-      <table>
-        <caption class="sr-only">
-          Доменные списки, их маски, группы и состояние
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col">Список и маски</th>
-            <th scope="col">Группа</th>
-            <th scope="col">Состояние</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (list of snapshot().lists; track list.id) {
-            <tr>
-              <th scope="row">
-                <a
-                  class="list-id"
-                  routerLink="/groups-and-rules"
-                  [queryParams]="{ list: list.id }"
-                  >{{ list.id }}</a
-                ><span class="masks">
-                  @for (mask of list.masks; track $index) {
-                    <code>{{ mask }}</code>
-                  } @empty {
-                    <span class="muted">Нет масок</span>
-                  }
-                </span>
-              </th>
-              <td>
-                @if (list.group) {
-                  <a
-                    routerLink="/groups-and-rules"
-                    [queryParams]="{ group: list.group }"
-                    >{{ list.group }}</a
-                  >
-                } @else {
-                  Группа не назначена
-                }
-              </td>
-              <td>
-                <span class="state" [class.on]="list.enabled">{{
-                  list.enabled ? "Включён" : "Выключен"
-                }}</span>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  } @else {
-    <p class="notice">Нет доменных списков</p>
+  </ol>
+  @if (order.dirty() && snapshot().groups.length) {
+    <p class="hint">
+      Сейчас на шлюзе по умолчанию:
+      <strong>{{ snapshot().groups[0].id }}</strong
+      >.
+    </p>
   }
+  @if (order.draft().changedSource) {
+    <p class="notice" role="status">
+      Исходный порядок на шлюзе изменился. Чтобы начать заново, загрузите
+      актуальный порядок. Это сбросит несохранённые изменения.
+    </p>
+  }
+  <p id="sort-help" class="sr-only">
+    Стрелки вверх и вниз меняют позицию. Выход перемещается только внутри своей
+    группы.
+  </p>
+  <p class="note">
+    «Сохранить» применит порядок групп и выходов на шлюзе. Текущие соединения
+    могут прерваться, а новые — пойти по выбранному маршруту до подтверждения.
+    Откат не отменяет уже переданные пакеты.
+  </p>
+  <div class="actions">
+    <button
+      class="save"
+      type="button"
+      [disabled]="
+        !order.dirty() || order.pending() || order.draft().changedSource
+      "
+      (click)="order.save()"
+    >
+      Сохранить</button
+    ><button
+      class="reset"
+      type="button"
+      [disabled]="!order.dirty() || order.pending()"
+      (click)="order.reset()"
+    >
+      {{
+        order.draft().changedSource
+          ? "Загрузить актуальный порядок"
+          : "Отменить изменения"
+      }}
+    </button>
+  </div>
+  <p class="sr-only" role="status">{{ order.movement() }}</p>
 </section>

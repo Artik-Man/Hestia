@@ -467,3 +467,28 @@ h1 {
 section > .default {
   margin-bottom: 12px;
 }
+
+main :where(button, input, select, textarea) {
+  font: inherit;
+}
+main
+  :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  border: 1px solid #a6b9b4;
+  border-radius: 6px;
+  background: white;
+  color: inherit;
+  padding: 0.55rem 0.7rem;
+}
+main :where(button, input, select, textarea):focus-visible {
+  outline: 3px solid #168164;
+  outline-offset: 2px;
+}
+main :where(button:not(:disabled), select:not(:disabled)) {
+  cursor: pointer;
+}
+main :where(fieldset) {
+  min-width: 0;
+}

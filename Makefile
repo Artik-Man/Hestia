@@ -26,12 +26,16 @@ test-installer:
 	bash -n deploy/install.sh
 	bash -n deploy/build-installer.sh
 
-.PHONY: test-installer
+.PHONY: test-installer test-experiments
+test-experiments:
+	python3 -B -m unittest discover -s tools -p test_run_experiment_tests.py
+	python3 -B tools/run_experiment_tests.py
+
 .PHONY: docs-check
 docs-check:
 	SHFMT=$(SHFMT) python3 tools/check_docs.py
 
-check: fmt-check lint test test-installer docs-check
+check: fmt-check lint test test-installer test-experiments docs-check
 
 .PHONY: generate-api
 generate-api:

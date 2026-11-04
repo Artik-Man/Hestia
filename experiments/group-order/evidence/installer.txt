@@ -1,0 +1,4 @@
+/tmp/tmp.gf7OKHkRuE/sing.tgz: OK
+Running installation smoke check (six-second total timeout)...
+PASS: routing services and binding watch active, local API owner, loaded backend credential, controller confirmation and selector targets
+Hestia installed; smoke check passed in 1 s.

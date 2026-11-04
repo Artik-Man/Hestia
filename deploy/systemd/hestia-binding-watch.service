@@ -1,0 +1,9 @@
+[Unit]
+Description=Restore routing after an interrupted Hestia binding transaction
+Requires=hestia-binding-recovery.service
+After=hestia-binding-recovery.service
+
+[Service]
+Type=oneshot
+TimeoutStartSec=320s
+ExecStart=/usr/local/bin/hestia -watch-pending-binding

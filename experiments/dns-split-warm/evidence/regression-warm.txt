@@ -1,0 +1,6 @@
+PASS three QR responses and three UPDATE messages on LAN caused zero external DNS queries or recorded visits
+PASS background requests over entire run {('fi', 'hot.lab.test'): 7, ('fi', 'hot.only-fi.lab.test'): 7, ('ru', 'hot.lab.test'): 7}
+PASS warm: LAN DNS hot=5, explicit=4, rare=1; 8 real FakeIP TCP/UDP flows
+PASS proactive new-generation responses before user hit: {('ru', 'hot.lab.test'): 4, ('fi', 'hot.lab.test'): 5, ('fi', 'hot.only-fi.lab.test'): 5}
+PASS rare DNS asked once per eligible upstream; data-only flows never increased visits
+PASS no wire queries throughout two multi-interval quiet periods; one later visit did not restart background work

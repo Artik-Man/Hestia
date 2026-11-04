@@ -1,0 +1,14 @@
+[Unit]
+Description=Watch for interrupted Hestia binding transactions
+# Start after boot recovery, outside the early paths.target startup ordering.
+DefaultDependencies=no
+Requires=hestia-binding-recovery.service
+After=hestia-binding-recovery.service
+Conflicts=shutdown.target
+Before=shutdown.target
+
+[Path]
+PathExists=/etc/hestia/.binding-pending
+
+[Install]
+WantedBy=multi-user.target

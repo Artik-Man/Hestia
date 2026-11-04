@@ -1,10 +1,14 @@
 /** Each implemented page supplies its navigation label, heading, and routing metadata. */
 export const pages = [
   {
-    path: "groups-and-rules",
-    label: "Группы и правила",
-    description:
-      "Выходы групп и привязки доменных списков по конфигурации шлюза.",
+    path: "groups",
+    label: "Группы подключений",
+    description: "Группы и порядок выхода через настроенные подключения.",
+  },
+  {
+    path: "domain-lists",
+    label: "Доменные списки",
+    description: "Маски доменов и привязки списков к группам подключений.",
   },
   {
     path: "connections",
@@ -16,3 +20,30 @@ export const pages = [
 
 /** A route supplies one of the navigation entries declared by the application. */
 export type Page = (typeof pages)[number];
+
+/** Additional sections are loaded on first navigation, keeping the startup bundle small. */
+export const featurePages = [
+  {
+    path: "country-map",
+    label: "Карта стран",
+    loadComponent: () => import("./geo").then((m) => m.GeoScreen),
+  },
+  {
+    path: "traffic",
+    label: "Журнал трафика",
+    loadComponent: () => import("./traffic").then((m) => m.TrafficScreen),
+  },
+  {
+    path: "quality",
+    label: "Качество связи",
+    loadComponent: () => import("./quality").then((m) => m.QualityScreen),
+  },
+  {
+    path: "dns",
+    label: "DNS",
+    loadComponent: () => import("./dns").then((m) => m.DnsScreen),
+  },
+] as const;
+
+/** Ordered links displayed in the panel navigation. */
+export const navigationPages = [...pages, ...featurePages] as const;

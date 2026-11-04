@@ -1,0 +1,167 @@
+<header class="intro">
+  <p class="kicker"><span class="bar"></span>Маршрутизация</p>
+  <h1>Карта стран</h1>
+  <p class="lede">
+    Выбор группы по стране IP, когда доменные правила не сработали.
+  </p>
+</header>
+<p class="notice">
+  Действующая карта пока недоступна. Здесь можно составить черновик и проверить
+  приоритет правил. Изменения хранятся в памяти вкладки до перезагрузки.
+</p>
+@if (inventory.view().kind === "failed") {
+  <p class="notice failure" role="alert">
+    Не удалось загрузить группы.
+    <button type="button" (click)="inventory.reload()">
+      Повторить загрузку
+    </button>
+  </p>
+} @else if (inventory.view().kind === "loading") {
+  <p role="status">Загружаем группы…</p>
+}
+<section class="policy-card">
+  <h2>Назначения стран</h2>
+  <p class="hint">Правило отдельной страны имеет приоритет над блоками.</p>
+  <form (submit)="$event.preventDefault(); saveCountry()" class="fields">
+    <label
+      >Страна<select
+        [formControl]="country"
+        (change)="selectCountry(country.value)"
+      >
+        <option value="">Выберите страну</option>
+        @for (item of countries; track item.code) {
+          <option [value]="item.code">
+            {{ item.label }} ({{ item.code }})
+          </option>
+        }
+      </select></label
+    >
+    <label
+      >Группа страны<select [formControl]="countryGroup">
+        <option value="">Выберите группу</option>
+        @for (group of groups(); track group.id) {
+          <option [value]="group.id">{{ group.id }}</option>
+        }
+      </select></label
+    >
+    <button type="submit" [disabled]="!groups().length">
+      Внести в черновик
+    </button>
+  </form>
+  <p role="status">{{ countryMessage() }}</p>
+  <ul class="detail-rows">
+    @for (rule of map().countries; track rule.country) {
+      <li>
+        <span
+          ><b>{{ countryLabel(rule.country) }}</b> → {{ rule.group }}</span
+        ><button
+          type="button"
+          (click)="removeCountry(rule.country)"
+          [attr.aria-label]="'Удалить назначение ' + countryLabel(rule.country)"
+        >
+          Удалить
+        </button>
+      </li>
+    } @empty {
+      <li class="muted">В черновике нет назначений для отдельных стран.</li>
+    }
+  </ul>
+</section>
+<section class="policy-card">
+  <h2>Блоки стран</h2>
+  <p class="hint">
+    Если страна входит в несколько блоков, применяется первый в списке.
+  </p>
+  <ol class="detail-rows">
+    @for (block of map().blocks; track block.name; let i = $index) {
+      <li>
+        <div>
+          <b>{{ i + 1 }}. {{ block.name }}</b> → {{ block.group }}<br />{{
+            block.countries.join(
+              ",
+        "
+            )
+          }}
+        </div>
+        <div class="actions">
+          <button
+            type="button"
+            [disabled]="i === 0"
+            (click)="moveBlock(i, -1)"
+            [attr.aria-label]="'Поднять блок ' + block.name"
+          >
+            Выше</button
+          ><button
+            type="button"
+            [disabled]="i === map().blocks.length - 1"
+            (click)="moveBlock(i, 1)"
+            [attr.aria-label]="'Опустить блок ' + block.name"
+          >
+            Ниже</button
+          ><button type="button" (click)="editBlock(block)">Изменить</button
+          ><button type="button" (click)="removeBlock(block.name)">
+            Удалить
+          </button>
+        </div>
+      </li>
+    } @empty {
+      <li class="muted">В черновике нет блоков.</li>
+    }
+  </ol>
+  <form class="fields" (submit)="$event.preventDefault(); saveBlock()">
+    <label>Название блока<input [formControl]="blockName" /></label>
+    <label
+      >Коды стран<input [formControl]="blockCountries" placeholder="DE, FR, IT"
+    /></label>
+    <label
+      >Группа блока<select [formControl]="blockGroup">
+        <option value="">Выберите группу</option>
+        @for (group of groups(); track group.id) {
+          <option [value]="group.id">{{ group.id }}</option>
+        }
+      </select></label
+    >
+    <button type="submit" [disabled]="!groups().length">
+      {{ editingBlock() ? "Обновить блок" : "Добавить блок" }}
+    </button>
+    @if (editingBlock()) {
+      <button type="button" (click)="clearBlock()">Отменить изменение</button>
+    }
+  </form>
+  <p role="status">{{ blockMessage() }}</p>
+</section>
+<section class="policy-card">
+  <h2>Остальной мир</h2>
+  <label
+    >Группа для известных стран без совпадения<select
+      #world
+      [value]="map().world"
+      (change)="setWorld(world.value)"
+    >
+      <option value="">Группа по умолчанию</option>
+      @for (group of groups(); track group.id) {
+        <option [value]="group.id">{{ group.id }}</option>
+      }
+    </select></label
+  >
+  <p class="hint">Если страна неизвестна, применяется группа по умолчанию.</p>
+</section>
+<section class="policy-card">
+  <h2>Проверка черновика</h2>
+  <label
+    >Страна назначения<select
+      #sample
+      [value]="previewCountry()"
+      (change)="previewCountry.set(sample.value)"
+    >
+      <option value="">Страна не определена</option>
+      @for (item of countries; track item.code) {
+        <option [value]="item.code">{{ item.label }} ({{ item.code }})</option>
+      }
+    </select></label
+  >
+  <p class="result" aria-live="polite">{{ preview() }}</p>
+</section>
+<button type="button" class="refresh" (click)="reset()">
+  Сбросить черновик карты
+</button>

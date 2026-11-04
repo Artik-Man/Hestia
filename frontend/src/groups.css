@@ -1,0 +1,137 @@
+.order-head {
+  margin-bottom: 16px;
+}
+.badge {
+  font-size: 12px;
+  font-weight: 650;
+  color: #556761;
+  background: #e8ede9;
+  border-radius: 5px;
+  padding: 3px 7px;
+}
+.order-list,
+.order-exits {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.order-group {
+  background: white;
+  border: 1px solid #ccd8d4;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.group-line,
+.exit-line,
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.group-line {
+  background: #f1f6f3;
+  padding: 10px 14px;
+  flex-wrap: wrap;
+}
+.group-line h3,
+.exit-line strong {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.order-exits {
+  padding: 0 15px 0 36px;
+}
+.exit-line {
+  min-height: 44px;
+  border-top: 1px solid #e1e8e5;
+  background: white;
+}
+.exit-line:first-child {
+  border-top: 0;
+}
+.handle,
+.save,
+.reset {
+  font: inherit;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.handle {
+  border: 1px solid transparent;
+  background: transparent;
+  color: #516c62;
+  cursor: grab;
+  flex: none;
+  min-width: 32px;
+  min-height: 36px;
+  font-size: 22px;
+  touch-action: none;
+}
+.handle:hover {
+  background: #e3ece6;
+}
+.handle:active {
+  cursor: grabbing;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+button:focus-visible {
+  outline: 3px solid #168164;
+  outline-offset: 1px;
+}
+.empty,
+.note {
+  color: #4d655d;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.empty {
+  padding: 12px 0;
+}
+.note {
+  margin: 14px 0;
+}
+
+.actions {
+  flex-wrap: wrap;
+}
+.save,
+.reset {
+  min-height: 40px;
+  padding: 7px 14px;
+  border: 1px solid #aebfb8;
+  background: white;
+  color: #245644;
+}
+.save {
+  background: #215c48;
+  color: white;
+}
+.cdk-drag-placeholder {
+  opacity: 0.35;
+}
+.cdk-drag-preview {
+  box-sizing: border-box;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px #173e3029;
+}
+@media (max-width: 620px) {
+  .group-line,
+  .exit-line {
+    gap: 7px;
+  }
+  .order-exits {
+    padding-left: 14px;
+  }
+
+  .handle {
+    min-height: 36px;
+  }
+  .health {
+    font-size: 12px;
+  }
+}

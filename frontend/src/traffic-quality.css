@@ -1,0 +1,76 @@
+.filters,
+.settings {
+  display: flex;
+  align-items: end;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 14px 0;
+}
+label {
+  display: grid;
+  gap: 6px;
+  color: #435c56;
+  font-weight: 600;
+  font-size: 14px;
+  min-width: 0;
+}
+input,
+select {
+  height: 42px;
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #bdcec8;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font: inherit;
+  color: #182f37;
+  background: #fff;
+}
+input:focus-visible,
+select:focus-visible,
+summary:focus-visible {
+  outline: 3px solid #168164;
+  outline-offset: 2px;
+}
+.settings {
+  background: white;
+  border: 1px solid #d1dcda;
+  border-radius: 10px;
+  padding: 16px;
+  align-items: center;
+}
+.observation {
+  margin-top: 12px;
+  padding: 14px 18px;
+  background: white;
+  border: 1px solid #d1dcda;
+  border-radius: 10px;
+  overflow-wrap: anywhere;
+}
+.observation summary {
+  cursor: pointer;
+  min-height: 30px;
+}
+.notice p,
+h2 + .hint {
+  margin-top: 6px;
+}
+section > .refresh {
+  margin-top: 12px;
+}
+@media (max-width: 620px) {
+  .filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .filters label:first-child {
+    grid-column: 1/-1;
+  }
+  .filters button {
+    min-height: 42px;
+  }
+  .settings {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

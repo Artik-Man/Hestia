@@ -2,11 +2,14 @@
   "name": "hestia-panel",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "engines": {
     "node": "^22.22.3 || ^24.15.0 || >=26.0.0"
   },
   "scripts": {
     "build": "ng build",
+    "test": "node --test tests/*.test.mjs",
+    "test:browser": "node --test tests/browser/profile-controls.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint src --max-warnings 0",

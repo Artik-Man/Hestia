@@ -10,7 +10,7 @@ work=$(mktemp -d)
 trap 'rm -rf -- "$work"' EXIT
 export COPYFILE_DISABLE=1
 mkdir -p "$work/app/deploy/bootstrap" "$work/app/deploy/systemd/hestia.service.d"
-for name in install.sh profile.py smoke.py export-config.py bootstrap/snapshot.json bootstrap/sing-box.json systemd/hestia.service systemd/hestia-observe.service systemd/hestia-sing-box.service systemd/hestia.service.d/backend.conf; do
+for name in install.sh profile.py smoke.py export-config.py bootstrap/snapshot.json bootstrap/sing-box.json systemd/hestia.service systemd/hestia-binding-recovery.service systemd/hestia-binding-watch.path systemd/hestia-binding-watch.service systemd/hestia-binding.conf systemd/hestia-observe.service systemd/hestia-sing-box.service systemd/hestia.service.d/backend.conf; do
     cp "$repo/deploy/$name" "$work/app/deploy/$name"
 done
 cp "$1" "$work/app/controller"

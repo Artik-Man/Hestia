@@ -1,0 +1,63 @@
+.policy-card {
+  padding: 20px;
+  background: white;
+  border: 1px solid #d1dcda;
+  border-radius: 12px;
+}
+.policy-card h2 {
+  margin-bottom: 8px;
+}
+.fields,
+.actions {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 14px 0;
+}
+label {
+  display: grid;
+  gap: 6px;
+  max-width: 100%;
+  font-weight: 600;
+}
+input,
+select,
+button {
+  font: inherit;
+  color: inherit;
+  min-height: 40px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #b7c9c4;
+  background: #fff;
+  max-width: 100%;
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.detail-rows {
+  padding-inline: 12px;
+}
+.detail-rows li {
+  flex-wrap: wrap;
+  justify-content: space-between;
+  overflow-wrap: anywhere;
+}
+.actions {
+  margin: 0;
+}
+.result {
+  font-weight: 650;
+  margin-top: 12px;
+}
+:host > .refresh {
+  margin-top: 20px;
+}
+.intro h1 {
+  margin: 9px 0;
+}

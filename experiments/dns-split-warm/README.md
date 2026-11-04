@@ -31,3 +31,5 @@ sudo env SPLIT_WARM_GATEWAY="$PWD/experiments/dns-warm/before.py" \
 ```
 
 Для независимой проверки сохранённых пакетов выполните `python3 experiments/dns-split-warm/verify.py warm experiments/dns-split-warm/evidence/warm`. Проверены одиночные IPv4 IN/A и краткие интервалы на контролируемой ВМ. Открытые до смены политики сеансы и комбинации DNS/GeoIP за пределами приведённой карты в эти критерии не входят. [Настройки](evidence/warm/settings.json), [хеши](evidence/warm/code.sha256).
+
+На исправленном кэше также повторно прошёл [исходный тест частоты N/X/Y](evidence/regression-warm.txt), включая редкий домен и прекращение фоновых запросов после падения частоты.

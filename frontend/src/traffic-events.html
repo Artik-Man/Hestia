@@ -1,0 +1,104 @@
+@let rows = matches();
+@if (rows === null) {
+  <div class="notice">
+    <h3>События пока недоступны</h3>
+    <p>
+      Шлюз пока не передаёт в панель наблюдения за потоками. Фильтры задают
+      условия просмотра.
+    </p>
+  </div>
+} @else {
+  <p class="hint" role="status">
+    Событий по выбранным условиям: {{ rows.length }}
+  </p>
+  @for (event of rows; track event.id) {
+    <details class="observation">
+      <summary>
+        <strong>{{ event.domain || event.address }}</strong> ·
+        {{ event.protocol }} ·
+        <time>{{ event.time }}</time>
+      </summary>
+      <dl class="facts">
+        <dt>Поток</dt>
+        <dd>{{ event.id }}</dd>
+        <dt>Назначение</dt>
+        <dd>{{ event.address }} · порт {{ event.port }}</dd>
+        @if (event.fakeIP) {
+          <dt>FakeIP</dt>
+          <dd>{{ event.fakeIP }}</dd>
+        }
+        <dt>Группа</dt>
+        <dd>
+          <a routerLink="/groups" [queryParams]="{ group: event.group }">{{
+            event.group
+          }}</a>
+        </dd>
+        <dt>Причина выбора</dt>
+        <dd>{{ event.reason }}</dd>
+        <dt>Результат</dt>
+        <dd>
+          @switch (event.result.kind) {
+            @case ("observed") {
+              Подтверждён выход
+              <a
+                routerLink="/connections"
+                [queryParams]="{ exit: event.result.connection }"
+                >{{ event.result.connection }}</a
+              >
+              · {{ event.result.namespace }} /
+              {{ event.result.networkInterface }}
+            }
+            @case ("blocked") {
+              Заблокировано · {{ event.result.reason }}
+            }
+            @case ("unconfirmed") {
+              Выход не подтверждён
+            }
+          }
+        </dd>
+        <dt>Первый ответ потока</dt>
+        <dd>
+          {{
+            event.firstReplyMs === null
+              ? "Ответ не наблюдался"
+              : event.firstReplyMs + " мс"
+          }}
+        </dd>
+      </dl>
+      <h3>Связанный DNS-запрос</h3>
+      @if (event.dns; as dns) {
+        <p>
+          {{ dns.name }} · {{ dns.recordType }} · {{ dns.queryId }} · ответ
+          клиенту за {{ dns.responseTimeMs }} мс
+        </p>
+
+        @if (dns.clientAddresses.length) {
+          <p>Адреса клиентского ответа: {{ dns.clientAddresses.join(", ") }}</p>
+        }
+        <ul class="detail-rows">
+          @for (attempt of dns.attempts; track $index) {
+            <li>
+              <div>
+                <strong>{{ attempt.resolver }}</strong> · {{ attempt.group }} /
+                {{ attempt.connection }}<br />
+                {{ attempt.namespace }} / {{ attempt.networkInterface }} ·
+                {{ attempt.startedAt }} · {{ attempt.elapsedMs }} мс<br />
+                {{ attempt.result }} ·
+                {{ attempt.fromCache ? "Из кэша" : "Запрос к резолверу" }}
+                @for (answer of attempt.answers; track $index) {
+                  <br />{{ answer.address }} · TTL {{ answer.ttlSeconds }} с
+                }
+              </div>
+            </li>
+          } @empty {
+            <li>Подробности попыток отсутствуют</li>
+          }
+        </ul>
+      } @else {
+        <p>Связь с DNS-запросом не установлена.</p>
+      }
+    </details>
+  } @empty {
+    <p class="notice">За выбранный период подходящих записей нет.</p>
+  }
+}

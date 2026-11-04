@@ -1,0 +1,2 @@
+Physical mouse + keyboard changed draft; staying across navigation and snapshot refresh; no PUT before Save. Live Save PUT 200. Payload: {"expected":[{"id":"group-alpha","exits":["exit-alpha","exit-reserve"]},{"id":"group-beta","exits":["exit-beta"]}],"groups":[{"id":"group-beta","exits":["exit-beta"]},{"id":"group-alpha","exits":["exit-reserve","exit-alpha"]}]}
+PASS live gateway and browser on http://127.0.0.1:39438/main-YZH4SAE7.js

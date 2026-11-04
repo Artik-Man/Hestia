@@ -47,12 +47,14 @@ done
 [[ ${ID:-} == debian && $(dpkg --print-architecture) == arm64 && -d /run/systemd/system ]] ||
     die "requires Debian ARM64 running systemd as PID 1"
 exec 9>/run/hestia-install.lock
-flock -n 9 || die "another Hestia installation is running"
+flock -n 9 || die "another Hestia configuration update is running"
+[[ ! -e /etc/hestia/.binding-pending && ! -L /etc/hestia/.binding-pending ]] || die "recover the pending binding update before installing"
 work=$(mktemp -d)
 managed=()
 had_group=1
 transaction=0
 services=(hestia-sing-box.service hestia.service)
+managed_units=(hestia-binding-recovery.service hestia-binding-watch.path hestia-binding-watch.service "${services[@]}")
 declare -A enabled active
 # cleanup rolls back replaced files and service states after a failed transaction and removes temporary artifacts.
 cleanup() {
@@ -61,18 +63,23 @@ cleanup() {
     if ((rc != 0 && transaction)); then
         set +e
         echo "Installation failed; restoring previous Hestia files and service states." >&2
-        systemctl stop hestia.service hestia-sing-box.service >/dev/null 2>&1
-        systemctl disable hestia.service hestia-sing-box.service >/dev/null 2>&1
+        systemctl stop hestia.service hestia-sing-box.service hestia-binding-watch.path hestia-binding-watch.service hestia-binding-recovery.service >/dev/null 2>&1
+        systemctl disable hestia.service hestia-sing-box.service hestia-binding-watch.path >/dev/null 2>&1
         for ((i = ${#managed[@]} - 1; i >= 0; i--)); do
             file=${managed[i]}
             if [[ -e $work/backup-$i ]]; then cp -a --remove-destination "$work/backup-$i" "$file"; else rm -f -- "$file"; fi
         done
         systemctl daemon-reload
-        for unit in "${services[@]}"; do
+        for unit in "${managed_units[@]}"; do
             if [[ ${enabled[$unit]} == enabled ]]; then systemctl enable "$unit"; fi
-            if [[ ${active[$unit]} == active ]]; then systemctl start "$unit"; fi
+            # The path unit starts its one-shot worker; never wait for that worker under the installer lock.
+            if [[ ${active[$unit]} == active && $unit != hestia-binding-watch.service ]]; then systemctl start "$unit"; fi
         done
-        if ((had_group == 0)); then groupdel hestia-snapshot; fi
+        if ((had_group == 0)); then
+            chown root:root /run/hestia-install.lock
+            chmod 0600 /run/hestia-install.lock
+            groupdel hestia-snapshot
+        fi
     fi
     rm -rf -- "$work"
     exit "$rc"
@@ -131,7 +138,7 @@ check_directory() {
             die "non-root users can write destination directory: $dir"
     fi
 }
-for dir in /usr/local /usr/local/lib /usr/local/lib/hestia /usr/local/bin /etc/systemd/system /etc/systemd/system/hestia.service.d "$config"; do
+for dir in /usr/local /usr/local/lib /usr/local/lib/hestia /usr/local/bin /etc/systemd/system /etc/systemd/system/hestia.service.d /etc/tmpfiles.d "$config"; do
     check_directory "$dir"
 done
 for file in "$marker" "$config/snapshot.json" "$config/sing-box.json" "$config/profile.json" "$config/profile-backend.sha256" "$config/profile-source.sha256"; do
@@ -169,10 +176,10 @@ fi
 if ! "$backend" check -c "$stage/sing-box.json" >"$work/backend-check.log" 2>&1; then
     die "sing-box rejected the candidate config; check the supplied profile locally (details suppressed to protect credentials)"
 fi
-for unit in "${services[@]}"; do
+for unit in "${managed_units[@]}"; do
     enabled[$unit]=$(systemctl is-enabled "$unit" 2>/dev/null || :)
     active[$unit]=$(systemctl is-active "$unit" 2>/dev/null || :)
-    case ${enabled[$unit]} in enabled | disabled | not-found | '') ;; *) die "$unit has unsupported pre-existing enablement: ${enabled[$unit]}" ;; esac
+    case ${enabled[$unit]} in enabled | disabled | static | not-found | '') ;; *) die "$unit has unsupported pre-existing enablement: ${enabled[$unit]}" ;; esac
     if [[ ! -f $marker && $(systemctl show "$unit" -p FragmentPath --value) != "" ]]; then
         die "$unit already exists outside this installer; migrate it explicitly"
     fi
@@ -186,7 +193,7 @@ owned_socket() {
     [[ -f $marker && $pid != 0 && $sockets != *$'\n'* && $sockets == *"127.0.0.1:9090"* && $sockets == *"pid=$pid,"* ]]
 }
 owned_socket || die "port 9090 is occupied by another service"
-for file in /usr/local/bin/hestia /usr/local/lib/hestia/sing-box /usr/local/bin/hestia-export-config /usr/local/lib/hestia/profile.py /usr/local/lib/hestia/hestia-observe.service; do
+for file in /usr/local/bin/hestia /usr/local/lib/hestia/sing-box /usr/local/bin/hestia-export-config /usr/local/lib/hestia/profile.py /usr/local/lib/hestia/smoke.py /etc/tmpfiles.d/hestia-binding.conf /usr/local/lib/hestia/hestia-observe.service; do
     [[ -f $marker || ! -e $file ]] || die "$file exists outside this installer"
 done
 # replace backs up the destination, prepares a same-directory file with the requested permissions, then atomically renames it.
@@ -206,7 +213,9 @@ if ! getent group hestia-snapshot >/dev/null; then
     groupadd --system hestia-snapshot
     had_group=0
 fi
-for dir in /usr/local/bin /usr/local/lib/hestia /etc/systemd/system/hestia.service.d; do
+chown root:hestia-snapshot /run/hestia-install.lock
+chmod 0640 /run/hestia-install.lock
+for dir in /usr/local/bin /usr/local/lib/hestia /etc/systemd/system/hestia.service.d /etc/tmpfiles.d; do
     if [[ ! -d $dir ]]; then install -d -m 0755 "$dir"; fi
 done
 if [[ ! -d $config ]]; then install -d -m 0751 "$config"; fi
@@ -226,15 +235,18 @@ done
 replace "$work/hestia" /usr/local/bin/hestia 0755
 replace "$repo/deploy/export-config.py" /usr/local/bin/hestia-export-config 0755
 replace "$repo/deploy/profile.py" /usr/local/lib/hestia/profile.py 0644
+replace "$repo/deploy/smoke.py" /usr/local/lib/hestia/smoke.py 0644
+replace "$repo/deploy/systemd/hestia-binding.conf" /etc/tmpfiles.d/hestia-binding.conf 0644
 replace "$repo/deploy/systemd/hestia-observe.service" /usr/local/lib/hestia/hestia-observe.service 0644
 replace "$backend" /usr/local/lib/hestia/sing-box 0755
-for unit in "${services[@]}"; do replace "$repo/deploy/systemd/$unit" "/etc/systemd/system/$unit" 0644; done
+for unit in "${managed_units[@]}"; do replace "$repo/deploy/systemd/$unit" "/etc/systemd/system/$unit" 0644; done
 replace "$repo/deploy/systemd/hestia.service.d/backend.conf" /etc/systemd/system/hestia.service.d/backend.conf 0644
 echo 1 >"$work/marker"
 replace "$work/marker" "$marker" 0600
 systemctl daemon-reload
-systemctl enable "${services[@]}"
+systemctl enable hestia-binding-watch.path "${services[@]}"
 systemctl stop hestia.service
+systemctl restart hestia-binding-watch.path
 systemctl restart hestia-sing-box.service
 systemctl start hestia.service
 start=$SECONDS

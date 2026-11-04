@@ -1,0 +1,62 @@
+.intro h1 {
+  margin: 9px 0;
+}
+.dns-card {
+  padding: 20px;
+  background: white;
+  border: 1px solid #d1dcda;
+  border-radius: 12px;
+}
+.dns-card h2 {
+  margin-bottom: 12px;
+}
+.fields,
+.actions {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 14px 0;
+}
+label {
+  display: grid;
+  gap: 6px;
+  font-weight: 600;
+  margin-top: 12px;
+}
+input,
+button {
+  font: inherit;
+  color: inherit;
+  min-height: 40px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #b7c9c4;
+  background: #fff;
+  max-width: 100%;
+}
+input[type="number"] {
+  width: 10em;
+}
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+input[type="checkbox"] {
+  min-height: 0;
+  width: 18px;
+  height: 18px;
+}
+button {
+  cursor: pointer;
+}
+.hint {
+  margin-top: 8px;
+}
+
+.observations {
+  margin: 16px 0;
+  max-width: 100%;
+  overflow-x: auto;
+}

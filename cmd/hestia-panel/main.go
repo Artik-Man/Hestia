@@ -1,4 +1,4 @@
-// Command hestia-panel serves a local browser bundle and a read-only view of the controller snapshot.
+// Command hestia-panel serves the local panel and can apply list bindings on an installed gateway.
 package main
 
 import (
@@ -19,16 +19,48 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/Artik-Man/Hestia/internal/binding"
 	"github.com/Artik-Man/Hestia/internal/controller"
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humago"
 )
 
+const installedSnapshot = "/etc/hestia/snapshot.json"
+
+// sameSnapshotPath recognizes alternate spellings and symlinks to the managed snapshot.
+func sameSnapshotPath(path, installed string) bool {
+	actual, err := filepath.Abs(path)
+	if err != nil {
+		return false
+	}
+	if actual == installed {
+		return true
+	}
+	resolved, err := filepath.EvalSymlinks(actual)
+	if err != nil {
+		return false
+	}
+	expected, err := filepath.EvalSymlinks(installed)
+	return err == nil && resolved == expected
+}
+
 // readSnapshot reads and validates the current file without contacting a selector.
 // Arrays retain controller order and encode empty collections as JSON arrays.
-func readSnapshot(path string) (panelmodel.Snapshot, error) {
-	data, err := os.ReadFile(path)
+func readSnapshot(path string, managed bool) (panelmodel.Snapshot, error) {
+	var data []byte
+	var err error
+	if !managed && sameSnapshotPath(path, installedSnapshot) {
+		// Legacy installers have no transaction lock for readers. New installations must use it
+		// even if this panel only reads while another panel is applying a change.
+		_, statErr := os.Stat("/etc/tmpfiles.d/hestia-binding.conf")
+		managed = !os.IsNotExist(statErr)
+	}
+	if managed {
+		data, err = binding.ReadSnapshot()
+	} else {
+		data, err = os.ReadFile(path)
+	}
 	if err != nil {
 		return panelmodel.Snapshot{}, err
 	}
@@ -97,8 +129,8 @@ type navigationOutput struct {
 	Body panelmodel.Navigation
 }
 
-// registerPanelAPI binds the read-only operations used by both the HTTP mux and OpenAPI generation.
-func registerPanelAPI(mux *http.ServeMux, snapshot, grafanaURL string) huma.API {
+// registerPanelAPI registers the same typed operations for the live mux and OpenAPI generation.
+func registerPanelAPI(mux *http.ServeMux, snapshot, grafanaURL string, writes panelWrites) huma.API {
 	config := huma.DefaultConfig("Локальная панель Гестии", "1.0.0")
 	config.Servers = []*huma.Server{{URL: "/"}}
 	// Only registered panel operations are public. Their bodies are the unmodified DTOs.
@@ -113,7 +145,7 @@ func registerPanelAPI(mux *http.ServeMux, snapshot, grafanaURL string) huma.API 
 		OperationID: "getGroupsAndRules", Tags: []string{"Panel"}, Method: http.MethodGet, Path: "/api/groups-and-rules",
 		Summary: "Прочитать проверенный снимок групп и доменных списков", Errors: []int{http.StatusServiceUnavailable},
 	}, func(_ context.Context, _ *struct{}) (*snapshotOutput, error) {
-		view, err := readSnapshot(snapshot)
+		view, err := readSnapshot(snapshot, writes.binding != nil || writes.order != nil)
 		if err != nil {
 			log.Printf("cannot load snapshot: %v", err)
 			return nil, huma.Error503ServiceUnavailable("Снимок конфигурации недоступен")
@@ -126,12 +158,14 @@ func registerPanelAPI(mux *http.ServeMux, snapshot, grafanaURL string) huma.API 
 	}, func(_ context.Context, _ *struct{}) (*navigationOutput, error) {
 		return &navigationOutput{Body: panelmodel.Navigation{GrafanaURL: grafanaURL}}, nil
 	})
+	registerBinding(api, writes.binding)
+	registerOrder(api, writes.order)
 	return api
 }
 
 // writeOpenAPI exports the same registered operations used at runtime as OpenAPI 3.0.3 for Angular generation.
 func writeOpenAPI(path string) error {
-	api := registerPanelAPI(http.NewServeMux(), "", "")
+	api := registerPanelAPI(http.NewServeMux(), "", "", panelWrites{})
 	data, err := api.OpenAPI().DowngradeYAML()
 	if err != nil {
 		return err
@@ -139,10 +173,10 @@ func writeOpenAPI(path string) error {
 	return os.WriteFile(path, data, 0644)
 }
 
-// panelHandler serves GET and HEAD requests for the bundle and freshly validated snapshot.
-func panelHandler(snapshot, grafanaURL string, assets map[string][]byte) http.Handler {
+// panelHandler serves local assets and the typed panel API. It rejects cross-origin browser mutations.
+func panelHandler(snapshot, grafanaURL string, assets map[string][]byte, writes panelWrites) http.Handler {
 	mux := http.NewServeMux()
-	registerPanelAPI(mux, snapshot, grafanaURL)
+	registerPanelAPI(mux, snapshot, grafanaURL, writes)
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		name := strings.TrimPrefix(r.URL.Path, "/")
 		switch name {
@@ -159,7 +193,7 @@ func panelHandler(snapshot, grafanaURL string, assets map[string][]byte) http.Ha
 		}
 		http.ServeContent(w, r, name, time.Time{}, bytes.NewReader(data))
 	})
-	return mux
+	return http.NewCrossOriginProtection().Handler(mux)
 }
 
 // localHandler rejects browser requests addressed to another host, including DNS rebinding.
@@ -214,6 +248,8 @@ func main() {
 	snapshot := flag.String("snapshot", "", "controller snapshot file (required)")
 	assets := flag.String("assets", "", "browser build directory containing index.html (required)")
 	grafanaURL := flag.String("grafana-url", "", "optional trusted HTTPS URL for the Grafana menu link")
+	enableOrder := flag.Bool("enable-group-order", false, "enable confirmed group and exit ordering on the installed gateway")
+	enableBindings := flag.Bool("enable-bindings", false, "enable confirmed list binding changes on the installed gateway")
 	openapi := flag.String("openapi", "", "write the generated OpenAPI contract at this path and exit")
 	flag.Parse()
 	if *openapi != "" {
@@ -233,11 +269,21 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	h, err := localHandler(*listen, panelHandler(*snapshot, *grafanaURL, bundle))
+	var writes panelWrites
+	if (*enableBindings || *enableOrder) && *snapshot != installedSnapshot {
+		log.Fatal("routing changes require /etc/hestia/snapshot.json")
+	}
+	if *enableBindings {
+		writes.binding = applyInstalledBinding
+	}
+	if *enableOrder {
+		writes.order = applyInstalledOrder
+	}
+	h, err := localHandler(*listen, panelHandler(*snapshot, *grafanaURL, bundle, writes))
 	if err != nil {
 		log.Fatal(err)
 	}
-	server := &http.Server{Addr: *listen, Handler: h, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second}
+	server := &http.Server{Addr: *listen, Handler: h, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second, WriteTimeout: 5 * time.Minute, IdleTimeout: 60 * time.Second}
 	log.Printf("serving Hestia panel on %s", server.Addr)
 	log.Fatal(server.ListenAndServe())
 }

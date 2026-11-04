@@ -1,0 +1,27 @@
+<details class="editor">
+  <summary>Редактировать маски · черновик</summary>
+  <p class="note">
+    Изменения видны только в этой форме. Шлюз пока принимает через панель только
+    изменение привязки списка.
+  </p>
+  <label
+    >Маски, по одной в строке<textarea
+      #field
+      rows="4"
+      [value]="text()"
+      (input)="text.set(field.value)"
+      placeholder="*.example.org"
+    ></textarea>
+  </label>
+  @if (invalid().length) {
+    <p class="error" role="status">
+      Некорректные маски: {{ invalid().join(", ") }}. Используйте формат
+      *.example.org.
+    </p>
+  } @else {
+    <p class="status" role="status">Масок в черновике: {{ masks().length }}.</p>
+  }
+  <button type="button" (click)="text.set(list().masks.join('\n'))">
+    Сбросить черновик
+  </button>
+</details>

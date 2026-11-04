@@ -1,0 +1,12 @@
+Wed Nov  4 12:33:28 UTC 2026
+Linux 6.1.0-53-cloud-arm64 aarch64 GNU/Linux
+12.15
+sing-box version 1.14.4
+dnsmasq-base	2.90-4~deb12u2
+wireguard-tools	1.0.20210914-1+b1
+e981ecbd181b997c1b434660d544d8c719109188a3a4c9c3ed47780078b884b8  /usr/local/bin/hestia
+6db2644d5137ba1a296289d4aeebaf3981e8b33e32d1f5f916529f33caae3da0  hestia-binding-watch-panel.arm64
+active
+active
+active
+active

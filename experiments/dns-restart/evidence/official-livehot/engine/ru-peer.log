@@ -1,0 +1,17 @@
+{"event": "ready", "ns": 934219738504}
+{"event": "authority", "ns": 934667920164, "source": "10.85.1.1", "group": "ru", "domain": "hot.lab.test", "ip": "203.0.113.11", "ttl": 14, "generation": "second"}
+{"event": "authority", "ns": 942801652019, "source": "10.85.1.1", "group": "ru", "domain": "hot.lab.test", "ip": "203.0.113.11", "ttl": 14, "generation": "second"}
+{"event": "peer", "ns": 942804972080, "token": "restart-prime-ru-hot.lab.test-tcp", "group": "ru", "ip": "203.0.113.11", "source": "10.85.1.1", "proto": "tcp"}
+{"event": "peer", "ns": 942806996811, "token": "restart-prime-ru-hot.lab.test-udp", "group": "ru", "ip": "203.0.113.11", "source": "10.85.1.1", "proto": "udp"}
+{"event": "authority", "ns": 944710247799, "source": "10.85.1.1", "group": "ru", "domain": "new-control.lab.test", "ip": "203.0.113.33", "ttl": 14, "generation": "third"}
+{"event": "peer", "ns": 944723637926, "token": "restart-fresh-hot.lab.test-tcp", "group": "ru", "ip": "203.0.113.11", "source": "10.85.1.1", "proto": "tcp"}
+{"event": "peer", "ns": 944727575836, "token": "restart-fresh-hot.lab.test-udp", "group": "ru", "ip": "203.0.113.11", "source": "10.85.1.1", "proto": "udp"}
+{"event": "peer", "ns": 944730855642, "ip": "203.0.113.33", "group": "ru", "proto": "tcp", "source": "10.85.1.1", "token": "restart-fresh-new-control.lab.test-tcp"}
+{"event": "peer", "ns": 944733076475, "ip": "203.0.113.33", "group": "ru", "proto": "udp", "source": "10.85.1.1", "token": "restart-fresh-new-control.lab.test-udp"}
+{"event": "peer", "ns": 944735051743, "ip": "203.0.113.33", "group": "ru", "proto": "tcp", "source": "10.85.1.1", "token": "restart-old-after-reissue-first.only-fi.lab.test-tcp"}
+{"event": "peer", "ns": 944737343082, "ip": "203.0.113.33", "group": "ru", "proto": "udp", "source": "10.85.1.1", "token": "restart-old-after-reissue-first.only-fi.lab.test-udp"}
+{"event": "peer", "ns": 944739588917, "token": "restart-old-after-reissue-hot.lab.test-tcp", "group": "ru", "ip": "203.0.113.11", "source": "10.85.1.1", "proto": "tcp"}
+{"event": "peer", "ns": 944741715366, "token": "restart-old-after-reissue-hot.lab.test-udp", "group": "ru", "ip": "203.0.113.11", "source": "10.85.1.1", "proto": "udp"}
+{"event": "authority", "ns": 957128155076, "source": "10.85.1.1", "group": "ru", "domain": "hot.lab.test", "ip": "203.0.113.33", "ttl": 14, "generation": "third"}
+{"event": "peer", "ns": 957130135884, "ip": "203.0.113.33", "group": "ru", "proto": "tcp", "source": "10.85.1.1", "token": "restart-after-ttl-hot.lab.test-tcp"}
+{"event": "peer", "ns": 957131514137, "ip": "203.0.113.33", "group": "ru", "proto": "udp", "source": "10.85.1.1", "token": "restart-after-ttl-hot.lab.test-udp"}

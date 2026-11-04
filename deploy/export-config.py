@@ -17,9 +17,10 @@ def read(path: Path) -> dict:
     return json.loads(path.read_bytes(), object_pairs_hook=unique)
 
 
-def export(output: Path) -> None:
+def export(output: Path, base: Path = Path("/etc/hestia")) -> None:
     """Create a private, reference-only profile from verified installed settings without overwriting a file."""
-    base = Path("/etc/hestia")
+    if (base / ".binding-pending").exists():
+        raise ValueError("pending binding update requires recovery before export")
     source = base / "profile.json"
     if source.exists():
         raw = source.read_bytes()

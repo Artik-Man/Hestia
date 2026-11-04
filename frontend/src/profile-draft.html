@@ -1,0 +1,105 @@
+<section class="editor">
+  <h2>
+    {{
+      exit() ? "Черновик изменения подключения" : "Черновик нового подключения"
+    }}
+  </h2>
+  <p class="note">
+    Профиль редактируется только в этой форме. Шлюз пока не предоставляет
+    настройки протокола и результат проверки туннеля. Закрытие формы удалит
+    введённые данные.
+  </p>
+  <form
+    [formGroup]="form"
+    (ngSubmit)="check()"
+    (input)="report.set('')"
+    (change)="report.set('')"
+    autocomplete="off"
+    novalidate
+  >
+    <div class="fields">
+      <label
+        >Тип подключения<select
+          #type
+          [value]="protocol() ?? ''"
+          (change)="selectProtocol(type.value)"
+        >
+          <option value="">Выберите протокол</option>
+          @for (p of protocols; track p) {
+            <option [value]="p">{{ p }}</option>
+          }
+        </select></label
+      >
+      <label
+        >ID выхода<input formControlName="id" [readOnly]="exit() !== null"
+      /></label>
+      <label
+        >Группа<select formControlName="group">
+          <option value="">Выберите группу</option>
+          @for (group of groups(); track group.id) {
+            <option [value]="group.id">{{ group.id }}</option>
+          }
+        </select></label
+      >
+      <label
+        >Приоритет в группе<input
+          type="number"
+          formControlName="priority"
+          min="1"
+          step="1"
+      /></label>
+      <label>Адрес сервера<input formControlName="host" /></label
+      ><label
+        >Порт<input type="number" formControlName="port" min="1" max="65535"
+      /></label>
+      <label
+        >DNS-серверы (необязательно)<input
+          formControlName="dns"
+          placeholder="IP-адреса через запятую"
+      /></label>
+      <label
+        >Действие после проверки<select formControlName="desired">
+          <option value="">Не задано</option>
+          <option value="enable">Включить для трафика</option>
+          <option value="disable">Отключить для трафика</option>
+        </select></label
+      >
+    </div>
+    <div class="fields">
+      @for (field of activeFields(); track protocol() + ":" + field.key) {
+        <label [for]="'profile-' + field.key">
+          {{ field.label }}
+          @if (field.options) {
+            <select
+              [id]="'profile-' + field.key"
+              [formControl]="extra.controls[field.key]"
+            >
+              @for (option of field.options; track option) {
+                <option [value]="option">{{ option }}</option>
+              }
+            </select>
+          } @else if (field.key === "obfuscation") {
+            <textarea
+              [id]="'profile-' + field.key"
+              [formControl]="extra.controls[field.key]"
+              rows="4"
+            ></textarea>
+          } @else {
+            <input
+              [type]="field.secret ? 'password' : 'text'"
+              [id]="'profile-' + field.key"
+              [formControl]="extra.controls[field.key]"
+              autocomplete="off"
+              spellcheck="false"
+            />
+          }
+        </label>
+      }
+    </div>
+    <div class="actions">
+      <button type="submit" class="primary">Проверить поля черновика</button
+      ><button type="button" (click)="closed.emit()">Закрыть черновик</button>
+    </div>
+    <p role="status" class="status">{{ report() }}</p>
+  </form>
+</section>

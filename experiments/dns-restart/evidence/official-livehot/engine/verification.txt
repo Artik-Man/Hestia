@@ -1,0 +1,7 @@
+engine: engine/cache PID+ticks ['3023 93422', '3038 93427'] -> ['3070 94283', '3038 93427']; old {'first.only-fi.lab.test': '198.18.0.2', 'hot.lab.test': '198.18.0.3'}; fresh {'new-control.lab.test': '198.18.0.2', 'hot.lab.test': '198.18.0.3'}
+TTL compared to actual source expiries: [('first.only-fi.lab.test', 'initial', 28, 29.0, '203.0.113.22'), ('first.only-fi.lab.test', 'frequent', 28, 29.0, '203.0.113.22'), ('hot.lab.test', 'initial', 28, 29.0, '203.0.113.22'), ('hot.lab.test', 'frequent', 28, 29.0, '203.0.113.22'), ('new-control.lab.test', 'reissued', 13, 13.99, '203.0.113.33'), ('hot.lab.test', 'reissued', 12, 12.08, '203.0.113.11'), ('hot.lab.test', 'after-ttl', 13, 14.0, '203.0.113.33')]
+20 tagged new TCP/UDP flows checked on LAN and both uplinks
+FAIL unattributed RU tcp attempt at 1793795032881666000 from (b'10.85.1.1', b'33534', b'203.0.113.33', b'19091')
+FAIL unattributed RU udp attempt at 1793795032883711000 from (b'10.85.1.1', b'33129', b'203.0.113.33', b'19091')
+FAIL old-after-reissue tcp explicit alias 198.18.0.2 escaped via ['ru']
+FAIL old-after-reissue udp explicit alias 198.18.0.2 escaped via ['ru']

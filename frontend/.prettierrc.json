@@ -1,7 +1,8 @@
 {
   "overrides": [
     {
-      "files": "src/{panel,groups,connections,details,snapshot-screen}.html",
+      "files": "src/**/*.html",
+      "excludeFiles": "src/index.html",
       "options": { "parser": "angular" }
     }
   ]

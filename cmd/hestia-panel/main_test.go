@@ -15,7 +15,7 @@ const sample = `{"groups":[{"id":"fi","exits":["fi2","fi1"]},{"id":"ru"}],"healt
 // TestPanelSnapshot checks order, binding, empty groups, recovery and read-only semantics through HTTP.
 func TestPanelSnapshot(t *testing.T) {
 	snapshot := filepath.Join(t.TempDir(), "config.json")
-	h := panelHandler(snapshot, "", map[string][]byte{"index.html": []byte("panel")})
+	h := panelHandler(snapshot, "", map[string][]byte{"index.html": []byte("panel")}, panelWrites{})
 	get := func(method, path string) *httptest.ResponseRecorder {
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, httptest.NewRequest(method, path, nil))
@@ -79,7 +79,7 @@ func TestPanelAssets(t *testing.T) {
 	}
 	for _, path := range []string{"/leak.js", "/private.json", "/.git/config", "/dir/", "/api/unknown"} {
 		w := httptest.NewRecorder()
-		panelHandler("", "", assets).ServeHTTP(w, httptest.NewRequest("GET", path, nil))
+		panelHandler("", "", assets, panelWrites{}).ServeHTTP(w, httptest.NewRequest("GET", path, nil))
 		if w.Code != 404 {
 			t.Errorf("%s status %d", path, w.Code)
 		}
@@ -120,7 +120,7 @@ func TestPanelLocalScope(t *testing.T) {
 // TestPanelNavigation checks the navigation response independently of the controller file.
 func TestPanelNavigation(t *testing.T) {
 	for _, grafana := range []string{"", "https://grafana.home.arpa:8443/grafana/"} {
-		h := panelHandler("", grafana, nil)
+		h := panelHandler("", grafana, nil, panelWrites{})
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, httptest.NewRequest("GET", "/api/navigation", nil))
 		if w.Code != 200 || string(bytes.TrimSpace(w.Body.Bytes())) != `{"grafanaUrl":"`+grafana+`"}` {
@@ -145,7 +145,7 @@ func TestGrafanaURL(t *testing.T) {
 
 // TestScreenRoutes checks direct page loads while keeping missing assets, resources and nested paths distinct.
 func TestScreenRoutes(t *testing.T) {
-	h := panelHandler("", "", map[string][]byte{"index.html": []byte("panel")})
+	h := panelHandler("", "", map[string][]byte{"index.html": []byte("panel")}, panelWrites{})
 	for _, path := range []string{"/", "/connections", "/groups-and-rules", "/connections/missing", "/groups-and-rules.js", "/api/missing", "/unknown"} {
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, httptest.NewRequest("GET", path, nil))
@@ -159,5 +159,21 @@ func TestScreenRoutes(t *testing.T) {
 				t.Errorf("%s: %d", path, w.Code)
 			}
 		}
+	}
+}
+
+// TestManagedAlias verifies read-only panels recognize alternate names for an installed snapshot.
+func TestManagedAlias(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "snapshot.json")
+	if err := os.WriteFile(target, nil, 0600); err != nil {
+		t.Fatal(err)
+	}
+	alias := filepath.Join(dir, "alias")
+	if err := os.Symlink(target, alias); err != nil {
+		t.Fatal(err)
+	}
+	if !sameSnapshotPath(dir+"/./snapshot.json", target) || !sameSnapshotPath(alias, target) || sameSnapshotPath(dir+"/other", target) {
+		t.Fatal("incorrect managed snapshot identity")
 	}
 }

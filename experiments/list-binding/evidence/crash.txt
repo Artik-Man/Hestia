@@ -1,0 +1,9 @@
+installed group='' managed_hashes={"profile-backend.sha256": "53496288a27d7bfc1feb43de97971583a709e1fda212f418f5fce0b7d9b3909e", "profile-source.sha256": "8929620440cd0291932639e3b6ace2713eab29887776f4fd9976a1016e948844", "profile.json": "fc99e87d345f4eae511003d766b1ad21fdd00559d6149322bb3654d33d377766", "sing-box.json": "7706fbe54bc7879ed6a3c0d337bf1ded9b36d3016271fe743a8cadff8bb785af", "snapshot.json": "0525e27fbdcf50e208338e5522f9ce5fc7f7fc0e663d013474fd3d6ce14cfce9"}
+TCP kill.bound.lab.test receiver=beta; journal=pending
+SIGKILL helper; HTTP 503
+installed group='' managed_hashes={"profile-backend.sha256": "53496288a27d7bfc1feb43de97971583a709e1fda212f418f5fce0b7d9b3909e", "profile-source.sha256": "8929620440cd0291932639e3b6ace2713eab29887776f4fd9976a1016e948844", "profile.json": "fc99e87d345f4eae511003d766b1ad21fdd00559d6149322bb3654d33d377766", "sing-box.json": "7706fbe54bc7879ed6a3c0d337bf1ded9b36d3016271fe743a8cadff8bb785af", "snapshot.json": "0525e27fbdcf50e208338e5522f9ce5fc7f7fc0e663d013474fd3d6ce14cfce9"}
+TCP kill-recovered.bound.lab.test receiver=alpha
+TCP kill-recovered.second.lab.test receiver=alpha
+TCP kill-recovered.control.lab.test receiver=alpha
+watchdog recovery after helper exit: 1.46 s; no extra PUT or reboot
+PASS

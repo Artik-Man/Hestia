@@ -1,0 +1,60 @@
+<header class="intro">
+  <p class="kicker"><span class="bar"></span> Диагностика</p>
+  <div class="title-line"><h1>Качество связи</h1></div>
+  <p class="lede">
+    Сравнение путей к одной цели и причины переключений внутри группы.
+  </p>
+</header>
+@let current = state.view();
+@switch (current.kind) {
+  @case ("loading") {
+    <p class="notice" role="status">Загружаем группы и выходы…</p>
+  }
+  @case ("failed") {
+    <div class="notice failure" role="alert">
+      <h2>Не удалось загрузить конфигурацию</h2>
+      <button type="button" class="refresh" (click)="state.reload()">
+        Повторить загрузку
+      </button>
+    </div>
+  }
+  @case ("ready") {
+    <hestia-quality-comparison
+      [groups]="current.snapshot.groups"
+      [report]="null"
+    />
+  }
+}
+
+<section aria-labelledby="controller-window">
+  <h2 id="controller-window">Окно оценки стабильности</h2>
+  <p class="hint">
+    Контроллер использует этот интервал при выборе выхода. Исходное окно — 60
+    минут. Действующее значение пока недоступно.
+  </p>
+  <button
+    type="button"
+    class="refresh"
+    [attr.aria-expanded]="editWindow()"
+    (click)="editWindow.set(!editWindow())"
+  >
+    {{ editWindow() ? "Закрыть настройки" : "Настроить окно оценки" }}
+  </button>
+  @if (editWindow()) {
+    <div class="settings">
+      <label
+        >Окно оценки, минут<input
+          type="number"
+          step="1"
+          min="1"
+          [formControl]="controllerMinutes"
+      /></label>
+      @if (controllerMinutes.invalid) {
+        <p role="alert">Введите целое число минут больше нуля.</p>
+      }
+      <p class="hint">
+        Черновик для этой страницы. Применение на шлюзе пока недоступно.
+      </p>
+    </div>
+  }
+</section>

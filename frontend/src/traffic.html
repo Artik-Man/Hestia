@@ -1,0 +1,76 @@
+<header class="intro">
+  <p class="kicker"><span class="bar"></span> Диагностика</p>
+  <div class="title-line"><h1>Журнал трафика</h1></div>
+  <p class="lede">
+    Новые потоки, решения маршрутизации и связанные попытки DNS.
+  </p>
+</header>
+<section aria-labelledby="traffic-filters">
+  <h2 id="traffic-filters">Поиск событий</h2>
+  <div class="filters">
+    <label
+      >Домен или IP назначения<input
+        type="search"
+        placeholder="Фрагмент домена или адреса"
+        [formControl]="queryControl"
+    /></label>
+    <label
+      >Протокол<select [formControl]="protocolControl">
+        <option value="">Все протоколы</option>
+        <option value="TCP">TCP</option>
+        <option value="UDP">UDP</option>
+      </select></label
+    >
+    <label
+      >Период<select [formControl]="periodControl">
+        @for (hours of periods; track hours) {
+          <option [ngValue]="hours">Последние {{ hours }} ч</option>
+        }
+      </select></label
+    >
+    <button type="button" class="refresh" (click)="resetFilters()">
+      Сбросить фильтры
+    </button>
+  </div>
+</section>
+<section aria-labelledby="traffic-results">
+  <h2 id="traffic-results">Записи потоков</h2>
+  <hestia-traffic-events
+    [events]="null"
+    [query]="query()"
+    [protocol]="protocol()"
+    [periodHours]="period()"
+  />
+</section>
+<section aria-labelledby="retention-heading">
+  <h2 id="retention-heading">Хранение журнала</h2>
+  <p class="hint">
+    Исходный срок хранения — 24 часа. Действующее значение на шлюзе пока
+    недоступно.
+  </p>
+  <button
+    type="button"
+    class="refresh"
+    [attr.aria-expanded]="editRetention()"
+    (click)="editRetention.set(!editRetention())"
+  >
+    {{ editRetention() ? "Закрыть настройки" : "Настроить срок" }}
+  </button>
+  @if (editRetention()) {
+    <div class="settings">
+      <label
+        >Срок хранения, часы<input
+          type="number"
+          min="1"
+          step="1"
+          [formControl]="retention"
+      /></label>
+      @if (retention.invalid) {
+        <p role="alert">Укажите целое число часов больше нуля.</p>
+      }
+      <p class="hint">
+        Черновик для этой страницы. Применение на шлюзе пока недоступно.
+      </p>
+    </div>
+  }
+</section>

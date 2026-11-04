@@ -1,0 +1,53 @@
+<section class="dns-card">
+  <h2>Имена в прогреве</h2>
+  @if (observations() === null) {
+    <p class="hint">
+      Сведения о доменах в прогреве ещё не поступают. Здесь будут видны число
+      клиентских обращений за окно и время последнего обновления для каждого
+      резолвера и выхода.
+    </p>
+  } @else {
+    <label
+      >Поиск по имени<input
+        #search
+        type="search"
+        [value]="query()"
+        (input)="query.set(search.value)"
+    /></label>
+    @if (visible().length) {
+      <div class="observations">
+        <table>
+          <caption class="sr-only">
+            Прогреваемые имена по подключениям и резолверам
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Имя и тип</th>
+              <th scope="col">Выход</th>
+              <th scope="col">Резолвер</th>
+              <th scope="col">Обращения</th>
+              <th scope="col">Обновлено</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of visible(); track row) {
+              <tr>
+                <th scope="row">{{ row.name }} ({{ row.recordType }})</th>
+                <td>{{ row.exit }}</td>
+                <td>{{ row.resolver }}</td>
+                <td>{{ row.requests }}</td>
+                <td>{{ row.refreshedAt ?? "Успешных обновлений ещё нет" }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <p role="status">
+        {{
+          query() ? "Совпадений по имени нет." : "Сейчас в прогреве нет имён."
+        }}
+      </p>
+    }
+  }
+</section>

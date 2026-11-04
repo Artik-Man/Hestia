@@ -3,7 +3,12 @@ import {
   Component,
   computed,
   input,
+  signal,
 } from "@angular/core";
+import { ProfileDraft } from "./profile-draft";
+import { GroupsRemoval } from "./groups-removal";
+import { BindingEditor } from "./binding";
+import { MasksDraft } from "./masks-draft";
 import { type ParamMap, RouterLink } from "@angular/router";
 import type { Exit } from "./api/generated/model/exit";
 import type { Group } from "./api/generated/model/group";
@@ -30,7 +35,10 @@ export function readSelection(
     keys.length !== 1 ||
     values.length !== 1 ||
     values[0] === "" ||
-    (key === "exit") !== (path === "connections")
+    path !==
+      ({ group: "groups", list: "domain-lists", exit: "connections" } as const)[
+        key
+      ]
   )
     return { kind: "invalid" };
   return { kind: key, id: values[0] };
@@ -82,11 +90,12 @@ function resolveDetail(selection: Selection, snapshot: Snapshot): Detail {
 /** Details presents the selected group, list or exit, including links to its configured relationships. */
 @Component({
   selector: "hestia-details",
-  imports: [RouterLink],
+  imports: [GroupsRemoval, RouterLink, BindingEditor, MasksDraft, ProfileDraft],
   templateUrl: "./details.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Details {
+  protected readonly editingExit = signal<string | null>(null);
   readonly selection = input.required<Selection>();
   readonly snapshot = input.required<Snapshot>();
   protected readonly detail = computed(() =>

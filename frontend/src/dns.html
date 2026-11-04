@@ -1,0 +1,101 @@
+<header class="intro">
+  <p class="kicker"><span class="bar"></span>Разрешение имён</p>
+  <h1>DNS</h1>
+  <p class="lede">
+    Хранение DNS-ответов и фоновое обновление часто используемых имён.
+  </p>
+</header>
+<p class="notice">
+  Действующие параметры DNS пока недоступны. Черновик хранится в памяти вкладки
+  до перезагрузки. Его проверка не изменяет настройки шлюза.
+</p>
+<form [formGroup]="form" (ngSubmit)="validate()" (input)="clearCheck()">
+  <section class="dns-card">
+    <h2>Кэш ответов</h2>
+    <label
+      >Хранение после TTL, с<input
+        formControlName="retention"
+        inputmode="numeric"
+        type="number"
+        min="0"
+        step="1"
+    /></label>
+    <p class="hint">Введите 0, чтобы удалять запись после истечения TTL.</p>
+    <label class="toggle"
+      ><input type="checkbox" formControlName="stale" /> Разрешить истёкший
+      положительный ответ при временном сбое DNS</label
+    >
+    @if (form.controls.stale.value) {
+      <label
+        >Окно выдачи после TTL, с<input
+          formControlName="staleAge"
+          inputmode="numeric"
+          type="number"
+          min="1"
+          step="1"
+      /></label>
+      <p class="hint">
+        Черновик предполагает выдачу в пределах окна только при живом
+        разрешённом выходе.
+      </p>
+    }
+  </section>
+  <section class="dns-card">
+    <h2>Фоновое обновление</h2>
+    <label class="toggle"
+      ><input formControlName="warm" type="checkbox" /> Прогревать часто
+      запрашиваемые домены</label
+    >
+    @if (form.controls.warm.value) {
+      <div class="fields">
+        <label
+          >Минимум обращений (N)<input
+            formControlName="threshold"
+            type="number"
+            min="1"
+            step="1"
+        /></label>
+        <label
+          >Окно активности (X), ч<input
+            formControlName="window"
+            type="number"
+            min="1"
+            step="1"
+        /></label>
+        <label
+          >Интервал обновления (Y), мин<input
+            formControlName="interval"
+            type="number"
+            min="1"
+            step="1"
+        /></label>
+      </div>
+      <p class="hint">
+        Частота учитывает только клиентские обращения. Интервал ограничивает
+        время до следующей фоновой попытки.
+      </p>
+    }
+  </section>
+  <div class="actions">
+    <button type="submit">Проверить черновик</button
+    ><button type="button" (click)="reset()">Сбросить черновик</button>
+  </div>
+  @if (checked()) {
+    @if (errors().length) {
+      <div role="alert" class="notice failure">
+        <p>Исправьте параметры черновика.</p>
+        <ul>
+          @for (message of errors(); track message) {
+            <li>{{ message }}</li>
+          }
+        </ul>
+      </div>
+    } @else {
+      <p role="status" class="notice">
+        Параметры черновика согласованы между собой. Изменения не отправлены на
+        шлюз.
+      </p>
+    }
+  }
+</form>
+<hestia-dns-names />

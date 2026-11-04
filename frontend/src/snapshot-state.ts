@@ -2,7 +2,7 @@ import { inject, Injectable } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
 import {
   catchError,
-  exhaustMap,
+  switchMap,
   map,
   of,
   startWith,
@@ -19,7 +19,7 @@ type View =
   | { kind: "failed" }
   | { kind: "ready"; snapshot: Snapshot };
 
-/** SnapshotState serves both pages from one validated read and ignores refreshes while it is in flight. */
+/** SnapshotState serves both pages from one validated read and replaces an obsolete read after a write. */
 @Injectable({ providedIn: "root" })
 export class SnapshotState {
   private readonly api = inject(PanelService);
@@ -27,7 +27,7 @@ export class SnapshotState {
   readonly view = toSignal(
     this.requests.pipe(
       startWith(undefined),
-      exhaustMap(() =>
+      switchMap(() =>
         this.api.getGroupsAndRules().pipe(
           timeout(10000),
           map((value): View =>
@@ -43,8 +43,8 @@ export class SnapshotState {
     { requireSync: true },
   );
 
-  /** reload asks for the latest snapshot without interrupting a read already in progress. */
-  reload(): void {
-    this.requests.next();
+  /** reload asks for the latest snapshot and supersedes an earlier read only when reconciling a write. */
+  reload(afterWrite = false): void {
+    if (afterWrite || this.view().kind !== "loading") this.requests.next();
   }
 }

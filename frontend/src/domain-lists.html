@@ -1,0 +1,60 @@
+<section aria-labelledby="lists-heading">
+  <div class="section-heading">
+    <h2 id="lists-heading">Доменные списки</h2>
+    <span class="count">{{ lists().length }}</span>
+  </div>
+  @if (lists().length) {
+    <div class="list-wrap">
+      <table>
+        <caption class="sr-only">
+          Доменные списки, их маски, группы и состояние
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Список и маски</th>
+            <th scope="col">Группа</th>
+            <th scope="col">Состояние</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (list of lists(); track list.id) {
+            <tr>
+              <th scope="row">
+                <a
+                  class="list-id"
+                  routerLink="/domain-lists"
+                  [queryParams]="{ list: list.id }"
+                  >{{ list.id }}</a
+                ><span class="masks">
+                  @for (mask of list.masks; track $index) {
+                    <code>{{ mask }}</code>
+                  } @empty {
+                    <span class="muted">Нет масок</span>
+                  }
+                </span>
+              </th>
+              <td>
+                @if (list.group) {
+                  <a
+                    routerLink="/groups"
+                    [queryParams]="{ group: list.group }"
+                    >{{ list.group }}</a
+                  >
+                } @else {
+                  Группа не назначена
+                }
+              </td>
+              <td>
+                <span class="state" [class.on]="list.enabled">{{
+                  list.enabled ? "Включён" : "Выключен"
+                }}</span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <p class="notice">Нет доменных списков</p>
+  }
+</section>

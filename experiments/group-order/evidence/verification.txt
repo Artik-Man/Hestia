@@ -1,0 +1,40 @@
+confirmed order=[{"id": "group-alpha", "exits": ["exit-alpha", "exit-reserve"]}, {"id": "group-beta", "exits": ["exit-beta"]}] hashes={"profile-backend.sha256": "5f5d17309a8b9cda42602ca265182a9137e5c18e4a31edf6152489ab22f8fff1", "profile-source.sha256": "7d3826c2ff31674824bf15713e291cc6217cb094b3c63d8d9602463b8fd2d8fc", "profile.json": "e8bb75fb8f011dd2950cdee6a806d830f32e60eca5279acc5309fdbeaddfcf63", "sing-box.json": "bd80d59a9ee1572c18e581797e67e588b44f554916c16c541fe7a45ba3d3c34b", "snapshot.json": "9fc65cdf8486b0cd71b090f753497a1d931ad230dffa8d7c16035dfa08d95d98"}
+TCP baseline.default.lab.test -> alpha
+TCP baseline.tie.lab.test -> alpha
+TCP baseline.alpha.lab.test -> alpha
+TCP baseline.beta.lab.test -> beta
+PUT group-order: HTTP 200
+confirmed order=[{"id": "group-alpha", "exits": ["exit-reserve", "exit-alpha"]}, {"id": "group-beta", "exits": ["exit-beta"]}] hashes={"profile-backend.sha256": "8f0e3cfe0cddb206d6fda18bab2b5f1133c4898f510cb3078ab797b07da266c9", "profile-source.sha256": "1ca2c3fb856c76d2b88e48b2018d7bb9e05524a82aa93ddb4d67219553592e0d", "profile.json": "944a1762bc7f41935176211c82d1af812918d0f520690c295019e53c9473c400", "sing-box.json": "2dc2d32b56c35f4e4d032d8bb56cb19febcc91a791a97059fb8a08e7e678e1c7", "snapshot.json": "5a46125f4ac99f8f46ad00992d9d28eed0312fa2fbcee8364895daf8c718c7c4"}
+TCP exits.default.lab.test -> reserve
+TCP exits.tie.lab.test -> reserve
+TCP exits.alpha.lab.test -> reserve
+TCP exits.beta.lab.test -> beta
+PUT group-order: HTTP 200
+confirmed order=[{"id": "group-beta", "exits": ["exit-beta"]}, {"id": "group-alpha", "exits": ["exit-reserve", "exit-alpha"]}] hashes={"profile-backend.sha256": "87eada84a6c931354078a3fc53e8f2528bb8a672a95ad91fca65d3d26fccd9b6", "profile-source.sha256": "637cf666379a65d60bf30f3616df694a54589a4dec7e2dd988faacab8b5bf563", "profile.json": "1061bef47c2fb312d4d7c245f3cae401b69c82292fb2ed78862b3374bf6b96ad", "sing-box.json": "bf966b533533f4932647a92b1cbbe51b88cf02081649f5ae162e8520a1b394d4", "snapshot.json": "382fa5d95907c5375e895ef323d231a4a412c0c25acbb51b822c13f4d8396a3c"}
+TCP groups.default.lab.test -> beta
+TCP groups.tie.lab.test -> beta
+TCP groups.alpha.lab.test -> reserve
+TCP groups.beta.lab.test -> beta
+PUT group-order: HTTP 409
+PUT group-order: HTTP 422
+PUT group-order: HTTP 413
+PUT group-order: HTTP 422
+confirmed order=[{"id": "group-beta", "exits": ["exit-beta"]}, {"id": "group-alpha", "exits": ["exit-reserve", "exit-alpha"]}] hashes={"profile-backend.sha256": "87eada84a6c931354078a3fc53e8f2528bb8a672a95ad91fca65d3d26fccd9b6", "profile-source.sha256": "637cf666379a65d60bf30f3616df694a54589a4dec7e2dd988faacab8b5bf563", "profile.json": "1061bef47c2fb312d4d7c245f3cae401b69c82292fb2ed78862b3374bf6b96ad", "sing-box.json": "bf966b533533f4932647a92b1cbbe51b88cf02081649f5ae162e8520a1b394d4", "snapshot.json": "382fa5d95907c5375e895ef323d231a4a412c0c25acbb51b822c13f4d8396a3c"}
+TCP rejected.default.lab.test -> beta
+TCP rejected.tie.lab.test -> beta
+TCP rejected.alpha.lab.test -> reserve
+TCP rejected.beta.lab.test -> beta
+PUT group-order: HTTP 503
+candidate start refusal confirmed by credential
+confirmed order=[{"id": "group-beta", "exits": ["exit-beta"]}, {"id": "group-alpha", "exits": ["exit-reserve", "exit-alpha"]}] hashes={"profile-backend.sha256": "87eada84a6c931354078a3fc53e8f2528bb8a672a95ad91fca65d3d26fccd9b6", "profile-source.sha256": "637cf666379a65d60bf30f3616df694a54589a4dec7e2dd988faacab8b5bf563", "profile.json": "1061bef47c2fb312d4d7c245f3cae401b69c82292fb2ed78862b3374bf6b96ad", "sing-box.json": "bf966b533533f4932647a92b1cbbe51b88cf02081649f5ae162e8520a1b394d4", "snapshot.json": "382fa5d95907c5375e895ef323d231a4a412c0c25acbb51b822c13f4d8396a3c"}
+TCP rollback.default.lab.test -> beta
+TCP rollback.tie.lab.test -> beta
+TCP rollback.alpha.lab.test -> reserve
+TCP rollback.beta.lab.test -> beta
+PUT group-order: HTTP 200
+confirmed order=[{"id": "group-alpha", "exits": ["exit-alpha", "exit-reserve"]}, {"id": "group-beta", "exits": ["exit-beta"]}] hashes={"profile-backend.sha256": "d92371b9fb7f6076bf7725ad5de5e1eb6951df5963b392606ff0125b22c331ca", "profile-source.sha256": "c4e0176e6b24514b56c3ded5a8797cc0d45300ae8ea9659284c60802469d7cf9", "profile.json": "5688bd7a393e644e1243d20af2944fff3a8fb609eecbbc9e966228f235a2b4ac", "sing-box.json": "7fc17a908c2f3fbbd2e255a62f570064b995b5c70253f7b31f63f653308a3f1a", "snapshot.json": "9fc65cdf8486b0cd71b090f753497a1d931ad230dffa8d7c16035dfa08d95d98"}
+TCP restored.default.lab.test -> alpha
+TCP restored.tie.lab.test -> alpha
+TCP restored.alpha.lab.test -> alpha
+TCP restored.beta.lab.test -> beta
+PASS

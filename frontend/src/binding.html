@@ -1,0 +1,33 @@
+<section class="editor">
+  <h2>Изменить привязку</h2>
+  <p class="note">
+    Шлюз перезапустит службы, поэтому открытые соединения могут прерваться.
+    Новые соединения могут пойти по выбранному маршруту ещё до подтверждения.
+    При откате уже переданные пакеты останутся у получателя.
+  </p>
+  <label
+    >Новая группа<select
+      #choice
+      [value]="selected()"
+      (change)="selected.set(choice.value)"
+      [disabled]="write.pending()"
+    >
+      <option value="" [selected]="selected() === ''">
+        Группа не назначена
+      </option>
+      @for (group of groups(); track group.id) {
+        <option [value]="group.id" [selected]="selected() === group.id">
+          {{ group.id }}
+        </option>
+      }
+    </select></label
+  >
+  <button
+    type="button"
+    class="primary"
+    (click)="submit()"
+    [disabled]="write.pending() || unchanged()"
+  >
+    Применить привязку
+  </button>
+</section>

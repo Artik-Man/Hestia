@@ -1,0 +1,8 @@
+[Unit]
+Description=Restore the last committed Hestia binding before loading backend credentials
+Before=hestia-sing-box.service hestia.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/hestia -recover-bindings
+RemainAfterExit=yes

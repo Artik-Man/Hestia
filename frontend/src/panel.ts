@@ -3,7 +3,7 @@ import { toSignal } from "@angular/core/rxjs-interop";
 import { RouterLink, RouterLinkActive, RouterOutlet } from "@angular/router";
 import { catchError, map, of, timeout } from "rxjs";
 import { PanelService } from "./api/generated/api/panel.service";
-import { pages } from "./pages";
+import { navigationPages } from "./pages";
 
 /** grafanaLink accepts a configured absolute HTTPS URL and rejects malformed navigation responses. */
 function grafanaLink(value: unknown): string | null {
@@ -37,7 +37,7 @@ function grafanaLink(value: unknown): string | null {
   templateUrl: "./panel.html",
 })
 export class Panel {
-  protected readonly pages = pages;
+  protected readonly pages = navigationPages;
   protected readonly grafanaUrl = toSignal(
     inject(PanelService)
       .getNavigation()

@@ -17,9 +17,9 @@ def run(*args):
     )
 
 
-def verify():
-    """Require live services, the expected socket owner, current controller confirmation and selector choices."""
-    for name in ("hestia", "hestia-sing-box"):
+def verify(*, fresh: bool = True):
+    """Check active services, credential and selectors; after a restart also require fresh controller events."""
+    for name in ("hestia", "hestia-sing-box", "hestia-binding-watch.path"):
         if run("systemctl", "is-active", name).strip() != "active":
             raise ValueError(f"{name} is not active")
     pid = run(
@@ -33,17 +33,31 @@ def verify():
     ):
         raise ValueError("127.0.0.1:9090 must belong to hestia-sing-box")
 
-    invocation = run(
-        "systemctl", "show", "-p", "InvocationID", "--value", "hestia"
-    ).strip()
-    logs = run(
-        "journalctl", "--no-pager", "-o", "cat", "_SYSTEMD_INVOCATION_ID=" + invocation
+    # LoadCredential provides a per-invocation copy visible inside the service mount namespace.
+    live = Path(
+        f"/proc/{pid}/root/run/credentials/hestia-sing-box.service/sing-box.json"
     )
+    if live.read_bytes() != Path("/etc/hestia/sing-box.json").read_bytes():
+        raise ValueError(
+            "running backend credential differs from the installed configuration"
+        )
+
     confirmed = {}
-    for line in logs.splitlines():
-        if line.startswith("{"):
-            event = json.loads(line)
-            confirmed[event["group"]] = event["selector_target"]
+    if fresh:
+        invocation = run(
+            "systemctl", "show", "-p", "InvocationID", "--value", "hestia"
+        ).strip()
+        logs = run(
+            "journalctl",
+            "--no-pager",
+            "-o",
+            "cat",
+            "_SYSTEMD_INVOCATION_ID=" + invocation,
+        )
+        for line in logs.splitlines():
+            if line.startswith("{"):
+                event = json.loads(line)
+                confirmed[event["group"]] = event["selector_target"]
 
     config = json.loads(Path("/etc/hestia/snapshot.json").read_text())
     for group in config["groups"]:
@@ -56,14 +70,19 @@ def verify():
             ),
             "deny",
         )
-        if confirmed.get(tag) != wanted:
+        if fresh and confirmed.get(tag) != wanted:
             raise ValueError(f"controller has not confirmed {tag} -> {wanted}")
         api = http.client.HTTPConnection("127.0.0.1", 9090, timeout=0.5)
         try:
             api.request("GET", "/proxies/" + quote(tag, safe=""))
             resp = api.getresponse()
-            if resp.status != 200 or json.load(resp)["now"] != wanted:
-                raise ValueError(f"selector {tag} differs from {wanted}")
+            if resp.status != 200:
+                raise ValueError(f"selector {tag} did not respond")
+            state = json.load(resp)
+            if state["now"] != wanted or state["all"] != [*group["exits"], "deny"]:
+                raise ValueError(
+                    f"selector {tag} differs from the configured order or target"
+                )
         finally:
             api.close()
     if not config["groups"]:
@@ -75,9 +94,9 @@ def main():
     deadline = time.monotonic() + 5
     while True:
         try:
-            verify()
+            verify(fresh=sys.argv[1:] != ["--current"])
             print(
-                "PASS: both services active, local API owner, controller confirmation and selector targets"
+                "PASS: routing services and binding watch active, local API owner, loaded backend credential, controller confirmation and selector targets"
             )
             return 0
         except (

@@ -1,0 +1,31 @@
+installed group='group-alpha' managed_hashes={"profile-backend.sha256": "08b913bf111bf3f761ae55a2ea58bf91d9919cbc5f480db4b272d8b15eca727c", "profile-source.sha256": "acfe42b607c91a9cda12b691be43c525fa1def5cc1ced1736368f4ac8be8a18d", "profile.json": "31f16669319c39371a855543403e86b9873848a78af1941a5dd262abcf2848bf", "sing-box.json": "f7af200e246192762393e132a0ad7462a258f97237899e63505291e3cb1af9d8", "snapshot.json": "d8fc52fe46940eea45ba0b8f780aca6b1c212e574afcbd69eba86018a6b7923e"}
+TCP before.bound.lab.test receiver=alpha
+TCP before.second.lab.test receiver=alpha
+TCP before.control.lab.test receiver=alpha
+PUT 'group-alpha' -> 'group-beta' status=403
+PUT 'group-alpha' -> 'group-beta' status=403
+TCP forbidden.bound.lab.test receiver=alpha
+TCP forbidden.second.lab.test receiver=alpha
+TCP forbidden.control.lab.test receiver=alpha
+PUT 'group-alpha' -> 'group-beta' status=200
+TCP after.bound.lab.test receiver=beta
+TCP after.second.lab.test receiver=beta
+TCP after.control.lab.test receiver=alpha
+installed group='group-beta' managed_hashes={"profile-backend.sha256": "6a874f450c737265bafc1096d23c44f1b74f59d8a4bc66549d5d9e64e5e045e9", "profile-source.sha256": "0c46faed71a2b4452482eba793e5412ef92c2dbcf48a69dad36d97cee39033fe", "profile.json": "f75857319de1e429dbde27286ab65e88bdcf42b7165657b163e71b950b3ca6a5", "sing-box.json": "46f4069452834e3d32bde685e039d850b48afe046250fa0464979afef3f6a4ae", "snapshot.json": "47acecb11d404b7b0965fe8598bf9bd8edd8886437f4dc5ba57728bc7c77f225"}
+PUT 'group-alpha' -> '' status=409
+PUT 'group-beta' -> 'unknown-group' status=404
+TCP conflict.bound.lab.test receiver=beta
+TCP conflict.second.lab.test receiver=beta
+TCP conflict.control.lab.test receiver=alpha
+PUT 'group-beta' -> 'group-alpha' status=503
+fault: start rejected using candidate credential
+installed group='group-beta' managed_hashes={"profile-backend.sha256": "6a874f450c737265bafc1096d23c44f1b74f59d8a4bc66549d5d9e64e5e045e9", "profile-source.sha256": "0c46faed71a2b4452482eba793e5412ef92c2dbcf48a69dad36d97cee39033fe", "profile.json": "f75857319de1e429dbde27286ab65e88bdcf42b7165657b163e71b950b3ca6a5", "sing-box.json": "46f4069452834e3d32bde685e039d850b48afe046250fa0464979afef3f6a4ae", "snapshot.json": "47acecb11d404b7b0965fe8598bf9bd8edd8886437f4dc5ba57728bc7c77f225"}
+TCP rollback.bound.lab.test receiver=beta
+TCP rollback.second.lab.test receiver=beta
+TCP rollback.control.lab.test receiver=alpha
+PUT 'group-beta' -> '' status=200
+installed group='' managed_hashes={"profile-backend.sha256": "53496288a27d7bfc1feb43de97971583a709e1fda212f418f5fce0b7d9b3909e", "profile-source.sha256": "8929620440cd0291932639e3b6ace2713eab29887776f4fd9976a1016e948844", "profile.json": "fc99e87d345f4eae511003d766b1ad21fdd00559d6149322bb3654d33d377766", "sing-box.json": "7706fbe54bc7879ed6a3c0d337bf1ded9b36d3016271fe743a8cadff8bb785af", "snapshot.json": "0525e27fbdcf50e208338e5522f9ce5fc7f7fc0e663d013474fd3d6ce14cfce9"}
+TCP unassigned.bound.lab.test receiver=alpha
+TCP unassigned.second.lab.test receiver=alpha
+TCP unassigned.control.lab.test receiver=alpha
+PASS

@@ -1,0 +1,124 @@
+<section aria-labelledby="quality-selection">
+  <h2 id="quality-selection">Сравнение выходов</h2>
+  <div class="filters">
+    <label
+      >Группа<select
+        #groupsSelect
+        [value]="group()?.id ?? ''"
+        (change)="selectedGroup.set(groupsSelect.value)"
+      >
+        @for (item of groups(); track item.id) {
+          <option [value]="item.id">{{ item.id }}</option>
+        }
+      </select></label
+    >
+    <label
+      >Протокол<select [formControl]="protocol">
+        <option>TCP</option>
+        <option>UDP</option>
+        <option>ICMP</option>
+      </select></label
+    >
+    <label
+      >Контрольная цель<select
+        #targetSelect
+        [value]="target()"
+        (change)="selectedTarget.set(targetSelect.value)"
+        [disabled]="!targets().length"
+      >
+        @for (item of targets(); track item) {
+          <option [value]="item">{{ item }}</option>
+        } @empty {
+          <option value="">Нет сведений о целях</option>
+        }
+      </select></label
+    >
+    <label
+      >Окно просмотра, минут<input
+        type="number"
+        min="1"
+        step="1"
+        [formControl]="minutes"
+    /></label>
+  </div>
+  @if (minutes.invalid) {
+    <p role="alert">Введите целое число минут больше нуля.</p>
+  }
+  <p class="hint">Окно просмотра задаёт период сравнения на этой странице.</p>
+  @if (report() === null) {
+    <div class="notice">
+      <h3>Измерения пока недоступны</h3>
+      <p>
+        Доступность получена из снимка конфигурации. Для сравнения потерь нужны
+        завершённые пробы через каждый выход.
+      </p>
+    </div>
+  }
+  @if (group(); as current) {
+    <ul class="detail-rows">
+      @for (exit of current.exits; track exit.id) {
+        <li>
+          <div>
+            <a routerLink="/connections" [queryParams]="{ exit: exit.id }"
+              ><strong>{{ exit.id }}</strong></a
+            >
+            · по снимку {{ exit.available ? "доступен" : "недоступен" }}
+            @if (totals(); as values) {
+              @if (values.get(exit.id); as result) {
+                @if (result.samples) {
+                  <p>
+                    Потери {{ result.timeouts }} из {{ result.samples }} ({{
+                      ((100 * result.timeouts) / result.samples).toFixed(1)
+                    }}%)
+                  </p>
+                } @else {
+                  <p>Нет завершённых сетевых проб</p>
+                }
+                <p>Ошибки измерителя: {{ result.localErrors }}.</p>
+                @if (result.meanLatencyMs !== null) {
+                  <p>
+                    Средняя задержка ответа:
+                    {{ result.meanLatencyMs.toFixed(1) }} мс.
+                  </p>
+                }
+              } @else {
+                <p>За выбранный период проб нет</p>
+              }
+            }
+          </div>
+        </li>
+      } @empty {
+        <li>В группе нет настроенных выходов</li>
+      }
+    </ul>
+  } @else {
+    <p class="notice">Нет настроенных групп</p>
+  }
+</section>
+<section aria-labelledby="quality-history">
+  <h2 id="quality-history">История переключений</h2>
+  @if (switches(); as history) {
+    @for (event of history; track $index) {
+      <details class="observation">
+        <summary>{{ event.time }} · {{ event.from }} → {{ event.to }}</summary>
+        <p>{{ event.reason }}</p>
+        @if (event.scope.kind === "group") {
+          <p>Область изменения: вся группа {{ event.group }}</p>
+        } @else {
+          <p>{{ event.scope.target }} · {{ event.scope.protocol }}</p>
+        }
+      </details>
+    } @empty {
+      <p class="notice">В этом окне переключений нет.</p>
+    }
+  } @else {
+    <p class="notice">
+      {{
+        minutes.invalid
+          ? "Исправьте окно просмотра."
+          : "Шлюз пока не передаёт
+    историю переключений."
+      }}
+    </p>
+  }
+</section>

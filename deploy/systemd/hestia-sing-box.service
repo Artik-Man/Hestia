@@ -1,5 +1,7 @@
 [Unit]
 Description=Hestia bootstrap sing-box backend
+Requires=hestia-binding-watch.path
+After=hestia-binding-watch.path
 
 [Service]
 Type=simple

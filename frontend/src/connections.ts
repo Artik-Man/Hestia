@@ -3,18 +3,21 @@ import {
   Component,
   computed,
   input,
+  signal,
 } from "@angular/core";
+import { ProfileDraft } from "./profile-draft";
 import { RouterLink } from "@angular/router";
 import type { Group } from "./api/generated/model/group";
 
 /** Connections lists configured exits in backend order with their priority within each group. */
 @Component({
   selector: "hestia-connections",
-  imports: [RouterLink],
+  imports: [RouterLink, ProfileDraft],
   templateUrl: "./connections.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Connections {
+  protected readonly creating = signal(false);
   readonly groups = input.required<readonly Group[]>();
   protected readonly rows = computed(() =>
     this.groups().flatMap((group) =>

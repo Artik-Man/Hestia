@@ -8,21 +8,33 @@ import {
 import { toSignal } from "@angular/core/rxjs-interop";
 import { ActivatedRoute, RouterLink } from "@angular/router";
 import { Details, readSelection } from "./details";
+import { BindingWrite } from "./binding";
 import { ButtonDirective } from "primeng/button";
 import { Connections } from "./connections";
+import { DomainLists } from "./domain-lists";
+import { GroupsState } from "./groups-state";
 import { Groups } from "./groups";
 import { type Page } from "./pages";
 import { SnapshotState } from "./snapshot-state";
 
-/** SnapshotScreen presents shared loading and retry controls for both read-only routes. */
+/** SnapshotScreen presents shared loading and retry controls for routes backed by the shared snapshot. */
 @Component({
   selector: "hestia-snapshot-screen",
-  imports: [ButtonDirective, Groups, Connections, Details, RouterLink],
+  imports: [
+    ButtonDirective,
+    Groups,
+    DomainLists,
+    Connections,
+    Details,
+    RouterLink,
+  ],
   templateUrl: "./snapshot-screen.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SnapshotScreen {
   readonly page = input.required<Page>();
+  protected readonly order = inject(GroupsState);
+  protected readonly binding = inject(BindingWrite);
   protected readonly state = inject(SnapshotState);
   private readonly route = inject(ActivatedRoute);
   private readonly params = toSignal(this.route.queryParamMap, {

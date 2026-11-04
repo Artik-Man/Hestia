@@ -31,11 +31,9 @@
                 >
               </th>
               <td>
-                <a
-                  routerLink="/groups-and-rules"
-                  [queryParams]="{ group: row.group }"
-                  >{{ row.group }}</a
-                >
+                <a routerLink="/groups" [queryParams]="{ group: row.group }">{{
+                  row.group
+                }}</a>
               </td>
               <td>{{ row.priority }}</td>
               <td>
@@ -53,3 +51,11 @@
     <p class="notice">Нет настроенных выходов</p>
   }
 </section>
+
+@if (creating()) {
+  <hestia-profile-draft [groups]="groups()" (closed)="creating.set(false)" />
+} @else {
+  <button type="button" class="refresh" (click)="creating.set(true)">
+    Добавить подключение · черновик
+  </button>
+}
