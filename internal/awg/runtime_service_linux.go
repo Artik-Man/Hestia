@@ -5,6 +5,7 @@ package awg
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"io"
 	"net"
@@ -231,8 +232,11 @@ func loadRouteManifest(id string) (routeManifest, bool, error) {
 	if errors.Is(err, os.ErrNotExist) {
 		return manifest, false, nil
 	}
-	stat, ok := infoStat(info)
-	if err != nil || info == nil || !info.Mode().IsRegular() || info.Mode().Perm() != 0600 || !ok || int(stat.Uid) != 0 || stat.Nlink != 1 {
+	if err != nil || info == nil {
+		return manifest, false, errors.New("AWG route ownership record is unsafe")
+	}
+	stat, ok := info.Sys().(*syscall.Stat_t)
+	if !info.Mode().IsRegular() || info.Mode().Perm() != 0600 || !ok || int(stat.Uid) != 0 || stat.Nlink != 1 {
 		return manifest, false, errors.New("AWG route ownership record is unsafe")
 	}
 	data, err := os.ReadFile(routeManifestPath)

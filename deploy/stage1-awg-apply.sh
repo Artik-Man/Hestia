@@ -5,8 +5,8 @@ umask 077
 
 # die prints a fatal preflight or update error and exits nonzero.
 die() {
-	echo "$*" >&2
-	exit 1
+    echo "$*" >&2
+    exit 1
 }
 
 [[ $# == 1 && $EUID == 0 ]] || die "Usage: sudo bash stage1-awg-apply.sh PACKAGE_DIRECTORY"
@@ -17,32 +17,32 @@ ip -4 -o addr show dev lima0 scope global | awk '$4 ~ /^192\.168\.1\.133\// { fo
 
 # die_if_untrusted_dir checks every existing component without following symlinks; target trees must be root-owned and not writable by group/other.
 die_if_untrusted_dir() {
-	local path=$1 current=/ part owner mode
-	[[ $path == /* ]] || die "Expected an absolute path: $path"
-	IFS=/ read -r -a parts <<<"${path#/}"
-	for part in "${parts[@]}"; do
-		[[ -n $part ]] || continue
-		current=${current%/}/$part
-		[[ ! -L $current ]] || die "Symlink in trusted path: $current"
-		[[ -d $current ]] || die "Required parent directory is missing: $current"
-		read -r owner mode < <(stat -c '%u %a' -- "$current")
-		((owner == 0 && (8#$mode & 0022) == 0)) || die "Untrusted directory ownership/mode: $current"
-	done
+    local path=$1 current=/ part owner mode
+    [[ $path == /* ]] || die "Expected an absolute path: $path"
+    IFS=/ read -r -a parts <<<"${path#/}"
+    for part in "${parts[@]}"; do
+        [[ -n $part ]] || continue
+        current=${current%/}/$part
+        [[ ! -L $current ]] || die "Symlink in trusted path: $current"
+        [[ -d $current ]] || die "Required parent directory is missing: $current"
+        read -r owner mode < <(stat -c '%u %a' -- "$current")
+        ((owner == 0 && (8#$mode & 0022) == 0)) || die "Untrusted directory ownership/mode: $current"
+    done
 }
 
 # die_if_untrusted_file rejects symlinks, non-regular files and writable/unowned existing targets before replacement.
 die_if_untrusted_file() {
-	local path=$1 owner mode
-	[[ ! -L $path ]] || die "Symlink target is not allowed: $path"
-	[[ ! -e $path ]] && return 0
-	[[ -f $path ]] || die "Target is not a regular file: $path"
-	read -r owner mode < <(stat -c '%u %a' -- "$path")
-	((owner == 0 && (8#$mode & 0022) == 0)) || die "Untrusted target ownership/mode: $path"
+    local path=$1 owner mode
+    [[ ! -L $path ]] || die "Symlink target is not allowed: $path"
+    [[ ! -e $path ]] && return 0
+    [[ -f $path ]] || die "Target is not a regular file: $path"
+    read -r owner mode < <(stat -c '%u %a' -- "$path")
+    ((owner == 0 && (8#$mode & 0022) == 0)) || die "Untrusted target ownership/mode: $path"
 }
 
 # tree_digest returns a stable digest over paths and bytes, rejecting links and special files.
 tree_digest() {
-	python3 -I - "$1" <<'PY'
+    python3 -I - "$1" <<'PY'
 import hashlib, os, pathlib, stat, sys
 root = pathlib.Path(sys.argv[1])
 if not root.is_dir() or root.is_symlink():
@@ -61,70 +61,70 @@ PY
 
 # require_root_file verifies an existing required file before it is inspected or replaced.
 require_root_file() {
-	local path=$1
-	die_if_untrusted_file "$path"
-	[[ -f $path ]] || die "Required managed file is missing: $path"
+    local path=$1
+    die_if_untrusted_file "$path"
+    [[ -f $path ]] || die "Required managed file is missing: $path"
 }
 
 # config_digest hashes only non-secret managed topology/configuration files for before/after comparison.
 config_digest() {
-	sha256sum /etc/hestia/snapshot.json /etc/hestia/sing-box.json \
-		/etc/hestia/profile.json /etc/wireguard/wg-keenetic.conf
+    sha256sum /etc/hestia/snapshot.json /etc/hestia/sing-box.json \
+        /etc/hestia/profile.json /etc/wireguard/wg-keenetic.conf
 }
 
 [[ -f /etc/hestia/.installer-managed && ! -L /etc/hestia/.installer-managed &&
-	$(stat -c '%u:%a' /etc/hestia/.installer-managed) == 0:600 &&
-	$(cat /etc/hestia/.installer-managed) == 1 ]] || die "Refusing an unmanaged Hestia installation"
+    $(stat -c '%u:%a' /etc/hestia/.installer-managed) == 0:600 &&
+    $(cat /etc/hestia/.installer-managed) == 1 ]] || die "Refusing an unmanaged Hestia installation"
 [[ ! -e /etc/hestia/.binding-pending && ! -L /etc/hestia/.binding-pending ]] || die "Recover the pending binding transaction before updating"
 
 # Establish safe parents and target states before lock acquisition or any system mutation.
 for dir in /etc /etc/hestia /etc/systemd /etc/systemd/system /etc/tmpfiles.d /etc/sudoers.d \
-	/usr /usr/local /usr/local/bin /usr/local/lib /usr/local/lib/hestia \
-	/usr/local/share /usr/local/share/hestia-panel /usr/local/share/hestia-panel/releases \
-	/run /var /var/backups /etc/wireguard; do
-	die_if_untrusted_dir "$dir"
+    /usr /usr/local /usr/local/bin /usr/local/lib /usr/local/lib/hestia \
+    /usr/local/share /usr/local/share/hestia-panel /usr/local/share/hestia-panel/releases \
+    /run /var /var/backups /etc/wireguard; do
+    die_if_untrusted_dir "$dir"
 done
 for dir in /etc/hestia/awg /run/hestia-awg; do
-	if [[ -e $dir || -L $dir ]]; then
-		die_if_untrusted_dir "$dir"
-		if [[ $dir == /etc/hestia/awg && $(stat -c '%u:%a' "$dir") != 0:700 ]]; then
-			die "AWG profile store must be root-owned mode 0700"
-		fi
-	fi
+    if [[ -e $dir || -L $dir ]]; then
+        die_if_untrusted_dir "$dir"
+        if [[ $dir == /etc/hestia/awg && $(stat -c '%u:%a' "$dir") != 0:700 ]]; then
+            die "AWG profile store must be root-owned mode 0700"
+        fi
+    fi
 done
 for path in /etc/hestia/.installer-managed /etc/hestia/.binding-pending /etc/hestia/profile.json \
-	/etc/hestia/snapshot.json /etc/hestia/sing-box.json \
-	/run/hestia-install.lock /run/hestia-awg/ready /run/hestia-awg/health.json /run/hestia-awg/routes.json \
-	/usr/local/bin/hestia /usr/local/bin/hestia-panel /usr/local/bin/awg \
-	/usr/local/bin/hestia.next /usr/local/bin/hestia-panel.next /usr/local/bin/awg.next \
-	/usr/local/lib/hestia/profile.py /usr/local/lib/hestia/amneziawg-go \
-	/usr/local/lib/hestia/profile.py.next /usr/local/lib/hestia/amneziawg-go.next \
-	/usr/local/share/hestia-panel/current /etc/hestia/.awg-runtime-version \
-	/usr/local/share/hestia-panel/current.next \
-	/etc/systemd/system/hestia.service /etc/systemd/system/hestia-panel.service \
-	/etc/systemd/system/hestia-awg.service /etc/tmpfiles.d/hestia-awg.conf /etc/sudoers.d/hestia-awg; do
-	parent=${path%/*}
-	if [[ $parent == /run/hestia-awg && ! -e $parent && ! -L $parent ]]; then
-		: # systemd-tmpfiles creates this runtime directory after installation.
-	else
-		die_if_untrusted_dir "$parent"
-	fi
-	if [[ $path == */current ]]; then
-		[[ ! -e $path || -L $path ]] || die "Panel current must be a symlink: $path"
-		if [[ -L $path ]]; then
-			link=$(readlink -- "$path")
-			[[ $link =~ ^releases/[0-9a-f]{20}$ ]] || die "Unexpected panel release symlink: $link"
-			die_if_untrusted_dir "$parent/${link%/*}"
-			die_if_untrusted_dir "$parent/$link"
-		fi
-	else
-		die_if_untrusted_file "$path"
-	fi
+    /etc/hestia/snapshot.json /etc/hestia/sing-box.json \
+    /run/hestia-install.lock /run/hestia-awg/ready /run/hestia-awg/health.json /run/hestia-awg/routes.json \
+    /usr/local/bin/hestia /usr/local/bin/hestia-panel /usr/local/bin/awg \
+    /usr/local/bin/hestia.next /usr/local/bin/hestia-panel.next /usr/local/bin/awg.next \
+    /usr/local/lib/hestia/profile.py /usr/local/lib/hestia/amneziawg-go \
+    /usr/local/lib/hestia/profile.py.next /usr/local/lib/hestia/amneziawg-go.next \
+    /usr/local/share/hestia-panel/current /etc/hestia/.awg-runtime-version \
+    /usr/local/share/hestia-panel/current.next \
+    /etc/systemd/system/hestia.service /etc/systemd/system/hestia-panel.service \
+    /etc/systemd/system/hestia-awg.service /etc/tmpfiles.d/hestia-awg.conf /etc/sudoers.d/hestia-awg; do
+    parent=${path%/*}
+    if [[ $parent == /run/hestia-awg && ! -e $parent && ! -L $parent ]]; then
+        : # systemd-tmpfiles creates this runtime directory after installation.
+    else
+        die_if_untrusted_dir "$parent"
+    fi
+    if [[ $path == */current ]]; then
+        [[ ! -e $path || -L $path ]] || die "Panel current must be a symlink: $path"
+        if [[ -L $path ]]; then
+            link=$(readlink -- "$path")
+            [[ $link =~ ^releases/[0-9a-f]{20}$ ]] || die "Unexpected panel release symlink: $link"
+            die_if_untrusted_dir "$parent/${link%/*}"
+            die_if_untrusted_dir "$parent/$link"
+        fi
+    else
+        die_if_untrusted_file "$path"
+    fi
 done
 for path in /usr/local/bin/hestia.next /usr/local/bin/hestia-panel.next /usr/local/bin/awg.next \
-	/usr/local/lib/hestia/profile.py.next /usr/local/lib/hestia/amneziawg-go.next \
-	/usr/local/share/hestia-panel/current.next; do
-	[[ ! -e $path && ! -L $path ]] || die "Stale staging target exists: $path"
+    /usr/local/lib/hestia/profile.py.next /usr/local/lib/hestia/amneziawg-go.next \
+    /usr/local/share/hestia-panel/current.next; do
+    [[ ! -e $path && ! -L $path ]] || die "Stale staging target exists: $path"
 done
 
 [[ -e /run/hestia-install.lock ]] || die "The managed installer lock is missing"
@@ -133,7 +133,7 @@ exec 9<>/run/hestia-install.lock
 flock -n 9 || die "Another Hestia transaction is running"
 
 for service in wg-quick@wg-keenetic.service hestia-sing-box.service hestia.service hestia-panel.service; do
-	[[ $(systemctl is-active "$service" 2>/dev/null || :) == active ]] || die "Required service is not active: $service"
+    [[ $(systemctl is-active "$service" 2>/dev/null || :) == active ]] || die "Required service is not active: $service"
 done
 [[ $(systemctl is-active hestia-awg.service 2>/dev/null || :) != active ]] || die "Refusing to replace an active AWG runtime"
 [[ ! -e /run/hestia-awg/ready && ! -e /run/hestia-awg/routes.json && ! -e /run/hestia-awg/health.json ]] || die "Stale AWG runtime state exists; inspect before updating"
@@ -157,15 +157,15 @@ python3 -I -c 'import json,sys; p=json.load(open(sys.argv[1])); raise SystemExit
 expected_version=$'amneziawg-go=3.1.20260828 commit=b5928efb6ca19f0153958460c3d141f04abc5c2e\namneziawg-tools=3.1.20260812 commit=ee0f0a9aa34ff0a0da4b3433b9512781cfe02843'
 printf '%s\n' "$expected_version" >"$bundle/awg-version"
 if [[ -e /etc/hestia/.awg-runtime-version ]]; then
-	[[ $(cat /etc/hestia/.awg-runtime-version) == "$expected_version" ]] || die "AWG version marker conflicts with the pinned package"
+    [[ $(cat /etc/hestia/.awg-runtime-version) == "$expected_version" ]] || die "AWG version marker conflicts with the pinned package"
 elif [[ -e /usr/local/lib/hestia/amneziawg-go || -e /usr/local/bin/awg || -e /etc/systemd/system/hestia-awg.service || -e /etc/tmpfiles.d/hestia-awg.conf || -e /etc/sudoers.d/hestia-awg ]]; then
-	die "AWG files exist without a managed version marker"
+    die "AWG files exist without a managed version marker"
 fi
 for pair in "hestia-awg.service:$bundle/hestia-awg.service:/etc/systemd/system/hestia-awg.service" \
-	"hestia-awg.conf:$bundle/hestia-awg.conf:/etc/tmpfiles.d/hestia-awg.conf" \
-	"hestia-awg.sudoers:$bundle/hestia-awg.sudoers:/etc/sudoers.d/hestia-awg"; do
-	IFS=: read -r _ src dst <<<"$pair"
-	if [[ -e $dst ]] && ! cmp -s "$src" "$dst"; then die "Unmanaged AWG configuration conflicts with package: $dst"; fi
+    "hestia-awg.conf:$bundle/hestia-awg.conf:/etc/tmpfiles.d/hestia-awg.conf" \
+    "hestia-awg.sudoers:$bundle/hestia-awg.sudoers:/etc/sudoers.d/hestia-awg"; do
+    IFS=: read -r _ src dst <<<"$pair"
+    if [[ -e $dst ]] && ! cmp -s "$src" "$dst"; then die "Unmanaged AWG configuration conflicts with package: $dst"; fi
 done
 
 if ! command -v make >/dev/null || ! command -v gcc >/dev/null; then die "The existing guest needs make and gcc to build the pinned awg tools"; fi
@@ -179,38 +179,38 @@ visudo -cf "$bundle/hestia-awg.sudoers" >/dev/null
 asset_id=$(tree_digest "$bundle/browser")
 asset_release=/usr/local/share/hestia-panel/releases/$asset_id
 if [[ -e $asset_release || -L $asset_release ]]; then
-	[[ -d $asset_release && ! -L $asset_release ]] || die "Digest-named panel release is not a real directory"
-	read -r release_owner release_mode < <(stat -c '%u %a' -- "$asset_release")
-	((release_owner == 0 && (8#$release_mode & 0022) == 0)) || die "Untrusted digest-named panel release directory"
-	while IFS= read -r -d '' entry; do
-		[[ ! -L $entry ]] || die "Symlink in installed panel release: $entry"
-		read -r owner mode < <(stat -c '%u %a' -- "$entry")
-		((owner == 0 && (8#$mode & 0022) == 0)) || die "Untrusted installed panel release entry: $entry"
-	done < <(find "$asset_release" -mindepth 1 -print0)
-	[[ $(tree_digest "$asset_release") == "$asset_id" ]] || die "Existing digest-named panel release content does not match its name"
+    [[ -d $asset_release && ! -L $asset_release ]] || die "Digest-named panel release is not a real directory"
+    read -r release_owner release_mode < <(stat -c '%u %a' -- "$asset_release")
+    ((release_owner == 0 && (8#$release_mode & 0022) == 0)) || die "Untrusted digest-named panel release directory"
+    while IFS= read -r -d '' entry; do
+        [[ ! -L $entry ]] || die "Symlink in installed panel release: $entry"
+        read -r owner mode < <(stat -c '%u %a' -- "$entry")
+        ((owner == 0 && (8#$mode & 0022) == 0)) || die "Untrusted installed panel release entry: $entry"
+    done < <(find "$asset_release" -mindepth 1 -print0)
+    [[ $(tree_digest "$asset_release") == "$asset_id" ]] || die "Existing digest-named panel release content does not match its name"
 fi
 
 # Preflight every file that the package will replace, including the rendered panel service.
 sed 's|@PANEL_LISTEN@|192.168.1.133:8080|g' "$bundle/hestia-panel.service.in" >"$build_dir/hestia-panel.service"
 for path in /usr/local/bin/hestia /usr/local/bin/hestia-panel /usr/local/bin/awg \
-	/usr/local/lib/hestia/profile.py /usr/local/lib/hestia/amneziawg-go \
-	/etc/hestia/.awg-runtime-version /etc/systemd/system/hestia.service \
-	/etc/systemd/system/hestia-panel.service /etc/systemd/system/hestia-awg.service \
-	/etc/tmpfiles.d/hestia-awg.conf /etc/sudoers.d/hestia-awg; do
-	die_if_untrusted_file "$path"
+    /usr/local/lib/hestia/profile.py /usr/local/lib/hestia/amneziawg-go \
+    /etc/hestia/.awg-runtime-version /etc/systemd/system/hestia.service \
+    /etc/systemd/system/hestia-panel.service /etc/systemd/system/hestia-awg.service \
+    /etc/tmpfiles.d/hestia-awg.conf /etc/sudoers.d/hestia-awg; do
+    die_if_untrusted_file "$path"
 done
 
 backup=/var/backups/hestia-stage1-awg-$(date -u +%Y%m%dT%H%M%SZ)
 [[ ! -e $backup && ! -L $backup ]] || die "Backup path already exists: $backup"
 for path in /usr/local/bin/hestia /usr/local/bin/hestia-panel /usr/local/bin/awg \
-	/usr/local/lib/hestia/profile.py /usr/local/lib/hestia/amneziawg-go \
-	/etc/hestia/.awg-runtime-version /etc/systemd/system/hestia.service \
-	/etc/systemd/system/hestia-panel.service /etc/systemd/system/hestia-awg.service \
-	/etc/tmpfiles.d/hestia-awg.conf /etc/sudoers.d/hestia-awg \
-	/usr/local/share/hestia-panel/current; do
-	if [[ -e $path || -L $path ]]; then
-		if [[ $path == */current ]]; then [[ -L $path ]] || die "Panel current is not a symlink"; else die_if_untrusted_file "$path"; fi
-	fi
+    /usr/local/lib/hestia/profile.py /usr/local/lib/hestia/amneziawg-go \
+    /etc/hestia/.awg-runtime-version /etc/systemd/system/hestia.service \
+    /etc/systemd/system/hestia-panel.service /etc/systemd/system/hestia-awg.service \
+    /etc/tmpfiles.d/hestia-awg.conf /etc/sudoers.d/hestia-awg \
+    /usr/local/share/hestia-panel/current; do
+    if [[ -e $path || -L $path ]]; then
+        if [[ $path == */current ]]; then [[ -L $path ]] || die "Panel current is not a symlink"; else die_if_untrusted_file "$path"; fi
+    fi
 done
 
 # All targets and parents are now preflighted; the following creates a manual recovery copy before replacing system files.
@@ -228,47 +228,47 @@ Use state.txt and routes-before.txt to compare service and route state. This bac
 EOF
 : >"$backup/manifest.txt"
 for path in /usr/local/bin/hestia /usr/local/bin/hestia-panel /usr/local/bin/awg \
-	/usr/local/lib/hestia/profile.py /usr/local/lib/hestia/amneziawg-go \
-	/etc/hestia/.awg-runtime-version /etc/systemd/system/hestia.service \
-	/etc/systemd/system/hestia-panel.service /etc/systemd/system/hestia-awg.service \
-	/etc/tmpfiles.d/hestia-awg.conf /etc/sudoers.d/hestia-awg \
-	/usr/local/share/hestia-panel/current; do
-	if [[ -e $path || -L $path ]]; then
-		name=${path#/}
-		mkdir -p "$backup/files/$(dirname "$name")"
-		cp -a -- "$path" "$backup/files/$name"
-		printf '%s\n' "$path" >>"$backup/manifest.txt"
-	fi
+    /usr/local/lib/hestia/profile.py /usr/local/lib/hestia/amneziawg-go \
+    /etc/hestia/.awg-runtime-version /etc/systemd/system/hestia.service \
+    /etc/systemd/system/hestia-panel.service /etc/systemd/system/hestia-awg.service \
+    /etc/tmpfiles.d/hestia-awg.conf /etc/sudoers.d/hestia-awg \
+    /usr/local/share/hestia-panel/current; do
+    if [[ -e $path || -L $path ]]; then
+        name=${path#/}
+        mkdir -p "$backup/files/$(dirname "$name")"
+        cp -a -- "$path" "$backup/files/$name"
+        printf '%s\n' "$path" >>"$backup/manifest.txt"
+    fi
 done
 {
-	printf 'enabled/active service states\n'
-	for service in wg-quick@wg-keenetic.service hestia-sing-box.service hestia.service hestia-panel.service hestia-awg.service; do
-		printf '%s enabled=%s active=%s\n' "$service" "$(systemctl is-enabled "$service" 2>/dev/null || :)" "$(systemctl is-active "$service" 2>/dev/null || :)"
-	done
-	printf '\nIPv4 default routes\n'
-	ip -4 route show default
-	printf '\nIPv6 default routes\n'
-	ip -6 route show default
-	printf '\nconfiguration digests\n'
-	config_digest
+    printf 'enabled/active service states\n'
+    for service in wg-quick@wg-keenetic.service hestia-sing-box.service hestia.service hestia-panel.service hestia-awg.service; do
+        printf '%s enabled=%s active=%s\n' "$service" "$(systemctl is-enabled "$service" 2>/dev/null || :)" "$(systemctl is-active "$service" 2>/dev/null || :)"
+    done
+    printf '\nIPv4 default routes\n'
+    ip -4 route show default
+    printf '\nIPv6 default routes\n'
+    ip -6 route show default
+    printf '\nconfiguration digests\n'
+    config_digest
 } >"$backup/state.txt"
 
 routes_before=$backup/routes-before.txt
 hashes_before=$backup/config-before.sha256
 {
-	printf 'IPv4 default routes\n'
-	ip -4 route show default
-	printf 'IPv6 default routes\n'
-	ip -6 route show default
+    printf 'IPv4 default routes\n'
+    ip -4 route show default
+    printf 'IPv6 default routes\n'
+    ip -6 route show default
 } >"$routes_before"
 config_digest >"$hashes_before"
 
 install -d -o root -g root -m 0755 /usr/local/share/hestia-panel/releases
 if [[ ! -e $asset_release ]]; then
-	install -d -o root -g root -m 0755 "$asset_release"
-	cp -R "$bundle/browser/." "$asset_release/"
-	chown -R root:root "$asset_release"
-	chmod -R a-w,go+rX "$asset_release"
+    install -d -o root -g root -m 0755 "$asset_release"
+    cp -R "$bundle/browser/." "$asset_release/"
+    chown -R root:root "$asset_release"
+    chmod -R a-w,go+rX "$asset_release"
 fi
 ln -s "releases/$asset_id" /usr/local/share/hestia-panel/current.next
 mv -fT /usr/local/share/hestia-panel/current.next /usr/local/share/hestia-panel/current
@@ -300,10 +300,10 @@ systemctl is-active --quiet hestia-sing-box.service hestia.service hestia-panel.
 curl --noproxy '*' --fail --silent --show-error --max-time 5 http://192.168.1.133:8080/ -o "$backup/panel-check.html"
 grep -q '<html' "$backup/panel-check.html" || die "Panel did not serve its frontend"
 {
-	printf 'IPv4 default routes\n'
-	ip -4 route show default
-	printf 'IPv6 default routes\n'
-	ip -6 route show default
+    printf 'IPv4 default routes\n'
+    ip -4 route show default
+    printf 'IPv6 default routes\n'
+    ip -6 route show default
 } >"$backup/routes-after.txt"
 config_digest >"$backup/config-after.sha256"
 cmp -s "$routes_before" "$backup/routes-after.txt" || die "Main default routes changed; inspect backup $backup"
