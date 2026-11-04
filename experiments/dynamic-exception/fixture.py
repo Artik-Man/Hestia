@@ -18,7 +18,7 @@ PORT = scoped.PORT
 PEERS = scoped.SOURCES
 CASES = (("x","udp","fake"), ("x","udp","ip"), ("x","tcp","fake"), ("x","tcp","ip"),
          ("y","udp","fake"), ("y","udp","ip"), ("ru","udp","fake"))
-STATES = {"baseline":"fi1", "added":"fi2", "removed":"fi1", "automatic":"fi2", "retired":"fi1"}
+STATES = {"baseline":"fi1", "added":"fi2", "removed":"fi1", "automatic":"fi2", "retired":"fi1", "tie":"fi2"}
 
 def dns(records):
     """Serve short-lived A records for dynamically selected lab addresses on the local resolver."""
@@ -62,6 +62,8 @@ def verify(out):
     records = json.loads((out/"records.json").read_text())
     server = [json.loads(s) for s in (out/"server.log").read_text().splitlines() if s.startswith("{")]
     phases = ("baseline","automatic","retired") if (out/"automatic.jsonl").exists() else ("baseline","added","removed")
+    if (out/"tie.jsonl").exists():
+        phases = ("baseline","automatic","tie","retired")
     markers = set()
     for phase in phases:
         rows = [json.loads(s) for s in (out/(phase+".jsonl")).read_text().splitlines()]

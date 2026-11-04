@@ -1,0 +1,7 @@
+PASS baseline: 7 client flows and rule-set checked
+PASS automatic: 7 client flows and rule-set checked
+PASS tie: 7 client flows and rule-set checked
+PASS retired: 7 client flows and rule-set checked
+PASS preexisting FakeIPs; same process; previously unseen exception learned on wire
+PASS 81 decisions, 162 matched probes; selective UDP/X losses {'fi1': 1, 'fi2': 3}
+PASS Go added FI2 exception, held at equal delivery, removed only after inverse impairment

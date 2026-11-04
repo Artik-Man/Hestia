@@ -1,0 +1,14 @@
+Started hestia-observe.service - Hestia per-interface echo measurements.
+{"time":"2026-11-04T08:58:02.631290222Z","group":"unit","address":"203.0.113.77","port":19091,"protocol":"udp","window":"10s","current":"local","recommended":"local","reason":"insufficient_samples","samples":1,"counts":{"local":{"sent":1,"received":1,"lost":0}},"latest":{"local":{"token":"hestia-f6c5c30242c26db626dbfe1d215dc69f","status":"received","rtt_ms":0.561368}}}
+{"time":"2026-11-04T08:58:02.882269905Z","group":"unit","address":"203.0.113.77","port":19091,"protocol":"udp","window":"10s","current":"local","recommended":"local","reason":"insufficient_samples","samples":2,"counts":{"local":{"sent":2,"received":2,"lost":0}},"latest":{"local":{"token":"hestia-b4e64792f7010d655927155dd8a4dad3","status":"received","rtt_ms":0.600835}}}
+Stopping hestia-observe.service...
+hestia-observe.service: Deactivated successfully.
+Stopped hestia-observe.service.
+Started hestia-observe.service - Hestia per-interface echo measurements.
+{"time":"2026-11-04T08:59:21.277520069Z","group":"unit","address":"203.0.113.77","port":19091,"protocol":"udp","window":"10s","current":"local","recommended":"local","reason":"insufficient_samples","samples":1,"counts":{"local":{"sent":1,"received":1,"lost":0}},"latest":{"local":{"token":"hestia-88d5e300afbe3d719849603dec97499f","status":"received","rtt_ms":0.439771}}}
+{"time":"2026-11-04T08:59:21.528889993Z","group":"unit","address":"203.0.113.77","port":19091,"protocol":"udp","window":"10s","current":"local","recommended":"local","reason":"insufficient_samples","samples":2,"counts":{"local":{"sent":2,"received":2,"lost":0}},"latest":{"local":{"token":"hestia-3ceeb2598ea9c2c3bbea47b20236ff94","status":"received","rtt_ms":0.573536}}}
+Stopping hestia-observe.service...
+hestia-observe.service: Deactivated successfully.
+Stopped hestia-observe.service.
+CapEff: 0000000000000000
+CapBnd: 0000000000000000

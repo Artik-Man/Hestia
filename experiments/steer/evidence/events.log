@@ -1,0 +1,8 @@
+2026-11-04T09:21:17,744505906+00:00 discovered group=FI proto=UDP dst=203.0.113.37 source=fi1-capture
+2026-11-04T09:21:17,778865038+00:00 confirmed phase=baseline via client and server
+2026-11-04T09:21:18,676150904+00:00 impaired via-fi1 UDP/203.0.113.37
+2026-11-04T09:21:19,344685200+00:00 confirmed phase=automatic via client and server
+2026-11-04T09:21:19,358938655+00:00 recovered via-fi1
+2026-11-04T09:21:22,158508907+00:00 confirmed phase=tie via client and server
+2026-11-04T09:21:22,161063415+00:00 impaired via-fi2 UDP/203.0.113.37
+2026-11-04T09:21:23,337496111+00:00 confirmed phase=retired via client and server

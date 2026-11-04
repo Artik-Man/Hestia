@@ -1,4 +1,5 @@
 /dist/
 /stand.local/
+/private/
 __pycache__/
 .ruff_cache/

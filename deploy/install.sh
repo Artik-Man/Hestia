@@ -186,7 +186,7 @@ owned_socket() {
     [[ -f $marker && $pid != 0 && $sockets != *$'\n'* && $sockets == *"127.0.0.1:9090"* && $sockets == *"pid=$pid,"* ]]
 }
 owned_socket || die "port 9090 is occupied by another service"
-for file in /usr/local/bin/hestia /usr/local/lib/hestia/sing-box /usr/local/bin/hestia-export-config /usr/local/lib/hestia/profile.py; do
+for file in /usr/local/bin/hestia /usr/local/lib/hestia/sing-box /usr/local/bin/hestia-export-config /usr/local/lib/hestia/profile.py /usr/local/lib/hestia/hestia-observe.service; do
     [[ -f $marker || ! -e $file ]] || die "$file exists outside this installer"
 done
 # replace backs up the destination, prepares a same-directory file with the requested permissions, then atomically renames it.
@@ -226,6 +226,7 @@ done
 replace "$work/hestia" /usr/local/bin/hestia 0755
 replace "$repo/deploy/export-config.py" /usr/local/bin/hestia-export-config 0755
 replace "$repo/deploy/profile.py" /usr/local/lib/hestia/profile.py 0644
+replace "$repo/deploy/systemd/hestia-observe.service" /usr/local/lib/hestia/hestia-observe.service 0644
 replace "$backend" /usr/local/lib/hestia/sing-box 0755
 for unit in "${services[@]}"; do replace "$repo/deploy/systemd/$unit" "/etc/systemd/system/$unit" 0644; done
 replace "$repo/deploy/systemd/hestia.service.d/backend.conf" /etc/systemd/system/hestia.service.d/backend.conf 0644

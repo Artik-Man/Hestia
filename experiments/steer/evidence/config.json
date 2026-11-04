@@ -1,0 +1,29 @@
+{
+  "log":{"level":"debug","timestamp":true},
+  "dns":{
+    "servers":[
+      {"type":"fakeip","tag":"virtual","inet4_range":"198.18.0.0/15"},
+      {"type":"udp","tag":"fixture","server":"127.0.0.1","server_port":15353}
+    ],
+    "rules":[{"inbound":"lan-tun","domain_suffix":"lab.test","query_type":"A","action":"route","server":"virtual"}],
+    "final":"fixture","strategy":"ipv4_only"
+  },
+  "inbounds":[{"type":"tun","tag":"lan-tun","interface_name":"hestia0","address":"172.19.0.1/30","auto_route":false,"stack":"system"}],
+  "outbounds":[
+    {"type":"direct","tag":"ru","bind_interface":"ru0","domain_resolver":"fixture"},
+    {"type":"direct","tag":"fi1","bind_interface":"fi1","domain_resolver":"fixture"},
+    {"type":"direct","tag":"fi2","bind_interface":"fi2","domain_resolver":"fixture"}
+  ],
+  "route":{
+    "rule_set":[{"type":"local","tag":"fi-udp-exceptions","format":"source","path":"fi-udp.json"}],
+    "default_domain_resolver":"fixture",
+    "rules":[
+      {"port":53,"action":"hijack-dns"},
+      {"domain":"ru.lab.test","action":"route","outbound":"ru"},
+      {"domain_suffix":"lab.test","action":"resolve","server":"fixture","strategy":"ipv4_only"},
+      {"network":"udp","rule_set":"fi-udp-exceptions","action":"route","outbound":"fi2"},
+      {"ip_cidr":"203.0.113.0/24","action":"route","outbound":"fi1"},
+      {"action":"reject"}
+    ]
+  }
+}

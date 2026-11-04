@@ -1,0 +1,35 @@
+{
+  "group": "FI",
+  "connections": [
+    {
+      "id": "fi1",
+      "interface": "fi1"
+    },
+    {
+      "id": "fi2",
+      "interface": "fi2"
+    }
+  ],
+  "targets": [
+    {
+      "address": "203.0.113.37",
+      "port": 19092,
+      "protocol": "udp"
+    },
+    {
+      "address": "203.0.113.37",
+      "port": 19092,
+      "protocol": "tcp"
+    },
+    {
+      "address": "203.0.113.200",
+      "port": 19092,
+      "protocol": "udp"
+    }
+  ],
+  "interval": "200ms",
+  "timeout": "120ms",
+  "window": "3s",
+  "min_samples": 5,
+  "margin_percent": 15
+}

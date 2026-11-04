@@ -5,7 +5,7 @@ umask 077
 ROOT=$(cd "$(dirname "$0")" && pwd)
 OUT=$(realpath -m "${1:?empty output directory}")
 mode=${2:-combined}
-[[ $mode == manual || $mode == combined ]]
+[[ $mode == manual || $mode == combined || $mode == steer ]]
 mkdir -p "$OUT"
 [[ $EUID == 0 && -z $(ls -A "$OUT") && -c /dev/net/tun ]]
 cd "$OUT"
@@ -144,6 +144,10 @@ if [[ $mode == manual ]]; then
     phase added
     apply empty
     phase removed
+elif [[ $mode == steer ]]; then
+    # shellcheck source=../steer/phases.sh
+    source "$ROOT/../steer/phases.sh"
+    steer_phases
 else
     # decide samples both paths for the named phase and prints the selected exit.
     decide() {
@@ -184,4 +188,5 @@ kill -INT "${caps[@]}"
 for pid in "${caps[@]}"; do wait "$pid"; done
 for dev in lan0 "${uplinks[@]}"; do grep -qx '0 packets dropped by kernel' "$dev.capture.log"; done
 python3 "$ROOT/fixture.py" verify "$OUT" | tee verification.txt
+if [[ $mode == steer ]]; then python3 "$ROOT/../steer/check.py" verify "$OUT" | tee -a verification.txt; fi
 if [[ $mode == combined ]]; then python3 "$ROOT/sweep.py" verify "$OUT" | tee -a verification.txt; fi

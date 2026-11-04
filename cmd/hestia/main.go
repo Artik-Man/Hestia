@@ -11,11 +11,25 @@ import (
 	"time"
 
 	"github.com/Artik-Man/Hestia/internal/controller"
+	"github.com/Artik-Man/Hestia/internal/observer"
 )
 
 // main selects snapshot validation, one-shot application, or continuous reconciliation.
 // In watch mode SIGTERM and SIGINT cancel the polling loop.
 func main() {
+	if len(os.Args) > 1 && (os.Args[1] == "observe" || os.Args[1] == "steer") {
+		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		defer stop()
+		command := observer.RunCLI
+		if os.Args[1] == "steer" {
+			command = observer.RunSteerCLI
+		}
+		if err := command(ctx, os.Args[2:], os.Stdout, os.Stderr); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
+	}
 	config := flag.String("config", "", "JSON routing and availability snapshot")
 	domain := flag.String("domain", "", "domain selecting the group (empty for direct IP)")
 	check := flag.Bool("check", false, "validate snapshot without applying it")

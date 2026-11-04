@@ -1,0 +1,21 @@
+[Unit]
+Description=Hestia per-interface echo measurements
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+DynamicUser=yes
+LoadCredential=observer.json:/etc/hestia/observer.json
+ExecStart=/usr/local/bin/hestia observe -config %d/observer.json
+Restart=on-failure
+RestartSec=5s
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_INET AF_UNIX AF_NETLINK
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+
+[Install]
+WantedBy=multi-user.target

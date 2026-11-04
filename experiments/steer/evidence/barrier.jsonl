@@ -1,0 +1,5 @@
+{"token": "barrier-516233cb36e161ac", "elapsed_ms": 201, "reply": null}
+{"token": "barrier-9032472f25732465", "elapsed_ms": 230, "reply": {"token": "barrier-9032472f25732465", "peer": "10.88.3.1", "target": "203.0.113.37", "proto": "udp"}}
+{"token": "barrier-b4bd893eefe2e612", "elapsed_ms": 1, "reply": {"token": "barrier-b4bd893eefe2e612", "peer": "10.88.3.1", "target": "203.0.113.37", "proto": "udp"}}
+{"token": "barrier-f2bc7eb0c856ff73", "elapsed_ms": 27, "reply": {"token": "barrier-f2bc7eb0c856ff73", "peer": "10.88.3.1", "target": "203.0.113.37", "proto": "udp"}}
+{"token": "barrier-470fa2cb4819fde7", "elapsed_ms": 53, "reply": {"token": "barrier-470fa2cb4819fde7", "peer": "10.88.2.1", "target": "203.0.113.37", "proto": "udp"}}
