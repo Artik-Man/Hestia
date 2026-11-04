@@ -1,6 +1,7 @@
 """Return deterministic A, NXDOMAIN or SERVFAIL responses, or deliberately drop the DNS reply."""
 
 import asyncio
+import importlib
 import json
 import sys
 from pathlib import Path
@@ -11,8 +12,8 @@ import dns.rcode
 import dns.rrset
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "dns-rotation"))
-import peer
+sys.path.insert(0, str(ROOT))
+peer = importlib.import_module("dns-rotation.peer")
 
 TTL = 2
 
