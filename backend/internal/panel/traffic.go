@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Artik-Man/Hestia/internal/geoip"
 	"github.com/Artik-Man/Hestia/internal/traffic"
 	"github.com/danielgtaylor/huma/v2"
 )
@@ -30,7 +31,7 @@ type trafficSettingsIO struct {
 }
 
 // registerTraffic exposes bounded journal windows and durable storage settings to the local panel.
-func registerTraffic(api huma.API, store *traffic.Store) {
+func registerTraffic(api huma.API, store *traffic.Store, countries *geoip.Index, provider *geoip.Enrichment) {
 	huma.Register(api, huma.Operation{OperationID: "getTraffic", Tags: []string{"Panel"}, Method: http.MethodGet, Path: "/api/traffic", Summary: "Прочитать страницу журнала трафика", Errors: []int{422, 503}}, func(ctx context.Context, in *trafficInput) (*trafficPageOutput, error) {
 		if store == nil {
 			return nil, trafficError(nil)
@@ -52,6 +53,15 @@ func registerTraffic(api huma.API, store *traffic.Store) {
 		page, err := store.Page(ctx, q)
 		if err != nil {
 			return nil, trafficError(err)
+		}
+		for i := range page.Events {
+			event := &page.Events[i]
+			if event.Address != event.FakeIP {
+				event.Country = provider.Country(event.Address)
+				if event.Country == "" {
+					event.Country = countries.Country(event.Address)
+				}
+			}
 		}
 		return &trafficPageOutput{Body: page}, nil
 	})

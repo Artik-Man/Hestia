@@ -1,0 +1,27 @@
+2026-11-05, baseline (before upgrade)
+stage1 GET /api/traffic?query=vk.ru -> total=0, sourceAvailable=true, lost=0
+lastInterruption=2026-11-05T17:23:35.427Z
+systemd, same second: hestia-panel.service stopped and started, alongside hestia and hestia-dns.
+Loaded sing-box rule: domain_suffix "ru" -> outbound "default" (group Россия).
+Loaded sing-box client inbound: tun[wg-clients]. No route sniff action.
+hestia-test-client: curl --ipv4 -sS -o /dev/null -w '%{remote_ip} %{http_code}\n' https://vk.ru/
+87.240.137.164 302
+GET /api/traffic?query=87.240.137.164&limit=2:
+id=1133 time=2026-11-05T17:58:59.844211081Z protocol=TCP port=443
+address=87.240.137.164 domain absent, connection=b8f41d93-d015-446c-9d3f-cbe65a8adf9a
+Same-context sing-box: inbound/tun[wg-clients], outbound/hysteria2[b8f41d93-d015-446c-9d3f-cbe65a8adf9a]
+
+After migration, 2026-11-05:
+All of hestia-panel, hestia, hestia-sing-box, hestia-dns and hestia-geoip-publish.timer active; hestia-smoke@current succeeded.
+Saved country assignments: enabled=true, RU maps to group "default" (Россия).
+GET /api/dns/geoip: {"configured":false}.
+hestia-test-client: curl -4 --resolve vk.ru:443:87.240.137.164 -sS -o /dev/null -w '%{remote_ip} %{http_code}\n' https://vk.ru/
+87.240.137.164 302
+GET /api/traffic?query=vk.ru&output=connection%3Akeenetic-direct:
+id=1326 time=2026-11-05T18:07:27.959261279Z country=RU domain=vk.ru address=87.240.137.164 port=443
+reason="match[4] domain_suffix=ru", connection=keenetic-direct, kind=unconfirmed
+hestia-test-client: curl -sS -o /dev/null -w '%{remote_ip} %{http_code}\n' http://87.240.137.164/
+87.240.137.164 404
+id=1327 time=2026-11-05T18:07:48.452421467Z country=RU address=87.240.137.164 port=80
+reason="match[7] rule_set=geoip-RU", connection=keenetic-direct, kind=unconfirmed
+Chromium viewport 1440x1000, traffic scroll area from y=278 to y=955. Row shows vk.ru, Россия, keenetic-direct.

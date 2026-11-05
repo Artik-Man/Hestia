@@ -16,7 +16,7 @@ Restart=on-failure
 RestartSec=3s
 ProtectSystem=strict
 ProtectHome=yes
-ReadWritePaths=/var/lib/hestia-country-map /run/amneziawg /etc/hestia /run/hestia-awg /run/hestia-install.lock -/etc/NetworkManager/system-connections
+ReadWritePaths=-/var/lib/hestia-geoip-proposals /var/lib/hestia-country-map /run/amneziawg /etc/hestia /run/hestia-awg /run/hestia-install.lock -/etc/NetworkManager/system-connections
 CapabilityBoundingSet=CAP_NET_ADMIN CAP_SETUID CAP_SETGID CAP_CHOWN
 AmbientCapabilities=
 

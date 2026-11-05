@@ -1,0 +1,59 @@
+<form class="dns-settings" (submit)="$event.preventDefault(); save()">
+  <fieldset [disabled]="busy()">
+    <legend>Определение страны по IP</legend>
+    <p class="hint">
+      Шлюз использует базу
+      <a href="https://db-ip.com" rel="noreferrer" target="_blank">DB-IP</a>.
+      Если задать ключ 2ip.io, шлюз будет в фоне передавать сервису только
+      публичный IP назначения для уточнения страны.
+    </p>
+    @if (error()) {
+      <p role="alert">{{ error() }}</p>
+    }
+    @if (configured() !== null) {
+      <p role="status">
+        @if (replaced()) {
+          Ключ заменён.
+        } @else {
+          {{ configured() ? "Ключ 2ip.io настроен." : "Ключ 2ip.io не задан." }}
+        }
+      </p>
+      <div class="dns-entry">
+        <label for="geoip-token">Новый ключ API 2ip.io</label>
+        <input
+          pInputText
+          type="password"
+          id="geoip-token"
+          autocomplete="new-password"
+          maxlength="256"
+          [formControl]="token"
+        />
+      </div>
+      <div class="dns-tools">
+        <button
+          pButton
+          type="submit"
+          [disabled]="!token.value.trim() || busy()"
+        >
+          {{ configured() ? "Заменить ключ" : "Сохранить ключ" }}
+        </button>
+        @if (configured()) {
+          <button
+            pButton
+            severity="secondary"
+            type="button"
+            (click)="save(true)"
+          >
+            Удалить ключ
+          </button>
+        }
+      </div>
+    } @else if (error()) {
+      <button pButton type="button" severity="secondary" (click)="read()">
+        Перечитать настройки GeoIP
+      </button>
+    } @else {
+      <p role="status">Загрузка настроек GeoIP…</p>
+    }
+  </fieldset>
+</form>

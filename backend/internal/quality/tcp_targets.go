@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Artik-Man/Hestia/internal/netaddress"
 	"golang.org/x/net/dns/dnsmessage"
 )
 
@@ -52,7 +53,7 @@ func (c *QualityCheck) NormalizeTCPInput(ctx context.Context, server string) err
 				resolved[name] = ip
 			}
 		}
-		if !publicTarget(ip.Unmap()) {
+		if !netaddress.Public(ip.Unmap()) {
 			return fmt.Errorf("цель TCP %q: требуется публичный IP-адрес", host)
 		}
 		targets = append(targets, netip.AddrPortFrom(ip.Unmap(), port).String())
@@ -138,7 +139,7 @@ func queryPublicIPv4(parent context.Context, server, name string) (netip.Addr, e
 		case dnsmessage.RCodeNameError:
 			return netip.Addr{}, errors.New("домен не найден (NXDOMAIN)")
 		case dnsmessage.RCodeSuccess:
-			if ip, ok := firstAnswerIPv4(&answer, publicTarget); ok {
+			if ip, ok := firstAnswerIPv4(&answer, netaddress.Public); ok {
 				return ip, nil
 			}
 			return netip.Addr{}, errors.New("в ответе нет допустимого публичного IPv4-адреса")

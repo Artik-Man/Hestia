@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   inject,
+  linkedSignal,
   signal,
 } from "@angular/core";
 import { Tooltip } from "primeng/tooltip";
@@ -39,6 +40,17 @@ function grafanaLink(value: unknown): string | null {
   }
 }
 
+const menuStorageKey = "hestia.menu.expanded";
+
+/** readDesktopExpanded restores the wide-menu preference, defaulting to collapsed. */
+function readDesktopExpanded(): boolean {
+  try {
+    return localStorage.getItem(menuStorageKey) === "true";
+  } catch {
+    return false;
+  }
+}
+
 /** Menu keeps internal navigation available even when the optional Grafana configuration fails. */
 @Component({
   selector: "hestia-menu",
@@ -48,7 +60,7 @@ function grafanaLink(value: unknown): string | null {
   styleUrl: "./menu.component.css",
 })
 export class Menu {
-  protected readonly expanded = signal(false);
+  private readonly desktopExpanded = signal(readDesktopExpanded());
   protected readonly toggleLabel = computed(() =>
     this.expanded() ? "Свернуть меню" : "Развернуть меню",
   );
@@ -57,6 +69,28 @@ export class Menu {
     inject(BreakpointObserver).observe("(width < 1000px)"),
     { requireSync: true },
   );
+  private readonly mobileExpanded = linkedSignal({
+    source: () => this.viewport().matches,
+    computation: () => false,
+  });
+  protected readonly expanded = computed(() =>
+    this.viewport().matches ? this.mobileExpanded() : this.desktopExpanded(),
+  );
+
+  /** setExpanded updates this layout and remembers the desktop choice when storage is available. */
+  protected setExpanded(value: boolean): void {
+    if (this.viewport().matches) {
+      this.mobileExpanded.set(value);
+      return;
+    }
+    this.desktopExpanded.set(value);
+    try {
+      localStorage.setItem(menuStorageKey, String(value));
+    } catch {
+      // The in-memory preference still applies when browser storage is unavailable.
+    }
+  }
+
   protected readonly overlayOpen = computed(
     () => this.expanded() && this.viewport().matches,
   );
@@ -64,7 +98,7 @@ export class Menu {
   /** closeOverlay collapses the temporary navigation and returns focus to its toggle. */
   protected closeOverlay(trigger: HTMLButtonElement): void {
     if (this.overlayOpen()) {
-      this.expanded.set(false);
+      this.mobileExpanded.set(false);
       trigger.focus();
     }
   }

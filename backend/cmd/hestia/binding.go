@@ -35,6 +35,19 @@ func runBindingCommand(mode string, input io.Reader, output io.Writer) int {
 	engine := binding.Installed()
 	var err error
 	switch mode {
+	case "-migrate-country-map":
+		err = engine.MigrateCountryMap(ctx)
+	case "-apply-country-map":
+		var change panelmodel.CountryMap
+		if decodeChange(input, 128<<10, &change) != nil {
+			err = binding.ErrInvalidCountryMap
+		} else {
+			var result panelmodel.CountryMap
+			result, err = engine.ApplyCountryMap(ctx, change)
+			if err == nil {
+				err = json.NewEncoder(output).Encode(result)
+			}
+		}
 	case "-create-domain-list":
 		var values panelmodel.DomainListValues
 		if decodeChange(input, 1<<20, &values) != nil {
@@ -126,7 +139,7 @@ func runBindingCommand(mode string, input io.Reader, output io.Writer) int {
 	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		if errors.Is(err, binding.ErrInvalidOrder) || errors.Is(err, binding.ErrInvalidDomainList) {
+		if errors.Is(err, binding.ErrInvalidCountryMap) || errors.Is(err, binding.ErrInvalidOrder) || errors.Is(err, binding.ErrInvalidDomainList) {
 			return 42
 		}
 		if errors.Is(err, binding.ErrNotFound) {

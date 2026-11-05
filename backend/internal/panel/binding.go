@@ -56,7 +56,7 @@ func runInstalledChange[T panelmodel.RuleList | panelmodel.BindingChange | panel
 }
 
 // runInstalledHelper sends one typed request on stdin and captures only the fixed helper's public confirmation.
-func runInstalledHelper[T panelmodel.RuleList | panelmodel.DomainListUpdate | panelmodel.DomainListValues | panelmodel.BindingChange | panelmodel.GroupOrderChange | panelmodel.GroupIdentifier | panelmodel.GroupCreateRequest | panelmodel.ExitMoveCommand | panelmodel.GroupDeleteCommand](ctx context.Context, mode string, change T, output io.Writer) error {
+func runInstalledHelper[T panelmodel.CountryMap | panelmodel.RuleList | panelmodel.DomainListUpdate | panelmodel.DomainListValues | panelmodel.BindingChange | panelmodel.GroupOrderChange | panelmodel.GroupIdentifier | panelmodel.GroupCreateRequest | panelmodel.ExitMoveCommand | panelmodel.GroupDeleteCommand](ctx context.Context, mode string, change T, output io.Writer) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -85,6 +85,9 @@ func runInstalledHelper[T panelmodel.RuleList | panelmodel.DomainListUpdate | pa
 				}
 				return huma.Error404NotFound("Список или группа не найдены")
 			case 42:
+				if mode == "-apply-country-map" {
+					return huma.Error422UnprocessableEntity("Назначьте каждой стране существующую группу")
+				}
 				if mode == "-rename-direct" {
 					return huma.Error422UnprocessableEntity("Недопустимое название или ID подключения")
 				}

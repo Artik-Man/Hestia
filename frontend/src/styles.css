@@ -232,9 +232,6 @@ thead {
   background: var(--ui-raised);
   font-size: 13px;
 }
-hestia-traffic thead th:first-child {
-  width: 50%;
-}
 tbody th {
   font-weight: normal;
 }
@@ -298,9 +295,6 @@ code {
   td {
     padding: 10px 6px;
     font-size: 13px;
-  }
-  hestia-traffic thead th:first-child {
-    width: 42%;
   }
   .state {
     padding: 4px;
@@ -601,4 +595,15 @@ main.frame {
   main.frame {
     padding-bottom: 80px;
   }
+}
+
+hestia-panel:has(main > hestia-traffic) {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}
+main.frame:has(> hestia-traffic) {
+  flex: 1;
+  min-height: 0;
+  padding-bottom: 0;
 }

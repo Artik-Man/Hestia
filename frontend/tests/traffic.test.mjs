@@ -25,6 +25,23 @@ test("traffic page validates the window and the source before accepting observat
   };
   assert.ok(validTrafficPage(page, 1, 500, "2"));
   assert.ok(!validTrafficPage(page, 1, 500, "3"));
+  for (const country of ["", "Russia", null, 12]) {
+    assert.ok(
+      !validTrafficPage({ ...page, events: [{ ...event, country }] }, 1, 500),
+    );
+  }
+  assert.ok(
+    !validTrafficPage(
+      {
+        ...page,
+        events: [
+          { ...event, address: "", fakeIP: "198.18.0.1", country: "RU" },
+        ],
+      },
+      1,
+      500,
+    ),
+  );
   assert.ok(
     !validTrafficPage({ ...page, lastInterruption: "unknown" }, 1, 500),
   );

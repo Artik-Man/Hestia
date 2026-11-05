@@ -13,6 +13,8 @@ test("DNS edits independent lists, rejects stale writes and preserves draft sett
       viewport: { width: 360, height: 800 },
     });
     page.setDefaultTimeout(6000);
+    let hasKey = false;
+    const keyWrites = [];
     let revision = 0,
       available = true,
       reportRows = true;
@@ -36,6 +38,14 @@ test("DNS edits independent lists, rejects stale writes and preserves draft sett
     };
     await page.route("**/*", async (route) => {
       const path = new URL(route.request().url()).pathname;
+      if (path === "/api/dns/geoip") {
+        if (route.request().method() === "PUT") {
+          const { token } = route.request().postDataJSON();
+          keyWrites.push(token);
+          hasKey = Boolean(token);
+        }
+        return route.fulfill({ json: { configured: hasKey } });
+      }
       if (path === "/api/dns/policy") {
         if (route.request().method() === "PUT") {
           const write = route.request().postDataJSON();
@@ -78,6 +88,22 @@ test("DNS edits independent lists, rejects stale writes and preserves draft sett
       });
     });
     await page.goto("http://127.0.0.1/#/dns");
+    const key = page.getByLabel("Новый ключ API 2ip.io");
+    await page.getByText("Ключ 2ip.io не задан.").waitFor();
+    assert.equal(await key.getAttribute("type"), "password");
+    await key.fill("fixture-first");
+    await page.getByRole("button", { name: "Сохранить ключ" }).click();
+    await page.getByText("Ключ 2ip.io настроен.").waitFor();
+    assert.equal(await key.inputValue(), "");
+    await key.fill("fixture-replacement");
+    await page.getByRole("button", { name: "Заменить ключ" }).click();
+    await page.getByText("Ключ заменён.").waitFor();
+    await page.reload();
+    await page.getByText("Ключ 2ip.io настроен.").waitFor();
+    assert.equal(await key.inputValue(), "");
+    await page.getByRole("button", { name: "Удалить ключ" }).click();
+    await page.getByText("Ключ 2ip.io не задан.").waitFor();
+    assert.deepEqual(keyWrites, ["fixture-first", "fixture-replacement", ""]);
     const automatic = page.getByRole("region", {
       name: "Автоматически добавленные",
     });

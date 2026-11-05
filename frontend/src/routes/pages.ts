@@ -47,5 +47,18 @@ export const featurePages = [
   },
 ] as const;
 
+/** Display order for every internal panel route, shared by all menu layouts. */
+const menuOrder = {
+  quality: 1,
+  traffic: 2,
+  connections: 3,
+  groups: 4,
+  "domain-lists": 5,
+  "country-map": 6,
+  dns: 7,
+} satisfies Record<(Page | (typeof featurePages)[number])["path"], number>;
+
 /** Ordered links displayed in the panel navigation. */
-export const navigationPages = [...pages, ...featurePages] as const;
+export const navigationPages = [...pages, ...featurePages].sort(
+  (left, right) => menuOrder[left.path] - menuOrder[right.path],
+);

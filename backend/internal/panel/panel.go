@@ -25,6 +25,7 @@ import (
 
 	"github.com/Artik-Man/Hestia/internal/binding"
 	"github.com/Artik-Man/Hestia/internal/controller"
+	"github.com/Artik-Man/Hestia/internal/geoip"
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
 	"github.com/Artik-Man/Hestia/internal/traffic"
 	"github.com/Artik-Man/Hestia/internal/trafficcapture"
@@ -162,7 +163,7 @@ func registerPanelAPI(mux *http.ServeMux, snapshot, grafanaURL string, writes pa
 	config.CreateHooks = nil
 	config.Transformers = append(config.Transformers, func(ctx huma.Context, _ string, body any) (any, error) {
 		// Huma includes the entire request in decode error details, including WireGuard private keys.
-		if problem, ok := body.(*huma.ErrorModel); ok && (strings.HasPrefix(ctx.Operation().Path, "/api/awg") || strings.HasPrefix(ctx.Operation().Path, hysteriaPath) || strings.HasPrefix(ctx.Operation().Path, "/api/wifi-connections")) {
+		if problem, ok := body.(*huma.ErrorModel); ok && (ctx.Operation().Path == geoIPSettingsPath || strings.HasPrefix(ctx.Operation().Path, "/api/awg") || strings.HasPrefix(ctx.Operation().Path, hysteriaPath) || strings.HasPrefix(ctx.Operation().Path, "/api/wifi-connections")) {
 			problem.Errors = nil
 		}
 		return body, nil
@@ -201,7 +202,8 @@ func registerPanelAPI(mux *http.ServeMux, snapshot, grafanaURL string, writes pa
 	registerAWG(api, writes.awg)
 	registerHysteria2(api, writes.physical)
 	registerQuality(api, snapshot, writes.quality)
-	registerTraffic(api, writes.traffic)
+	registerTraffic(api, writes.traffic, writes.trafficCountries, writes.enrichment)
+	registerGeoIP(api, writes.enrichment)
 	registerCountryMap(api, writes.countryMap)
 	registerDNS(api, writes.dnsPolicyPath, writes.dnsReportPath)
 	return api
@@ -313,6 +315,7 @@ func runPanel() error {
 	dnsReport := flag.String("dns-report", "/run/hestia-dns/report.json", "path to the DNS worker heartbeat and automatic membership report")
 	dnsPolicy := flag.String("dns-policy", "", "path to the panel-owned durable DNS policy; setting this path enables policy management")
 	countryMap := flag.String("country-map", "", "durable country assignments file for a custom snapshot")
+	geoIPIndex := flag.String("geoip-index", "", "country index produced by the GeoIP importer (managed default /usr/share/hestia/geoip/country.bin)")
 	trafficCapture := flag.Bool("traffic-capture", false, "subscribe to local gateway traffic with an explicit traffic-dir on a custom snapshot")
 	trafficDir := flag.String("traffic-dir", "", "private traffic journal directory (defaults to /var/lib/hestia-traffic on the managed gateway)")
 	qualitySettings := flag.String("quality-settings", "", "quality settings file (defaults to the installed settings for the managed gateway)")
@@ -345,7 +348,7 @@ func runPanel() error {
 		if *countryMap != "" {
 			return errors.New("managed gateways use the installed country map")
 		}
-		writes.countryMap = binding.Installed().CountryMap
+		writes.countryMap = installedCountryMap
 	} else if *countryMap != "" {
 		writes.countryMap = binding.CustomCountryMap(*snapshot, *countryMap)
 	}
@@ -354,6 +357,25 @@ func runPanel() error {
 	}
 	if *trafficCapture && *trafficDir == "" {
 		return errors.New("traffic-capture requires traffic-dir or a managed gateway")
+	}
+	if *dnsPolicy != "" {
+		rulesDir := ""
+		if managed {
+			rulesDir = "/var/lib/hestia-geoip-proposals"
+		}
+		writes.enrichment, err = geoip.NewEnrichment(filepath.Dir(*dnsPolicy), rulesDir)
+		if err != nil {
+			log.Printf("cannot initialize 2ip enrichment: %v", err)
+		}
+	}
+	if managed && *geoIPIndex == "" {
+		*geoIPIndex = "/usr/share/hestia/geoip/country.bin"
+	}
+	if *trafficDir != "" && *geoIPIndex != "" {
+		writes.trafficCountries, err = geoip.Load(*geoIPIndex)
+		if err != nil {
+			log.Printf("traffic journal: cannot load GeoIP index: %v", err)
+		}
 	}
 	if *trafficDir != "" {
 		store, storeErr := traffic.Open(*trafficDir)
@@ -409,17 +431,20 @@ func runPanel() error {
 	log.Printf("serving Hestia panel on %s", server.Addr)
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	return servePanel(ctx, server, writes.traffic, managed || *trafficCapture)
+	return servePanel(ctx, server, writes.traffic, writes.enrichment, managed || *trafficCapture)
 }
 
 // servePanel drains HTTP requests and stops journal workers before the caller closes the store.
-func servePanel(ctx context.Context, server *http.Server, store *traffic.Store, capture bool) error {
+func servePanel(ctx context.Context, server *http.Server, store *traffic.Store, provider *geoip.Enrichment, capture bool) error {
 	ctx, cancel := context.WithCancel(ctx)
 	var workers sync.WaitGroup
+	if provider != nil {
+		workers.Go(func() { provider.Run(ctx) })
+	}
 	if store != nil {
 		workers.Go(func() { maintainTraffic(ctx, store) })
 		if capture {
-			workers.Go(func() { trafficcapture.Run(ctx, store) })
+			workers.Go(func() { trafficcapture.Run(ctx, enrichedJournal{Store: store, provider: provider}) })
 		}
 	}
 	defer func() { cancel(); workers.Wait() }()

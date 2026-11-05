@@ -12,16 +12,17 @@ import (
 	"syscall"
 
 	"github.com/Artik-Man/Hestia/internal/controller"
+	"github.com/Artik-Man/Hestia/internal/geoip"
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
 )
 
 // ISO 3166-1 alpha-2 country and territory codes (IANA tzdata iso3166.tab).
-var countryCodes = strings.Fields("AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW")
+var countryCodes = strings.Fields(geoip.CountryCodes)
 var ErrInvalidCountryMap = errors.New("invalid country assignments")
 
-// CountryMap reads or replaces the installed policy while holding the same lock as topology changes.
+// ReadCountryMap reads the applied policy or initializes the legacy defaults under the topology lock.
 // First access captures the current default once. A pending transaction prevents any access.
-func (e Engine) CountryMap(change *panelmodel.CountryMap) (panelmodel.CountryMap, error) {
+func (e Engine) ReadCountryMap() (panelmodel.CountryMap, error) {
 	lock, err := e.acquire(false)
 	if err != nil {
 		return panelmodel.CountryMap{}, err
@@ -30,7 +31,7 @@ func (e Engine) CountryMap(change *panelmodel.CountryMap) (panelmodel.CountryMap
 	if _, err := os.Lstat(filepath.Join(e.dir, pending)); !errors.Is(err, os.ErrNotExist) {
 		return panelmodel.CountryMap{}, ErrUnavailable
 	}
-	return e.lockCountryMap(filepath.Join(e.dir, "snapshot.json"), change)
+	return e.lockCountryMap(filepath.Join(e.dir, "snapshot.json"), nil)
 }
 
 // CustomCountryMap opens an explicitly configured policy for a standalone panel with an unmanaged snapshot.
@@ -64,6 +65,9 @@ func (e Engine) accessCountryMap(snapshot string, change *panelmodel.CountryMap)
 	cfg, err := controller.CheckSnapshot(data)
 	if err != nil || len(cfg.Groups) == 0 {
 		return empty, ErrUnavailable
+	}
+	if cfg.CountryMap != nil && e.dir != "" {
+		return *cfg.CountryMap, nil
 	}
 	current, err := e.readCountryMap()
 	if errors.Is(err, os.ErrNotExist) {
@@ -105,7 +109,7 @@ func (e Engine) accessCountryMap(snapshot string, change *panelmodel.CountryMap)
 
 // completeCountryMap requires each supported country exactly once with a nonempty routing ID.
 func completeCountryMap(policy panelmodel.CountryMap) bool {
-	if len(policy.Assignments) != len(countryCodes) || policy.Version == "" {
+	if len(policy.Assignments) != len(countryCodes) || policy.Version == "" || len(policy.Version) > 64 {
 		return false
 	}
 	for _, code := range countryCodes {
@@ -175,7 +179,15 @@ func (e Engine) saveCountryMap(policy panelmodel.CountryMap) (panelmodel.Country
 }
 
 // checkCountryReferences prevents deleting any group referenced by the saved policy, including when disabled.
-func (e Engine) checkCountryReferences(id string) error {
+func (e Engine) checkCountryReferences(id string, applied *panelmodel.CountryMap) error {
+	if applied != nil {
+		for _, group := range applied.Assignments {
+			if group == id {
+				return ErrConflict
+			}
+		}
+		return nil
+	}
 	if e.countryMapPath == "" {
 		return nil
 	}

@@ -143,7 +143,13 @@ for unit in hestia-smoke@.service hestia-binding-recovery.service hestia-binding
 done
 cp "$repo/deploy/systemd/hestia-awg@.service" "$work/scheme3/"
 cp "$repo/deploy/systemd/hestia-awg.conf" "$work/scheme3/hestia-awg.tmpfiles"
-files=(scheme3 hestia hestia-panel browser amneziawg-go amneziawg-tools-source.tar awg-SHA256SUMS)
+mkdir -p "$work/deploy" "$work/backend/internal/geoip"
+mkdir -p "$work/deploy/systemd"
+cp "$repo/deploy/systemd/"hestia-geoip-publish.{service,timer} "$work/deploy/systemd/"
+cp -R "$repo/deploy/geoip" "$work/deploy/"
+cp "$repo/deploy/"{geoip-install.sh,import_geoip.py,publish_geoip.py} "$work/deploy/"
+cp "$repo/backend/internal/geoip/countries.txt" "$work/backend/internal/geoip/"
+files=(deploy backend scheme3 hestia hestia-panel browser amneziawg-go amneziawg-tools-source.tar awg-SHA256SUMS)
 if [[ $action == install ]]; then
     release=sing-box-1.14.4-linux-arm64
     if [[ -n ${SING_BOX_ARCHIVE:-} ]]; then

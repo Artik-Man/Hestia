@@ -180,7 +180,7 @@ func TestCountryAssignmentBlocksDeletion(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	policy, err := e.CountryMap(nil)
+	policy, err := e.ReadCountryMap()
 	reader.Close()
 	if err != nil {
 		t.Fatal(err)
@@ -193,7 +193,7 @@ func TestCountryAssignmentBlocksDeletion(t *testing.T) {
 		t.Fatalf("policy mode %o prevents bounded helper access or exposes assignments", info.Mode().Perm())
 	}
 	policy.Assignments["FI"] = "backup"
-	if _, err := e.CountryMap(&policy); err != nil {
+	if _, err := CustomCountryMap(filepath.Join(e.dir, "snapshot.json"), e.countryMapPath)(&policy); err != nil {
 		t.Fatal(err)
 	}
 	if err := e.DeleteGroup(context.Background(), "backup"); !errors.Is(err, ErrConflict) {
@@ -204,7 +204,7 @@ func TestCountryAssignmentBlocksDeletion(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer lock.Close()
-	if _, err := e.CountryMap(nil); !errors.Is(err, ErrConflict) {
+	if _, err := e.ReadCountryMap(); !errors.Is(err, ErrConflict) {
 		t.Fatalf("read during group transaction: %v", err)
 	}
 }

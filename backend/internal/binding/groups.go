@@ -144,7 +144,7 @@ func (e Engine) DeleteGroup(ctx context.Context, id string) error {
 			return ErrConflict
 		}
 		expected = current
-		if err := e.checkCountryReferences(id); err != nil {
+		if err := e.checkCountryReferences(id, current.CountryMap); err != nil {
 			return err
 		}
 		expected.Groups = slices.Delete(current.Groups, index, index+1)

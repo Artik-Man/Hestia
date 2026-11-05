@@ -45,6 +45,55 @@ class ProfileTests(unittest.TestCase):
         """Compile the current test profile using only its temporary directory for secrets."""
         return compile_profile(self.profile, self.base)
 
+    def test_country_route_and_domain_precedence(self):
+        """Recompile the same client policy after a group reorder without changing fixed listener routes."""
+        codes = (
+            (
+                Path(__file__).resolve().parents[1]
+                / "backend/internal/geoip/countries.txt"
+            )
+            .read_text()
+            .split()
+        )
+        assignments = dict.fromkeys(codes, "russia")
+        assignments["FI"] = "finland"
+        self.profile["countryMap"] = {
+            "enabled": True,
+            "version": "fixture",
+            "assignments": assignments,
+        }
+        (self.base / "manifest.json").write_text(
+            json.dumps({"countries": ["FI", "RU"]})
+        )
+        with patch("profile.GEOIP_DIRECTORY", self.base):
+            snapshot, backend = self.compile()
+            self.assertEqual(snapshot["countryMap"], self.profile["countryMap"])
+            route = backend["route"]
+            exact, base = [
+                rule
+                for rule in route["rules"]
+                if rule.get("outbound") == "finland" and "rule_set" in rule
+            ]
+            self.assertEqual(exact["rule_set"], ["exact-FI"])
+            self.assertEqual(base["rule_set"], ["geoip-FI"])
+            self.assertLess(route["rules"].index(exact), route["rules"].index(base))
+            masks = [
+                i for i, rule in enumerate(route["rules"]) if "domain_suffix" in rule
+            ]
+            self.assertLess(max(masks), route["rules"].index(exact))
+            self.assertEqual(route["final"], "russia")
+            self.assertNotIn("geoip-RU", [rule["tag"] for rule in route["rule_set"]])
+            self.profile["groups"].reverse()
+            _, backend = self.compile()
+            self.assertEqual(backend["route"]["final"], "finland")
+            self.assertEqual(
+                backend["route"]["rules"][-1],
+                {"action": "route", "outbound": "russia", "rule_set": ["geoip-RU"]},
+            )
+            self.profile["countryMap"]["enabled"] = False
+            _, backend = self.compile()
+            self.assertNotIn("rule_set", backend["route"])
+
     def test_ordered_hysteria_candidates_and_cycle(self):
         """Compile independent physical and VPN clients, probe each privately and reject cross-protocol cycles."""
         self.profile.update(version=2, connectors=[])

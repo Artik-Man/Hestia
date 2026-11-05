@@ -37,13 +37,17 @@
   }
   @if (!sourceAvailable()) {
     <p class="notice" role="status">
-      Источник событий недоступен. Ниже показаны сохранённые записи.
+      Сбор приостановлен. Нет связи с журналом sing-box.
+      @if (lastInterruption(); as interruptedAt) {
+        Связь прервалась {{ timestamp(interruptedAt) }}.
+      }
+      Ниже показаны сохранённые записи.
     </p>
-  }
-  @if (lastInterruption(); as interruptedAt) {
+  } @else if (lastInterruption(); as interruptedAt) {
     <p class="notice" role="status">
-      Последний перерыв сбора — {{ timestamp(interruptedAt) }}. Часть событий
-      могла быть пропущена.
+      Сбор возобновлён. Последний раз связь с журналом sing-box прервалась
+      {{ timestamp(interruptedAt) }}. За время перерыва часть событий могла быть
+      пропущена.
     </p>
   }
   @if (lost() > 0) {
@@ -54,16 +58,17 @@
     [scrollable]="true"
     [virtualScroll]="true"
     [virtualScrollItemSize]="56"
-    scrollHeight="420px"
+    scrollHeight="flex"
     [lazy]="true"
     [lazyLoadOnInit]="false"
     [virtualScrollDelay]="50"
     (onLazyLoad)="viewport($event)"
-    [tableStyle]="{ 'min-width': '46rem', 'table-layout': 'fixed' }"
+    [tableStyle]="{ 'min-width': '60rem', 'table-layout': 'fixed' }"
   >
     <ng-template #header>
       <tr>
         <th scope="col">Домен или IP</th>
+        <th scope="col" rowspan="2">Страна</th>
         <th scope="col">Протокол</th>
         <th scope="col">Дата и время</th>
         <th scope="col">Выход</th>
@@ -127,13 +132,16 @@
               <small>{{ row.address }}</small>
             }
           </td>
+          <td>
+            {{ row.country ? countryNames.of(row.country) : "Не определена" }}
+          </td>
           <td>{{ row.protocol }}</td>
           <td>
             <time [attr.datetime]="row.time">{{ timestamp(row.time) }}</time>
           </td>
           <td [title]="exitName(row)">{{ exitName(row) }}</td>
         } @else {
-          <td colspan="4">Загрузка…</td>
+          <td colspan="5">Загрузка…</td>
         }
       </tr></ng-template
     >
@@ -164,17 +172,22 @@
       </button>
     </div>
   }
-  <p class="hint journal-status" role="status">
-    @if (busy()) {
-      Загрузка событий…
-    } @else if (!error()) {
-      @if (rows().length) {
-        Найдено событий: {{ total() }}
-      } @else {
-        За выбранный период подходящих записей нет.
+  <footer class="hint journal-status">
+    <p role="status">
+      @if (busy()) {
+        Загрузка событий…
+      } @else if (!error()) {
+        @if (rows().length) {
+          Найдено событий: {{ total() }}
+        } @else {
+          За выбранный период подходящих записей нет.
+        }
       }
-    }
-  </p>
+    </p>
+    <a href="https://db-ip.com" rel="noreferrer" target="_blank"
+      >Геолокация IP от DB-IP</a
+    >
+  </footer>
 </section>
 @if (selected(); as item) {
   <hestia-traffic-details [event]="item" (closed)="selected.set(null)" />

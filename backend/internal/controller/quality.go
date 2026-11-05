@@ -46,10 +46,6 @@ func (w *watcher) startQuality(ctx context.Context) error {
 			w.devices[path.ID] = path.Device
 		}
 	}
-	engine, err := quality.NewEngine(qualitySettingsFile)
-	if err != nil {
-		return err
-	}
 	w.relayReady = make(map[string]*atomic.Bool)
 	w.relayProbes = make(chan struct{}, 32)
 	candidates := make(map[string][]quality.Path)
@@ -60,6 +56,12 @@ func (w *watcher) startQuality(ctx context.Context) error {
 			continue
 		}
 		publicPaths = append(publicPaths, path)
+	}
+	engine, err := quality.NewEngine(qualitySettingsFile, publicPaths...)
+	if err != nil {
+		return err
+	}
+	for _, path := range publicPaths {
 		if path.Hysteria2 {
 			ready := new(atomic.Bool)
 			w.relayReady[path.ID] = ready
@@ -71,7 +73,7 @@ func (w *watcher) startQuality(ctx context.Context) error {
 		w.relayReady[id] = ready
 		go w.monitorCandidates(ctx, id, paths, ready)
 	}
-	go engine.Run(ctx, func(context.Context) ([]quality.Path, error) { return publicPaths, nil })
+	go engine.Run(ctx)
 	w.quality = engine
 	return nil
 }

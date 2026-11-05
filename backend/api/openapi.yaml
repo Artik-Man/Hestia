@@ -238,6 +238,9 @@ components:
           items:
             $ref: "#/components/schemas/TargetResult"
           type: array
+        unsupported:
+          description: Выход не поддерживает проверку. Такая проверка исключена из итогового балла.
+          type: boolean
       required:
         - protocol
         - samples
@@ -285,6 +288,26 @@ components:
         - unclassifiedAttempts
         - attempts
         - retriedAttempts
+      type: object
+    DNSGeoIPSettings:
+      additionalProperties: false
+      properties:
+        configured:
+          description: Ключ 2ip сохранён
+          type: boolean
+      required:
+        - configured
+      type: object
+    DNSGeoIPUpdate:
+      additionalProperties: false
+      properties:
+        token:
+          description: Новый ключ 2ip. Пустая строка отключает запросы к сервису.
+          maxLength: 256
+          type: string
+          writeOnly: true
+      required:
+        - token
       type: object
     DNSPolicySnapshot:
       additionalProperties: false
@@ -1045,6 +1068,10 @@ components:
           type: string
         connection:
           type: string
+        country:
+          description: Страна реального IP назначения по текущей базе GeoIP (ISO 3166-1 alpha-2)
+          pattern: ^[A-Z]{2}$
+          type: string
         dnsQueryId:
           type: string
         domain:
@@ -1719,6 +1746,68 @@ paths:
                 $ref: "#/components/schemas/ErrorModel"
           description: Service Unavailable
       summary: Сохранить маршруты по странам
+      tags:
+        - Panel
+  /api/dns/geoip:
+    get:
+      operationId: getDnsGeoip
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DNSGeoIPSettings"
+          description: OK
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Прочитать состояние ключа 2ip
+      tags:
+        - Panel
+    put:
+      operationId: updateDnsGeoip
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DNSGeoIPUpdate"
+        description: Ключ для фоновых запросов GeoIP
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DNSGeoIPSettings"
+          description: OK
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Заменить или удалить ключ 2ip
       tags:
         - Panel
   /api/dns/policy:

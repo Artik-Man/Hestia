@@ -3,9 +3,14 @@ package panel
 import (
 	"encoding/json"
 	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/Artik-Man/Hestia/internal/geoip"
 	"github.com/Artik-Man/Hestia/internal/traffic"
 )
 
@@ -71,5 +76,68 @@ func TestTrafficHTTP(t *testing.T) {
 	offline := panelHandler("", "", nil, panelWrites{})
 	if res = dnsRequest(t, offline, http.MethodGet, "/api/traffic", nil, ""); res.Code != 503 {
 		t.Fatalf("missing store: %d", res.Code)
+	}
+}
+
+// TestGeoIPJournalAPI verifies lookup for old observations and protects the private provider credential in every response.
+func TestGeoIPJournalAPI(t *testing.T) {
+	dir := t.TempDir()
+	store, err := traffic.Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+	dbBytes := append([]byte{'H', 'G', 'I', '1', 0, 0, 0, 1}, 9, 9, 9, 0, 9, 9, 9, 255, 'C', 'H')
+	file := filepath.Join(dir, "geo.bin")
+	if err = os.WriteFile(file, dbBytes, 0600); err != nil {
+		t.Fatal(err)
+	}
+	db, err := geoip.Load(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	provider, err := geoip.NewEnrichment(dir, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := panelHandler("", "", nil, panelWrites{traffic: store, trafficCountries: db, enrichment: provider})
+	for _, e := range []traffic.TrafficEvent{{Address: "9.9.9.9"}, {Address: "", Domain: "vk.ru", FakeIP: "9.9.9.9"}} {
+		e.Time = time.Now()
+		e.Protocol = "TCP"
+		e.Kind = traffic.Unconfirmed
+		if err = store.Append(t.Context(), e); err != nil {
+			t.Fatal(err)
+		}
+	}
+	res := dnsRequest(t, h, http.MethodGet, "/api/traffic", nil, "")
+	var page traffic.TrafficPage
+	if res.Code != 200 || json.Unmarshal(res.Body.Bytes(), &page) != nil || len(page.Events) != 2 || page.Events[0].Country != "" || page.Events[1].Country != "CH" {
+		t.Fatalf("journal: %s", res.Body.String())
+	}
+	const secret = "private-test-token"
+	for _, req := range []struct {
+		method string
+		body   any
+		want   int
+	}{
+		{http.MethodGet, nil, 200},
+		{http.MethodPut, map[string]string{"token": secret}, 200},
+		{http.MethodGet, nil, 200},
+		{http.MethodPut, map[string]string{"wrong": secret}, 422},
+		{http.MethodPut, map[string]string{"token": strings.Repeat(secret, 20)}, 422},
+		{http.MethodPut, map[string]string{"token": secret + " x"}, 422},
+		{http.MethodPut, map[string]string{"token": ""}, 200},
+	} {
+		res = dnsRequest(t, h, req.method, geoIPSettingsPath, req.body, "")
+		if res.Code != req.want || strings.Contains(res.Body.String(), secret) {
+			t.Fatalf("unsafe or failed settings response: status %d, expected %d", res.Code, req.want)
+		}
+	}
+	req := httptest.NewRequest(http.MethodPut, geoIPSettingsPath, strings.NewReader(`{"token":"`+secret))
+	req.Header.Set("Content-Type", "application/json")
+	malformed := httptest.NewRecorder()
+	h.ServeHTTP(malformed, req)
+	if malformed.Code < 400 || strings.Contains(malformed.Body.String(), secret) {
+		t.Fatalf("malformed JSON leaked or accepted: %d", malformed.Code)
 	}
 }

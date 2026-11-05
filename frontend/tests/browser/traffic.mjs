@@ -13,6 +13,7 @@ test("traffic journal reaches rows past 500 and refresh preserves its filters", 
     page.setDefaultTimeout(5000);
     let catalogAvailable = false;
     let revision = 1;
+    let sourceAvailable = true;
     let settings = { maxMB: 1024, retentionHours: 24 };
     const requests = [];
     const writes = [];
@@ -24,6 +25,7 @@ test("traffic journal reaches rows past 500 and refresh preserves its filters", 
       protocol: i % 2 ? "TCP" : "UDP",
       domain: "flow-" + i + ".example",
       address: "192.0.2.1",
+      country: i % 2 ? undefined : "RU",
       port: 443,
       kind: "observed",
       connection: i % 4 ? officeID : "RU-1",
@@ -67,7 +69,7 @@ test("traffic journal reaches rows past 500 and refresh preserves its filters", 
             snapshot: q.get("snapshot") || String(revision),
             outputs: [officeID, "RU-1"],
             lost: 0,
-            sourceAvailable: true,
+            sourceAvailable,
             lastInterruption: new Date(now - 60000).toISOString(),
           },
         });
@@ -79,7 +81,10 @@ test("traffic journal reaches rows past 500 and refresh preserves its filters", 
         return route.fulfill({ status: 503 });
       if (url.pathname === "/api/awg-underlays")
         return route.fulfill({
-          json: [{ id: officeID, name: "Офис", type: "wireguard" }],
+          json: [
+            { id: officeID, name: "Офис", type: "wireguard" },
+            { id: "keenetic-direct", type: "direct" },
+          ],
         });
       if (url.pathname.startsWith("/api/"))
         throw Error("Unexpected request " + url.pathname);
@@ -104,7 +109,42 @@ test("traffic journal reaches rows past 500 and refresh preserves its filters", 
     await page
       .getByRole("button", { name: "flow-0.example", exact: true })
       .waitFor();
-    await page.getByText(/Последний перерыв сбора/).waitFor();
+    await page.getByText(/Сбор возобновлён/).waitFor();
+    await page.getByRole("columnheader", { name: "Страна" }).waitFor();
+    await page
+      .getByRole("cell", { name: "Россия", exact: true })
+      .first()
+      .waitFor();
+    await page.getByRole("cell", { name: "Не определена" }).first().waitFor();
+    const scroller = page.locator(".p-virtualscroller");
+    const initialHeight = (await scroller.boundingBox()).height;
+    await page.setViewportSize({ width: 1280, height: 1080 });
+    await page.waitForFunction(
+      (height) =>
+        document.querySelector(".p-virtualscroller").clientHeight >=
+        height + 340,
+      initialHeight,
+    );
+    assert.ok(
+      await page.evaluate(
+        () => document.documentElement.scrollHeight <= innerHeight + 1,
+      ),
+    );
+    await page.getByRole("combobox", { name: "Выход", exact: true }).click();
+    await page.getByRole("option", { name: "Офис", exact: true }).waitFor();
+    assert.equal(
+      await page.getByRole("option", { name: "Офис", exact: true }).count(),
+      1,
+    );
+    await page
+      .getByRole("option", { name: "keenetic-direct", exact: true })
+      .click();
+    await page
+      .getByText("За выбранный период подходящих записей нет.")
+      .waitFor();
+    assert.equal(requests.at(-1).output, "connection:keenetic-direct");
+    await page.getByRole("combobox", { name: "Выход", exact: true }).click();
+    await page.getByRole("option", { name: "Все выходы", exact: true }).click();
     await page.getByRole("button", { name: "Старее" }).click();
     await page
       .getByRole("button", { name: "flow-10000.example", exact: true })
@@ -199,6 +239,20 @@ test("traffic journal reaches rows past 500 and refresh preserves its filters", 
     await dialog.getByRole("button", { name: "Сохранить" }).click();
     await dialog.waitFor({ state: "hidden" });
     assert.deepEqual(settings, { maxMB: 512, retentionHours: 72 });
+    sourceAvailable = false;
+    await page.getByRole("button", { name: "Обновить журнал" }).click();
+    await page.getByText(/Сбор приостановлен.*Нет связи/s).waitFor();
+    assert.equal(await page.getByText(/Сбор возобновлён/).count(), 0);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForFunction(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    );
+    assert.ok((await scroller.boundingBox()).height > 240);
+    assert.ok(
+      await page.evaluate(
+        () => document.documentElement.scrollHeight <= innerHeight + 1,
+      ),
+    );
   } finally {
     await browser.close();
   }

@@ -16,6 +16,7 @@ type TrafficEvent struct {
 	Time             time.Time `json:"time"`
 	Protocol         string    `json:"protocol" enum:"TCP,UDP"`
 	Address          string    `json:"address"`
+	Country          string    `json:"country,omitempty" pattern:"^[A-Z]{2}$" doc:"Страна реального IP назначения по текущей базе GeoIP (ISO 3166-1 alpha-2)"`
 	Port             int       `json:"port" minimum:"0" maximum:"65535"`
 	Domain           string    `json:"domain,omitempty"`
 	FakeIP           string    `json:"fakeIP,omitempty"`

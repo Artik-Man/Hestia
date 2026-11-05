@@ -8,6 +8,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/Artik-Man/Hestia/internal/panelmodel"
 	"github.com/Artik-Man/Hestia/internal/routing"
 )
 
@@ -15,10 +16,11 @@ const deny = "deny"
 
 // Config describes a complete availability snapshot. Group and exit IDs are sing-box tags.
 type Config struct {
-	Groups         []routing.Group   `json:"groups"`
-	Lists          []routing.List    `json:"lists"`
-	Healthy        map[string]bool   `json:"healthy"`
-	ConnectorKinds map[string]string `json:"connectorKinds,omitempty"`
+	CountryMap     *panelmodel.CountryMap `json:"countryMap,omitempty"`
+	Groups         []routing.Group        `json:"groups"`
+	Lists          []routing.List         `json:"lists"`
+	Healthy        map[string]bool        `json:"healthy"`
+	ConnectorKinds map[string]string      `json:"connectorKinds,omitempty"`
 }
 
 // Decode parses a single JSON snapshot and rejects unknown struct fields or

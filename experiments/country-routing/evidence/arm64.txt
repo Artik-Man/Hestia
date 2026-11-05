@@ -1,0 +1,14 @@
+2026-11-05  Linux ARM64, isolated Lima VM hestia-load-01
+Linux 6.1.0-53-cloud-arm64 aarch64 GNU/Linux
+unshare --net --pid --fork --mount-proc; only loopback enabled
+fs.inotify.max_user_instances: 128 initially, 1024 for test, restored on exit
+sing-box 1.14.4, linux/arm64, revision c005f35300ce76427dc285481ec5695f5b179cd2
+SHA-256
+d953af885f11d6b547c21a3c0ffe70796963afc802fab959d548311002b4908a  sing-box
+ecfd7c9137aadcd28562693c9ce36da1cf7086a58fcce6d1157f1bf5d0826cd5  deploy/profile.py
+3148cb11e663f7eb2a692e158ef33ed2d5cdb5b1c841587ca64ad0c96f59e863  experiments/country-routing/verify.py
+
+sing-box check: exit 0
+DB-IP RU delivered HTTP over the assigned pass group
+Atomic FI override switched subsequent flows to refusing fallback without a restart
+HTTP host matched explicit domain rule and reached target despite FI override

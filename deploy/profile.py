@@ -477,13 +477,98 @@ def export_paths(backend: dict, directory: Path, source: os.stat_result | None =
     os.replace(stream.name, directory / "paths.json")
 
 
-def replace_domain_routes(backend: dict, final: str, rules: list[dict]) -> None:
-    """Retain already verified tunnel transport bindings ahead of rewritten domain/group rules."""
-    transports = [rule for rule in backend["route"].get("rules", [])
-                  if any(tag.startswith(("_wg-transport-", "_quality-")) for tag in rule.get("inbound", []))]
-    backend["route"] = {"final": final}
-    if transports or rules:
-        backend["route"]["rules"] = transports + rules
+GEOIP_DIRECTORY = Path("/usr/share/hestia/geoip")
+GEOIP_OVERRIDES = Path("/var/lib/hestia-geoip-overrides")
+
+
+def client_route(
+    profile: dict, final: str, domain_rules: list[dict], pinned: list[dict]
+) -> dict:
+    """Build ordered client rules after private listener pins, defaulting unknown IPs to the first group."""
+    rules = list(pinned)
+    inbound_tags = [
+        item["tag"]
+        for item in profile.get("inbounds", [])
+        if item["type"] == "tun" and item.get("tag")
+    ]
+    if inbound_tags and domain_rules:
+        rules.append({"inbound": inbound_tags, "action": "sniff", "timeout": "300ms"})
+    rules.extend(domain_rules)
+    route = {"final": final}
+    policy = profile.get("countryMap")
+    if policy is not None:
+        fields(policy, "enabled version assignments")
+        groups = {group["id"] for group in profile["groups"]}
+        assignments = policy["assignments"]
+        require(
+            type(policy["enabled"]) is bool
+            and isinstance(policy["version"], str)
+            and 0 < len(policy["version"]) <= 64
+            and isinstance(assignments, dict)
+            and len(assignments) == 249
+            and all(
+                re.fullmatch("[A-Z]{2}", code) and group in groups
+                for code, group in assignments.items()
+            ),
+            "invalid country routing assignments",
+        )
+        if policy["enabled"]:
+            manifest = json.loads(
+                (GEOIP_DIRECTORY / "manifest.json").read_bytes(),
+                object_pairs_hook=unique,
+            )
+            codes = manifest["countries"]
+            require(
+                isinstance(codes, list)
+                and codes
+                and codes == sorted(set(codes))
+                and all(code in assignments for code in codes),
+                "invalid country database manifest",
+            )
+            local_sets = []
+            for prefix, directory, countries in (
+                ("exact", GEOIP_OVERRIDES, sorted(assignments)),
+                ("geoip", GEOIP_DIRECTORY, codes),
+            ):
+                by_group = {}
+                for code in countries:
+                    group = assignments[code]
+                    # An exact override assigned to the default must still beat a different DB-IP group.
+                    if prefix == "geoip" and group == final:
+                        continue
+                    tag = prefix + "-" + code
+                    local_sets.append(
+                        {
+                            "type": "local",
+                            "tag": tag,
+                            "format": "source",
+                            "path": str(directory / (code + ".json")),
+                        }
+                    )
+                    by_group.setdefault(group, []).append(tag)
+                rules.extend(
+                    {"rule_set": tags, "action": "route", "outbound": group}
+                    for group, tags in by_group.items()
+                )
+            route["rule_set"] = local_sets
+    if rules:
+        route["rules"] = rules
+    return route
+
+
+def replace_domain_routes(
+    backend: dict, profile: dict, final: str, rules: list[dict]
+) -> None:
+    """Recompile group and country rules while retaining verified transport and probe pins."""
+    pinned = [
+        rule
+        for rule in backend["route"].get("rules", [])
+        if any(
+            tag.startswith(("_wg-transport-", "_quality-"))
+            for tag in rule.get("inbound", [])
+        )
+    ]
+    backend["route"] = client_route(profile, final, rules, pinned)
 
 
 def bind_underlay_dns(outbounds: list[dict], servers: list[dict], manual: bool = False) -> None:
@@ -585,14 +670,14 @@ def compile_profile(profile: dict, directory: Path, committed: dict | None = Non
     )
     managed_v2 = False
     if profile["version"] == 1:
-        fields(profile, "version interfaces groups lists healthy socks_port")
+        fields(profile, "version interfaces groups lists healthy socks_port" + (" countryMap" if "countryMap" in profile else ""))
         connectors = []
     else:
         managed_v2 = "inbounds" in profile
         if managed_v2:
-            fields(profile, "version interfaces connectors groups lists healthy inbounds" + (" hysteria2" if "hysteria2" in profile else ""))
+            fields(profile, "version interfaces connectors groups lists healthy inbounds" + (" hysteria2" if "hysteria2" in profile else "") + (" countryMap" if "countryMap" in profile else ""))
         else:
-            fields(profile, "version interfaces connectors groups lists healthy socks_port" + (" hysteria2" if "hysteria2" in profile else ""))
+            fields(profile, "version interfaces connectors groups lists healthy socks_port" + (" hysteria2" if "hysteria2" in profile else "") + (" countryMap" if "countryMap" in profile else ""))
         connectors = profile["connectors"]
         require(isinstance(connectors, list) and len(connectors) <= 64, "invalid connector list")
     listen = None
@@ -720,17 +805,13 @@ def compile_profile(profile: dict, directory: Path, committed: dict | None = Non
     require(all(item["listen_port"] not in existing_ports for item in transport_inbounds), "occupied WireGuard transport port")
     quality_inbounds, quality_rules = quality_fragments(endpoints, existing_ports | {item["listen_port"] for item in transport_inbounds}, profile.get("hysteria2", []))
     inbounds += transport_inbounds + quality_inbounds
-    routes = quality_rules + routes
-    routes = transport_rules + routes
     inbound_tags = {item.get("tag") for item in inbounds if "tag" in item}
     require(
         len(inbound_tags) == sum("tag" in item for item in inbounds)
         and not (inbound_tags & exits),
         "duplicate inbound tag",
     )
-    route = {"final": groups[0]["id"]}
-    if routes:
-        route["rules"] = routes
+    route = client_route(profile, groups[0]["id"], routes, transport_rules + quality_rules)
     backend = {
         "experimental": {"clash_api": {"external_controller": "127.0.0.1:9090"}},
         "inbounds": inbounds,
@@ -766,6 +847,8 @@ def compile_profile(profile: dict, directory: Path, committed: dict | None = Non
     snapshot_groups = [snapshot_group(group) for group in groups]
     unique_group_names(snapshot_groups)
     snapshot = {"groups": snapshot_groups, "lists": lists, "healthy": health}
+    if "countryMap" in profile:
+        snapshot["countryMap"] = profile["countryMap"]
     if connector_kinds(profile):
         snapshot["connectorKinds"] = connector_kinds(profile)
     return snapshot, backend
@@ -801,24 +884,23 @@ def managed_profile(base: Path) -> tuple[dict, dict, dict]:
     require(type(profile.get("version")) is int and profile["version"] in {1, 2}, "unsupported profile")
     managed_v2 = False
     if profile["version"] == 1:
-        fields(profile, "version interfaces groups lists healthy socks_port")
+        fields(profile, "version interfaces groups lists healthy socks_port" + (" countryMap" if "countryMap" in profile else ""))
         connectors = []
     else:
         managed_v2 = "inbounds" in profile
         if managed_v2:
-            fields(profile, "version interfaces connectors groups lists healthy inbounds" + (" hysteria2" if "hysteria2" in profile else ""))
+            fields(profile, "version interfaces connectors groups lists healthy inbounds" + (" hysteria2" if "hysteria2" in profile else "") + (" countryMap" if "countryMap" in profile else ""))
         else:
-            fields(profile, "version interfaces connectors groups lists healthy socks_port" + (" hysteria2" if "hysteria2" in profile else ""))
+            fields(profile, "version interfaces connectors groups lists healthy socks_port" + (" hysteria2" if "hysteria2" in profile else "") + (" countryMap" if "countryMap" in profile else ""))
         connectors = profile["connectors"]
         require(isinstance(connectors, list), "invalid connector metadata")
     backend = read_verified(base, "sing-box.json", "profile-backend.sha256")
     snapshot = json.loads(
         (base / "snapshot.json").read_bytes(), object_pairs_hook=unique
     )
-    if connector_kinds(profile):
-        fields(snapshot, "groups lists healthy connectorKinds")
-    else:
-        fields(snapshot, "groups lists healthy")
+    fields(snapshot, "groups lists healthy" + (" connectorKinds" if connector_kinds(profile) else "")
+           + (" countryMap" if "countryMap" in profile else ""))
+    require(snapshot.get("countryMap") == profile.get("countryMap"), "country map differs from profile")
     profile_groups = [snapshot_group(group) for group in profile["groups"]]
     unique_group_names(profile_groups)
     require(
@@ -843,7 +925,6 @@ def managed_profile(base: Path) -> tuple[dict, dict, dict]:
         )
     lists = profile["lists"]
     route_default = groups[0]["id"]
-    expected_route = {"final": route_default}
     transport_inbounds, transport_rules = transport_fragments(profile, base)
     require([item for item in backend.get("inbounds", []) if item.get("tag", "").startswith("_wg-transport-")]
             == transport_inbounds, "backend transport listeners differ from the selected underlays")
@@ -859,9 +940,15 @@ def managed_profile(base: Path) -> tuple[dict, dict, dict]:
         backend["route"]["rules"] = transport_rules + quality_rules + domain_routes(lists, rank)
     else:
         require(installed_quality == quality_inbounds, "backend quality listeners differ from endpoints")
-    expected_rules = transport_rules + quality_rules + domain_routes(lists, rank)
-    if expected_rules:
-        expected_route["rules"] = expected_rules
+    domains = domain_routes(lists, rank)
+    expected_route = client_route(profile, route_default, domains, transport_rules + quality_rules)
+    if "countryMap" not in profile:
+        previous_rules = transport_rules + quality_rules + domains
+        previous_route = {"final": route_default}
+        if previous_rules:
+            previous_route["rules"] = previous_rules
+        if backend["route"] == previous_route:
+            backend["route"] = expected_route
     require(
         backend["route"]
         == expected_route,
@@ -938,7 +1025,7 @@ def stage_list_routes(stage: Path, profile: dict, snapshot: dict, backend: dict)
     """Compile current list bindings and write a complete generation, omitting empty sing-box rule tables."""
     groups = profile["groups"]
     rules = domain_routes(profile["lists"], {g["id"]: i for i, g in enumerate(groups)})
-    replace_domain_routes(backend, groups[0]["id"], rules)
+    replace_domain_routes(backend, profile, groups[0]["id"], rules)
     snapshot["lists"] = profile["lists"]
     stage_generation(stage, profile, snapshot, backend)
 
@@ -1043,7 +1130,7 @@ def stage_delete_group(base: Path, stage: Path, group_id: str) -> None:
             item["group"] = ""
     snapshot["lists"] = profile["lists"]
     rules = domain_routes(profile["lists"], {item["id"]: i for i, item in enumerate(groups)})
-    replace_domain_routes(backend, groups[0]["id"], rules)
+    replace_domain_routes(backend, profile, groups[0]["id"], rules)
     snapshot["groups"] = [snapshot_group(item) for item in groups]
     stage_generation(stage, profile, snapshot, backend)
 
@@ -1159,7 +1246,7 @@ def stage_order(base: Path, stage: Path, groups: list[dict]) -> None:
     ordered_routes = domain_routes(
         profile["lists"], {group["id"]: i for i, group in enumerate(groups)}
     )
-    replace_domain_routes(backend, desired_groups[0]["id"], ordered_routes)
+    replace_domain_routes(backend, profile, desired_groups[0]["id"], ordered_routes)
     profile["groups"] = desired_groups
     snapshot["groups"] = [snapshot_group(group) for group in desired_groups]
     stage_generation(stage, profile, snapshot, backend)
@@ -1201,6 +1288,13 @@ def main() -> None:
         return
     if len(sys.argv) == 3 and sys.argv[1] == "--validate-managed":
         managed_profile(Path(sys.argv[2]))
+        return
+    if len(sys.argv) == 4 and sys.argv[1] == "--country-map":
+        base, stage = Path(sys.argv[2]), Path(sys.argv[3])
+        profile, snapshot, backend = managed_profile(base)
+        policy = json.loads((stage / "country-request.json").read_bytes(), object_pairs_hook=unique)
+        profile["countryMap"] = snapshot["countryMap"] = policy
+        stage_list_routes(stage, profile, snapshot, backend)
         return
     if len(sys.argv) == 5 and sys.argv[1] == "--save-list":
         stage = Path(sys.argv[3])

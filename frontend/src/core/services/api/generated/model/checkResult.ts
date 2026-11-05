@@ -17,6 +17,10 @@ export interface CheckResult {
     score: number | null;
     successes: number;
     targets: Array<TargetResult>;
+    /**
+     * Выход не поддерживает проверку. Такая проверка исключена из итогового балла.
+     */
+    unsupported?: boolean;
 }
 export namespace CheckResult {
     export const ProtocolEnum = {

@@ -39,6 +39,10 @@ import { BindingChange } from '../model/bindingChange';
 // @ts-ignore
 import { CountryMap } from '../model/countryMap';
 // @ts-ignore
+import { DNSGeoIPSettings } from '../model/dNSGeoIPSettings';
+// @ts-ignore
+import { DNSGeoIPUpdate } from '../model/dNSGeoIPUpdate';
+// @ts-ignore
 import { DNSPolicySnapshot } from '../model/dNSPolicySnapshot';
 // @ts-ignore
 import { DNSPolicyUpdate } from '../model/dNSPolicyUpdate';
@@ -1093,6 +1097,59 @@ export class PanelService extends BaseService {
         let localVarPath = `/api/country-map`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<CountryMap>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Прочитать состояние ключа 2ip
+     * @endpoint get /api/dns/geoip
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public getDnsGeoip(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<DNSGeoIPSettings>;
+    public getDnsGeoip(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<DNSGeoIPSettings>>;
+    public getDnsGeoip(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<DNSGeoIPSettings>>;
+    public getDnsGeoip(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+
+        let localVarHeaders = this.defaultHeaders;
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/dns/geoip`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<DNSGeoIPSettings>('get', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
                 responseType: <any>responseType_,
@@ -2378,6 +2435,73 @@ export class PanelService extends BaseService {
             {
                 context: localVarHttpContext,
                 body: countryMap,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Заменить или удалить ключ 2ip
+     * @endpoint put /api/dns/geoip
+     * @param dNSGeoIPUpdate Ключ для фоновых запросов GeoIP
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public updateDnsGeoip(dNSGeoIPUpdate: DNSGeoIPUpdate, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<DNSGeoIPSettings>;
+    public updateDnsGeoip(dNSGeoIPUpdate: DNSGeoIPUpdate, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<DNSGeoIPSettings>>;
+    public updateDnsGeoip(dNSGeoIPUpdate: DNSGeoIPUpdate, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<DNSGeoIPSettings>>;
+    public updateDnsGeoip(dNSGeoIPUpdate: DNSGeoIPUpdate, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (dNSGeoIPUpdate === null || dNSGeoIPUpdate === undefined) {
+            throw new Error('Required parameter dNSGeoIPUpdate was null or undefined when calling updateDnsGeoip.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/dns/geoip`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<DNSGeoIPSettings>('put', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: dNSGeoIPUpdate,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

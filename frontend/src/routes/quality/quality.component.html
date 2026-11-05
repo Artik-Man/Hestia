@@ -21,7 +21,6 @@
   </p>
 }
 @if (report(); as data) {
-  <hestia-quality-settings [settings]="data.settings" (saved)="reload()" />
   <section aria-labelledby="groups-title">
     <div class="section-heading">
       <h2 id="groups-title">Группы подключений</h2>
@@ -74,14 +73,16 @@
               @for (check of data.settings.checks; track check.protocol) {
                 @let item = result(row, check.protocol);
                 <td>
-                  @if (
+                  @if (item?.unsupported) {
+                    не поддерживается
+                  } @else if (
                     item && item.score !== null && item.score !== undefined
                   ) {
                     <strong>{{ roundScore(item.score) }}%</strong>
                   } @else {
                     Нет данных
                   }
-                  @if (item) {
+                  @if (item && !item.unsupported) {
                     <details>
                       <summary>
                         Успешно {{ item.successes }} из {{ item.samples }}
@@ -130,6 +131,7 @@
       <p class="notice">Нет настроенных групп</p>
     }
   </section>
+  <hestia-quality-settings [settings]="data.settings" (saved)="reload()" />
 } @else if (!failed()) {
   <p class="notice" role="status">Загружаем проверки и результаты…</p>
 }

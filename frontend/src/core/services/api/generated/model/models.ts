@@ -11,6 +11,8 @@ export * from './bindingChange';
 export * from './checkResult';
 export * from './countryMap';
 export * from './dNSClientUDP';
+export * from './dNSGeoIPSettings';
+export * from './dNSGeoIPUpdate';
 export * from './dNSPolicySnapshot';
 export * from './dNSPolicyUpdate';
 export * from './dNSSettings';

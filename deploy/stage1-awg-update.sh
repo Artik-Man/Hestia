@@ -88,6 +88,12 @@ git clone --depth 1 --branch "$awg_tools_tag" \
 }
 git -C "$work/amneziawg-tools-source" archive --format=tar HEAD >"$work/amneziawg-tools-source.tar"
 
+mkdir -p "$work/deploy" "$work/backend/internal/geoip"
+mkdir -p "$work/deploy/systemd"
+cp "$repo/deploy/systemd/"hestia-geoip-publish.{service,timer} "$work/deploy/systemd/"
+cp -R "$repo/deploy/geoip" "$work/deploy/"
+cp "$repo/deploy/"{geoip-install.sh,import_geoip.py,publish_geoip.py} "$work/deploy/"
+cp "$repo/backend/internal/geoip/countries.txt" "$work/backend/internal/geoip/"
 cp "$repo/deploy/$apply" "$work/"
 for unit in ${extra[@]+"${extra[@]}"}; do cp "$repo/deploy/systemd/$unit" "$work/"; done
 cp "$repo/deploy/awg-upgrade.sh" "$repo/deploy/profile.py" "$repo/deploy/smoke.py" "$work/"
@@ -102,7 +108,7 @@ cp "$repo/deploy/systemd/hestia-awg.sudoers" "$work/"
 cp "$repo/deploy/systemd/hestia-panel.service.in" "$work/"
 (cd "$work" && shasum -a 256 hestia hestia-panel amneziawg-go amneziawg-tools-source.tar hestia-dns.service >SHA256SUMS)
 COPYFILE_DISABLE=1 tar -C "$work" -czf "$work/stage1-awg-update.tgz" \
-    hestia hestia-panel browser amneziawg-go amneziawg-tools-source.tar SHA256SUMS \
+    deploy backend hestia hestia-panel browser amneziawg-go amneziawg-tools-source.tar SHA256SUMS \
     "$apply" ${extra[@]+"${extra[@]}"} awg-upgrade.sh profile.py smoke.py adopt-profile.py guest-profile.json hestia.service stage1-backend-credential.sh stage1-backend-credential.dropin hestia-smoke@.service hestia-awg@.service \
     hestia-awg.conf hestia-awg.sudoers hestia-panel.service.in
 

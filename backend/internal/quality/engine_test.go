@@ -233,3 +233,84 @@ func TestResponseCodesExpireIndependently(t *testing.T) {
 		t.Fatal(row)
 	}
 }
+
+// TestUnsupportedICMP verifies capability reporting before the first round and scoring only supported checks.
+func TestUnsupportedICMP(t *testing.T) {
+	relay := Path{ID: "relay", SocksAddress: "127.0.0.1:1080"}
+	direct := Path{ID: "direct", Device: "eth0"}
+	e, err := NewEngine(filepath.Join(t.TempDir(), "settings.json"), relay, direct)
+	if err != nil {
+		t.Fatal(err)
+	}
+	settings := e.Settings()
+	tcp := settings.Checks[1]
+	ping := Check{Protocol: ICMP, Targets: []string{"8.8.8.8"}, TimeoutSeconds: 1, IntervalSeconds: 30}
+	settings.Checks = []Check{ping}
+	if err := e.ApplySettings(settings); err != nil {
+		t.Fatal(err)
+	}
+	_, rows := e.Snapshot([]string{relay.ID, direct.ID})
+	check := rows[relay.ID].Checks[0]
+	if !check.Unsupported || check.Score != nil || check.Targets == nil || len(check.Targets) != 0 || check.LocalErrors != 0 || rows[relay.ID].Overall != nil || rows[direct.ID].Checks[0].Unsupported {
+		t.Fatalf("unexpected initial results: %+v", rows)
+	}
+	settings.Checks = append(settings.Checks, tcp)
+	if err := e.ApplySettings(settings); err != nil {
+		t.Fatal(err)
+	}
+	_, rows = e.Snapshot([]string{relay.ID})
+	if rows[relay.ID].Overall != nil {
+		t.Fatalf("unmeasured TCP should keep score unknown: %+v", rows)
+	}
+	for _, p := range []Path{relay, direct} {
+		e.record(seriesKey{p.ID, TCP, tcp.Targets[0]}, time.Now(), success)
+		e.record(seriesKey{p.ID, TCP, tcp.Targets[0]}, time.Now(), failure)
+	}
+	_, rows = e.Snapshot([]string{relay.ID, direct.ID})
+	if rows[relay.ID].Overall == nil || *rows[relay.ID].Overall != 50 || rows[direct.ID].Overall != nil {
+		t.Fatalf("expected 50%% for SOCKS and incomplete direct exit: %+v", rows)
+	}
+}
+
+// TestICMPScheduleSkipsSOCKS verifies the completed worker round records local setup failures only for supported paths.
+func TestICMPScheduleSkipsSOCKS(t *testing.T) {
+	relay := Path{ID: "relay", SocksAddress: "127.0.0.1:1080"}
+	direct := Path{ID: "direct", DialContext: func(context.Context, string, string) (net.Conn, error) {
+		return nil, errors.New("test socket setup failed")
+	}}
+	e, err := NewEngine(filepath.Join(t.TempDir(), "settings.json"), relay, direct)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ping := Check{Protocol: ICMP, Targets: []string{"8.8.8.8"}, TimeoutSeconds: 1, IntervalSeconds: 30}
+	if err := e.ApplySettings(Settings{WindowMinutes: 60, Checks: []Check{ping}}); err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		e.runCheck(ctx, ICMP)
+	}()
+	defer func() {
+		cancel()
+		<-done
+	}()
+	deadline := time.Now().Add(3 * time.Second)
+	for {
+		e.mu.RLock()
+		directResult := e.history[seriesKey{direct.ID, ICMP, ping.Targets[0]}]
+		relayResult := e.history[seriesKey{relay.ID, ICMP, ping.Targets[0]}]
+		e.mu.RUnlock()
+		if directResult != nil {
+			if relayResult != nil {
+				t.Fatal("unsupported ICMP generated measurement history")
+			}
+			return
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("ICMP round did not publish its supported path")
+		}
+		time.Sleep(time.Millisecond)
+	}
+}

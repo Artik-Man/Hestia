@@ -35,6 +35,8 @@ def export(output: Path, base: Path = Path("/etc/hestia")) -> None:
     snapshot = read(base / "snapshot.json")
     if "healthy" in profile:
         expected = {k: profile[k] for k in ("groups", "lists", "healthy")}
+        if "countryMap" in profile:
+            expected["countryMap"] = profile["countryMap"]
         healthy = snapshot.get("healthy")
         known = {tag for group in profile["groups"] for tag in group["exits"]}
         if not isinstance(healthy, dict) or any(

@@ -1,7 +1,9 @@
 package panel
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 
@@ -26,6 +28,8 @@ func registerCountryMap(api huma.API, access countryMapAccess) {
 			return nil, huma.Error409Conflict("Настройки изменились или выполняется другая операция")
 		case errors.Is(err, binding.ErrInvalidCountryMap):
 			return nil, huma.Error422UnprocessableEntity("Назначьте каждой стране существующую группу")
+		case errors.As(err, new(huma.StatusError)):
+			return nil, err
 		case err != nil:
 			return nil, huma.Error503ServiceUnavailable("Не удалось прочитать или сохранить маршруты по странам")
 		}
@@ -33,4 +37,18 @@ func registerCountryMap(api huma.API, access countryMapAccess) {
 	}
 	huma.Register(api, huma.Operation{OperationID: "getCountryMap", Tags: []string{"Panel"}, Method: http.MethodGet, Path: "/api/country-map", Summary: "Прочитать маршруты по странам", Errors: []int{409, 503}}, func(_ context.Context, _ *struct{}) (*countryMapMessage, error) { return invoke(nil) })
 	huma.Register(api, huma.Operation{OperationID: "updateCountryMap", Tags: []string{"Panel"}, Method: http.MethodPut, Path: "/api/country-map", Summary: "Сохранить маршруты по странам", MaxBodyBytes: 128 << 10, Errors: []int{409, 413, 422, 503}}, func(_ context.Context, in *countryMapMessage) (*countryMapMessage, error) { return invoke(&in.Body) })
+}
+
+// installedCountryMap reads the applied snapshot or delegates a transactional update to the fixed root helper.
+func installedCountryMap(change *panelmodel.CountryMap) (panelmodel.CountryMap, error) {
+	if change == nil {
+		return binding.Installed().ReadCountryMap()
+	}
+	var buffer bytes.Buffer
+	var result panelmodel.CountryMap
+	if err := runInstalledHelper(context.Background(), "-apply-country-map", *change, &buffer); err != nil {
+		return result, err
+	}
+	err := json.Unmarshal(buffer.Bytes(), &result)
+	return result, err
 }

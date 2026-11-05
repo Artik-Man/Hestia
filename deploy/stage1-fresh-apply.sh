@@ -27,6 +27,7 @@ python3 -I profile.py guest-profile.json config .
 /usr/local/bin/sing-box check -c config/sing-box.json
 getent group hestia-snapshot >/dev/null || groupadd --system hestia-snapshot
 id hestia-panel >/dev/null 2>&1 || useradd --system --user-group --no-create-home --shell /usr/sbin/nologin hestia-panel
+bash deploy/geoip-install.sh
 visudo -cf hestia-awg.sudoers
 for unit in hestia-dns.service hestia-panel.service hestia-binding-watch.path hestia-binding-watch.service hestia.service hestia-sing-box.service hestia-awg.service; do
     if [[ $(systemctl show "$unit" -p LoadState --value) != not-found ]]; then

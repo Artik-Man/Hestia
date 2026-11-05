@@ -512,6 +512,7 @@ if [[ -s $release/ready-awg ]]; then
     restart_ready_awg "$profile_link"
 fi
 if [[ $mode == update && -e /proc/$$/fd/8 ]]; then flock -u 8; fi
+bash "$bundle/deploy/geoip-install.sh"
 systemctl enable --now hestia-binding-watch.path
 sed "s/@LAN_IP@/$gateway_ip/" "$bundle/scheme3/host-panel.service.in" >"$panel"
 systemctl daemon-reload
@@ -525,4 +526,5 @@ for service in hestia hestia-panel hestia-sing-box; do systemctl is-active "$ser
 if [[ $(systemctl is-enabled hestia-awg.service 2>/dev/null || :) == enabled ]]; then
     systemctl disable hestia-awg.service
 fi
+"$app/current/hestia" -migrate-country-map
 printf 'Panel: http://%s:8080\n' "$gateway_ip"

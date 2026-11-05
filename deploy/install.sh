@@ -155,6 +155,7 @@ if [[ ! -f $marker ]]; then
         [[ ! -e $file ]] || die "profile metadata exists outside this installer: $file"
     done
 fi
+bash "$repo/deploy/geoip-install.sh"
 stage=$work/config
 mkdir "$stage"
 if [[ -n $profile ]]; then
@@ -212,6 +213,7 @@ if ! getent group hestia-snapshot >/dev/null; then
     groupadd --system hestia-snapshot
     had_group=0
 fi
+chgrp hestia-snapshot /var/lib/hestia-geoip-overrides
 chown root:hestia-snapshot /run/hestia-install.lock
 chmod 0640 /run/hestia-install.lock
 for dir in /usr/local/bin /usr/local/lib/hestia /etc/systemd/system/hestia.service.d /etc/tmpfiles.d; do
@@ -256,3 +258,7 @@ if ! timeout 6s python3 "$repo/deploy/smoke.py"; then
     exit 1
 fi
 echo "Hestia installed; smoke check passed in $((SECONDS - start)) s."
+# Migrate panel-managed assignments under their own fail-safe binding transaction.
+transaction=0
+flock -u 9
+/usr/local/bin/hestia -migrate-country-map

@@ -22,7 +22,7 @@ type journal interface {
 
 // Run consumes the installed gateway's loopback-only Clash subscription until cancellation.
 // Reconnecting establishes a fresh attribution scope; the upstream offers no history replay.
-func Run(ctx context.Context, store *traffic.Store) {
+func Run(ctx context.Context, store journal) {
 	run(ctx, gatewayLog, store)
 }
 

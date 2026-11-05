@@ -179,7 +179,7 @@ function validResponseCodes(value: unknown, errors: number): boolean {
   return total === errors;
 }
 
-/** validResult checks each target and preserves the distinction between missing data and zero. */
+/** validResult checks each target and distinguishes unsupported checks, missing samples and measured scores. */
 function validResult(value: unknown): value is Result {
   return (
     record(value) &&
@@ -188,6 +188,13 @@ function validResult(value: unknown): value is Result {
     score(value.score) &&
     (value.score === null) === (value.samples === 0) &&
     Array.isArray(value.targets) &&
+    (value.unsupported === undefined ||
+      typeof value.unsupported === "boolean") &&
+    (!value.unsupported ||
+      (value.protocol === "ICMP" &&
+        value.samples === 0 &&
+        value.localErrors === 0 &&
+        value.targets.length === 0)) &&
     value.targets.every(
       (t) =>
         record(t) &&

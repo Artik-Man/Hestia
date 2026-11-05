@@ -445,6 +445,7 @@ systemd-tmpfiles --create /etc/tmpfiles.d/hestia-awg.conf /etc/tmpfiles.d/hestia
 /usr/local/bin/hestia -check -config /etc/hestia/snapshot.json
 /usr/local/lib/hestia/sing-box check -c /etc/hestia/sing-box.json >/dev/null
 python3 -I /usr/local/lib/hestia/profile.py --validate-managed /etc/hestia
+bash "$bundle/deploy/geoip-install.sh"
 named_activation=1
 restart_ready_awg /usr/local/lib/hestia/profile.py || die "A committed connector failed its egress check; inspect backup $backup"
 # The runtime and candidate were verified under the installer lock. Later checks use the manual backup.
@@ -478,4 +479,5 @@ fi
 if [[ $(systemctl is-enabled hestia-awg.service 2>/dev/null || :) == enabled ]]; then
     systemctl disable hestia-awg.service
 fi
+/usr/local/bin/hestia -migrate-country-map
 echo "Stage1 package is installed. Manual backup of replaced files and service state: $backup"

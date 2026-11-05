@@ -49,21 +49,34 @@ test("quality page displays all ranked groups, keeps a measured zero, and persis
           active: confirmed && id === "b",
           result: {
             overall: id === "b" ? 85.47 : null,
-            checks: settings.checks.map((check) => ({
-              protocol: check.protocol,
-              samples: id === "b" ? 1 : 0,
-              successes: 0,
-              localErrors: 0,
-              score: id === "b" ? (check.protocol === "TCP" ? 85.5 : 0) : null,
-              targets: check.targets.map((target) => ({
-                target,
-                samples: id === "b" ? 1 : 0,
-                successes: 0,
-                localErrors: 0,
-                dnsErrors: 0,
-                score: id === "b" ? 0 : null,
-              })),
-            })),
+            checks: settings.checks.map((check) =>
+              id === "b" && check.protocol === "ICMP"
+                ? {
+                    protocol: "ICMP",
+                    unsupported: true,
+                    samples: 0,
+                    successes: 0,
+                    localErrors: 0,
+                    score: null,
+                    targets: [],
+                  }
+                : {
+                    protocol: check.protocol,
+                    samples: id === "b" ? 1 : 0,
+                    successes: 0,
+                    localErrors: 0,
+                    score:
+                      id === "b" ? (check.protocol === "TCP" ? 85.5 : 0) : null,
+                    targets: check.targets.map((target) => ({
+                      target,
+                      samples: id === "b" ? 1 : 0,
+                      successes: 0,
+                      localErrors: 0,
+                      dnsErrors: 0,
+                      score: id === "b" ? 0 : null,
+                    })),
+                  },
+            ),
           },
         }));
         return route.fulfill({
@@ -144,6 +157,30 @@ test("quality page displays all ranked groups, keeps a measured zero, and persis
     });
     await page.goto("http://127.0.0.1/#/quality");
     await page.getByRole("rowheader", { name: "b", exact: true }).waitFor();
+    assert.deepEqual(
+      await page.getByRole("heading", { level: 2 }).allTextContents(),
+      ["Группы подключений", "Проверки"],
+    );
+    const menu = page.getByRole("navigation", { name: "Основная навигация" });
+    const links = menu.getByRole("link");
+    const menuLabels = [
+      "Качество связи",
+      "Журнал трафика",
+      "Подключения",
+      "Группы подключений",
+      "Доменные списки",
+      "Маршруты по странам",
+      "DNS",
+    ];
+    assert.equal(await links.count(), menuLabels.length);
+    await links.first().focus();
+    for (const [index, label] of menuLabels.entries()) {
+      if (index > 0) await page.keyboard.press("Tab");
+      assert.equal(
+        await menu.locator("a:focus").getAttribute("aria-label"),
+        label,
+      );
+    }
     catalogAvailable = true;
     await page.getByRole("button", { name: "Обновить", exact: true }).click();
     await page.getByRole("rowheader", { name: "Бета", exact: true }).waitFor();
@@ -228,6 +265,13 @@ test("quality page displays all ranked groups, keeps a measured zero, and persis
         check: { ...check, intervalSeconds: 30, timeoutSeconds: 3 },
       });
     }
+    const unsupported = first.getByRole("cell", {
+      name: "не поддерживается",
+      exact: true,
+    });
+    await unsupported.waitFor();
+    assert.equal(await unsupported.locator("details").count(), 0);
+    await first.getByText("85%", { exact: true }).waitFor();
     for (const check of settings.checks) {
       const label = check.protocol === "HTTP3" ? "HTTP/3" : check.protocol;
       const dialog = await open("Редактировать проверку " + label);

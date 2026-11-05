@@ -1,0 +1,16 @@
+[Unit]
+Description=Publish validated Hestia country overrides
+ConditionPathExists=/var/lib/hestia-geoip-proposals/ZW.json
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 -I /usr/local/lib/hestia/publish_geoip.py
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+PrivateNetwork=yes
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+SupplementaryGroups=hestia-snapshot
+ReadWritePaths=/var/lib/hestia-geoip-overrides

@@ -45,7 +45,7 @@ import { trafficLimits, validTrafficPage } from "./traffic-observations";
     TrafficSettingsDialog,
   ],
   templateUrl: "./traffic.component.html",
-  styleUrl: "../../styles/traffic-quality.css",
+  styleUrls: ["../../styles/traffic-quality.css", "./traffic.component.css"],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TrafficScreen {
@@ -88,13 +88,23 @@ export class TrafficScreen {
     dateStyle: "short",
     timeStyle: "medium",
   });
+  protected readonly countryNames = new Intl.DisplayNames("ru", {
+    type: "region",
+  });
   private readonly connections = signal<string[]>([]);
   protected readonly outputs = computed(() => [
     { label: "Все выходы", value: "" },
-    ...this.connections().map((id) => ({
-      label: this.catalog.name(id),
-      value: "connection:" + id,
-    })),
+    ...Array.from(
+      new Set([
+        ...this.catalog.entries().keys(),
+        ...this.catalog.hysteriaProfiles().keys(),
+        ...this.connections(),
+      ]),
+      (id) => ({
+        label: this.catalog.name(id),
+        value: "connection:" + id,
+      }),
+    ),
     { label: "Заблокировано", value: "blocked" },
     { label: "Выход не подтверждён", value: "unconfirmed" },
   ]);

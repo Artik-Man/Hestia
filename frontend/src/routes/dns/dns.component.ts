@@ -14,6 +14,7 @@ import { InputNumber } from "primeng/inputnumber";
 import { ToggleSwitch } from "primeng/toggleswitch";
 import { Message } from "primeng/message";
 import { Subscription, timer, timeout } from "rxjs";
+import { GeoipSettings } from "../../core/components/geoip-settings/geoip-settings.component";
 import { PanelService } from "../../core/services/api/generated/api/panel.service";
 import {
   DnsNames,
@@ -39,6 +40,7 @@ import {
     ToggleSwitch,
     Message,
     DnsNames,
+    GeoipSettings,
   ],
   templateUrl: "./dns.component.html",
   styleUrl: "../../styles/dns.css",

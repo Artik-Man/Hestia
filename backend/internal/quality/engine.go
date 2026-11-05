@@ -22,6 +22,7 @@ type TargetResult struct {
 
 // CheckResult counts all completed exchanges in one transport check.
 type CheckResult struct {
+	Unsupported bool           `json:"unsupported,omitempty" doc:"Выход не поддерживает проверку. Такая проверка исключена из итогового балла."`
 	Protocol    string         `json:"protocol" enum:"UDP,TCP,ICMP,DNS,HTTPS,HTTP3"`
 	Samples     int            `json:"samples"`
 	Successes   int            `json:"successes"`
@@ -30,7 +31,7 @@ type CheckResult struct {
 	Targets     []TargetResult `json:"targets" nullable:"false"`
 }
 
-// Result contains a connection's check scores and their arithmetic mean when all are known.
+// Result contains a connection's check scores and their arithmetic mean when all supported checks have samples.
 type Result struct {
 	Checks  []CheckResult `json:"checks" nullable:"false"`
 	Overall *float64      `json:"overall" nullable:"true"`
@@ -48,20 +49,28 @@ type observation struct {
 
 // Engine schedules comparable probes and owns independently timestamped observations for the running worker session.
 type Engine struct {
-	mu       sync.RWMutex
-	settings Settings
-	epochs   map[string]uint64
-	started  time.Time
-	history  map[seriesKey]*windowSeries
+	paths      []Path
+	socksExits map[string]bool
+	mu         sync.RWMutex
+	settings   Settings
+	epochs     map[string]uint64
+	started    time.Time
+	history    map[seriesKey]*windowSeries
 }
 
-// NewEngine loads persisted settings and creates empty measurement history.
-func NewEngine(path string) (*Engine, error) {
+// NewEngine loads settings and fixes the public probe paths and their capabilities for this worker generation.
+func NewEngine(path string, paths ...Path) (*Engine, error) {
 	s, err := LoadSettings(path)
 	if err != nil {
 		return nil, err
 	}
-	return &Engine{settings: s, epochs: map[string]uint64{}, started: time.Now(), history: map[seriesKey]*windowSeries{}}, nil
+	socksExits := make(map[string]bool)
+	for _, path := range paths {
+		if path.SocksAddress != "" {
+			socksExits[path.ID] = true
+		}
+	}
+	return &Engine{paths: slices.Clone(paths), socksExits: socksExits, settings: s, epochs: map[string]uint64{}, started: time.Now(), history: map[seriesKey]*windowSeries{}}, nil
 }
 
 // cloneSettings returns a deep copy so readers cannot mutate worker state.
@@ -122,13 +131,25 @@ func (e *Engine) Snapshot(ids []string) (Settings, map[string]Result) {
 	return cloneSettings(e.settings), results
 }
 
-// scores excludes local failures and weights each configured check equally, including a genuine zero score.
+// unsupported reports whether the configured exit cannot carry a protocol at all.
+func (e *Engine) unsupported(id, protocol string) bool {
+	return protocol == ICMP && e.socksExits[id]
+}
+
+// scores excludes unsupported checks and weights all supported checks equally, including a genuine zero score.
 func (e *Engine) scores(id string) Result {
 	r := Result{Checks: []CheckResult{}}
 	sum := 0.
-	complete := len(e.settings.Checks) > 0
+	complete := true
+	supported := 0
 	for _, c := range e.settings.Checks {
 		check := CheckResult{Protocol: c.Protocol, Targets: []TargetResult{}}
+		if e.unsupported(id, c.Protocol) {
+			check.Unsupported = true
+			r.Checks = append(r.Checks, check)
+			continue
+		}
+		supported++
 		for _, target := range c.Targets {
 			v := TargetResult{Target: target}
 			if s := e.history[seriesKey{id, c.Protocol, target}]; s != nil {
@@ -163,8 +184,8 @@ func (e *Engine) scores(id string) Result {
 		}
 		r.Checks = append(r.Checks, check)
 	}
-	if complete {
-		v := sum / float64(len(r.Checks))
+	if complete && supported > 0 {
+		v := sum / float64(supported)
 		r.Overall = &v
 	}
 	return r
@@ -180,17 +201,18 @@ func score(successes, samples int) *float64 {
 }
 
 // Run schedules each protocol independently and waits for all workers at shutdown. Topology must include reserve paths.
-func (e *Engine) Run(ctx context.Context, paths func(context.Context) ([]Path, error)) {
+func (e *Engine) Run(ctx context.Context) {
 	var workers sync.WaitGroup
 	for _, protocol := range protocols {
 		workers.Add(1)
-		go func() { defer workers.Done(); e.runCheck(ctx, protocol, paths) }()
+		go func() { defer workers.Done(); e.runCheck(ctx, protocol) }()
 	}
 	workers.Wait()
 }
 
 // runCheck picks up schedule changes within a second and never overlaps rounds of the same protocol.
-func (e *Engine) runCheck(ctx context.Context, protocol string, paths func(context.Context) ([]Path, error)) {
+func (e *Engine) runCheck(ctx context.Context, protocol string) {
+	paths := slices.DeleteFunc(slices.Clone(e.paths), func(p Path) bool { return e.unsupported(p.ID, protocol) })
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 	var next time.Time
@@ -209,10 +231,8 @@ func (e *Engine) runCheck(ctx context.Context, protocol string, paths func(conte
 		now := time.Now()
 		if current.Protocol != "" && (epoch != lastEpoch || !now.Before(next)) {
 			lastEpoch = epoch
-			if pp, err := paths(ctx); err == nil {
-				e.round(ctx, pp, current, epoch)
-				next = now.Add(time.Duration(current.IntervalSeconds) * time.Second)
-			}
+			e.round(ctx, paths, current, epoch)
+			next = now.Add(time.Duration(current.IntervalSeconds) * time.Second)
 		}
 		select {
 		case <-ctx.Done():

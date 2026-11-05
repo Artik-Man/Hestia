@@ -13,6 +13,10 @@ export interface TrafficEvent {
     address: string;
     blockReason?: string;
     connection?: string;
+    /**
+     * Страна реального IP назначения по текущей базе GeoIP (ISO 3166-1 alpha-2)
+     */
+    country?: string;
     dnsQueryId?: string;
     domain?: string;
     fakeIP?: string;

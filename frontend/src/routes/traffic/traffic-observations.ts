@@ -48,6 +48,10 @@ function validEvent(value: unknown): value is TrafficEvent {
     (value["protocol"] !== "TCP" && value["protocol"] !== "UDP") ||
     typeof value["address"] !== "string" ||
     !(value["address"] || value["domain"] || value["fakeIP"]) ||
+    (value["country"] !== undefined &&
+      (!value["address"] ||
+        typeof value["country"] !== "string" ||
+        !/^[A-Z]{2}$/u.test(value["country"]))) ||
     !integer(value["port"], 0, 65535)
   )
     return false;

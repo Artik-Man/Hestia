@@ -13,6 +13,8 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+
+	"github.com/Artik-Man/Hestia/internal/netaddress"
 )
 
 const (
@@ -138,43 +140,16 @@ func (c QualityCheck) validateOptions() error {
 func (c QualityCheck) targetAddress(target string) (netip.AddrPort, error) {
 	if c.Protocol == ICMP {
 		ip, err := netip.ParseAddr(target)
-		if err != nil || !publicTarget(ip.Unmap()) {
+		if err != nil || !netaddress.Public(ip.Unmap()) {
 			return netip.AddrPort{}, errors.New("для ICMP нужен публичный IP без порта")
 		}
 		return netip.AddrPortFrom(ip.Unmap(), 0), nil
 	}
 	ep, err := netip.ParseAddrPort(target)
-	if err != nil || ep.Port() == 0 || !publicTarget(ep.Addr().Unmap()) || ((c.Protocol == UDP || c.Protocol == DNS) && ep.Port() != 53) {
+	if err != nil || ep.Port() == 0 || !netaddress.Public(ep.Addr().Unmap()) || ((c.Protocol == UDP || c.Protocol == DNS) && ep.Port() != 53) {
 		return netip.AddrPort{}, errors.New("нужен публичный IP:порт, для DNS — порт 53")
 	}
 	return netip.AddrPortFrom(ep.Addr().Unmap(), ep.Port()), nil
-}
-
-// These special-purpose ranges can pass IsGlobalUnicast yet designate private overlays,
-// documentation, benchmarking, transition mechanisms, or reserved address space.
-var excludedTargets = []netip.Prefix{
-	netip.MustParsePrefix("0.0.0.0/8"), netip.MustParsePrefix("100.64.0.0/10"),
-	netip.MustParsePrefix("192.0.0.0/24"), netip.MustParsePrefix("192.0.2.0/24"),
-	netip.MustParsePrefix("192.88.99.0/24"), netip.MustParsePrefix("198.18.0.0/15"),
-	netip.MustParsePrefix("198.51.100.0/24"), netip.MustParsePrefix("203.0.113.0/24"),
-	netip.MustParsePrefix("240.0.0.0/4"), netip.MustParsePrefix("2001::/23"),
-	netip.MustParsePrefix("2001:db8::/32"), netip.MustParsePrefix("2002::/16"),
-	netip.MustParsePrefix("3fff::/20"),
-}
-
-var publicIPv6 = netip.MustParsePrefix("2000::/3")
-
-// publicTarget restricts probes to public unicast destinations, excluding tunnels that can embed private IPv4 targets.
-func publicTarget(ip netip.Addr) bool {
-	if ip.Zone() != "" || !ip.IsGlobalUnicast() || ip.IsPrivate() || (ip.Is6() && !publicIPv6.Contains(ip)) {
-		return false
-	}
-	for _, prefix := range excludedTargets {
-		if prefix.Contains(ip) {
-			return false
-		}
-	}
-	return true
 }
 
 // validName accepts an ASCII DNS host name with optional trailing root label.

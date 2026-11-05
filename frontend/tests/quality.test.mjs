@@ -61,6 +61,12 @@ test("accepts a measured zero score and rejects inconsistent counters or counter
   check.samples = 0;
   body.groups[0].connections[0].result.overall = null;
   assert.equal(isQualityReport(body), true);
+  check.protocol = "ICMP";
+  check.unsupported = true;
+  assert.equal(isQualityReport(body), true);
+  check.unsupported = "false";
+  assert.equal(isQualityReport(body), false);
+  check.unsupported = false;
   check.successes = 1;
   assert.equal(isQualityReport(body), false);
 });
