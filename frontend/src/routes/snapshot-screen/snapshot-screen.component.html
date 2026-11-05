@@ -5,8 +5,6 @@
     <a class="back-link" [routerLink]="['/', page().path]"
       ><span aria-hidden="true">←</span> {{ page().label }}</a
     >
-  } @else {
-    <p class="kicker"><span class="bar"></span> Маршрутизация</p>
   }
   <div class="title-line">
     <h1 #pageHeading tabindex="-1">{{ heading() }}</h1>
@@ -37,9 +35,6 @@
       {{ current.kind === "failed" ? "Повторить загрузку" : "Обновить" }}
     </button>
   </div>
-  @if (!selection) {
-    <p class="lede">{{ page().description }}</p>
-  }
 </header>
 @switch (current.kind) {
   @case ("loading") {

@@ -12,15 +12,15 @@
 }
 .check-card,
 .quality-group {
-  background: white;
-  border: 1px solid #d1dcda;
+  background: var(--ui-panel);
+  border: 1px solid var(--ui-border);
   border-radius: 12px;
   padding: 1rem;
   min-width: 0;
 }
 .check-card p,
 .quality-group details {
-  color: #53696c;
+  color: var(--ui-muted);
   font-size: 0.875rem;
 }
 .check-card dl {
@@ -30,7 +30,7 @@
   margin: 0.8rem 0 0;
 }
 .check-card dt {
-  color: #53696c;
+  color: var(--ui-muted);
 }
 .check-card dd {
   margin: 0;

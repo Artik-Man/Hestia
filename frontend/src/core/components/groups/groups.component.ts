@@ -1,3 +1,4 @@
+import { Tooltip } from "primeng/tooltip";
 import { ConnectionCatalog } from "../../services/connection-catalog.service";
 import {
   afterNextRender,
@@ -30,6 +31,7 @@ import { GroupsState } from "../../services/groups-state.service";
 @Component({
   selector: "hestia-groups",
   imports: [
+    Tooltip,
     FormsModule,
     Toast,
     InputText,

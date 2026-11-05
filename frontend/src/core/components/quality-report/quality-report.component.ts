@@ -1,3 +1,4 @@
+import { Tooltip } from "primeng/tooltip";
 import {
   ChangeDetectionStrategy,
   Component,
@@ -62,7 +63,7 @@ interface CheckDraft {
 /** QualityEditor owns independent dialogs for the individual checks and their shared scoring window. */
 @Component({
   selector: "hestia-quality-settings",
-  imports: [FormsModule, ButtonDirective, Dialog, InputText, Textarea],
+  imports: [Tooltip, FormsModule, ButtonDirective, Dialog, InputText, Textarea],
   templateUrl: "./quality-report.component.html",
   styleUrl: "../../../styles/quality.css",
   changeDetection: ChangeDetectionStrategy.OnPush,

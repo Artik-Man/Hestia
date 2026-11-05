@@ -39,6 +39,10 @@
                     'Редактировать подключение ' + catalog.name(row.id)
                   "
                   (click)="rename.emit(entry)"
+                  [pTooltip]="
+                    'Редактировать подключение ' + catalog.name(row.id)
+                  "
+                  tooltipEvent="both"
                 >
                   <span aria-hidden="true" class="edit-icon"></span>
                 </button>
@@ -104,6 +108,8 @@
                 [disabled]="busy() || !inventory()?.wifiAvailable"
                 [attr.aria-label]="'Редактировать подключение ' + profile.ssid"
                 (click)="openWifi(wifiDialog, profile)"
+                [pTooltip]="'Редактировать подключение ' + profile.ssid"
+                tooltipEvent="both"
               >
                 <span aria-hidden="true" class="edit-icon"></span>
               </button>
@@ -116,6 +122,8 @@
                 [disabled]="busy() || !inventory()?.wifiAvailable"
                 [attr.aria-label]="'Удалить подключение ' + profile.ssid"
                 (click)="removeWifi(profile)"
+                [pTooltip]="'Удалить подключение ' + profile.ssid"
+                tooltipEvent="both"
               >
                 <span class="delete-icon" aria-hidden="true"></span>
               </button>

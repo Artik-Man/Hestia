@@ -66,6 +66,8 @@
               [attr.aria-label]="'В чёрный список: ' + row.domain"
               [disabled]="disabled()"
               (click)="add('exclusions', row.domain, false)"
+              [pTooltip]="'В чёрный список: ' + row.domain"
+              tooltipEvent="both"
             >
               В чёрный список
             </button>
@@ -172,6 +174,8 @@
                 [disabled]="disabled()"
                 [attr.aria-label]="'Изменить исключение: ' + name"
                 (click)="edit(name, domainInput)"
+                [pTooltip]="'Изменить исключение: ' + name"
+                tooltipEvent="both"
               >
                 Изменить
               </button>
@@ -187,6 +191,12 @@
                   : 'Удалить из ручного списка: ') + name
               "
               (click)="remove(list, name)"
+              [pTooltip]="
+                (list === 'exclusions'
+                  ? 'Снять исключение: '
+                  : 'Удалить из ручного списка: ') + name
+              "
+              tooltipEvent="both"
             >
               {{
                 list === "exclusions"

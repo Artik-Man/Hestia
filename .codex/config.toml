@@ -1,0 +1,3 @@
+[mcp_servers.primeng]
+command = "npx"
+args = ["-y", "@primeng/mcp@22.1.4"]

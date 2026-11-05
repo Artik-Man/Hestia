@@ -1,0 +1,25 @@
+:root {
+  --ui-nav: #161c27;
+  --ui-canvas: #131a25;
+  --ui-panel: #1b2434;
+  --ui-raised: #243146;
+  --ui-selected: #2e3d57;
+  --ui-border: #39485d;
+  --ui-text: #e0e6ed;
+  --ui-muted: #aebaca;
+  --ui-accent: #53c7ff;
+  --ui-action: #086d9b;
+  --ui-success: #79d6af;
+  --ui-goodbg: #193c35;
+  --ui-danger: #ffaca7;
+  --ui-badbg: #482c33;
+  --ui-warning: #f1cc8d;
+  --ui-warnbg: #403627;
+  --ui-shadow: rgb(0 0 0 / 30%);
+  --ui-onaction: #ffffff;
+}
+
+.p-tooltip .p-tooltip-text {
+  font-size: 0.75rem;
+  line-height: 1.4;
+}

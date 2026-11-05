@@ -1,3 +1,4 @@
+import { Tooltip } from "primeng/tooltip";
 import {
   ChangeDetectionStrategy,
   Component,
@@ -33,6 +34,7 @@ import { trafficLimits, validTrafficPage } from "./traffic-observations";
 @Component({
   selector: "hestia-traffic",
   imports: [
+    Tooltip,
     ButtonDirective,
     RefreshIcon,
     InputText,

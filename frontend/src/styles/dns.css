@@ -9,9 +9,9 @@
 .dns-section {
   padding: clamp(12px, 2vw, 22px);
   margin: 12px 0 0;
-  border: 1px solid #d1dcda;
+  border: 1px solid var(--ui-border);
   border-radius: 12px;
-  background: #fff;
+  background: var(--ui-panel);
   min-width: 0;
 }
 .dns-settings fieldset {
@@ -22,7 +22,6 @@
 }
 .dns-settings legend,
 .dns-section h2 {
-  font-size: 1.13rem;
   font-weight: 650;
   margin: 0 0 8px;
   padding: 0;
@@ -77,7 +76,7 @@ p-inputnumber {
 }
 .dns-rows li {
   padding: 10px 0;
-  border-top: 1px solid #d1dcda;
+  border-top: 1px solid var(--ui-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -87,14 +86,14 @@ p-inputnumber {
 }
 .dns-rows small {
   display: block;
-  color: #49635e;
+  color: var(--ui-muted);
 }
 .hint {
-  color: #49635e;
+  color: var(--ui-muted);
   margin: 5px 0 8px;
 }
 .dns-success {
-  color: #155341;
+  color: var(--ui-accent);
 }
 p-message {
   display: block;

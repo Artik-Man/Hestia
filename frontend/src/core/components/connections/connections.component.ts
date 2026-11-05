@@ -1,3 +1,4 @@
+import { Tooltip } from "primeng/tooltip";
 import { Toast } from "primeng/toast";
 import {
   ChangeDetectionStrategy,
@@ -34,6 +35,7 @@ import {
 @Component({
   selector: "hestia-connections",
   imports: [
+    Tooltip,
     Toast,
     ButtonDirective,
     Menu,

@@ -1,3 +1,4 @@
+import { Tooltip } from "primeng/tooltip";
 import { Toast } from "primeng/toast";
 import {
   AfterViewInit,
@@ -42,7 +43,7 @@ import {
 /** ProfileDraft edits the fields of a single manually entered, imported or stored WireGuard/AWG profile in a modal dialog. */
 @Component({
   selector: "hestia-profile-draft",
-  imports: [Toast, ButtonDirective, InputText, ReactiveFormsModule],
+  imports: [Tooltip, Toast, ButtonDirective, InputText, ReactiveFormsModule],
   templateUrl: "./profile-draft.component.html",
   styleUrl: "./profile-draft.component.css",
   changeDetection: ChangeDetectionStrategy.OnPush,

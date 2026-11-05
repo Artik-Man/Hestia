@@ -1,3 +1,4 @@
+import { Tooltip } from "primeng/tooltip";
 import { DatePipe } from "@angular/common";
 import {
   ChangeDetectionStrategy,
@@ -27,7 +28,7 @@ export interface NamesEdit {
 /** DnsNames renders observed automatic names and two independently editable operator lists. */
 @Component({
   selector: "hestia-dns-names",
-  imports: [DatePipe, InputText, ButtonDirective, Message],
+  imports: [Tooltip, DatePipe, InputText, ButtonDirective, Message],
   templateUrl: "./dns-names.component.html",
   styleUrl: "../../../styles/dns.css",
   changeDetection: ChangeDetectionStrategy.OnPush,

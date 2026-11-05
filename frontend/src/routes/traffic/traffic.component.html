@@ -7,9 +7,10 @@
         type="button"
         severity="secondary"
         aria-label="Обновить журнал"
-        title="Обновить журнал"
         [disabled]="busy()"
         (click)="refresh()"
+        pTooltip="Обновить журнал"
+        tooltipEvent="both"
       >
         <svg data-p-icon="refresh" aria-hidden="true"></svg
         ><span>Обновить</span>
@@ -19,8 +20,9 @@
         type="button"
         severity="secondary"
         aria-label="Настройки журнала"
-        title="Настройки журнала"
         (click)="showSettings.set(true)"
+        pTooltip="Настройки журнала"
+        tooltipEvent="both"
       >
         <span class="settings-icon" aria-hidden="true">⚙</span>
       </button>

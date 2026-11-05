@@ -13,6 +13,10 @@
       "root": "",
       "sourceRoot": "src",
       "architect": {
+        "serve": {
+          "builder": "@angular/build:dev-server",
+          "options": { "buildTarget": "hestia:build" }
+        },
         "build": {
           "builder": "@angular/build:application",
           "options": {

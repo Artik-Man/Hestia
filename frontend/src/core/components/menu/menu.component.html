@@ -1,21 +1,53 @@
-<div class="nav-band">
-  <nav class="frame nav" aria-label="Основная навигация">
+<aside
+  tabindex="-1"
+  class="sidebar"
+  [class.open]="expanded()"
+  (keydown.escape)="expanded.set(false); trigger.focus()"
+>
+  <nav id="gateway-menu" class="rail" aria-label="Основная навигация">
     @for (page of pages; track page.path) {
       <a
         [routerLink]="['/', page.path]"
         routerLinkActive="active"
         ariaCurrentWhenActive="page"
-        >{{ page.label }}</a
+        [attr.aria-label]="page.label"
+        [pTooltip]="page.label"
+        [tooltipDisabled]="expanded()"
+        tooltipEvent="both"
+        tooltipPosition="right"
+        (click)="closeOnPhone()"
       >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path [attr.d]="icons[page.path]" /></svg
+        ><span>{{ page.label }}</span>
+      </a>
     }
     @if (grafanaUrl(); as url) {
-      <span class="external-nav">
-        <span class="external-label">Внешние сервисы</span>
-        <a [href]="url" target="_blank" rel="noopener noreferrer"
-          >Grafana <span aria-hidden="true">↗</span
-          ><span class="sr-only"> (в новой вкладке)</span></a
-        >
-      </span>
+      <a
+        [href]="url"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Grafana (в новой вкладке)"
+        pTooltip="Открыть Grafana"
+        tooltipEvent="both"
+        >↗<span>Grafana</span></a
+      >
     }
   </nav>
-</div>
+  <button
+    #trigger
+    pButton
+    type="button"
+    class="menu-trigger"
+    aria-controls="gateway-menu"
+    [attr.aria-expanded]="expanded()"
+    [attr.aria-label]="toggleLabel()"
+    [pTooltip]="toggleLabel()"
+    tooltipEvent="both"
+    tooltipPosition="right"
+    (click)="expanded.set(!expanded())"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg
+    ><span>Свернуть меню</span>
+  </button>
+</aside>

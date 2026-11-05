@@ -10,8 +10,9 @@
         [text]="true"
         [rounded]="true"
         aria-label="Редактировать окно оценки"
-        title="Редактировать окно оценки"
         (click)="editWindow()"
+        pTooltip="Редактировать окно оценки"
+        tooltipEvent="both"
       >
         <span class="edit-icon" aria-hidden="true"></span>
       </button>
@@ -31,8 +32,9 @@
             [attr.aria-label]="
               'Редактировать проверку ' + label(check.protocol)
             "
-            [title]="'Редактировать проверку ' + label(check.protocol)"
             (click)="edit(check.protocol)"
+            [pTooltip]="'Редактировать проверку ' + label(check.protocol)"
+            tooltipEvent="both"
           >
             <span class="edit-icon" aria-hidden="true"></span>
           </button>
@@ -43,8 +45,9 @@
             [text]="true"
             [rounded]="true"
             [attr.aria-label]="'Удалить проверку ' + label(check.protocol)"
-            [title]="'Удалить проверку ' + label(check.protocol)"
             (click)="deleting.set(check)"
+            [pTooltip]="'Удалить проверку ' + label(check.protocol)"
+            tooltipEvent="both"
           >
             <span class="delete-icon" aria-hidden="true"></span>
           </button>

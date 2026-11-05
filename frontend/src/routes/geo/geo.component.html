@@ -1,9 +1,5 @@
 <header class="intro">
-  <p class="kicker"><span class="bar"></span>Маршрутизация</p>
-  <h1>Маршрутизация по странам</h1>
-  <p class="lede">
-    Группа подключения по стране IP-адреса, если не сработало доменное правило.
-  </p>
+  <h1>Маршруты по странам</h1>
 </header>
 @if (draft.warning()) {
   <p class="notice failure" role="alert">{{ draft.warning() }}</p>
@@ -11,7 +7,7 @@
 @if (inventory.view().kind === "failed") {
   <p class="notice failure" role="alert">
     Не удалось загрузить группы.
-    <button type="button" (click)="inventory.reload()">
+    <button pButton type="button" (click)="inventory.reload()">
       Повторить загрузку
     </button>
   </p>
@@ -22,16 +18,19 @@
 } @else if (draft.value(); as map) {
   <section class="map-card" aria-label="Настройки маршрутизации по странам">
     <div class="controls">
-      <label class="switch-label"
-        ><input
-          #enabled
-          type="checkbox"
-          role="switch"
-          [checked]="map.enabled"
-          (change)="toggle(enabled.checked)"
+      <div class="switch-label">
+        <p-toggleswitch
+          inputId="country-routing"
+          [ngModel]="map.enabled"
+          (ngModelChange)="toggle($event)"
         />
-        Выбирать группу по стране назначения</label
-      >
+        <label for="country-routing"
+          >Выбирать группу по стране назначения</label
+        >
+      </div>
+      <p class="hint">
+        Доменное правило имеет приоритет над выбором по стране.
+      </p>
       @if (defaultGroup(); as fallback) {
         <p class="hint">
           Если страна IP-адреса неизвестна, используется группа по умолчанию:
@@ -62,12 +61,14 @@
                   "“ всем странам";
                 {{ group.name ?? group.id }}
                 <button
+                  pButton
                   type="button"
                   (click)="assign(group.id)"
                   [attr.aria-label]="label"
+                  [pTooltip]="label"
+                  tooltipEvent="both"
                 >
                   <span aria-hidden="true">↓</span>
-                  <span class="bulk-tip" aria-hidden="true">{{ label }}</span>
                 </button>
               </th>
             }
@@ -84,17 +85,15 @@
               </th>
               @for (group of groups(); track group.id) {
                 <td>
-                  <label
-                    ><input
-                      type="radio"
-                      [name]="'country-' + country.code"
-                      [value]="group.id"
-                      [checked]="map.assignments[country.code] === group.id"
-                      (change)="assign(group.id, country.code)"
-                      [attr.aria-label]="
-                        country.label + ' — ' + (group.name ?? group.id)
-                      "
-                  /></label>
+                  <p-radiobutton
+                    [name]="'country-' + country.code"
+                    [value]="group.id"
+                    [ngModel]="map.assignments[country.code]"
+                    (ngModelChange)="assign(group.id, country.code)"
+                    [ariaLabel]="
+                      country.label + ' — ' + (group.name ?? group.id)
+                    "
+                  />
                 </td>
               }
               @for (id of missingGroups(); track id) {
@@ -127,7 +126,7 @@
   <p class="notice">
     Можно заменить повреждённый черновик новой выключенной картой. Все страны
     получат текущую группу по умолчанию.
-    <button type="button" (click)="recreate()">
+    <button pButton type="button" (click)="recreate()">
       Заменить повреждённый черновик
     </button>
   </p>

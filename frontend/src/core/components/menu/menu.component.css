@@ -1,53 +1,81 @@
-:host {
-  display: block;
+.sidebar {
+  position: fixed;
+  inset: 64px auto 0 0;
+  width: 72px;
+  display: flex;
+  flex-direction: column;
+  background: var(--ui-nav);
+  z-index: 5;
+  transition: width 0.18s ease;
 }
-.nav-band {
-  border-bottom: 1px solid #cfdbd8;
-  background: white;
+.sidebar.open {
+  width: min(240px, 85vw);
 }
-.nav {
+.rail {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.rail a,
+.menu-trigger {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 4px 20px;
-}
-.nav a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 46px;
-  padding: 4px 2px;
-  border-bottom: 3px solid transparent;
-  color: #435e59;
-  font-weight: 600;
+  width: 100%;
+  height: 64px;
+  padding: 0;
+  gap: 0;
+  color: var(--ui-text);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
   text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  font:
+    500 14px/20px Roboto,
+    sans-serif;
 }
-.nav a:hover {
-  color: #125e47;
+.rail a:hover,
+.menu-trigger:hover {
+  background: var(--ui-raised);
 }
-.nav a.active {
-  color: #145c47;
-  border-color: #278569;
+.rail a.active {
+  background: var(--ui-selected);
+  color: var(--ui-accent);
 }
-.nav a:focus-visible {
-  outline: 3px solid #168164;
-  outline-offset: -2px;
+.sidebar svg {
+  width: 22px;
+  height: 22px;
+  margin: 0 25px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linejoin: round;
+  stroke-linecap: round;
 }
-.external-nav {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-left: auto;
+.sidebar:not(.open) span {
+  display: none;
 }
-.external-label {
-  font-size: 12px;
-  color: #526763;
+.menu-trigger {
+  justify-content: flex-start;
+  height: 52px;
+  flex: none;
+  border-top: 1px solid var(--ui-border);
 }
-@media (max-width: 620px) {
-  .nav {
-    gap: 0 12px;
-    font-size: 14px;
+.open .menu-trigger svg {
+  transform: rotate(180deg);
+}
+@media (max-width: 600px) {
+  .sidebar:not(.open) {
+    inset: auto auto 0 0;
   }
-  .external-nav {
-    margin-left: 0;
+  .sidebar:not(.open) nav {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidebar {
+    transition: none;
   }
 }

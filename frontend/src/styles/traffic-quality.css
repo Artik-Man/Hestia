@@ -30,7 +30,7 @@ th p-select {
 .flow-link {
   border: 0;
   background: transparent;
-  color: #18654e;
+  color: var(--ui-accent);
   font: inherit;
   font-weight: 600;
   text-align: left;
@@ -42,7 +42,7 @@ th p-select {
 }
 .flow-row small,
 .journal-status {
-  color: #53696c;
+  color: var(--ui-muted);
 }
 .journal-form,
 .journal-form label {

@@ -168,6 +168,8 @@
             aria-describedby="sort-help"
             [attr.aria-label]="'Переместить группу ' + groupName(group.id)"
             (keydown)="keyboardMove($event, i)"
+            [pTooltip]="'Переместить группу ' + groupName(group.id)"
+            tooltipEvent="both"
           >
             <span aria-hidden="true">⠿</span>
           </button>
@@ -186,6 +188,8 @@
               order.pending() || order.dirty() || order.draft().changedSource
             "
             (click)="openEditor(editor, group.id)"
+            [pTooltip]="'Редактировать группу ' + groupName(group.id)"
+            tooltipEvent="both"
           >
             <span class="edit-icon" aria-hidden="true"></span>
           </button>
@@ -200,6 +204,8 @@
                 order.pending() || order.dirty() || order.draft().changedSource
               "
               (click)="openDeletion(deletion, group.id)"
+              [pTooltip]="'Удалить группу ' + groupName(group.id)"
+              tooltipEvent="both"
             >
               <span class="delete-icon" aria-hidden="true"></span>
             </button>
@@ -237,6 +243,8 @@
                 [attr.data-exit-handle]="exit"
                 [attr.aria-label]="'Переместить выход ' + catalog.name(exit)"
                 (keydown)="keyboardMove($event, j, group.id)"
+                [pTooltip]="'Переместить выход ' + catalog.name(exit)"
+                tooltipEvent="both"
               >
                 <span aria-hidden="true">⠿</span>
               </button>

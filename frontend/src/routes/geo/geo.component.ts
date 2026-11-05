@@ -1,3 +1,4 @@
+import { Tooltip } from "primeng/tooltip";
 import {
   ChangeDetectionStrategy,
   Component,
@@ -5,6 +6,10 @@ import {
   effect,
   inject,
 } from "@angular/core";
+import { FormsModule } from "@angular/forms";
+import { RadioButton } from "primeng/radiobutton";
+import { ToggleSwitch } from "primeng/toggleswitch";
+import { ButtonDirective } from "primeng/button";
 import {
   initializeCountryMap,
   regionCodes,
@@ -17,6 +22,7 @@ const names = new Intl.DisplayNames("ru", { type: "region" });
 /** GeoScreen edits one explicit assignment per country without changing the gateway configuration. */
 @Component({
   selector: "hestia-geo",
+  imports: [Tooltip, RadioButton, FormsModule, ToggleSwitch, ButtonDirective],
   templateUrl: "./geo.component.html",
   styleUrl: "./geo.component.css",
   changeDetection: ChangeDetectionStrategy.OnPush,

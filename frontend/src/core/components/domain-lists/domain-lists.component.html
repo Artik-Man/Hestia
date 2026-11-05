@@ -5,8 +5,9 @@
     type="button"
     class="icon-action"
     aria-label="Редактировать список"
-    title="Редактировать список"
     (click)="edit(list, editButton)"
+    pTooltip="Редактировать список"
+    tooltipEvent="both"
   >
     <span class="edit-icon" aria-hidden="true"></span>
   </button>
@@ -91,6 +92,10 @@
                         'Редактировать список ' + (list.name ?? list.id)
                       "
                       (click)="edit(list, rowEdit)"
+                      [pTooltip]="
+                        'Редактировать список ' + (list.name ?? list.id)
+                      "
+                      tooltipEvent="both"
                     >
                       <span class="edit-icon" aria-hidden="true"></span>
                     </button>
@@ -104,6 +109,8 @@
                         'Удалить список ' + (list.name ?? list.id)
                       "
                       (click)="confirmDeletion(list, rowDelete)"
+                      [pTooltip]="'Удалить список ' + (list.name ?? list.id)"
+                      tooltipEvent="both"
                     >
                       <span class="delete-icon" aria-hidden="true"></span>
                     </button>
@@ -192,6 +199,8 @@
             aria-haspopup="dialog"
             [attr.aria-expanded]="maskHelpOpen()"
             (click)="openMaskHelp($event, maskExamplesPopover, maskInfoButton)"
+            pTooltip="Примеры масок"
+            tooltipEvent="both"
           >
             <svg
               viewBox="0 0 24 24"

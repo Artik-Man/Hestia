@@ -86,9 +86,10 @@
                   class="icon-action"
                   #editTrigger
                   [attr.aria-label]="'Редактировать профиль ' + row.id"
-                  title="Редактировать подключение"
                   [disabled]="deleting() === row.id"
                   (click)="editConnection(profile, editTrigger)"
+                  [pTooltip]="'Редактировать профиль ' + row.id"
+                  tooltipEvent="both"
                 >
                   <span class="edit-icon" aria-hidden="true"></span>
                 </button>
@@ -99,9 +100,10 @@
                   type="button"
                   class="icon-action delete-action connection-remove"
                   [attr.aria-label]="'Удалить подключение ' + row.id"
-                  title="Удалить подключение"
                   [disabled]="deleting() === row.id"
                   (click)="deleteConnection(profile)"
+                  [pTooltip]="'Удалить подключение ' + row.id"
+                  tooltipEvent="both"
                 >
                   <span class="delete-icon" aria-hidden="true"></span>
                 </button>

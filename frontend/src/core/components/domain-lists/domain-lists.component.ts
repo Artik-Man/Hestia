@@ -1,3 +1,4 @@
+import { Tooltip } from "primeng/tooltip";
 import { Notifications } from "../../services/notifications.service";
 import { groupName, isRuleList } from "../../models/snapshot";
 import {
@@ -53,6 +54,7 @@ function invalidMasks(masks: readonly string[]): readonly string[] {
 @Component({
   selector: "hestia-domain-lists",
   imports: [
+    Tooltip,
     ButtonDirective,
     Dialog,
     InputText,

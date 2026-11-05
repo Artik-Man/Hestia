@@ -55,8 +55,8 @@
   margin-top: 4px;
   padding: 3px 6px;
   border-radius: 4px;
-  background: #edf3f0;
-  color: #284d43;
+  background: var(--ui-raised);
+  color: var(--ui-accent);
 }
 .mask-examples-content p {
   margin-top: 4px;
@@ -73,14 +73,14 @@
 }
 .error {
   margin-top: 8px;
-  color: #a22e2e;
+  color: var(--ui-danger);
   font-size: 13px;
 }
 .dialog-actions {
   justify-content: flex-end;
   margin-top: 22px;
   padding-top: 16px;
-  border-top: 1px solid #e0e8e5;
+  border-top: 1px solid var(--ui-border);
 }
 @media (max-width: 600px) {
   .dialog-actions {

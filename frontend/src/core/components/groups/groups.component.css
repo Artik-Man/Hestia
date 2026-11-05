@@ -5,7 +5,7 @@ dialog input {
   min-width: 0;
   max-width: 100%;
   padding: 8px 10px;
-  border: 1px solid #aebfb8;
+  border: 1px solid var(--ui-border);
   border-radius: 6px;
   font: inherit;
 }
@@ -15,8 +15,8 @@ dialog input {
 .badge {
   font-size: 12px;
   font-weight: 650;
-  color: #556761;
-  background: #e8ede9;
+  color: var(--ui-accent);
+  background: var(--ui-raised);
   border-radius: 5px;
   padding: 3px 7px;
 }
@@ -27,8 +27,8 @@ dialog input {
   padding: 0;
 }
 .order-group {
-  background: white;
-  border: 1px solid #ccd8d4;
+  background: var(--ui-panel);
+  border: 1px solid var(--ui-border);
   border-radius: 12px;
   overflow: hidden;
   margin-bottom: 12px;
@@ -41,7 +41,7 @@ dialog input {
   gap: 12px;
 }
 .group-line {
-  background: #f1f6f3;
+  background: var(--ui-raised);
   padding: 10px 14px;
   flex-wrap: wrap;
 }
@@ -55,8 +55,8 @@ dialog input {
 }
 .exit-line {
   min-height: 44px;
-  border-top: 1px solid #e1e8e5;
-  background: white;
+  border-top: 1px solid var(--ui-border);
+  background: var(--ui-panel);
 }
 .exit-line:first-child {
   border-top: 0;
@@ -71,7 +71,7 @@ dialog input {
 .handle {
   border: 1px solid transparent;
   background: transparent;
-  color: #516c62;
+  color: var(--ui-accent);
   cursor: grab;
   flex: none;
   min-width: 32px;
@@ -80,7 +80,7 @@ dialog input {
   touch-action: none;
 }
 .handle:hover {
-  background: #e3ece6;
+  background: var(--ui-raised);
 }
 .handle:active {
   cursor: grabbing;
@@ -91,12 +91,12 @@ button:disabled {
   cursor: default;
 }
 button:focus-visible {
-  outline: 3px solid #168164;
+  outline: 3px solid var(--ui-accent);
   outline-offset: 1px;
 }
 .empty,
 .note {
-  color: #4d655d;
+  color: var(--ui-muted);
   font-size: 14px;
   line-height: 1.5;
 }
@@ -114,13 +114,13 @@ button:focus-visible {
 .reset {
   min-height: 40px;
   padding: 7px 14px;
-  border: 1px solid #aebfb8;
-  background: white;
-  color: #245644;
+  border: 1px solid var(--ui-border);
+  background: var(--ui-panel);
+  color: var(--ui-accent);
 }
 .save {
-  background: #215c48;
-  color: white;
+  background: var(--ui-action);
+  color: var(--ui-onaction);
 }
 .cdk-drag-placeholder {
   opacity: 0.35;
@@ -128,7 +128,7 @@ button:focus-visible {
 .cdk-drag-preview {
   box-sizing: border-box;
   border-radius: 10px;
-  box-shadow: 0 8px 24px #173e3029;
+  box-shadow: 0 8px 24px var(--ui-shadow);
 }
 @media (max-width: 620px) {
   .group-line,
@@ -151,17 +151,17 @@ button:focus-visible {
   min-height: 44px;
 }
 .order-exits.cdk-drop-list-receiving {
-  outline: 2px dashed #39816b;
+  outline: 2px dashed var(--ui-accent);
   outline-offset: -2px;
-  background: #f0f8f4;
+  background: var(--ui-raised);
 }
 .gateway-dialog .remove {
   min-height: 40px;
   padding: 7px 14px;
-  border: 1px solid #8b342b;
+  border: 1px solid var(--ui-border);
   border-radius: 6px;
-  background: #8b342b;
-  color: white;
+  background: var(--ui-danger);
+  color: var(--ui-onaction);
   font: inherit;
   cursor: pointer;
 }

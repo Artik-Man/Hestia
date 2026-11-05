@@ -1,3 +1,4 @@
+import { Tooltip } from "primeng/tooltip";
 import { Toast } from "primeng/toast";
 import {
   ChangeDetectionStrategy,
@@ -77,7 +78,7 @@ function validInventory(value: unknown): value is Inventory {
 /** PhysicalConnections discovers Ethernet ports and manages explicitly configured wireless client profiles. */
 @Component({
   selector: "hestia-physical-connections",
-  imports: [Toast, FormsModule, ButtonDirective, InputText],
+  imports: [Tooltip, Toast, FormsModule, ButtonDirective, InputText],
   templateUrl: "./physical-connections.component.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
