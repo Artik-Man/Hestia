@@ -30,8 +30,8 @@
 
 ```sh
 limactl start --name hestia-binding-test --tty=false experiments/fakeip/vm/lima.yaml
-CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o /tmp/hestia-binding ./cmd/hestia
-CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o /tmp/hestia-binding-panel ./cmd/hestia-panel
+CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go -C backend build -o /tmp/hestia-binding ./cmd/hestia
+CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go -C backend build -o /tmp/hestia-binding-panel ./cmd/hestia-panel
 (cd frontend && npm ci && npm run build)
 ```
 

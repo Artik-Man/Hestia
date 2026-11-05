@@ -16,7 +16,7 @@
 Нужна изолированная [Debian ARM64-ВМ со стендом sing-box](../fakeip/README.md), запущенная с systemd как PID 1. Соберите бинарник из корня проекта, перенесите его и файлы проекта в гостевую систему, сохраняя их взаимное расположение:
 
 ```sh
-CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o /tmp/hestia ./cmd/hestia
+CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go -C backend build -o /tmp/hestia ./cmd/hestia
 ```
 
 В гостевой системе из корня копии проекта выполните:

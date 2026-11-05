@@ -106,7 +106,7 @@ if [[ -z $controller ]]; then
     fetch "https://go.dev/dl/go$go_version.linux-arm64.tar.gz" "$work/go.tgz"
     check_hash "$go_sha" "$work/go.tgz"
     tar -C "$work" -xzf "$work/go.tgz"
-    (cd "$repo" && GOENV=off GOTOOLCHAIN=local GOWORK=off GOPROXY=off CGO_ENABLED=0 GOOS=linux GOARCH=arm64 \
+    (cd "$repo/backend" && GOENV=off GOTOOLCHAIN=local GOWORK=off GOPROXY=off CGO_ENABLED=0 GOOS=linux GOARCH=arm64 \
         GOCACHE="$work/cache" "$work/go/bin/go" build -mod=readonly -trimpath -buildvcs=false -o "$work/hestia" ./cmd/hestia)
 else
     install -m 0755 "$controller" "$work/hestia"

@@ -12,8 +12,8 @@
 
 ```sh
 lab=$(mktemp -d)
-GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -buildvcs=false -o "$lab/" ./cmd/hestia ./cmd/hestia-panel
-GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -buildvcs=false -o "$lab/quality-test-service" ./experiments/connection-quality/service
+GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go -C backend build -buildvcs=false -o "$lab/" ./cmd/hestia ./cmd/hestia-panel
+GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go -C backend build -buildvcs=false -o "$lab/quality-test-service" ../experiments/connection-quality/service/main.go
 cp /path/to/linux-arm64/sing-box deploy/profile.py experiments/connection-quality/{respond.py,verify.py,run.sh} "$lab/"
 ssh_config="$HOME/.lima/hestia-load-01/ssh.config"
 tar -C "$lab" -czf - . | ssh -F "$ssh_config" lima-hestia-load-01 'set -e; d=$(mktemp -d); cd "$d"; tar xz; uname -srmo; sha256sum hestia hestia-panel; sudo unshare --mount --net --pid --fork --mount-proc bash run.sh; cat events.jsonl'

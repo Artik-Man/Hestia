@@ -12,14 +12,14 @@
 | Ручное имя при действующем исключении | Планировщик отправил запросы A и AAAA. Фоновые обновления не повысили пороговый счётчик. Снятие исключения вернуло популярное имя в автоматический список. |
 | Истечение TTL и перезапуск | Новый клиентский запрос к имени с истёкшим TTL получил изменившийся адрес. Для ещё действующей записи после перезапуска сохранились адрес и исходное время истечения. |
 
-[Результат Playwright](evidence/playwright.txt) · [Протокол DNS с детектором гонок](evidence/loopback.txt) · [Тесты службы](../../internal/dnsservice/integration_test.go)
+[Результат Playwright](evidence/playwright.txt) · [Протокол DNS с детектором гонок](evidence/loopback.txt) · [Тесты службы](../../backend/internal/dnsservice/integration_test.go)
 
 **Что исправлено при проверке.** Первое сохранение отображённых исходных значений создаёт первую версию политики. Добавлен браузерный сценарий, проверяющий подтверждение этого перехода. Смена политики из второй вкладки теперь проверяется также на настоящем API. В DNS-службе отдельно проверяются отзыв разрешения во время открытия сокета и переоценка путей после изменения конфигурации.
 
 **Воспроизведение из корня проекта.** Для браузерного прогона нужны зависимости из `frontend/package-lock.json`, Chromium Playwright и Go. При использовании локальной сборки Chromium укажите исполняемый файл в `CHROME_BIN`.
 
 ```sh
-go test -race -count=1 -run '^TestDNSWorkerIntegration$' -v ./internal/dnsservice
+go -C backend test -race -count=1 -run '^TestDNSWorkerIntegration$' -v ./internal/dnsservice
 cd frontend
 npm ci
 npx playwright install chromium
@@ -44,8 +44,8 @@ npm run test:browser
 Браузерный сценарий проверяет те же списки с настоящей DNS-службой и HTTP API на loopback. Три клиентских запроса создают спрос. После исключения и восстановления через интерфейс отчёт содержит исходные три обращения. Этот прогон проверяет DNS и панель в изолированном окружении. Для воспроизведения выполните из корня проекта:
 
 ```sh
-go test -race -count=1 -v -run '^(TestAutomaticExclusionResumeAndWindowExpiry|TestScheduledRefreshUsesEarlierOfIntervalAndTTL|TestSplitWarmRepeatedRevocation)$' ./internal/dnsresolver
+go -C backend test -race -count=1 -v -run '^(TestAutomaticExclusionResumeAndWindowExpiry|TestScheduledRefreshUsesEarlierOfIntervalAndTTL|TestSplitWarmRepeatedRevocation)$' ./internal/dnsresolver
 (cd frontend && npm run test:browser:dns-api)
 ```
 
-Тот же Playwright-сценарий отправил отдельный UDP-запрос дважды с одного порта и с одинаковым идентификатором. После первой передачи панель показала 100 % попыток без замеченного повтора, после второй — 50 % (один повтор на две передачи). Тест с настоящим UDP-входом отдельно проверяет содержимое ответов, число клиентских обращений и число запросов к резолверу. [Сценарий Playwright](../../frontend/tests/browser/dns-worker.mjs) · [Проверка UDP-службы](../../internal/dnsservice/integration_test.go).
+Тот же Playwright-сценарий отправил отдельный UDP-запрос дважды с одного порта и с одинаковым идентификатором. После первой передачи панель показала 100 % попыток без замеченного повтора, после второй — 50 % (один повтор на две передачи). Тест с настоящим UDP-входом отдельно проверяет содержимое ответов, число клиентских обращений и число запросов к резолверу. [Сценарий Playwright](../../frontend/tests/browser/dns-worker.mjs) · [Проверка UDP-службы](../../backend/internal/dnsservice/integration_test.go).

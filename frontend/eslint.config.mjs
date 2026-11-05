@@ -3,7 +3,7 @@ import ts from "typescript-eslint";
 import angular from "angular-eslint";
 
 export default [
-  { ignores: ["src/api/generated/**"] },
+  { ignores: ["src/core/services/api/generated/**"] },
   ...ts.config({
     files: ["src/**/*.ts"],
     extends: [

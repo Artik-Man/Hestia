@@ -4,7 +4,7 @@ import {
   initializeCountryMap,
   readCountryMap,
   regionCodes,
-} from "../src/geo-policy.ts";
+} from "../src/core/models/geo-policy.ts";
 
 /** Verifies the initial map covers each country exactly once and starts disabled. */
 test("a new map assigns every country to the initial default", () => {

@@ -17,7 +17,7 @@
     "test:e2e": "node --test tests/browser/profile-live.mjs",
     "test:e2e:domain-list": "node --test tests/browser/domain-list-live.mjs",
     "test:browser:dns-api": "npm run build && npm run test:browser:dns-api:built",
-    "test:browser:dns-api:built": "HESTIA_DNS_BROWSER_TEST=1 go test -count=1 -timeout=2m -run \"^TestDNS(Panel|Worker)Playwright$\" -v ../internal/panel ../internal/dnsservice"
+    "test:browser:dns-api:built": "HESTIA_DNS_BROWSER_TEST=1 go -C ../backend test -count=1 -timeout=2m -run \"^TestDNS(Panel|Worker)Playwright$\" -v ./internal/panel ./internal/dnsservice"
   },
   "dependencies": {
     "@angular/cdk": "21.2.14",

@@ -22,8 +22,8 @@
 
 ```sh
 (cd frontend && npm ci && npm run build)
-go run ./cmd/hestia-panel -assets frontend/dist/hestia/browser \
-  -snapshot experiments/controller-service/evidence/failover-snapshot.json
+go -C backend run ./cmd/hestia-panel -assets ../frontend/dist/hestia/browser \
+  -snapshot ../experiments/controller-service/evidence/failover-snapshot.json
 ```
 
 Откройте в браузере [локальную панель](http://127.0.0.1:8080). В этом примере группа `russia` выбрана по умолчанию, а у группы `finland` первый выход `fi1-out` недоступен и второй `fi2-out` доступен. Маска `*.fi.lab.test` привязана к `finland`.
@@ -38,7 +38,7 @@ go run ./cmd/hestia-panel -assets frontend/dist/hestia/browser \
 
 ```sh
 mkdir -p dist
-CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o dist/hestia-panel ./cmd/hestia-panel
+CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go -C backend build -o ../dist/hestia-panel ./cmd/hestia-panel
 ```
 
 Перенесите на шлюз бинарный файл, файл уведомлений о лицензиях `frontend/dist/hestia/3rdpartylicenses.txt` и содержимое `frontend/dist/hestia/browser/`. Процессу нужен доступ на чтение к каталогу сборки и файлу снимка.
@@ -51,7 +51,7 @@ CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o dist/hestia-panel ./cmd/hestia
 
 ## Изменение API
 
-Меняйте типы ответа и регистрацию операции на стороне Go. Из корня репозитория выполните `make generate-api`: Huma v2.40.0 строит из регистрации операции и Go-типов OpenAPI 3.0.3. Первый шаг сохраняет машиночитаемый контракт в `api/openapi.yaml`, второй запускает OpenAPI Generator 7.21.0 с генератором `typescript-angular`. Для генерации нужны Go, Node.js и Java 21. При первом запуске команда скачивает JAR и сверяет его SHA-256. Для обычной сборки панели используются сохранённые в репозитории исходники клиента.
+Меняйте типы ответа и регистрацию операции на стороне Go. Из корня репозитория выполните `make generate-api`: Huma v2.40.0 строит из регистрации операции и Go-типов OpenAPI 3.0.3. Первый шаг сохраняет машиночитаемый контракт в `backend/api/openapi.yaml`, второй запускает OpenAPI Generator 7.21.0 с генератором `typescript-angular`. Для генерации нужны Go, Node.js и Java 21. При первом запуске команда скачивает JAR и сверяет его SHA-256. Для обычной сборки панели используются сохранённые в репозитории исходники клиента.
 
 Компонент вызывает `PanelService.getGroupsAndRules()` и проверяет полученные данные перед отображением. Изменения Go-кода, контракта и клиента передавайте вместе. CI повторяет генерацию и проверяет добавленные, удалённые и изменённые файлы.
 

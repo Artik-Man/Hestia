@@ -4,7 +4,7 @@ import {
   validExitId,
   validHost,
   validSubnet,
-} from "../src/profile-validation.ts";
+} from "../src/core/components/profile-draft/profile-validation.ts";
 
 test("exit identifiers reject reserved or path characters in any position", () => {
   for (const id of [

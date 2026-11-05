@@ -5,7 +5,7 @@ import {
   matchesOrder,
   reconcile,
   sourceOrder,
-} from "../src/groups-order.ts";
+} from "../src/core/models/groups-order.ts";
 
 const source = [
   { id: "fi", exits: ["fi1", "fi2"] },

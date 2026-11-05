@@ -16,7 +16,7 @@
 
 ## Воспроизведение
 
-На машине сборки в корне проекта выполните `CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -o hestia ./cmd/hestia`. Передайте бинарник и каталог `experiments/observer` в одноразовую Debian ARM64-ВМ. В госте требуются Python 3, iproute2, iptables и tcpdump. Каталоги результатов должны быть пустыми.
+На машине сборки в корне проекта выполните `CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go -C backend build -trimpath -o ../hestia ./cmd/hestia`. Передайте бинарник и каталог `experiments/observer` в одноразовую Debian ARM64-ВМ. В госте требуются Python 3, iproute2, iptables и tcpdump. Каталоги результатов должны быть пустыми.
 
 ```sh
 sudo bash experiments/observer/lab.sh ./hestia fast /var/tmp/hestia-fast

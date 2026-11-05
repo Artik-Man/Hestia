@@ -6,7 +6,7 @@ import {
   validSettings,
   validSnapshot,
   validWarm,
-} from "../src/dns-validation.ts";
+} from "../src/routes/dns/dns-validation.ts";
 const settings = {
   threshold: 5,
   automaticEnabled: true,

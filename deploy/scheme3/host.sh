@@ -129,7 +129,7 @@ cd "$repo"
     exit 1
 }
 for name in hestia hestia-panel; do
-    GOENV=off GOTOOLCHAIN=local GOWORK=off CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -o "$work/$name" "./cmd/$name"
+    GOENV=off GOTOOLCHAIN=local GOWORK=off CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go -C backend build -trimpath -o "$work/$name" "./cmd/$name"
 done
 build_awg_runtime "$work"
 mkdir "$work/frontend"

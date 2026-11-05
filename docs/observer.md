@@ -12,4 +12,4 @@
 
 Установочный комплект поставляет измеритель в составе бинарника Гестии и отдельный unit. Оператор создаёт конфигурацию измерений в `/etc/hestia/observer.json`, после чего включает наблюдение командой `sudo systemctl enable --now /usr/local/lib/hestia/hestia-observe.service`. Записи доступны через `journalctl -u hestia-observe -f`. Команда `sudo systemctl disable --now hestia-observe.service` останавливает пробы. После обновления бинарника перезапустите включённую службу через `sudo systemctl restart hestia-observe.service`.
 
-[Формат конфигурации и журналов](../cmd/hestia-observe/README.md). [Методика испытаний на ARM64](../experiments/observer/README.md).
+[Формат конфигурации и журналов](../backend/cmd/hestia-observe/README.md). [Методика испытаний на ARM64](../experiments/observer/README.md).

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
+import { expect } from "playwright/test";
 import {
   assign,
   edit,
@@ -48,7 +49,10 @@ AllowedIPs = ${required.AllowedIPs}
 `;
 
 /** fixture serves only a local production bundle and a synthetic typed API, retaining public and private records separately. */
-async function fixture(page, includeOrphan = false, hasRadio = true) {
+async function fixture(
+  page,
+  { includeOrphan = false, hasRadio = true, directName } = {},
+) {
   const publicRecord = {
     id: "existing",
     group: "test",
@@ -67,7 +71,7 @@ async function fixture(page, includeOrphan = false, hasRadio = true) {
     });
     profiles.set("pending", config);
   }
-  const direct = { id: "wan-a", type: "direct" };
+  const direct = { id: "wan-a", type: "direct", name: directName };
   const physical = {
     interfaces: [
       {
@@ -534,7 +538,7 @@ test("connections retain profiles absent from the snapshot and native exits abse
   });
   try {
     const page = await browser.newPage({ serviceWorkers: "block" });
-    await fixture(page, true);
+    await fixture(page, { includeOrphan: true });
     await perform(page, "GET", "/api/awg", () => page.goto(url));
 
     await savedRow(page, "wan-b")
@@ -569,55 +573,90 @@ test("connections retain profiles absent from the snapshot and native exits abse
   }
 });
 
-test("a direct connection keeps its routing ID after renaming and legacy links reopen the table", async () => {
+test("a legacy direct-connection link opens the Ethernet table", async (t) => {
   const browser = await chromium.launch({
     executablePath: process.env.CHROME_BIN,
   });
-  try {
-    const page = await browser.newPage({ serviceWorkers: "block" });
-    const { state } = await fixture(page);
-    const legacyURL = url + "?exit=wan-a";
-    await perform(page, "GET", "/api/awg-underlays", () =>
-      page.goto(legacyURL),
-    );
-    const row = savedRow(page, "wan-a");
-    await row.waitFor();
-    assert.equal(await row.getByRole("link").count(), 0);
+  t.after(() => browser.close());
+  const page = await browser.newPage({ serviceWorkers: "block" });
+  await fixture(page);
+  await page.goto(url + "?exit=wan-a");
 
-    await row
-      .getByRole("button", { name: "Редактировать подключение wan-a" })
-      .click();
-    const dialog = page.getByRole("dialog", {
-      name: "Редактировать прямое подключение",
-    });
-    const label = "Домашний интернет";
-    await dialog
-      .getByLabel("Название подключения", { exact: true })
-      .fill(label);
-    await perform(page, "PUT", "/api/connections/wan-a/name", () =>
-      dialog.getByRole("button", { name: "Сохранить", exact: true }).click(),
-    );
-    await dialog.waitFor({ state: "hidden" });
-    await savedRow(page, label).waitFor();
-    await perform(page, "GET", "/api/awg-underlays", () => page.reload());
-    await savedRow(page, label).waitFor();
-    assert.deepEqual(state.writes, [
-      {
-        method: "PUT",
-        pathname: "/api/connections/wan-a/name",
-        data: { name: label },
-      },
-    ]);
-    const editor = await edit(page, "existing");
-    await editor.locator("#underlay-trigger").click();
-    await editor.getByRole("checkbox", { name: label, exact: true }).check();
-    await perform(page, "PUT", "/api/awg/existing", () =>
-      editor.getByRole("button", { name: "Сохранить", exact: true }).click(),
-    );
-    assert.deepEqual(state.writes.at(-1).data.underlays, ["wan-a"]);
-  } finally {
-    await browser.close();
-  }
+  const ethernet = page.getByRole("table", { name: "Ethernet", exact: true });
+  const row = ethernet.getByRole("row").filter({
+    has: page.getByRole("rowheader", { name: "wan-a", exact: true }),
+  });
+  await expect(
+    row.getByRole("button", {
+      name: "Редактировать подключение wan-a",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(row.getByRole("link")).toHaveCount(0);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+
+test("renaming an Ethernet connection updates its row and survives a reload", async (t) => {
+  const browser = await chromium.launch({
+    executablePath: process.env.CHROME_BIN,
+  });
+  t.after(() => browser.close());
+  const page = await browser.newPage({ serviceWorkers: "block" });
+  const { state } = await fixture(page);
+  await page.goto(url);
+
+  const ethernet = page.getByRole("table", { name: "Ethernet", exact: true });
+  const port = ethernet
+    .getByRole("row")
+    .filter({ has: page.getByRole("cell", { name: "eth0", exact: true }) });
+  await port
+    .getByRole("button", {
+      name: "Редактировать подключение wan-a",
+      exact: true,
+    })
+    .click();
+  const dialog = page.getByRole("dialog", {
+    name: "Редактировать прямое подключение",
+  });
+  const field = dialog.getByLabel("Название подключения", { exact: true });
+  await expect(field).toHaveValue("wan-a");
+  const label = "Домашний интернет";
+  await field.fill(label);
+  await expect(field).toHaveValue(label);
+  await perform(page, "PUT", "/api/connections/wan-a/name", () =>
+    dialog.getByRole("button", { name: "Сохранить", exact: true }).click(),
+  );
+  assert.deepEqual(state.writes, [
+    {
+      method: "PUT",
+      pathname: "/api/connections/wan-a/name",
+      data: { name: label },
+    },
+  ]);
+  await expect(dialog).toBeHidden();
+  await expect(port.getByRole("rowheader")).toHaveText(label);
+  await page.reload();
+  await expect(port.getByRole("rowheader")).toHaveText(label);
+});
+
+test("selecting a named Ethernet transport saves its routing ID in the VPN profile", async (t) => {
+  const browser = await chromium.launch({
+    executablePath: process.env.CHROME_BIN,
+  });
+  t.after(() => browser.close());
+  const page = await browser.newPage({ serviceWorkers: "block" });
+  const label = "Домашний интернет";
+  const { state } = await fixture(page, { directName: label });
+  await page.goto(url);
+
+  const editor = await edit(page, "existing");
+  await editor.locator("#underlay-trigger").click();
+  await editor.getByRole("checkbox", { name: label, exact: true }).check();
+  await perform(page, "PUT", "/api/awg/existing", () =>
+    editor.getByRole("button", { name: "Сохранить", exact: true }).click(),
+  );
+  assert.equal(state.writes.length, 1);
+  assert.deepEqual(state.writes[0].data.underlays, ["wan-a"]);
 });
 
 test("manual Wi-Fi setup uses the selected radio, band, SSID and password, and lists only public fields", async () => {
@@ -699,7 +738,7 @@ test("Wi-Fi setup cannot be submitted when a gateway has no radio", async () => 
   });
   try {
     const page = await browser.newPage({ serviceWorkers: "block" });
-    const { state } = await fixture(page, false, false);
+    const { state } = await fixture(page, { hasRadio: false });
     await perform(page, "GET", "/api/physical-connections", () =>
       page.goto(url),
     );

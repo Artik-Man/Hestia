@@ -33,7 +33,7 @@ sudo bash experiments/installer/lab.sh reboot /var/tmp/hestia /var/tmp/sing-box.
 sudo python3 -B experiments/installer/report.py bootstrap "$out"
 ```
 
-Для сквозного переноса выполнить [сборку комплекта](../../docs/installer.md), поместить установщик, профиль и два тестовых файла VPN в отдельный каталог исходной чистой ВМ. Проверочный сценарий и `profile-test.py` поместить в другой каталог. Исходное дерево проекта установщику не требуется. Выполнить от root:
+Для сквозного переноса выполнить [сборку комплекта](../../deploy/docs/installer.md), поместить установщик, профиль и два тестовых файла VPN в отдельный каталог исходной чистой ВМ. Проверочный сценарий и `profile-test.py` поместить в другой каталог. Исходное дерево проекта установщику не требуется. Выполнить от root:
 
 ```sh
 bash /var/tmp/runner/profile-lab.sh /var/tmp/inputs/hestia.run /var/tmp/inputs/stand.json source /var/tmp/source-proof

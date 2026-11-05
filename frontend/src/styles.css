@@ -326,47 +326,6 @@ code {
     font-size: 11px;
   }
 }
-.nav-band {
-  border-bottom: 1px solid #cfdbd8;
-  background: white;
-}
-.nav {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 4px 20px;
-}
-.nav a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 46px;
-  padding: 4px 2px;
-  border-bottom: 3px solid transparent;
-  color: #435e59;
-  font-weight: 600;
-  text-decoration: none;
-}
-.nav a:hover {
-  color: #125e47;
-}
-.nav a.active {
-  color: #145c47;
-  border-color: #278569;
-}
-.nav a:focus-visible {
-  outline: 3px solid #168164;
-  outline-offset: -2px;
-}
-.external-nav {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-left: auto;
-}
-.external-label {
-  font-size: 12px;
-  color: #526763;
-}
 .connections thead th:first-child {
   width: 30%;
 }
@@ -380,13 +339,6 @@ code {
   flex: none;
 }
 @media (max-width: 620px) {
-  .nav {
-    gap: 0 12px;
-    font-size: 14px;
-  }
-  .external-nav {
-    margin-left: 0;
-  }
   .connections th:nth-child(3) {
     width: 20%;
   }
@@ -544,14 +496,14 @@ main button.icon-action:not(:disabled):hover {
   width: 18px;
   height: 18px;
   background: currentColor;
-  mask: url("/pencil.svg") center / contain no-repeat;
+  mask: url("/assets/pencil.svg") center / contain no-repeat;
 }
 
 .delete-icon {
   width: 18px;
   height: 18px;
   background: currentColor;
-  mask: url("/trash.svg") center / contain no-repeat;
+  mask: url("/assets/trash.svg") center / contain no-repeat;
 }
 main button.icon-action.connection-remove {
   color: #b42318;

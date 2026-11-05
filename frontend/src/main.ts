@@ -4,16 +4,16 @@ import { provideHttpClient } from "@angular/common/http";
 import { MessageService } from "primeng/api";
 import Aura from "@primeuix/themes/aura";
 import { providePrimeNG } from "primeng/config";
-import { provideApi } from "./api/generated/provide-api";
+import { provideApi } from "./core/services/api/generated/provide-api";
 import {
   Router,
   provideRouter,
   withComponentInputBinding,
   withHashLocation,
 } from "@angular/router";
-import { featurePages, pages } from "./pages";
-import { SnapshotScreen } from "./snapshot-screen";
-import { Panel } from "./panel";
+import { featurePages, pages } from "./routes/pages";
+import { SnapshotScreen } from "./routes/snapshot-screen/snapshot-screen.component";
+import { Panel } from "./core/components/panel/panel.component";
 
 // Preserve bookmarks created before the panel used fragment URLs for local pages.
 if (

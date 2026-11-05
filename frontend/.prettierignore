@@ -3,4 +3,4 @@ dist
 .angular
 package-lock.json
 .cache
-src/api/generated
+src/core/services/api/generated

@@ -10,7 +10,7 @@
 
 ```sh
 (cd frontend && npm run build)
-CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -buildvcs=false -o dist/hestia-panel ./cmd/hestia-panel
+CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go -C backend build -buildvcs=false -o ../dist/hestia-panel ./cmd/hestia-panel
 # В каталоге опыта на изолированной ВМ hestia-load-01:
 sudo unshare --net --pid --fork --mount-proc sh -ec 'ip link set lo up; python3 verify.py ./hestia-panel ./sing-box ./browser ./snapshot.json'
 ```
@@ -30,5 +30,5 @@ node --test tests/browser/traffic.mjs
 Для повторения передайте путь к установленному sing-box 1.14.4 для своей ОС.
 
 ```sh
-HESTIA_TEST_SING_BOX=/path/to/sing-box go test -count=1 -v ./internal/trafficcapture
+HESTIA_TEST_SING_BOX=/path/to/sing-box go -C backend test -count=1 -v ./internal/trafficcapture
 ```

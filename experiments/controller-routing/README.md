@@ -21,7 +21,7 @@ Go-команда применяет выбор для группы по зап�
 Подготовить изолированную Debian ARM64-ВМ, установить sing-box и инструменты по [инструкции базового стенда](../fakeip/README.md). На хосте с Go из корня проекта собрать исполняемый файл:
 
 ```sh
-CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o /tmp/hestia ./cmd/hestia
+CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go -C backend build -o /tmp/hestia ./cmd/hestia
 ```
 
 Перенести в ВМ исполняемый файл и каталоги `experiments/controller-routing`, `experiments/failover`, `experiments/fakeip` с сохранением взаимного расположения. Из корня копии проекта в гостевой ВМ:

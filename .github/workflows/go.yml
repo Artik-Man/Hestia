@@ -27,7 +27,7 @@ jobs:
       - name: Verify that other platforms have no gateway commands
         run: |
           for target in darwin/arm64 linux/amd64 linux/arm android/arm64; do
-            packages=$(GOOS="${target%/*}" GOARCH="${target#*/}" go list ./cmd/...)
+            packages=$(GOOS="${target%/*}" GOARCH="${target#*/}" go -C backend list ./cmd/...)
             test -z "$packages"
           done
       - run: make check
@@ -46,6 +46,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.27.3'
+          cache-dependency-path: backend/go.sum
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -54,8 +55,8 @@ jobs:
       - run: make -C .. generate-api
       - name: Verify generated contract and Angular client
         run: |
-          git diff --exit-code -- ../api/openapi.yaml src/api/generated
-          test -z "$(git ls-files --others --exclude-standard -- ../api/openapi.yaml src/api/generated)"
+          git diff --exit-code -- ../backend/api/openapi.yaml src/core/services/api/generated
+          test -z "$(git ls-files --others --exclude-standard -- ../backend/api/openapi.yaml src/core/services/api/generated)"
       - run: npm run format:check
       - run: npm run lint
       - run: npm test

@@ -60,9 +60,9 @@ guest ip -4 -o addr show dev lima0 scope global |
     exit 1
 }
 
-(cd "$repo" && GOENV=off GOTOOLCHAIN=local GOWORK=off CGO_ENABLED=0 GOOS=linux GOARCH=arm64 \
+(cd "$repo/backend" && GOENV=off GOTOOLCHAIN=local GOWORK=off CGO_ENABLED=0 GOOS=linux GOARCH=arm64 \
     go build -trimpath -buildvcs=false -o "$work/hestia" ./cmd/hestia)
-(cd "$repo" && GOENV=off GOTOOLCHAIN=local GOWORK=off CGO_ENABLED=0 GOOS=linux GOARCH=arm64 \
+(cd "$repo/backend" && GOENV=off GOTOOLCHAIN=local GOWORK=off CGO_ENABLED=0 GOOS=linux GOARCH=arm64 \
     go build -trimpath -buildvcs=false -o "$work/hestia-panel" ./cmd/hestia-panel)
 (cd "$repo/frontend" && npm ci && npm run build -- --output-path "$work/frontend-build")
 mv "$work/frontend-build/browser" "$work/browser"

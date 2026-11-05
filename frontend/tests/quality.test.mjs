@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   isQualityReport,
   isQualitySettings,
-} from "../src/quality-observations.ts";
+} from "../src/routes/quality/quality-observations.ts";
 
 const udp = {
   protocol: "UDP",

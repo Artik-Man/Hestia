@@ -26,9 +26,9 @@ def main() -> int:
         ["git", "ls-files", "-co", "--exclude-standard", "-z"]
     )
     paths = sorted({Path(os.fsdecode(name)) for name in names.split(b"\0") if name})
-    go = [str(p) for p in paths if p.suffix == ".go" and p.is_file()]
+    go = [str(p.resolve()) for p in paths if p.suffix == ".go" and p.is_file()]
     failed = (
-        subprocess.run(["go", "run", "./tools/doccheck", *go], check=False).returncode
+        subprocess.run(["go", "-C", "backend", "run", "./tools/doccheck", *go], check=False).returncode
         != 0
     )
     for path in paths:

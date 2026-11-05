@@ -1,0 +1,21 @@
+<div class="nav-band">
+  <nav class="frame nav" aria-label="Основная навигация">
+    @for (page of pages; track page.path) {
+      <a
+        [routerLink]="['/', page.path]"
+        routerLinkActive="active"
+        ariaCurrentWhenActive="page"
+        >{{ page.label }}</a
+      >
+    }
+    @if (grafanaUrl(); as url) {
+      <span class="external-nav">
+        <span class="external-label">Внешние сервисы</span>
+        <a [href]="url" target="_blank" rel="noopener noreferrer"
+          >Grafana <span aria-hidden="true">↗</span
+          ><span class="sr-only"> (в новой вкладке)</span></a
+        >
+      </span>
+    }
+  </nav>
+</div>

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   validTrafficPage,
   validTrafficSettings,
-} from "../src/traffic-observations.ts";
+} from "../src/routes/traffic/traffic-observations.ts";
 
 /** Covers bounded viewport allocation, stable snapshots and rejection of malformed evidence. */
 test("traffic page validates the window and the source before accepting observations", () => {

@@ -23,8 +23,8 @@
             "assets": [
               {
                 "glob": "*.svg",
-                "input": "src",
-                "output": "/"
+                "input": "src/assets",
+                "output": "/assets/"
               }
             ],
             "outputPath": "dist/hestia",

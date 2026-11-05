@@ -31,8 +31,8 @@ Chromium загрузил main-YZH4SAE7.js от действующей пане�
 
 Используйте отдельную ВМ hestia-binding-test с профилем [Debian 12 ARM64](../fakeip/vm/lima.yaml), инструментами wireguard-tools, dnsmasq-base, curl, sudo, iproute2 и Python 3. На машине разработки выполните из корня проекта:
 
-    CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o /tmp/hestia-order-controller ./cmd/hestia
-    CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o /tmp/hestia-order-panel ./cmd/hestia-panel
+    CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go -C backend build -o /tmp/hestia-order-controller ./cmd/hestia
+    CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go -C backend build -o /tmp/hestia-order-panel ./cmd/hestia-panel
     (cd frontend && npm ci && npm run build)
 
 Передайте в отдельный каталог гостя оба бинарника, каталоги `deploy/`, `experiments/group-order/`, `frontend/dist/hestia/browser/`, общий сценарий `experiments/list-binding/peer.sh` и официальный архив sing-box 1.14.4. Выполните в этом каталоге свежего гостя:

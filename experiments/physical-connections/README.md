@@ -29,5 +29,5 @@ sudo unshare --mount bash ./inventory.sh ./hestia
 Воспроизведение офлайн-проверки с доступным `nmcli` на Linux:
 
 ```sh
-HESTIA_NMCLI_OFFLINE=/usr/bin/nmcli go test -count=1 -v ./internal/physical
+HESTIA_NMCLI_OFFLINE=/usr/bin/nmcli go -C backend test -count=1 -v ./internal/physical
 ```

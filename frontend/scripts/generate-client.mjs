@@ -18,7 +18,7 @@ const sha256 =
   "124727eacdb64fd6c9c1c3a78e353207ec1378d071bbdc15de79b0a30ed2ad6d";
 const file = `openapi-generator-${version}.jar`;
 const cache = resolve(".cache", file);
-const destination = resolve("src/api/generated");
+const destination = resolve("src/core/services/api/generated");
 const url = `https://repo.maven.apache.org/maven2/org/openapitools/openapi-generator-cli/${version}/openapi-generator-cli-${version}.jar`;
 
 /** verify rejects a jar unless its contents match the pinned generator release. */
@@ -53,7 +53,7 @@ function generate() {
         cache,
         "generate",
         "-i",
-        resolve("../api/openapi.yaml"),
+        resolve("../backend/api/openapi.yaml"),
         "-g",
         "typescript-angular",
         "-o",

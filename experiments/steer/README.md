@@ -11,7 +11,7 @@
 
 Из 162 проб на двух интерфейсах по трём целям четыре потерялись, каждая в соответствующей фазе потерь UDP к X. По 81 записи решений проверены моменты публикации и удаления правила. Первое применение до проверки всех клиентских маршрутов заняло 0,67 с от включения потерь, обратное — 1,18 с. Это параметры короткого стендового окна в 3 с с минимумом 5 пар, порогом преимущества 15 процентных пунктов и двумя физически моделируемыми путями через veth. PID и время старта sing-box совпали до и после теста. Фактический выход подтверждают маркированные пакеты на LAN, FI1, FI2 и RU, ответ удалённого сервера и журналы. [События](evidence/events.log), [решения](evidence/decisions.jsonl), [захваты](evidence).
 
-Хеш проверенного ARM64-бинарника записан в [controller.sha256](evidence/controller.sha256). Для повторения соберите его из корня проекта командой `CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -o hestia ./cmd/hestia`. Перенесите бинарник и каталог экспериментов в одноразовую Debian ARM64-ВМ с TUN, sing-box 1.14.4, Python 3, iproute2, iptables и tcpdump. Запустите из корня проекта в госте:
+Хеш проверенного ARM64-бинарника записан в [controller.sha256](evidence/controller.sha256). Для повторения соберите его из корня проекта командой `CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go -C backend build -trimpath -o ../hestia ./cmd/hestia`. Перенесите бинарник и каталог экспериментов в одноразовую Debian ARM64-ВМ с TUN, sing-box 1.14.4, Python 3, iproute2, iptables и tcpdump. Запустите из корня проекта в госте:
 
 ```sh
 sudo env HESTIA_BIN="$PWD/hestia" bash experiments/dynamic-exception/lab.sh /var/tmp/steer-test steer
