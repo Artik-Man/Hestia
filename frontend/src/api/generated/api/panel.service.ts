@@ -37,6 +37,12 @@ import { AppliedOrder } from '../model/appliedOrder';
 // @ts-ignore
 import { BindingChange } from '../model/bindingChange';
 // @ts-ignore
+import { DNSPolicySnapshot } from '../model/dNSPolicySnapshot';
+// @ts-ignore
+import { DNSPolicyUpdate } from '../model/dNSPolicyUpdate';
+// @ts-ignore
+import { DNSWarmReport } from '../model/dNSWarmReport';
+// @ts-ignore
 import { DomainListUpdate } from '../model/domainListUpdate';
 // @ts-ignore
 import { DomainListValues } from '../model/domainListValues';
@@ -59,9 +65,13 @@ import { Navigation } from '../model/navigation';
 // @ts-ignore
 import { PhysicalInventory } from '../model/physicalInventory';
 // @ts-ignore
+import { QualityCheck } from '../model/qualityCheck';
+// @ts-ignore
 import { QualityReport } from '../model/qualityReport';
 // @ts-ignore
 import { QualitySettings } from '../model/qualitySettings';
+// @ts-ignore
+import { QualityWindow } from '../model/qualityWindow';
 // @ts-ignore
 import { RuleList } from '../model/ruleList';
 // @ts-ignore
@@ -736,6 +746,63 @@ export class PanelService extends BaseService {
     }
 
     /**
+     * Удалить одну проверку связи
+     * @endpoint delete /api/quality/checks/{protocol}
+     * @param protocol 
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public deleteQualityCheck(protocol: 'UDP' | 'TCP' | 'ICMP' | 'DNS' | 'HTTPS' | 'HTTP3', observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<QualitySettings>;
+    public deleteQualityCheck(protocol: 'UDP' | 'TCP' | 'ICMP' | 'DNS' | 'HTTPS' | 'HTTP3', observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<QualitySettings>>;
+    public deleteQualityCheck(protocol: 'UDP' | 'TCP' | 'ICMP' | 'DNS' | 'HTTPS' | 'HTTP3', observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<QualitySettings>>;
+    public deleteQualityCheck(protocol: 'UDP' | 'TCP' | 'ICMP' | 'DNS' | 'HTTPS' | 'HTTP3', observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (protocol === null || protocol === undefined) {
+            throw new Error('Required parameter protocol was null or undefined when calling deleteQualityCheck.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/quality/checks/${this.configuration.encodeParam({name: "protocol", value: protocol, in: "path", style: "simple", explode: false, dataType: "'UDP' | 'TCP' | 'ICMP' | 'DNS' | 'HTTPS' | 'HTTP3'", dataFormat: undefined})}`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<QualitySettings>('delete', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
      * Удалить сохранённый профиль Wi-Fi
      * @endpoint delete /api/wifi-connections/{id}
      * @param id 
@@ -836,6 +903,112 @@ export class PanelService extends BaseService {
         let localVarPath = `/api/awg/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<AWGConnectionProfile>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Прочитать сохранённые настройки DNS и списки прогрева
+     * @endpoint get /api/dns/policy
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public getDnsPolicy(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<DNSPolicySnapshot>;
+    public getDnsPolicy(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<DNSPolicySnapshot>>;
+    public getDnsPolicy(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<DNSPolicySnapshot>>;
+    public getDnsPolicy(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+
+        let localVarHeaders = this.defaultHeaders;
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/dns/policy`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<DNSPolicySnapshot>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Прочитать наблюдаемый список автоматического прогрева
+     * @endpoint get /api/dns/warm
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public getDnsWarm(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<DNSWarmReport>;
+    public getDnsWarm(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<DNSWarmReport>>;
+    public getDnsWarm(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<DNSWarmReport>>;
+    public getDnsWarm(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+
+        let localVarHeaders = this.defaultHeaders;
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/dns/warm`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<DNSWarmReport>('get', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
                 responseType: <any>responseType_,
@@ -1238,6 +1411,144 @@ export class PanelService extends BaseService {
     }
 
     /**
+     * Добавить или изменить одну проверку связи
+     * @endpoint put /api/quality/checks/{protocol}
+     * @param protocol 
+     * @param qualityCheck 
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public putQualityCheck(protocol: 'UDP' | 'TCP' | 'ICMP' | 'DNS' | 'HTTPS' | 'HTTP3', qualityCheck: QualityCheck, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<QualitySettings>;
+    public putQualityCheck(protocol: 'UDP' | 'TCP' | 'ICMP' | 'DNS' | 'HTTPS' | 'HTTP3', qualityCheck: QualityCheck, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<QualitySettings>>;
+    public putQualityCheck(protocol: 'UDP' | 'TCP' | 'ICMP' | 'DNS' | 'HTTPS' | 'HTTP3', qualityCheck: QualityCheck, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<QualitySettings>>;
+    public putQualityCheck(protocol: 'UDP' | 'TCP' | 'ICMP' | 'DNS' | 'HTTPS' | 'HTTP3', qualityCheck: QualityCheck, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (protocol === null || protocol === undefined) {
+            throw new Error('Required parameter protocol was null or undefined when calling putQualityCheck.');
+        }
+        if (qualityCheck === null || qualityCheck === undefined) {
+            throw new Error('Required parameter qualityCheck was null or undefined when calling putQualityCheck.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/quality/checks/${this.configuration.encodeParam({name: "protocol", value: protocol, in: "path", style: "simple", explode: false, dataType: "'UDP' | 'TCP' | 'ICMP' | 'DNS' | 'HTTPS' | 'HTTP3'", dataFormat: undefined})}`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<QualitySettings>('put', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: qualityCheck,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Изменить общее окно оценки
+     * @endpoint put /api/quality/window
+     * @param qualityWindow 
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public putQualityWindow(qualityWindow: QualityWindow, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<QualitySettings>;
+    public putQualityWindow(qualityWindow: QualityWindow, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<QualitySettings>>;
+    public putQualityWindow(qualityWindow: QualityWindow, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<QualitySettings>>;
+    public putQualityWindow(qualityWindow: QualityWindow, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (qualityWindow === null || qualityWindow === undefined) {
+            throw new Error('Required parameter qualityWindow was null or undefined when calling putQualityWindow.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/quality/window`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<QualitySettings>('put', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: qualityWindow,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
      * Переименовать прямое подключение
      * @endpoint put /api/connections/{id}/name
      * @param id 
@@ -1510,6 +1821,73 @@ export class PanelService extends BaseService {
             {
                 context: localVarHttpContext,
                 body: aWGUpdateRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Сохранить настройки DNS и списки при совпадении ревизии
+     * @endpoint put /api/dns/policy
+     * @param dNSPolicyUpdate 
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public updateDnsPolicy(dNSPolicyUpdate: DNSPolicyUpdate, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<DNSPolicySnapshot>;
+    public updateDnsPolicy(dNSPolicyUpdate: DNSPolicyUpdate, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<DNSPolicySnapshot>>;
+    public updateDnsPolicy(dNSPolicyUpdate: DNSPolicyUpdate, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<DNSPolicySnapshot>>;
+    public updateDnsPolicy(dNSPolicyUpdate: DNSPolicyUpdate, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (dNSPolicyUpdate === null || dNSPolicyUpdate === undefined) {
+            throw new Error('Required parameter dNSPolicyUpdate was null or undefined when calling updateDnsPolicy.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/dns/policy`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<DNSPolicySnapshot>('put', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: dNSPolicyUpdate,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

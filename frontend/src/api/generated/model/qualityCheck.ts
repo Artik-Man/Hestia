@@ -13,13 +13,25 @@ export interface QualityCheck {
     dnsName?: string;
     intervalSeconds: number;
     protocol: QualityCheck.ProtocolEnum;
+    /**
+     * Путь запроса на сервере, включая необязательную строку параметров.
+     */
+    requestPath?: string;
+    /**
+     * Имя сервера для TLS и HTTP.
+     */
+    serverName?: string;
     targets: Array<string>;
     timeoutSeconds: number;
 }
 export namespace QualityCheck {
     export const ProtocolEnum = {
         Udp: 'UDP',
-        Tcp: 'TCP'
+        Tcp: 'TCP',
+        Icmp: 'ICMP',
+        Dns: 'DNS',
+        Https: 'HTTPS',
+        Http3: 'HTTP3'
     } as const;
     export type ProtocolEnum = typeof ProtocolEnum[keyof typeof ProtocolEnum];
 }

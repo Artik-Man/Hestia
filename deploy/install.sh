@@ -53,7 +53,7 @@ managed=()
 had_group=1
 transaction=0
 services=(hestia-sing-box.service hestia.service)
-managed_units=(hestia-binding-recovery.service hestia-binding-watch.path hestia-binding-watch.service "${services[@]}")
+managed_units=(hestia-binding-recovery.service hestia-binding-watch.path hestia-binding-watch.service "${services[@]}" hestia-dns.service)
 declare -A enabled active
 # cleanup rolls back replaced files and service states after a failed transaction and removes temporary artifacts.
 cleanup() {

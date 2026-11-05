@@ -35,3 +35,22 @@ func TestQualitySelectionKeepsAvailabilityAndEvidence(t *testing.T) {
 		})
 	}
 }
+
+// TestICMPQualityEvidence counts distinct ICMP addresses and deduplicates a shared ICMP/TCP destination.
+func TestICMPQualityEvidence(t *testing.T) {
+	result := func(score float64, secondIP string) quality.Result {
+		return quality.Result{Checks: []quality.CheckResult{
+			{Protocol: quality.ICMP, Targets: []quality.TargetResult{
+				{Target: "1.1.1.1", Samples: 3, Score: &score},
+				{Target: secondIP, Samples: 3, Score: &score},
+			}},
+			{Protocol: quality.TCP, Targets: []quality.TargetResult{{Target: "1.1.1.1:443", Samples: 3, Score: &score}}},
+		}}
+	}
+	if !corroborated(result(100, "8.8.8.8"), result(50, "8.8.8.8")) {
+		t.Fatal("two improving ICMP targets did not qualify")
+	}
+	if corroborated(result(100, "::ffff:1.1.1.1"), result(50, "::ffff:1.1.1.1")) {
+		t.Fatal("one IP counted as independent targets")
+	}
+}

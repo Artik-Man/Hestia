@@ -87,3 +87,6 @@ summary {
 .card-title h3 {
   margin-right: auto;
 }
+.add-checks {
+  flex-wrap: wrap;
+}

@@ -13,6 +13,8 @@ mkdir -p /run/hestia-quality /var/lib/hestia-quality-settings
 chown 65534:65534 /run/hestia-quality
 chown 65533:65533 /var/lib/hestia-quality-settings
 ip link set lo up
+openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj '/CN=quality.test' -addext 'subjectAltName=DNS:quality.test' -keyout key.pem -out cert.pem 2>cert.log
+export SSL_CERT_FILE="$PWD/cert.pem"
 for path in one two; do
     index=1
     [[ $path == two ]] && index=2
@@ -29,6 +31,7 @@ for path in one two; do
         ip route add "$target/32" dev "$path" via "10.0.$index.2" metric "$index"
     done
     (cd "$path" && exec ip netns exec "$path" python3 ../respond.py) &
+    (cd "$path" && exec ip netns exec "$path" ../quality-test-service) &
 done
 cat >profile.json <<'JSON'
 {"version":2,"interfaces":[{"id":"one","type":"direct","bind_interface":"one"},{"id":"two","type":"direct","bind_interface":"two"}],"groups":[{"id":"finland","exits":["one","two"],"defaultExit":"one"},{"id":"empty","exits":[],"defaultExit":"deny"}],"connectors":[],"inbounds":[],"lists":[],"healthy":{"one":true,"two":true}}

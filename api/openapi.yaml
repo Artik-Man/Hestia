@@ -203,6 +203,10 @@ components:
           enum:
             - UDP
             - TCP
+            - ICMP
+            - DNS
+            - HTTPS
+            - HTTP3
           type: string
         samples:
           format: int64
@@ -225,6 +229,107 @@ components:
         - localErrors
         - score
         - targets
+      type: object
+    DNSPolicySnapshot:
+      additionalProperties: false
+      properties:
+        policy:
+          $ref: "#/components/schemas/Policy"
+        revision:
+          format: int64
+          minimum: 0
+          type: integer
+      required:
+        - revision
+        - policy
+      type: object
+    DNSPolicyUpdate:
+      additionalProperties: false
+      properties:
+        expectedRevision:
+          format: int64
+          minimum: 0
+          type: integer
+        policy:
+          $ref: "#/components/schemas/Policy"
+      required:
+        - expectedRevision
+        - policy
+      type: object
+    DNSSettings:
+      additionalProperties: false
+      properties:
+        automaticEnabled:
+          type: boolean
+        intervalMinutes:
+          format: int64
+          maximum: 525600
+          minimum: 1
+          type: integer
+        retentionSeconds:
+          format: int64
+          maximum: 31536000
+          minimum: 0
+          type: integer
+        serveStale:
+          type: boolean
+        staleWindowSeconds:
+          format: int64
+          maximum: 31536000
+          minimum: 0
+          type: integer
+        threshold:
+          format: int64
+          maximum: 1000000
+          minimum: 1
+          type: integer
+        windowHours:
+          format: int64
+          maximum: 8760
+          minimum: 1
+          type: integer
+      required:
+        - retentionSeconds
+        - serveStale
+        - staleWindowSeconds
+        - automaticEnabled
+        - threshold
+        - windowHours
+        - intervalMinutes
+      type: object
+    DNSWarmName:
+      additionalProperties: false
+      properties:
+        clientRequests:
+          format: int64
+          minimum: 1
+          type: integer
+        domain:
+          maxLength: 253
+          minLength: 1
+          type: string
+      required:
+        - domain
+        - clientRequests
+      type: object
+    DNSWarmReport:
+      additionalProperties: false
+      properties:
+        automatic:
+          items:
+            $ref: "#/components/schemas/DNSWarmName"
+          type: array
+        observedAt:
+          format: date-time
+          type: string
+        policyRevision:
+          format: int64
+          minimum: 0
+          type: integer
+      required:
+        - observedAt
+        - policyRevision
+        - automatic
       type: object
     DomainListUpdate:
       additionalProperties: false
@@ -492,6 +597,26 @@ components:
         - wifiProfiles
         - wifiAvailable
       type: object
+    Policy:
+      additionalProperties: false
+      properties:
+        exclusions:
+          items:
+            type: string
+          maxItems: 4096
+          type: array
+        manual:
+          items:
+            type: string
+          maxItems: 4096
+          type: array
+        settings:
+          $ref: "#/components/schemas/DNSSettings"
+      required:
+        - settings
+        - manual
+        - exclusions
+      type: object
     QualityCheck:
       additionalProperties: false
       properties:
@@ -507,6 +632,18 @@ components:
           enum:
             - UDP
             - TCP
+            - ICMP
+            - DNS
+            - HTTPS
+            - HTTP3
+          type: string
+        requestPath:
+          description: Путь запроса на сервере, включая необязательную строку параметров.
+          maxLength: 1024
+          type: string
+        serverName:
+          description: Имя сервера для TLS и HTTP.
+          maxLength: 253
           type: string
         targets:
           items:
@@ -582,7 +719,7 @@ components:
         checks:
           items:
             $ref: "#/components/schemas/QualityCheck"
-          maxItems: 2
+          maxItems: 6
           minItems: 0
           type: array
         windowMinutes:
@@ -593,6 +730,17 @@ components:
       required:
         - windowMinutes
         - checks
+      type: object
+    QualityWindow:
+      additionalProperties: false
+      properties:
+        windowMinutes:
+          format: int64
+          maximum: 1440
+          minimum: 1
+          type: integer
+      required:
+        - windowMinutes
       type: object
     Result:
       additionalProperties: false
@@ -1167,6 +1315,104 @@ paths:
       summary: Переименовать прямое подключение
       tags:
         - Panel
+  /api/dns/policy:
+    get:
+      operationId: getDnsPolicy
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DNSPolicySnapshot"
+          description: OK
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Прочитать сохранённые настройки DNS и списки прогрева
+      tags:
+        - Panel
+    put:
+      operationId: updateDnsPolicy
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DNSPolicyUpdate"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DNSPolicySnapshot"
+          description: OK
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Conflict
+        "413":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Request Entity Too Large
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Сохранить настройки DNS и списки при совпадении ревизии
+      tags:
+        - Panel
+  /api/dns/warm:
+    get:
+      operationId: getDnsWarm
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DNSWarmReport"
+          description: OK
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Прочитать наблюдаемый список автоматического прогрева
+      tags:
+        - Panel
   /api/domain-lists:
     post:
       operationId: createDomainList
@@ -1703,6 +1949,99 @@ paths:
       summary: Прочитать настройки проверок и текущий порядок выходов всех групп
       tags:
         - Panel
+  /api/quality/checks/{protocol}:
+    delete:
+      operationId: deleteQualityCheck
+      parameters:
+        - in: path
+          name: protocol
+          required: true
+          schema:
+            enum:
+              - UDP
+              - TCP
+              - ICMP
+              - DNS
+              - HTTPS
+              - HTTP3
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QualitySettings"
+          description: OK
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Удалить одну проверку связи
+      tags:
+        - Panel
+    put:
+      operationId: putQualityCheck
+      parameters:
+        - in: path
+          name: protocol
+          required: true
+          schema:
+            enum:
+              - UDP
+              - TCP
+              - ICMP
+              - DNS
+              - HTTPS
+              - HTTP3
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QualityCheck"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QualitySettings"
+          description: OK
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Добавить или изменить одну проверку связи
+      tags:
+        - Panel
   /api/quality/settings:
     put:
       operationId: updateQualitySettings
@@ -1744,6 +2083,43 @@ paths:
                 $ref: "#/components/schemas/ErrorModel"
           description: Service Unavailable
       summary: Сохранить общие для всех выходов параметры проверок связи
+      tags:
+        - Panel
+  /api/quality/window:
+    put:
+      operationId: putQualityWindow
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QualityWindow"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QualitySettings"
+          description: OK
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Изменить общее окно оценки
       tags:
         - Panel
   /api/wifi-connections:

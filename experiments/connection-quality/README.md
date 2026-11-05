@@ -13,9 +13,19 @@
 ```sh
 lab=$(mktemp -d)
 GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -buildvcs=false -o "$lab/" ./cmd/hestia ./cmd/hestia-panel
+GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -buildvcs=false -o "$lab/quality-test-service" ./experiments/connection-quality/service
 cp /path/to/linux-arm64/sing-box deploy/profile.py experiments/connection-quality/{respond.py,verify.py,run.sh} "$lab/"
 ssh_config="$HOME/.lima/hestia-load-01/ssh.config"
 tar -C "$lab" -czf - . | ssh -F "$ssh_config" lima-hestia-load-01 'set -e; d=$(mktemp -d); cd "$d"; tar xz; uname -srmo; sha256sum hestia hestia-panel; sudo unshare --mount --net --pid --fork --mount-proc bash run.sh; cat events.jsonl'
 ```
 
 На macOS ARM64 отдельно проверен аутентифицированный путь SOCKS через настоящий sing-box. Контрольный сервер подтвердил TCP-подключение и DNS-запрос через UDP ASSOCIATE. Закрытый TCP-порт учтён как неудачный обмен, неверный пароль — как локальная ошибка измерителя. Команда и результат приведены в [протоколе SOCKS](evidence/macos-socks.txt).
+
+
+## Отдельные проверки ICMP, DNS, HTTPS и HTTP/3
+
+На том же изолированном стенде 5 ноября 2026 года проверили, отличает ли измеритель доступность приложения от доставки его пакетов. Рабочее дерево поверх 84952fe, SHA-256 бинарных файлов указаны в [протоколе](evidence/arm64-services.txt). Сценарий воспроизводится командами выше. Внешние IP локально назначены синтетическим адресатам. Для quality.test создан однодневный тестовый сертификат, доверенный только процессам опыта.
+
+Через отдельный PUT для каждого типа добавили ICMP, DNS, HTTPS и HTTP/3. Ожидали успеха по каждому адресу на обоих выходах. Первый запуск выявил ошибку обработки IPv4-заголовка при чтении из raw-сокета: исправные ICMP-ответы учитывались как тайм-ауты. После исправления все четыре новых проверки прошли на двух адресах через оба выхода. Затем только на первом выходе отключили Echo Reply, включили SERVFAIL у резолвера и HTTP 503 по QUIC. На первом выходе счётчики успешных ICMP, DNS и HTTP/3 проб составили 2 из 4 для каждого типа. HTTPS дал 4 из 4. На втором выходе прошли все 4 из 4 по каждому новому типу. Отдельно проверены ICMPv4 и ICMPv6 на loopback Linux ARM64.
+
+Опыт покрывает реальные протоколы на прямых выходах Linux и изменения конфигурации через API. Ограничение raw ICMP у SOCKS-выхода нативного WireGuard описано в [документе функции](../../docs/features/connection-quality.md).

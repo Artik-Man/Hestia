@@ -74,6 +74,7 @@ config_digest() {
 
 # shellcheck source=awg-upgrade.sh
 source "$bundle/awg-upgrade.sh"
+dns_unit=/etc/systemd/system/hestia-dns.service
 adopt_profile=0
 if [[ -e /etc/hestia/.installer-managed || -L /etc/hestia/.installer-managed ]]; then
     [[ -f /etc/hestia/.installer-managed && ! -L /etc/hestia/.installer-managed &&
@@ -210,17 +211,29 @@ for pair in "hestia-awg@.service:$bundle/hestia-awg@.service:/etc/systemd/system
     fi
 done
 
-for unit in hestia-binding-recovery.service hestia-binding-watch.path hestia-binding-watch.service; do
+for unit in hestia-binding-recovery.service hestia-binding-watch.path hestia-binding-watch.service hestia-dns.service; do
     path=/etc/systemd/system/$unit
     die_if_untrusted_file "$path"
     if [[ -e $path ]] && ! cmp -s "$bundle/$unit" "$path"; then
         previous=$(sha256sum "$path" | cut -d' ' -f1)
         case "$unit:$previous" in
             hestia-binding-watch.service:f6f721ec694af19997180094cabd2bf96fa530d0ff6559b6db3126315fa92078 | hestia-binding-recovery.service:449163cbc40901e498ba8a5de74ae893f1b6fa3f721ca5c0d577e5bab4492502) ;;
-            *) die "Conflicting binding unit: $unit" ;;
+            *) die "Conflicting managed unit: $unit" ;;
         esac
     fi
 done
+# systemctl may return a nonzero exit status for a missing optional unit while still printing its load state.
+dns_load=$(systemctl show hestia-dns.service -p LoadState --value) || [[ $dns_load == not-found ]] || die "Cannot inspect DNS service"
+case "$dns_load" in
+    not-found) ;;
+    loaded)
+        dns_fragment=$(systemctl show hestia-dns.service -p FragmentPath --value) || die "Cannot inspect DNS service location"
+        [[ $dns_fragment == "$dns_unit" ]] || die "Conflicting DNS service location: $dns_fragment"
+        ;;
+    *) die "Unsupported DNS service state: $dns_load" ;;
+esac
+dns_was_active=0
+if systemctl is-active --quiet hestia-dns.service; then dns_was_active=1; fi
 die_if_untrusted_file /etc/tmpfiles.d/hestia-binding.conf
 [[ ! -e /etc/tmpfiles.d/hestia-binding.conf ]] || cmp -s "$bundle/hestia-binding.conf" /etc/tmpfiles.d/hestia-binding.conf || die "Conflicting binding lock layout"
 
@@ -252,7 +265,7 @@ for path in /usr/local/bin/hestia /usr/local/bin/hestia-panel /usr/local/bin/awg
     /usr/local/lib/hestia/profile.py /usr/local/lib/hestia/smoke.py /usr/local/lib/hestia/amneziawg-go \
     /etc/hestia/.awg-runtime-version /etc/systemd/system/hestia.service \
     /etc/systemd/system/hestia-panel.service /etc/systemd/system/hestia-sing-box.service /etc/systemd/system/hestia-smoke@.service /etc/systemd/system/hestia-awg@.service \
-    /etc/systemd/system/hestia-binding-{recovery.service,watch.path,watch.service} /etc/tmpfiles.d/hestia-binding.conf /etc/hestia/{sing-box.json,profile-backend.sha256} \
+    "$dns_unit" /etc/systemd/system/hestia-binding-{recovery.service,watch.path,watch.service} /etc/tmpfiles.d/hestia-binding.conf /etc/hestia/{sing-box.json,profile-backend.sha256} \
     /etc/tmpfiles.d/hestia-awg.conf /etc/sudoers.d/hestia-awg; do
     die_if_untrusted_file "$path"
 done
@@ -263,7 +276,7 @@ for path in /usr/local/bin/hestia /usr/local/bin/hestia-panel /usr/local/bin/awg
     /usr/local/lib/hestia/profile.py /usr/local/lib/hestia/smoke.py /usr/local/lib/hestia/amneziawg-go \
     /etc/hestia/.awg-runtime-version /etc/systemd/system/hestia.service \
     /etc/systemd/system/hestia-panel.service /etc/systemd/system/hestia-sing-box.service /etc/systemd/system/hestia-smoke@.service /etc/systemd/system/hestia-awg@.service \
-    /etc/systemd/system/hestia-binding-{recovery.service,watch.path,watch.service} /etc/tmpfiles.d/hestia-binding.conf /etc/hestia/{sing-box.json,profile-backend.sha256} \
+    "$dns_unit" /etc/systemd/system/hestia-binding-{recovery.service,watch.path,watch.service} /etc/tmpfiles.d/hestia-binding.conf /etc/hestia/{sing-box.json,profile-backend.sha256} \
     /etc/tmpfiles.d/hestia-awg.conf /etc/sudoers.d/hestia-awg \
     /usr/local/share/hestia-panel/current; do
     if [[ -e $path || -L $path ]]; then
@@ -292,7 +305,7 @@ for path in /usr/local/bin/hestia /usr/local/bin/hestia-panel /usr/local/bin/awg
     /usr/local/lib/hestia/profile.py /usr/local/lib/hestia/smoke.py /usr/local/lib/hestia/amneziawg-go \
     /etc/hestia/.awg-runtime-version /etc/systemd/system/hestia.service \
     /etc/systemd/system/hestia-panel.service /etc/systemd/system/hestia-sing-box.service /etc/systemd/system/hestia-smoke@.service /etc/systemd/system/hestia-awg@.service \
-    /etc/systemd/system/hestia-binding-{recovery.service,watch.path,watch.service} /etc/tmpfiles.d/hestia-binding.conf /etc/hestia/{sing-box.json,profile-backend.sha256} \
+    "$dns_unit" /etc/systemd/system/hestia-binding-{recovery.service,watch.path,watch.service} /etc/tmpfiles.d/hestia-binding.conf /etc/hestia/{sing-box.json,profile-backend.sha256} \
     /etc/tmpfiles.d/hestia-awg.conf /etc/sudoers.d/hestia-awg \
     /usr/local/share/hestia-panel/current; do
     if [[ -e $path || -L $path ]]; then
@@ -306,7 +319,7 @@ for path in /usr/local/bin/hestia /usr/local/bin/hestia-panel /usr/local/bin/awg
 done
 {
     printf 'enabled/active service states\n'
-    for service in wg-quick@wg-keenetic.service hestia-sing-box.service hestia.service hestia-panel.service hestia-awg.service; do
+    for service in wg-quick@wg-keenetic.service hestia-sing-box.service hestia.service hestia-panel.service hestia-awg.service hestia-dns.service; do
         printf '%s enabled=%s active=%s\n' "$service" "$(systemctl is-enabled "$service" 2>/dev/null || :)" "$(systemctl is-active "$service" 2>/dev/null || :)"
     done
     printf '\nIPv4 default routes\n'
@@ -371,6 +384,7 @@ restore_awg_upgrade() {
         fi
         flock -u 9
         systemctl start hestia-sing-box.service hestia.service hestia-panel.service
+        if ((dns_was_active)); then systemctl start hestia-dns.service; fi
         echo "Restored prior gateway files; inspect runtime health and backup $backup" >&2
     fi
     rm -rf -- "$build_dir"
@@ -417,7 +431,7 @@ install -o root -g root -m 0600 "$bundle/awg-version" /etc/hestia/.awg-runtime-v
 install -o root -g root -m 0644 "$bundle/hestia-smoke@.service" /etc/systemd/system/hestia-smoke@.service
 install_backend_credential "$bundle/stage1-backend-credential.dropin"
 install -o root -g root -m 0644 "$bundle/hestia-awg@.service" /etc/systemd/system/hestia-awg@.service
-for unit in hestia-binding-recovery.service hestia-binding-watch.path hestia-binding-watch.service; do
+for unit in hestia-binding-recovery.service hestia-binding-watch.path hestia-binding-watch.service hestia-dns.service; do
     install -o root -g root -m 0644 "$bundle/$unit" "/etc/systemd/system/$unit"
 done
 install -o root -g root -m 0644 "$bundle/hestia-binding.conf" /etc/tmpfiles.d/hestia-binding.conf
@@ -445,6 +459,8 @@ systemctl is-active --quiet wg-quick@wg-keenetic.service
 systemctl is-active --quiet hestia-sing-box.service hestia.service hestia-panel.service
 curl --noproxy '*' --fail --silent --show-error --max-time 5 http://192.168.1.133:8080/ -o "$backup/panel-check.html"
 grep -q '<html' "$backup/panel-check.html" || die "Panel did not serve its frontend"
+curl --noproxy '*' --fail --silent --show-error --max-time 5 http://192.168.1.133:8080/api/dns/policy >/dev/null
+if ((dns_was_active)); then systemctl is-active --quiet hestia-dns.service; fi
 {
     printf 'IPv4 default routes\n'
     ip -4 route show default

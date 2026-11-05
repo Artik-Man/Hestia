@@ -11,30 +11,58 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { HttpErrorResponse } from "@angular/common/http";
 import { FormsModule } from "@angular/forms";
 import { ButtonDirective } from "primeng/button";
+import { Dialog } from "primeng/dialog";
 import { InputText } from "primeng/inputtext";
 import { Textarea } from "primeng/textarea";
-import { timeout } from "rxjs";
+import { Observable, timeout } from "rxjs";
 import { PanelService } from "./api/generated/api/panel.service";
+import type { QualityCheck } from "./api/generated/model/qualityCheck";
 import type { QualitySettings } from "./api/generated/model/qualitySettings";
 import { Notifications } from "./notifications";
-import { isQualitySettings, sameQualitySettings } from "./quality-observations";
+import {
+  isQualitySettings,
+  validCheck,
+  qualityProtocols,
+  qualityLabel,
+  sameQualityCheck,
+} from "./quality-observations";
 
-type Check = QualitySettings["checks"][number];
+type Protocol = QualityCheck["protocol"];
 
-/** EditableSettings keeps the raw multiline target list intact while the operator is typing. */
-interface EditableSettings {
-  windowMinutes: number | null;
-  checks: (Omit<Check, "targets" | "intervalSeconds" | "timeoutSeconds"> & {
-    targets: string;
-    intervalSeconds: number | null;
-    timeoutSeconds: number | null;
-  })[];
+const descriptions: Record<Protocol, string> = {
+  UDP: "Доставка DNS-запроса по UDP",
+  TCP: "Установка TCP-соединения",
+  ICMP: "Ответ на echo-запрос (ping)",
+  DNS: "Разрешение доменного имени",
+  HTTPS: "HTTPS-запрос с проверкой сертификата",
+  HTTP3: "HTTP/3-запрос через QUIC",
+};
+
+const suggestedTargets: Record<Protocol, string> = {
+  UDP: "1.1.1.1:53\n8.8.8.8:53",
+  TCP: "1.1.1.1:443\n8.8.8.8:443",
+  ICMP: "1.1.1.1\n8.8.8.8",
+  DNS: "1.1.1.1:53\n8.8.8.8:53",
+  HTTPS: "",
+  HTTP3: "",
+};
+
+/** CheckDraft holds the values of just one check; its original settings detect concurrent edits. */
+interface CheckDraft {
+  protocol: Protocol;
+  original?: QualityCheck;
+  targets: string;
+  intervalSeconds: number | null;
+  timeoutSeconds: number | null;
+  dnsName: string;
+  serverName: string;
+  requestPath: string;
 }
 
-/** QualityEditor edits one complete settings document and confirms the gateway's validated response. */
+/** QualityEditor owns independent dialogs for the individual checks and their shared scoring window. */
 @Component({
   selector: "hestia-quality-settings",
-  imports: [FormsModule, ButtonDirective, InputText, Textarea],
+  imports: [FormsModule, ButtonDirective, Dialog, InputText, Textarea],
   templateUrl: "./quality-report.html",
   styleUrl: "./quality.css",
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -42,101 +70,159 @@ interface EditableSettings {
 export class QualityEditor {
   readonly settings = input.required<QualitySettings>();
   readonly saved = output<void>();
-  protected readonly draft = signal<EditableSettings | null>(null);
+  protected readonly draft = signal<CheckDraft | null>(null);
+  protected readonly windowDraft = signal<{
+    original: number;
+    minutes: number | null;
+  } | null>(null);
+  protected readonly deleting = signal<QualityCheck | null>(null);
   protected readonly saving = signal(false);
+  protected readonly protocols = qualityProtocols;
+  protected readonly descriptions = descriptions;
+  protected readonly label = qualityLabel;
   private readonly api = inject(PanelService);
   private readonly notices = inject(Notifications);
   private readonly destroyRef = inject(DestroyRef);
-  protected readonly protocols = ["UDP", "TCP"] as const;
-  private original?: QualitySettings;
 
-  /** edit snapshots all settings so periodic reads cannot overwrite an unsaved change. */
-  protected edit(): void {
-    const current = this.settings();
-    this.original = current;
+  /** check returns the configured check of this type or undefined when it can be added. */
+  protected check(protocol: Protocol): QualityCheck | undefined {
+    return this.settings().checks.find((c) => c.protocol === protocol);
+  }
+
+  /** edit snapshots only the selected check and opens its protocol-specific form. */
+  protected edit(protocol: Protocol): void {
+    const original = this.check(protocol);
     this.draft.set({
-      windowMinutes: current.windowMinutes,
-      checks: current.checks.map((check) => ({
-        ...check,
-        targets: check.targets.join("\n"),
-      })),
-    });
-  }
-
-  /** hasCheck indicates which protocols can still be added to the current draft. */
-  protected hasCheck(
-    form: EditableSettings,
-    protocol: Check["protocol"],
-  ): boolean {
-    return form.checks.some((check) => check.protocol === protocol);
-  }
-
-  /** add stages a new protocol with editable targets; it starts probing only after save. */
-  protected add(protocol: Check["protocol"]): void {
-    const draft = this.draft();
-    if (!draft || this.hasCheck(draft, protocol)) return;
-    draft.checks.push({
       protocol,
-      targets: "",
-      intervalSeconds: 30,
-      timeoutSeconds: 3,
-      ...(protocol === "UDP" ? { dnsName: "example.com" } : {}),
+      original,
+      targets: original?.targets.join("\n") ?? suggestedTargets[protocol],
+      intervalSeconds: original?.intervalSeconds ?? 30,
+      timeoutSeconds: original?.timeoutSeconds ?? 3,
+      dnsName: original?.dnsName ?? "example.com",
+      serverName: original?.serverName ?? "",
+      requestPath: original?.requestPath ?? "/",
     });
   }
 
-  /** remove stages removal while retaining the option to cancel the complete edit. */
-  protected remove(protocol: Check["protocol"]): void {
-    if (!this.draft()) this.edit();
-    const draft = this.draft();
-    if (draft)
-      this.draft.set({
-        ...draft,
-        checks: draft.checks.filter((check) => check.protocol !== protocol),
-      });
+  /** editWindow initializes the separate editor for the shared assessment period. */
+  protected editWindow(): void {
+    const original = this.settings().windowMinutes;
+    this.windowDraft.set({ original, minutes: original });
   }
 
-  /** save validates the draft and performs exactly one complete update, retaining edits on failure. */
-  protected save(): void {
+  /** dismiss closes an idle dialog without writing to the gateway. */
+  protected dismiss(): void {
+    if (this.saving()) return;
+    this.draft.set(null);
+    this.windowDraft.set(null);
+    this.deleting.set(null);
+  }
+
+  /** saveCheck writes only the check shown in the current dialog and verifies its confirmation. */
+  protected saveCheck(): void {
     const draft = this.draft();
     if (!draft || this.saving()) return;
-    if (
-      !this.original ||
-      !sameQualitySettings(this.original, this.settings())
-    ) {
-      this.notices.show(
-        "warn",
-        "Настройки на шлюзе изменились. Отмените правки и откройте актуальные настройки.",
-      );
-      return;
-    }
-    const settings = {
-      windowMinutes: draft.windowMinutes,
-      checks: draft.checks.map((check) => ({
-        ...check,
-        targets: check.targets
-          .split(/\r?\n/u)
-          .map((target) => target.trim())
-          .filter(Boolean),
-      })),
+    if (!this.current(draft.protocol, draft.original)) return;
+    const { protocol, intervalSeconds, timeoutSeconds } = draft;
+    const item = {
+      protocol,
+      intervalSeconds,
+      timeoutSeconds,
+      targets: draft.targets
+        .split(/\r?\n/u)
+        .map((t) => t.trim())
+        .filter(Boolean),
+      ...(protocol === "DNS" || protocol === "UDP"
+        ? { dnsName: draft.dnsName.trim() }
+        : {}),
+      ...(protocol === "HTTPS" || protocol === "HTTP3"
+        ? {
+            serverName: draft.serverName.trim(),
+            requestPath: draft.requestPath.trim(),
+          }
+        : {}),
     };
-    if (!isQualitySettings(settings)) {
+    if (!validCheck(item)) {
       this.notices.show(
         "error",
-        "Проверьте цели и интервалы. Для UDP нужны два разных IP на порту 53 и доменное имя. Тайм-аут не должен превышать интервал.",
+        "Проверьте цели, параметры запроса, интервал и тайм-аут.",
       );
       return;
     }
+    this.persist(this.api.putQualityCheck(protocol, item), (settings) =>
+      settings.checks.some((check) => sameQualityCheck(check, item)),
+    );
+  }
+
+  /** saveWindow updates the assessment window while retaining every current check. */
+  protected saveWindow(): void {
+    const draft = this.windowDraft();
+    if (!draft || this.saving()) return;
+    const current = this.settings();
+    if (draft.original !== current.windowMinutes) {
+      this.conflict();
+      return;
+    }
+    const minutes = draft.minutes;
+    if (
+      minutes === null ||
+      !Number.isSafeInteger(minutes) ||
+      minutes < 1 ||
+      minutes > 1440
+    )
+      return;
+    this.persist(
+      this.api.putQualityWindow({ windowMinutes: minutes }),
+      (settings) => settings.windowMinutes === minutes,
+    );
+  }
+
+  /** remove deletes exactly the confirmed check and preserves the current window and other checks. */
+  protected remove(): void {
+    const item = this.deleting();
+    if (!item || !this.current(item.protocol, item) || this.saving()) return;
+    this.persist(
+      this.api.deleteQualityCheck(item.protocol),
+      (settings) =>
+        !settings.checks.some((check) => check.protocol === item.protocol),
+    );
+  }
+
+  /** current detects a gateway change to the specific check affected by the dialog. */
+  private current(
+    protocol: Protocol,
+    original: QualityCheck | undefined,
+  ): boolean {
+    const now = this.check(protocol);
+    if (
+      now === original ||
+      (now && original && sameQualityCheck(now, original))
+    )
+      return true;
+    this.conflict();
+    return false;
+  }
+
+  /** conflict tells the operator to reopen a draft after a concurrent change. */
+  private conflict(): void {
+    this.notices.show(
+      "warn",
+      "Настройка на шлюзе изменилась. Закройте окно и откройте её снова.",
+    );
+  }
+
+  /** persist submits one scoped operation and closes its dialog after verifying the returned settings. */
+  private persist(
+    request: Observable<QualitySettings>,
+    confirmed: (settings: QualitySettings) => boolean,
+  ): void {
     this.saving.set(true);
-    this.api
-      .updateQualitySettings(settings)
+    request
       .pipe(timeout(15000), takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (body: unknown) => {
           this.saving.set(false);
-          if (
-            !isQualitySettings(body) ||
-            !sameQualitySettings(settings, body)
-          ) {
+          if (!isQualitySettings(body) || !confirmed(body)) {
             this.notices.show(
               "error",
               "Шлюз вернул некорректное подтверждение настроек.",
@@ -144,7 +230,7 @@ export class QualityEditor {
             this.saved.emit();
             return;
           }
-          this.draft.set(null);
+          this.dismiss();
           this.notices.show("success", "Настройки проверок сохранены.");
           this.saved.emit();
         },
@@ -163,8 +249,7 @@ export class QualityEditor {
               : "";
           this.notices.show(
             "error",
-            detail ||
-              "Не удалось сохранить настройки проверок. Проверьте доступность шлюза и параметры целей.",
+            detail || "Не удалось сохранить настройки проверок.",
           );
           this.saved.emit();
         },

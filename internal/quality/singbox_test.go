@@ -116,6 +116,7 @@ func TestRealSingBoxLoopback(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Log("authenticated UDP ASSOCIATE: DNS target received query and matching answer reached probe")
+	t.Run("HTTP3", func(t *testing.T) { verifyHTTP3Path(t, route) })
 	route.SocksPassword = "wrong"
 	if got := probe(context.Background(), route, udpCheck, udp.LocalAddr().String()); got != localError {
 		t.Fatalf("auth failure recorded as %v", got)

@@ -1,0 +1,31 @@
+[Unit]
+Description=Hestia router-facing DNS resolver
+ConditionPathExists=/etc/hestia/dns.json
+After=hestia.service hestia-sing-box.service network-online.target
+Requires=hestia.service
+PartOf=hestia.service
+
+[Service]
+DynamicUser=yes
+User=hestia-dns
+Group=hestia-panel
+SupplementaryGroups=hestia-snapshot
+RuntimeDirectory=hestia-dns
+RuntimeDirectoryMode=0750
+StateDirectory=hestia-dns
+StateDirectoryMode=0700
+UMask=0027
+ExecStartPre=+/usr/bin/python3 -I /usr/local/lib/hestia/profile.py --dns-paths /etc/hestia/sing-box.json /run/hestia-dns
+ExecStart=/usr/local/bin/hestia dns /etc/hestia/dns.json
+Restart=on-failure
+RestartSec=2s
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+NoNewPrivileges=yes
+AmbientCapabilities=CAP_NET_RAW CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_RAW CAP_NET_BIND_SERVICE CAP_SETUID CAP_SETGID
+RestrictAddressFamilies=AF_INET AF_NETLINK AF_UNIX
+
+[Install]
+WantedBy=hestia.service

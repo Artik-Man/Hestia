@@ -48,7 +48,7 @@
               <th scope="col">Подключение</th>
               <th scope="col">Статус</th>
               @for (check of data.settings.checks; track check.protocol) {
-                <th scope="col">{{ check.protocol }}</th>
+                <th scope="col">{{ label(check.protocol) }}</th>
               }
               <th scope="col">Общая оценка</th>
             </tr>

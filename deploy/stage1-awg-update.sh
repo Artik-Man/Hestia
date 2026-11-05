@@ -9,7 +9,7 @@ umask 077
 repo=$(cd "$(dirname "$0")/.." && pwd)
 instance=hestia-stage1
 apply=stage1-awg-apply.sh
-extra=(hestia-binding.conf hestia-binding-recovery.service hestia-binding-watch.path hestia-binding-watch.service)
+extra=(hestia-dns.service hestia-binding.conf hestia-binding-recovery.service hestia-binding-watch.path hestia-binding-watch.service)
 if [[ ${1:-} == --fresh ]]; then
     apply=stage1-fresh-apply.sh
     runtime=/private/tmp/hestia-vm-run
@@ -100,7 +100,7 @@ cp "$repo/deploy/systemd/hestia-awg@.service" "$work/"
 cp "$repo/deploy/systemd/hestia-awg.conf" "$work/"
 cp "$repo/deploy/systemd/hestia-awg.sudoers" "$work/"
 cp "$repo/deploy/systemd/hestia-panel.service.in" "$work/"
-(cd "$work" && shasum -a 256 hestia hestia-panel amneziawg-go amneziawg-tools-source.tar >SHA256SUMS)
+(cd "$work" && shasum -a 256 hestia hestia-panel amneziawg-go amneziawg-tools-source.tar hestia-dns.service >SHA256SUMS)
 COPYFILE_DISABLE=1 tar -C "$work" -czf "$work/stage1-awg-update.tgz" \
     hestia hestia-panel browser amneziawg-go amneziawg-tools-source.tar SHA256SUMS \
     "$apply" ${extra[@]+"${extra[@]}"} awg-upgrade.sh profile.py smoke.py adopt-profile.py guest-profile.json hestia.service stage1-backend-credential.sh stage1-backend-credential.dropin hestia-smoke@.service hestia-awg@.service \

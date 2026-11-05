@@ -21,7 +21,11 @@ export interface CheckResult {
 export namespace CheckResult {
     export const ProtocolEnum = {
         Udp: 'UDP',
-        Tcp: 'TCP'
+        Tcp: 'TCP',
+        Icmp: 'ICMP',
+        Dns: 'DNS',
+        Https: 'HTTPS',
+        Http3: 'HTTP3'
     } as const;
     export type ProtocolEnum = typeof ProtocolEnum[keyof typeof ProtocolEnum];
 }

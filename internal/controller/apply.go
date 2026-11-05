@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/Artik-Man/Hestia/internal/routing"
@@ -168,4 +170,72 @@ func setTarget(ctx context.Context, client *http.Client, endpoint, target string
 		return fmt.Errorf("PUT selector: %s", resp.Status)
 	}
 	return nil
+}
+
+// DNSExits reads the selected live exit of each applicable group without mutating selectors.
+// An explicit rule permits only its group; a failed selector or unhealthy exit provides no path.
+func DNSExits(ctx context.Context, cfg Config, domain string) ([]string, error) {
+	client := newClient()
+	defer client.CloseIdleConnections()
+	return dnsExits(ctx, client, localAPI, cfg, domain)
+}
+
+var serviceOwnerLabel = regexp.MustCompile(`^_?[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$`)
+
+// dnsRoutingName returns the longest hostname suffix usable by domain masks. It preserves
+// normal names for the routing parser and treats only the DNS root as an empty name.
+// Service labels may drop earlier labels only when the complete wire owner is unambiguous.
+func dnsRoutingName(domain string) (string, error) {
+	if domain == "." {
+		return "", nil
+	}
+	if !strings.Contains(domain, "_") {
+		return domain, nil
+	}
+	name := strings.TrimSuffix(domain, ".")
+	if len(name) > 253 {
+		return "", fmt.Errorf("DNS owner is too long")
+	}
+	position, suffixStart := 0, 0
+	for label := range strings.SplitSeq(name, ".") {
+		if len(label) > 63 || !serviceOwnerLabel.MatchString(label) {
+			return "", fmt.Errorf("invalid service DNS label")
+		}
+		position += len(label) + 1
+		if label[0] == '_' {
+			// No domain mask can contain an underscore, so a match may only begin after this label.
+			suffixStart = position
+		}
+	}
+	if suffixStart >= len(name) {
+		return "", fmt.Errorf("DNS service owner has no hostname suffix")
+	}
+	return name[suffixStart:], nil
+}
+
+// dnsExits reads selectors from the supplied controller endpoint and returns only verified live exits.
+func dnsExits(ctx context.Context, client *http.Client, base string, cfg Config, domain string) ([]string, error) {
+	name, err := dnsRoutingName(domain)
+	if err != nil {
+		return nil, err
+	}
+	decision := routing.Decide(cfg.Groups, cfg.Lists, cfg.Healthy, name)
+	if decision.Outcome == routing.Reject || decision.Outcome == routing.RejectName {
+		return nil, fmt.Errorf("invalid DNS routing context")
+	}
+	var exits []string
+	for _, group := range cfg.Groups {
+		if decision.Reason == routing.Matched && group.ID != decision.Group {
+			continue
+		}
+		state, err := readSelector(ctx, client, base+"/proxies/"+url.PathEscape(group.ID))
+		if err != nil || !state.matches(append([]string{deny}, group.Exits...)) || !cfg.Healthy[state.Now] {
+			continue
+		}
+		if cfg.ConnectorKinds[state.Now] == "awg" && !AWGHeartbeatHealthy(state.Now) {
+			continue
+		}
+		exits = append(exits, state.Now)
+	}
+	return exits, nil
 }

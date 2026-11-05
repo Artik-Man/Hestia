@@ -100,3 +100,45 @@ test("validates optional DNS response-code counters against the per-target error
     assert.equal(isQualityReport(report), false);
   }
 });
+
+test("validates ICMP, resolver and TLS service check fields independently", () => {
+  const tcp = {
+    protocol: "TCP",
+    targets: ["1.1.1.1:443"],
+    intervalSeconds: 30,
+    timeoutSeconds: 3,
+  };
+  const icmp = {
+    ...tcp,
+    protocol: "ICMP",
+    targets: ["1.1.1.1", "2606:4700:4700::1111"],
+  };
+  const dns = { ...udp, protocol: "DNS", targets: ["8.8.8.8:53"] };
+  const https = {
+    ...tcp,
+    protocol: "HTTPS",
+    serverName: "example.org",
+    requestPath: "/health?region=fi",
+  };
+  const http3 = { ...https, protocol: "HTTP3" };
+  assert.equal(
+    isQualitySettings({
+      windowMinutes: 60,
+      checks: [udp, tcp, icmp, dns, https, http3],
+    }),
+    true,
+  );
+  for (const bad of [
+    { ...icmp, targets: ["1.1.1.1:7"] },
+    { ...dns, targets: ["1.1.1.1:443"] },
+    { ...https, serverName: "" },
+    { ...http3, requestPath: "//other.example/a" },
+    { ...tcp, requestPath: "/" },
+    { ...icmp, dnsName: "example.org" },
+  ]) {
+    assert.equal(
+      isQualitySettings({ windowMinutes: 60, checks: [bad] }),
+      false,
+    );
+  }
+});

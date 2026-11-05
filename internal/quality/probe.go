@@ -7,6 +7,7 @@ import (
 	"errors"
 	"io"
 	"net"
+	"net/netip"
 	"strings"
 	"syscall"
 	"time"
@@ -52,7 +53,22 @@ func (p Path) dial(ctx context.Context, network, target string) (net.Conn, error
 func probe(parent context.Context, p Path, c Check, target string) outcome {
 	ctx, cancel := context.WithTimeout(parent, time.Duration(c.TimeoutSeconds)*time.Second)
 	defer cancel()
-	conn, err := p.dial(ctx, strings.ToLower(c.Protocol), target)
+	switch c.Protocol {
+	case HTTP3:
+		return probeHTTP3(ctx, p, c, target)
+	case HTTPS:
+		return probeHTTPS(ctx, p, c, target)
+	case ICMP:
+		return probeICMP(ctx, p, target)
+	case UDP, DNS, TCP:
+	default:
+		return localError
+	}
+	network := "udp"
+	if c.Protocol == TCP {
+		network = "tcp"
+	}
+	conn, err := p.dial(ctx, network, target)
 	if err != nil {
 		return classify(parent, err)
 	}
@@ -82,7 +98,7 @@ func probe(parent context.Context, p Path, c Check, target string) outcome {
 	if _, err = conn.Write(packet); err != nil {
 		return classify(parent, err)
 	}
-	buf := make([]byte, 4096)
+	buf := make([]byte, 65535)
 	for {
 		n, err := conn.Read(buf)
 		if err != nil {
@@ -92,18 +108,95 @@ func probe(parent context.Context, p Path, c Check, target string) outcome {
 			return classify(parent, err)
 		}
 		var response dnsmessage.Message
-		if response.Unpack(buf[:n]) != nil || !response.Response || response.ID != query.ID || response.OpCode != 0 || len(response.Questions) != 1 {
+		if response.Unpack(buf[:n]) != nil || !matchesQuery(&response, &query) {
 			continue
 		}
-		q := response.Questions[0]
-		if q.Type != dnsmessage.TypeA || q.Class != dnsmessage.ClassINET || !strings.EqualFold(q.Name.String(), name.String()) {
-			continue
+		if response.Truncated && c.Protocol == DNS {
+			return resolveTCP(ctx, p, target, packet, &query)
 		}
-		if response.RCode != dnsmessage.RCodeSuccess {
-			return dnsError + outcome(response.RCode-1)
-		}
+		return dnsOutcome(&response, c.Protocol)
+	}
+}
+
+// matchesQuery ties a DNS reply to the outstanding A/IN question and transaction.
+func matchesQuery(response, query *dnsmessage.Message) bool {
+	if !response.Response || response.ID != query.ID || response.OpCode != 0 || len(response.Questions) != 1 {
+		return false
+	}
+	q := response.Questions[0]
+	return q.Class == dnsmessage.ClassINET && q.Type == dnsmessage.TypeA && strings.EqualFold(q.Name.String(), query.Questions[0].Name.String())
+}
+
+// dnsOutcome distinguishes proof of a UDP exchange from successful resolution of the requested name.
+func dnsOutcome(response *dnsmessage.Message, protocol string) outcome {
+	if response.RCode != dnsmessage.RCodeSuccess {
+		return dnsError + outcome(response.RCode-1)
+	}
+	if protocol == UDP {
 		return success
 	}
+	if response.Truncated {
+		return failure
+	}
+	name := strings.ToLower(response.Questions[0].Name.String())
+	aliases := map[string]string{}
+	addresses := map[string]bool{}
+	for _, answer := range response.Answers {
+		if answer.Header.Class != dnsmessage.ClassINET {
+			continue
+		}
+		owner := strings.ToLower(answer.Header.Name.String())
+		switch data := answer.Body.(type) {
+		case *dnsmessage.AResource:
+			addr := netip.AddrFrom4(data.A)
+			if addr.IsGlobalUnicast() {
+				addresses[owner] = true
+			}
+		case *dnsmessage.CNAMEResource:
+			aliases[owner] = strings.ToLower(data.CNAME.String())
+		}
+	}
+	for name != "" {
+		if addresses[name] {
+			return success
+		}
+		next := aliases[name]
+		delete(aliases, name)
+		name = next
+	}
+	return failure
+}
+
+// resolveTCP follows a truncated resolver answer once on the same pinned path and within the original deadline.
+func resolveTCP(ctx context.Context, p Path, target string, packet []byte, query *dnsmessage.Message) outcome {
+	conn, err := p.dial(ctx, "tcp", target)
+	if err != nil {
+		return classify(context.WithoutCancel(ctx), err)
+	}
+	defer conn.Close()
+	stop := context.AfterFunc(ctx, func() { _ = conn.Close() })
+	defer stop()
+	deadline, _ := ctx.Deadline()
+	if conn.SetDeadline(deadline) != nil {
+		return localError
+	}
+	request := binary.BigEndian.AppendUint16(nil, uint16(len(packet)))
+	if _, err = conn.Write(append(request, packet...)); err != nil {
+		return classify(context.WithoutCancel(ctx), err)
+	}
+	var length [2]byte
+	if _, err = io.ReadFull(conn, length[:]); err != nil {
+		return classify(context.WithoutCancel(ctx), err)
+	}
+	reply := make([]byte, binary.BigEndian.Uint16(length[:]))
+	if _, err = io.ReadFull(conn, reply); err != nil {
+		return classify(context.WithoutCancel(ctx), err)
+	}
+	var response dnsmessage.Message
+	if response.Unpack(reply) != nil || !matchesQuery(&response, query) {
+		return failure
+	}
+	return dnsOutcome(&response, DNS)
 }
 
 // classify separates an attempted but unsuccessful transport exchange from a local measurement failure.
@@ -124,4 +217,13 @@ func classify(parent context.Context, err error) outcome {
 		return failure
 	}
 	return localError
+}
+
+// DialExit opens a connection through this exit's bound device or authenticated relay.
+// It has no system-resolver fallback. Callers supply a literal destination and a deadline.
+func (p Path) DialExit(ctx context.Context, network, target string) (net.Conn, error) {
+	if _, err := netip.ParseAddrPort(target); err != nil || (network != "udp" && network != "tcp") {
+		return nil, errors.New("invalid exit destination")
+	}
+	return p.dial(ctx, network, target)
 }

@@ -22,7 +22,7 @@ type TargetResult struct {
 
 // CheckResult counts all completed exchanges in one transport check.
 type CheckResult struct {
-	Protocol    string         `json:"protocol" enum:"UDP,TCP"`
+	Protocol    string         `json:"protocol" enum:"UDP,TCP,ICMP,DNS,HTTPS,HTTP3"`
 	Samples     int            `json:"samples"`
 	Successes   int            `json:"successes"`
 	LocalErrors int            `json:"localErrors"`
@@ -143,8 +143,11 @@ func (e *Engine) scores(id string) Result {
 					v.DNSResponseCodes[strconv.Itoa(index+1)] = count
 					v.DNSErrors += count
 				}
-				v.Successes = s.counts[success] + v.DNSErrors
-				v.Samples = v.Successes + s.counts[failure]
+				v.Samples = s.counts[success] + s.counts[failure] + v.DNSErrors
+				v.Successes = s.counts[success]
+				if c.Protocol == UDP {
+					v.Successes += v.DNSErrors
+				}
 			}
 			v.Score = score(v.Successes, v.Samples)
 			check.Samples += v.Samples
@@ -179,7 +182,7 @@ func score(successes, samples int) *float64 {
 // Run schedules each protocol independently and waits for all workers at shutdown. Topology must include reserve paths.
 func (e *Engine) Run(ctx context.Context, paths func(context.Context) ([]Path, error)) {
 	var workers sync.WaitGroup
-	for _, protocol := range []string{UDP, TCP} {
+	for _, protocol := range protocols {
 		workers.Add(1)
 		go func() { defer workers.Done(); e.runCheck(ctx, protocol, paths) }()
 	}

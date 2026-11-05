@@ -422,8 +422,8 @@ def quality_fragments(endpoints: list[dict], occupied: set) -> tuple[list[dict],
     return listeners, rules
 
 
-def export_quality_paths(backend: dict, directory: Path) -> None:
-    """Publish only pinned egress descriptors to the watcher after dropping installation privileges."""
+def pinned_paths(backend: dict) -> list[dict]:
+    """Extract confined egress transports without copying VPN private keys."""
     paths = [{"id": item["tag"], "device": item["bind_interface"], "mark": item.get("routing_mark", 0)}
              for item in backend.get("outbounds", []) if item["type"] == "direct"
              and item.get("bind_interface") and item["tag"] != "deny"]
@@ -431,12 +431,24 @@ def export_quality_paths(backend: dict, directory: Path) -> None:
         if item.get("tag", "").startswith("_quality-") and item["type"] == "socks":
             paths.append({"id": item["tag"][9:], "socksAddress": "127.0.0.1:" + str(item["listen_port"]),
                           "socksPassword": item["users"][0]["password"]})
+    return paths
+
+
+def export_paths(backend: dict, directory: Path, source: os.stat_result | None = None) -> None:
+    """Publish confined paths; DNS additionally gets per-exit resolvers and source generation."""
+    paths = pinned_paths(backend)
+    payload = paths
+    if source is not None:
+        resolvers = {item["detour"]: item["server"] for item in backend.get("dns", {}).get("servers", [])
+                     if item.get("type") == "udp" and item.get("detour")}
+        payload = {"inode": source.st_ino, "modified": source.st_mtime_ns, "paths": paths,
+                   "resolvers": resolvers}
     owner = directory.stat()
     os.setgroups([])
     os.setgid(owner.st_gid)
     os.setuid(owner.st_uid)
     with tempfile.NamedTemporaryFile(dir=directory, delete=False, mode="w") as stream:
-        json.dump(paths, stream)
+        json.dump(payload, stream)
     os.replace(stream.name, directory / "paths.json")
 
 
@@ -1051,8 +1063,10 @@ def stage_order(base: Path, stage: Path, groups: list[dict]) -> None:
 
 def main() -> None:
     """Write both validated configurations to new files inside the private staging directory."""
-    if len(sys.argv) == 4 and sys.argv[1] == "--quality-paths":
-        export_quality_paths(json.loads(Path(sys.argv[2]).read_bytes()), Path(sys.argv[3]))
+    if len(sys.argv) == 4 and sys.argv[1] in {"--quality-paths", "--dns-paths"}:
+        with Path(sys.argv[2]).open("rb") as stream:
+            source = os.fstat(stream.fileno()) if sys.argv[1] == "--dns-paths" else None
+            export_paths(json.load(stream), Path(sys.argv[3]), source)
         return
     if len(sys.argv) == 4 and sys.argv[1] == "--compare-backend":
         compare_backend_files(Path(sys.argv[2]), Path(sys.argv[3]))

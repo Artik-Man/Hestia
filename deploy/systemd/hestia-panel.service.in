@@ -6,10 +6,10 @@ After=network-online.target
 [Service]
 User=hestia-panel
 Group=hestia-panel
-StateDirectory=hestia-quality-settings
+StateDirectory=hestia-quality-settings hestia-dns-policy
 StateDirectoryMode=0755
 SupplementaryGroups=hestia-snapshot
-ExecStart=/usr/local/bin/hestia-panel -listen @PANEL_LISTEN@ -assets /usr/local/share/hestia-panel/current -snapshot /etc/hestia/snapshot.json -enable-bindings -enable-group-order -enable-domain-lists -enable-group-create -enable-group-delete -enable-exit-move -enable-awg
+ExecStart=/usr/local/bin/hestia-panel -listen @PANEL_LISTEN@ -assets /usr/local/share/hestia-panel/current -snapshot /etc/hestia/snapshot.json -dns-policy /var/lib/hestia-dns-policy/policy.json -enable-bindings -enable-group-order -enable-domain-lists -enable-group-create -enable-group-delete -enable-exit-move -enable-awg
 Restart=on-failure
 RestartSec=3s
 ProtectSystem=strict

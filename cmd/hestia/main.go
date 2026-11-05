@@ -13,12 +13,22 @@ import (
 	"time"
 
 	"github.com/Artik-Man/Hestia/internal/controller"
+	"github.com/Artik-Man/Hestia/internal/dnsservice"
 	"github.com/Artik-Man/Hestia/internal/observer"
 )
 
 // main selects snapshot validation, one-shot application, or continuous reconciliation.
 // In watch mode SIGTERM and SIGINT cancel the polling loop.
 func main() {
+	if len(os.Args) == 3 && os.Args[1] == "dns" {
+		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		defer stop()
+		if err := dnsservice.Run(ctx, os.Args[2]); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
+	}
 	if len(os.Args) == 2 {
 		switch os.Args[1] {
 		case "-physical-list", "-wifi-create", "-wifi-save", "-wifi-delete":

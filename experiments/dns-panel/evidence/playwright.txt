@@ -1,0 +1,18 @@
+✔ DNS edits independent lists, rejects stale writes and preserves draft settings (4306.064625ms)
+ℹ tests 13
+ℹ pass 13
+ℹ fail 0
+=== RUN   TestDNSPanelPlaywright
+    dns_browser_test.go:42: ✔ DNS persists separate manual and excluded domains across reloads and reports concurrent edits (1932.725208ms)
+        ℹ tests 1
+        ℹ suites 0
+        ℹ pass 1
+        ℹ fail 0
+        ℹ cancelled 0
+        ℹ skipped 0
+        ℹ todo 0
+        ℹ duration_ms 2127.751917
+        
+--- PASS: TestDNSPanelPlaywright (2.18s)
+PASS
+ok  	github.com/Artik-Man/Hestia/internal/panel	2.533s

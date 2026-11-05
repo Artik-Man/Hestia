@@ -1,6 +1,25 @@
 import type { QualityReport } from "./api/generated/model/qualityReport";
 import type { QualitySettings } from "./api/generated/model/qualitySettings";
 
+export const qualityProtocols = [
+  "UDP",
+  "TCP",
+  "ICMP",
+  "DNS",
+  "HTTPS",
+  "HTTP3",
+] as const;
+
+/** qualityLabel renders the protocol name used on check cards and result columns. */
+export function qualityLabel(protocol: Check["protocol"]): string {
+  return protocol === "HTTP3" ? "HTTP/3" : protocol;
+}
+
+/** validProtocol identifies a supported quality probe at the network boundary. */
+function validProtocol(value: unknown): value is Check["protocol"] {
+  return qualityProtocols.some((p) => p === value);
+}
+
 type Check = QualitySettings["checks"][number];
 type Connection = QualityReport["groups"][number]["connections"][number];
 type Result = Connection["result"]["checks"][number];
@@ -62,19 +81,33 @@ function validDomain(text: string): boolean {
 }
 
 /** validCheck checks protocol-specific settings before display or submission. */
-function validCheck(value: unknown): value is Check {
-  if (!record(value) || (value.protocol !== "UDP" && value.protocol !== "TCP"))
-    return false;
-  const dns = value.protocol === "UDP";
+export function validCheck(value: unknown): value is Check {
+  if (!record(value) || !validProtocol(value.protocol)) return false;
+  const dns = value.protocol === "UDP" || value.protocol === "DNS";
+  const http = value.protocol === "HTTPS" || value.protocol === "HTTP3";
   return (
     whole(value.intervalSeconds, 1, 3600) &&
     whole(value.timeoutSeconds, 1, Math.min(value.intervalSeconds, 30)) &&
     Array.isArray(value.targets) &&
     value.targets.length >= 1 &&
     value.targets.length <= 8 &&
-    (!dns || value.targets.length === 2) &&
+    (value.protocol !== "UDP" || value.targets.length === 2) &&
     new Set(value.targets).size === value.targets.length &&
-    value.targets.every((target) => validTarget(target, dns)) &&
+    value.targets.every((target) =>
+      value.protocol === "ICMP"
+        ? typeof target === "string" &&
+          validLiteral(target.includes(":") ? "[" + target + "]" : target)
+        : validTarget(target, dns),
+    ) &&
+    (http
+      ? typeof value.serverName === "string" &&
+        validDomain(value.serverName) &&
+        !validLiteral(value.serverName) &&
+        !value.serverName.endsWith(".") &&
+        typeof value.requestPath === "string" &&
+        value.requestPath.length <= 1024 &&
+        /^\/(?!\/)[^\s#\\]*$/u.test(value.requestPath)
+      : !value.serverName && !value.requestPath) &&
     (dns
       ? typeof value.dnsName === "string" && validDomain(value.dnsName)
       : !value.dnsName)
@@ -87,31 +120,23 @@ export function isQualitySettings(value: unknown): value is QualitySettings {
     record(value) &&
     whole(value.windowMinutes, 1, 1440) &&
     Array.isArray(value.checks) &&
-    value.checks.length <= 2 &&
+    value.checks.length <= qualityProtocols.length &&
     value.checks.every(validCheck) &&
     new Set(value.checks.map((c) => c.protocol)).size === value.checks.length
   );
 }
 
-/** sameQualitySettings compares applied settings by value in their configured order. */
-export function sameQualitySettings(
-  left: QualitySettings,
-  right: QualitySettings,
-): boolean {
+/** sameQualityCheck compares one persisted check's configuration, preserving target order. */
+export function sameQualityCheck(check: Check, other: Check): boolean {
   return (
-    left.windowMinutes === right.windowMinutes &&
-    left.checks.length === right.checks.length &&
-    left.checks.every((check, index) => {
-      const other = right.checks[index];
-      return (
-        check.protocol === other.protocol &&
-        check.intervalSeconds === other.intervalSeconds &&
-        check.timeoutSeconds === other.timeoutSeconds &&
-        (check.dnsName ?? "") === (other.dnsName ?? "") &&
-        check.targets.length === other.targets.length &&
-        check.targets.every((target, i) => target === other.targets[i])
-      );
-    })
+    check.protocol === other.protocol &&
+    check.intervalSeconds === other.intervalSeconds &&
+    check.timeoutSeconds === other.timeoutSeconds &&
+    (check.dnsName ?? "") === (other.dnsName ?? "") &&
+    (check.serverName ?? "") === (other.serverName ?? "") &&
+    (check.requestPath ?? "") === (other.requestPath ?? "") &&
+    check.targets.length === other.targets.length &&
+    check.targets.every((target, i) => target === other.targets[i])
   );
 }
 
@@ -156,7 +181,7 @@ function validResponseCodes(value: unknown, errors: number): boolean {
 function validResult(value: unknown): value is Result {
   return (
     record(value) &&
-    (value.protocol === "UDP" || value.protocol === "TCP") &&
+    validProtocol(value.protocol) &&
     counts(value) &&
     score(value.score) &&
     (value.score === null) === (value.samples === 0) &&

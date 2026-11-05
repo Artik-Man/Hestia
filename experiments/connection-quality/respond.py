@@ -23,7 +23,12 @@ def serve() -> None:
             else:
                 query, sender = sock.recvfrom(4096)
                 if not Path("drop-udp").exists():
-                    sock.sendto(query[:2] + bytes.fromhex("8180") + query[4:], sender)
+                    if Path("dns-servfail").exists():
+                        response = query[:2] + bytes.fromhex("8182") + query[4:]
+                    else:
+                        answer = bytes.fromhex("c00c000100010000001e0004") + socket.inet_aton("1.1.1.1")
+                        response = query[:2] + bytes.fromhex("81800001000100000000") + query[12:] + answer
+                    sock.sendto(response, sender)
 
 
 if __name__ == "__main__":

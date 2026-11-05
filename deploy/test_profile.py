@@ -9,10 +9,9 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
-from smoke import expected_target
 from profile import (
     compile_profile,
+    export_paths,
     managed_profile,
     semantically_equal_backend,
     stage_binding,
@@ -22,6 +21,9 @@ from profile import (
     stage_order,
     stage_rename_group,
 )
+from unittest.mock import patch
+
+from smoke import expected_target
 
 EXAMPLES = Path(__file__).parent / "examples"
 
@@ -41,6 +43,42 @@ class ProfileTests(unittest.TestCase):
     def compile(self):
         """Compile the current test profile using only its temporary directory for secrets."""
         return compile_profile(self.profile, self.base)
+
+    def test_dns_path_export_scopes_credentials_and_generation(self):
+        """Export per-exit resolver addresses, confinement and generation without copying private VPN keys."""
+        _, backend = self.compile()
+        source = self.base / "sing-box.json"
+        source.write_text(json.dumps(backend))
+        stamp = source.stat()
+        with (
+            patch("profile.os.setgroups") as groups,
+            patch("profile.os.setgid") as gid,
+            patch("profile.os.setuid") as uid,
+        ):
+            export_paths(backend, self.base, stamp)
+        groups.assert_called_once_with([])
+        gid.assert_called_once_with(self.base.stat().st_gid)
+        uid.assert_called_once_with(self.base.stat().st_uid)
+        published = self.base / "paths.json"
+        self.assertEqual(published.stat().st_mode & 0o777, 0o600)
+        encoded = published.read_text()
+        report = json.loads(encoded)
+        self.assertEqual(report["inode"], stamp.st_ino)
+        self.assertEqual(report["modified"], stamp.st_mtime_ns)
+        for endpoint in backend["endpoints"]:
+            self.assertNotIn(endpoint["private_key"], encoded)
+            relay = next(
+                path for path in report["paths"] if path["id"] == endpoint["tag"]
+            )
+            self.assertTrue(relay["socksAddress"].startswith("127.0.0.1:"))
+            self.assertTrue(relay["socksPassword"])
+            dns = next(
+                server
+                for server in backend["dns"]["servers"]
+                if server.get("detour") == endpoint["tag"]
+            )
+            self.assertEqual(report["resolvers"][endpoint["tag"]], dns["server"])
+        self.assertNotIn("deny", [path["id"] for path in report["paths"]])
 
     def test_mask_rejects_non_ascii_before_lowercasing(self):
         """Reject non-ASCII masks even when lowercase conversion produces a valid ASCII label."""

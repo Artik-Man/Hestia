@@ -1,0 +1,7 @@
+=== RUN   TestDNSWorkerIntegration
+2026/11/05 14:38:17 DNS warm name=popular.example type=28 exit=fixture resolver=127.0.0.1:52633 positive=true ttl=2m0s
+2026/11/05 14:38:17 DNS warm name=pinned.example type=1 exit=fixture resolver=127.0.0.1:52633 positive=true ttl=2m0s
+2026/11/05 14:38:17 DNS warm name=pinned.example type=28 exit=fixture resolver=127.0.0.1:52633 positive=true ttl=2m0s
+--- PASS: TestDNSWorkerIntegration (8.07s)
+PASS
+ok  	github.com/Artik-Man/Hestia/internal/dnsservice	9.403s

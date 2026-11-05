@@ -28,7 +28,7 @@ python3 -I profile.py guest-profile.json config .
 getent group hestia-snapshot >/dev/null || groupadd --system hestia-snapshot
 id hestia-panel >/dev/null 2>&1 || useradd --system --user-group --no-create-home --shell /usr/sbin/nologin hestia-panel
 visudo -cf hestia-awg.sudoers
-for unit in hestia-panel.service hestia-binding-watch.path hestia-binding-watch.service hestia.service hestia-sing-box.service hestia-awg.service; do
+for unit in hestia-dns.service hestia-panel.service hestia-binding-watch.path hestia-binding-watch.service hestia.service hestia-sing-box.service hestia-awg.service; do
     if [[ $(systemctl show "$unit" -p LoadState --value) != not-found ]]; then
         systemctl stop "$unit"
     fi
@@ -84,7 +84,7 @@ systemctl enable --now hestia-binding-watch.path
 systemctl restart hestia-sing-box hestia hestia-panel
 for unit in hestia-sing-box hestia hestia-panel; do systemctl is-active --quiet "$unit"; done
 systemctl start hestia-smoke@current.service
-for endpoint in api/awg api/groups-and-rules; do
+for endpoint in api/awg api/groups-and-rules api/dns/policy; do
     curl --noproxy '*' --retry 4 --retry-connrefused -fsS "http://192.168.1.133:8080/$endpoint" >/dev/null
 done
 curl --noproxy '*' --retry 4 --retry-connrefused --fail -s http://192.168.1.133:8080/ | grep -o '<title>[^<]*'

@@ -1,53 +1,187 @@
-<section class="dns-card">
-  <h2>Имена в прогреве</h2>
-  @if (observations() === null) {
-    <p class="hint">
-      Сведения о доменах в прогреве ещё не поступают. Здесь будут видны число
-      клиентских обращений за окно и время последнего обновления для каждого
-      резолвера и выхода.
-    </p>
+<section class="dns-section" aria-labelledby="dns-auto">
+  <header class="section-heading">
+    <h2 id="dns-auto">Автоматически добавленные</h2>
+  </header>
+  @if (!snapshot().policy.settings.automaticEnabled) {
+    <p class="hint">Автоматический отбор выключен.</p>
   } @else {
-    <label
-      >Поиск по имени<input
-        #search
-        type="search"
-        [value]="query()"
-        (input)="query.set(search.value)"
-    /></label>
-    @if (visible().length) {
-      <div class="observations">
-        <table>
-          <caption class="sr-only">
-            Прогреваемые имена по подключениям и резолверам
-          </caption>
-          <thead>
-            <tr>
-              <th scope="col">Имя и тип</th>
-              <th scope="col">Выход</th>
-              <th scope="col">Резолвер</th>
-              <th scope="col">Обращения</th>
-              <th scope="col">Обновлено</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (row of visible(); track row) {
-              <tr>
-                <th scope="row">{{ row.name }} ({{ row.recordType }})</th>
-                <td>{{ row.exit }}</td>
-                <td>{{ row.resolver }}</td>
-                <td>{{ row.requests }}</td>
-                <td>{{ row.refreshedAt ?? "Успешных обновлений ещё нет" }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+    <p class="hint">
+      Порог обращений — {{ snapshot().policy.settings.threshold }}. Окно учёта —
+      {{ snapshot().policy.settings.windowHours }} ч.
+    </p>
+  }
+  @if (observationState() === "unavailable") {
+    <p-message severity="warn"
+      >Сведения об автоматическом прогреве недоступны.</p-message
+    >
+  } @else if (report(); as data) {
+    @if (data.policyRevision !== snapshot().revision) {
+      <p role="status">Ожидаем наблюдения для действующих настроек.</p>
     } @else {
-      <p role="status">
-        {{
-          query() ? "Совпадений по имени нет." : "Сейчас в прогреве нет имён."
-        }}
+      <p class="hint">
+        Наблюдение на
+        <time [attr.datetime]="data.observedAt">{{
+          data.observedAt | date: "dd.MM.yyyy HH:mm:ss"
+        }}</time>
       </p>
+      <ul class="dns-rows">
+        @for (row of data.automatic; track row.domain) {
+          <li>
+            <div>
+              <strong>{{ row.domain }}</strong
+              ><small
+                >Запросов за окно: {{ row.clientRequests }}
+                @if (snapshot().policy.manual.includes(row.domain)) {
+                  · также добавлен вручную
+                }
+              </small>
+            </div>
+            <button
+              pButton
+              severity="secondary"
+              type="button"
+              [attr.aria-label]="'В чёрный список: ' + row.domain"
+              [disabled]="disabled()"
+              (click)="add('exclusions', row.domain, false)"
+            >
+              В чёрный список
+            </button>
+          </li>
+        } @empty {
+          <li>Автоматически добавленных доменов пока нет.</li>
+        }
+      </ul>
     }
+  } @else {
+    <p role="status">Загрузка наблюдений…</p>
   }
 </section>
+@for (list of lists; track list) {
+  <section class="dns-section" [attr.aria-labelledby]="'dns-' + list">
+    <header class="section-heading">
+      <h2 [id]="'dns-' + list">
+        {{
+          list === "exclusions"
+            ? "Чёрный список автопрогрева"
+            : "Добавленные вручную"
+        }}
+      </h2>
+    </header>
+    <p class="hint">
+      {{
+        list === "exclusions"
+          ? "Эти домены исключены только из автоматического прогрева."
+          : "Эти имена включены в прогрев независимо от числа запросов клиентов."
+      }}
+    </p>
+    <form
+      class="dns-entry"
+      (submit)="$event.preventDefault(); add(list, draft[list](), true)"
+    >
+      <label [for]="'dns-entry-' + list">{{
+        list === "exclusions" && editing()
+          ? "Изменить исключение"
+          : list === "exclusions"
+            ? "Домен для исключения"
+            : "Домен для ручного прогрева"
+      }}</label>
+      <div class="dns-tools">
+        <input
+          #domainInput
+          [id]="'dns-entry-' + list"
+          pInputText
+          placeholder="example.org"
+          [value]="draft[list]()"
+          (input)="draft[list].set(domainInput.value); errors[list].set('')"
+          [disabled]="disabled()"
+          spellcheck="false"
+          autocapitalize="none"
+          autocomplete="off"
+          required
+        />
+        <button pButton type="submit" [disabled]="disabled()">
+          {{
+            list === "exclusions" && editing()
+              ? "Сохранить исключение"
+              : list === "exclusions"
+                ? "Добавить исключение"
+                : "Добавить домен"
+          }}
+        </button>
+        @if (list === "exclusions" && editing()) {
+          <button
+            pButton
+            severity="secondary"
+            type="button"
+            [disabled]="disabled()"
+            (click)="clearEditor(list)"
+          >
+            Отмена
+          </button>
+        }
+      </div>
+      @if (errors[list]()) {
+        <p-message severity="error">{{ errors[list]() }}</p-message>
+      }
+    </form>
+    <ul class="dns-rows">
+      @for (name of snapshot().policy[list]; track name) {
+        <li>
+          <div>
+            <strong>{{ name }}</strong>
+            @if (
+              list === "exclusions" && snapshot().policy.manual.includes(name)
+            ) {
+              <small>Также добавлен вручную</small>
+            }
+            @if (
+              list === "manual" && snapshot().policy.exclusions.includes(name)
+            ) {
+              <small>Исключён из автопрогрева</small>
+            }
+          </div>
+          <div class="dns-tools">
+            @if (list === "exclusions") {
+              <button
+                pButton
+                type="button"
+                severity="secondary"
+                [disabled]="disabled()"
+                [attr.aria-label]="'Изменить исключение: ' + name"
+                (click)="edit(name, domainInput)"
+              >
+                Изменить
+              </button>
+            }
+            <button
+              pButton
+              type="button"
+              severity="secondary"
+              [disabled]="disabled()"
+              [attr.aria-label]="
+                (list === 'exclusions'
+                  ? 'Снять исключение: '
+                  : 'Удалить из ручного списка: ') + name
+              "
+              (click)="remove(list, name)"
+            >
+              {{
+                list === "exclusions"
+                  ? "Снять исключение"
+                  : "Удалить из ручного списка"
+              }}
+            </button>
+          </div>
+        </li>
+      } @empty {
+        <li>
+          {{
+            list === "exclusions"
+              ? "Исключений пока нет."
+              : "Домены вручную ещё не добавлены."
+          }}
+        </li>
+      }
+    </ul>
+  </section>
+}

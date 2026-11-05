@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"os"
 	"reflect"
+	"slices"
+	"sync"
 	"time"
 
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
@@ -24,8 +26,48 @@ type qualityReportOutput struct{ Body panelmodel.QualityReport }
 type qualitySettingsInput struct{ Body quality.Settings }
 type qualitySettingsOutput struct{ Body quality.Settings }
 
+type qualityCheckPath struct {
+	Protocol string `path:"protocol" enum:"UDP,TCP,ICMP,DNS,HTTPS,HTTP3"`
+}
+type qualityCheckInput struct {
+	Protocol string `path:"protocol" enum:"UDP,TCP,ICMP,DNS,HTTPS,HTTP3"`
+	Body     quality.Check
+}
+
+// QualityWindow sets the common measurement window independently of individual checks.
+type QualityWindow struct {
+	WindowMinutes int `json:"windowMinutes" minimum:"1" maximum:"1440"`
+}
+type qualityWindowInput struct{ Body QualityWindow }
+
+// save validates a complete configuration and atomically publishes it for the running gateway.
+func (files qualityFiles) save(settings quality.Settings) (*qualitySettingsOutput, error) {
+	if err := quality.ValidateSettings(settings); err != nil {
+		return nil, huma.Error422UnprocessableEntity(err.Error())
+	}
+	if files.settings == "" {
+		return nil, huma.Error503ServiceUnavailable("Файл настроек проверок не настроен")
+	}
+	if err := quality.SaveSettings(files.settings, settings); err != nil {
+		log.Printf("save quality settings: %v", err)
+		return nil, huma.Error503ServiceUnavailable("Не удалось сохранить настройки проверок")
+	}
+	return &qualitySettingsOutput{Body: settings}, nil
+}
+
 // registerQuality exposes the worker's ranking and validates complete setting replacements before persistence.
 func registerQuality(api huma.API, snapshot string, files qualityFiles) {
+	var writes sync.Mutex
+	change := func(edit func(*quality.Settings)) (*qualitySettingsOutput, error) {
+		writes.Lock()
+		defer writes.Unlock()
+		settings, err := quality.LoadSettings(files.settings)
+		if err != nil {
+			return nil, huma.Error503ServiceUnavailable("Не удалось прочитать настройки проверок")
+		}
+		edit(&settings)
+		return files.save(settings)
+	}
 	huma.Register(api, huma.Operation{
 		OperationID: "getQuality", Tags: []string{"Panel"}, Method: http.MethodGet, Path: "/api/quality",
 		Summary: "Прочитать настройки проверок и текущий порядок выходов всех групп", Errors: []int{http.StatusServiceUnavailable},
@@ -42,17 +84,31 @@ func registerQuality(api huma.API, snapshot string, files qualityFiles) {
 		Summary: "Сохранить общие для всех выходов параметры проверок связи", MaxBodyBytes: 8192,
 		Errors: []int{http.StatusRequestEntityTooLarge, http.StatusUnprocessableEntity, http.StatusServiceUnavailable},
 	}, func(_ context.Context, in *qualitySettingsInput) (*qualitySettingsOutput, error) {
-		if err := quality.ValidateSettings(in.Body); err != nil {
-			return nil, huma.Error422UnprocessableEntity("Некорректные параметры проверок: " + err.Error())
+		writes.Lock()
+		defer writes.Unlock()
+		return files.save(in.Body)
+	})
+	huma.Register(api, huma.Operation{OperationID: "putQualityCheck", Tags: []string{"Panel"}, Method: http.MethodPut, Path: "/api/quality/checks/{protocol}", Summary: "Добавить или изменить одну проверку связи", MaxBodyBytes: 8192, Errors: []int{422, 503}}, func(_ context.Context, in *qualityCheckInput) (*qualitySettingsOutput, error) {
+		if in.Body.Protocol != in.Protocol {
+			return nil, huma.Error422UnprocessableEntity("Тип проверки в адресе и настройках должен совпадать")
 		}
-		if files.settings == "" {
-			return nil, huma.Error503ServiceUnavailable("Файл настроек проверок не настроен")
-		}
-		if err := quality.SaveSettings(files.settings, in.Body); err != nil {
-			log.Printf("save quality settings: %v", err)
-			return nil, huma.Error503ServiceUnavailable("Не удалось сохранить настройки проверок")
-		}
-		return &qualitySettingsOutput{Body: in.Body}, nil
+		return change(func(settings *quality.Settings) {
+			for i, check := range settings.Checks {
+				if check.Protocol == in.Protocol {
+					settings.Checks[i] = in.Body
+					return
+				}
+			}
+			settings.Checks = append(settings.Checks, in.Body)
+		})
+	})
+	huma.Register(api, huma.Operation{OperationID: "deleteQualityCheck", Tags: []string{"Panel"}, Method: http.MethodDelete, Path: "/api/quality/checks/{protocol}", Summary: "Удалить одну проверку связи", Errors: []int{422, 503}}, func(_ context.Context, in *qualityCheckPath) (*qualitySettingsOutput, error) {
+		return change(func(settings *quality.Settings) {
+			settings.Checks = slices.DeleteFunc(settings.Checks, func(check quality.Check) bool { return check.Protocol == in.Protocol })
+		})
+	})
+	huma.Register(api, huma.Operation{OperationID: "putQualityWindow", Tags: []string{"Panel"}, Method: http.MethodPut, Path: "/api/quality/window", Summary: "Изменить общее окно оценки", Errors: []int{422, 503}}, func(_ context.Context, in *qualityWindowInput) (*qualitySettingsOutput, error) {
+		return change(func(settings *quality.Settings) { settings.WindowMinutes = in.Body.WindowMinutes })
 	})
 }
 

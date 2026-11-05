@@ -87,3 +87,53 @@ func TestQualityPanel(t *testing.T) {
 		t.Fatalf("invalid request changed settings: HTTP %d", status)
 	}
 }
+
+// TestIndependentQualityEdits ensures concurrent editors of different checks preserve both changes and the common window.
+func TestIndependentQualityEdits(t *testing.T) {
+	dir := t.TempDir()
+	files := qualityFiles{settings: filepath.Join(dir, "settings.json")}
+	handler := panelHandler(filepath.Join(dir, "snapshot.json"), "", nil, panelWrites{quality: files})
+	send := func(method, path string, body []byte) int {
+		request := httptest.NewRequest(method, path, bytes.NewReader(body))
+		request.Header.Set("Content-Type", "application/json")
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, request)
+		return response.Code
+	}
+	checks := quality.DefaultSettings().Checks
+	responses := make(chan int, len(checks)+1)
+	for _, check := range checks {
+		check.IntervalSeconds = 47
+		body, err := json.Marshal(check)
+		if err != nil {
+			t.Fatal(err)
+		}
+		go func() { responses <- send(http.MethodPut, "/api/quality/checks/"+check.Protocol, body) }()
+	}
+	go func() { responses <- send(http.MethodPut, "/api/quality/window", []byte(`{"windowMinutes":25}`)) }()
+	for range len(checks) + 1 {
+		if status := <-responses; status != http.StatusOK {
+			t.Fatalf("scoped PUT: HTTP %d", status)
+		}
+	}
+	s, err := quality.LoadSettings(files.settings)
+	if err != nil || s.WindowMinutes != 25 || len(s.Checks) != len(checks) {
+		t.Fatalf("unexpected settings: %+v %v", s, err)
+	}
+	for _, c := range s.Checks {
+		if c.IntervalSeconds != 47 {
+			t.Fatalf("lost edit for %s", c.Protocol)
+		}
+	}
+	body, _ := json.Marshal(checks[0])
+	if status := send(http.MethodPut, "/api/quality/checks/TCP", body); status != 422 {
+		t.Fatalf("protocol mismatch: HTTP %d", status)
+	}
+	if status := send(http.MethodDelete, "/api/quality/checks/UDP", nil); status != http.StatusOK {
+		t.Fatalf("delete: HTTP %d", status)
+	}
+	s, err = quality.LoadSettings(files.settings)
+	if err != nil || len(s.Checks) != len(checks)-1 || s.WindowMinutes != 25 {
+		t.Fatalf("delete changed unrelated settings: %+v %v", s, err)
+	}
+}

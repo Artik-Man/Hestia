@@ -13,7 +13,7 @@ import { Subscription, timer, timeout } from "rxjs";
 import { PanelService } from "./api/generated/api/panel.service";
 import type { QualityReport } from "./api/generated/model/qualityReport";
 import { ConnectionCatalog } from "./connection-catalog";
-import { isQualityReport } from "./quality-observations";
+import { isQualityReport, qualityLabel } from "./quality-observations";
 import { Notifications } from "./notifications";
 import { QualityEditor } from "./quality-report";
 
@@ -32,6 +32,7 @@ export class QualityScreen {
   protected readonly catalog = inject(ConnectionCatalog);
   protected readonly report = signal<QualityReport | null>(null);
   protected readonly failed = signal(false);
+  protected readonly label = qualityLabel;
   protected readonly busy = signal(false);
   private request?: Subscription;
   protected readonly numberFormat = new Intl.NumberFormat("ru-RU", {

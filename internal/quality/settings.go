@@ -8,14 +8,20 @@ import (
 	"fmt"
 	"io"
 	"net/netip"
+	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
 const (
-	UDP = "UDP"
-	TCP = "TCP"
+	UDP   = "UDP"
+	TCP   = "TCP"
+	ICMP  = "ICMP"
+	DNS   = "DNS"
+	HTTPS = "HTTPS"
+	HTTP3 = "HTTP3"
 
 	// MaxSamplesPerExit bounds exact rolling history even for the largest accepted schedule.
 	MaxSamplesPerExit = 32768
@@ -24,17 +30,21 @@ const (
 // QualitySettings defines a common scoring window and the checks shared by every exit.
 type QualitySettings struct {
 	WindowMinutes int            `json:"windowMinutes" minimum:"1" maximum:"1440"`
-	Checks        []QualityCheck `json:"checks" minItems:"0" maxItems:"2" nullable:"false"`
+	Checks        []QualityCheck `json:"checks" minItems:"0" maxItems:"6" nullable:"false"`
 }
 
 // QualityCheck configures one transport test against literal IP:port targets.
 type QualityCheck struct {
-	Protocol        string   `json:"protocol" enum:"UDP,TCP"`
+	Protocol        string   `json:"protocol" enum:"UDP,TCP,ICMP,DNS,HTTPS,HTTP3"`
 	Targets         []string `json:"targets" minItems:"1" maxItems:"8" nullable:"false"`
 	IntervalSeconds int      `json:"intervalSeconds" minimum:"1" maximum:"3600"`
 	TimeoutSeconds  int      `json:"timeoutSeconds" minimum:"1" maximum:"30"`
 	DNSName         string   `json:"dnsName,omitempty" maxLength:"253"`
+	ServerName      string   `json:"serverName,omitempty" maxLength:"253" doc:"Имя сервера для TLS и HTTP."`
+	RequestPath     string   `json:"requestPath,omitempty" maxLength:"1024" doc:"Путь запроса на сервере, включая необязательную строку параметров."`
 }
+
+var protocols = [...]string{UDP, TCP, ICMP, DNS, HTTPS, HTTP3}
 
 type Settings = QualitySettings
 type Check = QualityCheck
@@ -52,14 +62,14 @@ func ValidateSettings(s Settings) error { return s.Validate() }
 
 // Validate accepts only distinct supported protocols, bounded scheduling and distinct public targets for each test.
 func (s QualitySettings) Validate() error {
-	if s.WindowMinutes < 1 || s.WindowMinutes > 1440 || s.Checks == nil || len(s.Checks) > 2 {
+	if s.WindowMinutes < 1 || s.WindowMinutes > 1440 || s.Checks == nil || len(s.Checks) > len(protocols) {
 		return errors.New("нужны окно от 1 до 1440 минут и список проверок")
 	}
 	seen := map[string]bool{}
 	scheduled := 0
 	for _, c := range s.Checks {
-		if seen[c.Protocol] || (c.Protocol != UDP && c.Protocol != TCP) {
-			return errors.New("допустима одна проверка каждого типа TCP или UDP")
+		if seen[c.Protocol] || !slices.Contains(protocols[:], c.Protocol) {
+			return errors.New("допустима одна проверка каждого поддерживаемого типа")
 		}
 		seen[c.Protocol] = true
 		if c.IntervalSeconds < 1 || c.IntervalSeconds > 3600 || c.TimeoutSeconds < 1 || c.TimeoutSeconds > 30 || c.TimeoutSeconds > c.IntervalSeconds {
@@ -68,11 +78,8 @@ func (s QualitySettings) Validate() error {
 		if len(c.Targets) < 1 || len(c.Targets) > 8 {
 			return errors.New("для проверки требуется от одной до восьми целей")
 		}
-		if c.Protocol == UDP && (len(c.Targets) != 2 || !validName(c.DNSName)) {
-			return errors.New("для UDP укажите два резолвера разных операторов и корректное DNS-имя")
-		}
-		if c.Protocol == TCP && c.DNSName != "" {
-			return errors.New("поле DNS-имени допустимо только для UDP")
+		if err := c.validateOptions(); err != nil {
+			return err
 		}
 		// A completion can move by one timeout relative to its scheduled start.
 		// Include the boundaries of both the completion window and the in-flight round.
@@ -83,16 +90,64 @@ func (s QualitySettings) Validate() error {
 		}
 		targets := map[netip.AddrPort]bool{}
 		for _, target := range c.Targets {
-			ep, err := netip.ParseAddrPort(target)
-			ip := ep.Addr().Unmap()
-			key := netip.AddrPortFrom(ip, ep.Port())
-			if err != nil || ep.Port() == 0 || !publicTarget(ip) || targets[key] || (c.Protocol == UDP && ep.Port() != 53) {
-				return fmt.Errorf("%s: требуется уникальный публичный IP:порт (для UDP порт 53)", c.Protocol)
+			key, err := c.targetAddress(target)
+			if err != nil || targets[key] {
+				return fmt.Errorf("%s: укажите разные публичные адреса целей в формате проверки", c.Protocol)
 			}
 			targets[key] = true
 		}
 	}
 	return nil
+}
+
+// validateOptions checks the DNS or HTTP-specific fields and rejects stray options from other probes.
+func (c QualityCheck) validateOptions() error {
+	if c.Protocol == UDP && len(c.Targets) != 2 {
+		return errors.New("для UDP укажите два резолвера разных операторов")
+	}
+	switch c.Protocol {
+	case UDP, DNS:
+		if !validName(c.DNSName) {
+			return errors.New("для DNS-запроса укажите корректное доменное имя")
+		}
+	default:
+		if c.DNSName != "" {
+			return errors.New("доменное имя запроса доступно только для DNS и UDP")
+		}
+	}
+	if c.Protocol != HTTPS && c.Protocol != HTTP3 {
+		if c.ServerName != "" || c.RequestPath != "" {
+			return errors.New("имя сервера и путь доступны только для HTTPS и HTTP/3")
+		}
+		return nil
+	}
+	if !validName(c.ServerName) || strings.HasSuffix(c.ServerName, ".") {
+		return errors.New("укажите корректное имя HTTPS-сервера")
+	}
+	if _, err := netip.ParseAddr(c.ServerName); err == nil {
+		return errors.New("укажите DNS-имя HTTPS-сервера")
+	}
+	u, err := url.ParseRequestURI(c.RequestPath)
+	if err != nil || len(c.RequestPath) > 1024 || !strings.HasPrefix(c.RequestPath, "/") || strings.HasPrefix(c.RequestPath, "//") || strings.ContainsAny(c.RequestPath, "#\\") || u.IsAbs() || u.Host != "" || u.User != nil {
+		return errors.New("путь запроса должен начинаться с / и принадлежать выбранному серверу")
+	}
+	return nil
+}
+
+// targetAddress normalizes the literal probe destination and enforces the transport's port policy.
+func (c QualityCheck) targetAddress(target string) (netip.AddrPort, error) {
+	if c.Protocol == ICMP {
+		ip, err := netip.ParseAddr(target)
+		if err != nil || !publicTarget(ip.Unmap()) {
+			return netip.AddrPort{}, errors.New("для ICMP нужен публичный IP без порта")
+		}
+		return netip.AddrPortFrom(ip.Unmap(), 0), nil
+	}
+	ep, err := netip.ParseAddrPort(target)
+	if err != nil || ep.Port() == 0 || !publicTarget(ep.Addr().Unmap()) || ((c.Protocol == UDP || c.Protocol == DNS) && ep.Port() != 53) {
+		return netip.AddrPort{}, errors.New("нужен публичный IP:порт, для DNS — порт 53")
+	}
+	return netip.AddrPortFrom(ep.Addr().Unmap(), ep.Port()), nil
 }
 
 // These special-purpose ranges can pass IsGlobalUnicast yet designate private overlays,

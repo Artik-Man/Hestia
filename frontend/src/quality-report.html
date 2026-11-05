@@ -1,185 +1,275 @@
 <section aria-labelledby="checks-title">
   <div class="section-heading">
     <h2 id="checks-title">Проверки</h2>
-    @if (!draft()) {
+    <div class="card-title">
+      <span>Окно оценки: {{ settings().windowMinutes }} мин</span>
       <button
         pButton
         type="button"
         severity="secondary"
         [text]="true"
         [rounded]="true"
-        aria-label="Редактировать настройки проверок"
-        title="Редактировать настройки проверок"
-        (click)="edit()"
+        aria-label="Редактировать окно оценки"
+        title="Редактировать окно оценки"
+        (click)="editWindow()"
       >
         <span class="edit-icon" aria-hidden="true"></span>
       </button>
-    }
+    </div>
   </div>
-  @if (draft(); as form) {
-    <form #editor="ngForm" (ngSubmit)="save()">
-      <fieldset [disabled]="saving()">
-        <label
-          >Окно оценки, мин<input
-            pInputText
-            type="number"
-            min="1"
-            max="1440"
-            step="1"
-            required
-            name="window"
-            [(ngModel)]="form.windowMinutes"
-        /></label>
-        <div class="check-grid">
-          @for (check of form.checks; track check.protocol) {
-            <fieldset class="check-card" [ngModelGroup]="check.protocol">
-              <legend>Проверка {{ check.protocol }}</legend>
-              <button
-                type="button"
-                pButton
-                severity="danger"
-                [text]="true"
-                [rounded]="true"
-                [attr.aria-label]="'Удалить проверку ' + check.protocol"
-                [title]="'Удалить проверку ' + check.protocol"
-                (click)="remove(check.protocol)"
-              >
-                <span class="delete-icon" aria-hidden="true"></span>
-              </button>
-              <label
-                >Цели (IP:порт, по одной на строку)<textarea
-                  pTextarea
-                  required
-                  rows="3"
-                  name="targets"
-                  [(ngModel)]="check.targets"
-                ></textarea>
-              </label>
-              @if (check.protocol === "UDP") {
-                <label
-                  >Домен для DNS-запроса<input
-                    pInputText
-                    required
-                    type="text"
-                    name="dnsName"
-                    [(ngModel)]="check.dnsName"
-                /></label>
-              }
-              <div class="numeric">
-                <label
-                  >Интервал, с<input
-                    pInputText
-                    type="number"
-                    step="1"
-                    min="1"
-                    max="3600"
-                    required
-                    name="interval"
-                    [(ngModel)]="check.intervalSeconds"
-                /></label>
-                <label
-                  >Тайм-аут, с<input
-                    pInputText
-                    type="number"
-                    step="1"
-                    min="1"
-                    [max]="
-                      check.intervalSeconds === null
-                        ? 30
-                        : check.intervalSeconds < 30
-                          ? check.intervalSeconds
-                          : 30
-                    "
-                    required
-                    name="timeout"
-                    [(ngModel)]="check.timeoutSeconds"
-                /></label>
-              </div>
-            </fieldset>
-          }
-        </div>
-        <div class="actions">
-          @for (protocol of protocols; track protocol) {
-            @if (!hasCheck(form, protocol)) {
-              <button
-                pButton
-                type="button"
-                severity="secondary"
-                (click)="add(protocol)"
-              >
-                Добавить {{ protocol }}
-              </button>
-            }
-          }
-          <button pButton type="submit" [disabled]="editor.invalid || saving()">
-            {{ saving() ? "Сохранение…" : "Сохранить" }}
-          </button>
+  <div class="check-grid">
+    @for (check of settings().checks; track check.protocol) {
+      <article class="check-card">
+        <div class="card-title">
+          <h3>Проверка {{ label(check.protocol) }}</h3>
           <button
             pButton
             type="button"
             severity="secondary"
-            (click)="draft.set(null)"
+            [text]="true"
+            [rounded]="true"
+            [attr.aria-label]="
+              'Редактировать проверку ' + label(check.protocol)
+            "
+            [title]="'Редактировать проверку ' + label(check.protocol)"
+            (click)="edit(check.protocol)"
           >
-            Отмена
+            <span class="edit-icon" aria-hidden="true"></span>
+          </button>
+          <button
+            pButton
+            type="button"
+            severity="danger"
+            [text]="true"
+            [rounded]="true"
+            [attr.aria-label]="'Удалить проверку ' + label(check.protocol)"
+            [title]="'Удалить проверку ' + label(check.protocol)"
+            (click)="deleting.set(check)"
+          >
+            <span class="delete-icon" aria-hidden="true"></span>
+          </button>
+        </div>
+        <p>{{ descriptions[check.protocol] }}</p>
+        <dl>
+          <dt>Цели</dt>
+          <dd>{{ check.targets.join(", ") }}</dd>
+          @if (check.dnsName) {
+            <dt>Домен</dt>
+            <dd>{{ check.dnsName }}</dd>
+          }
+          @if (check.serverName) {
+            <dt>Имя сервера</dt>
+            <dd>{{ check.serverName }}</dd>
+            <dt>Путь</dt>
+            <dd>{{ check.requestPath }}</dd>
+          }
+          <dt>Интервал</dt>
+          <dd>{{ check.intervalSeconds }} с</dd>
+          <dt>Тайм-аут</dt>
+          <dd>{{ check.timeoutSeconds }} с</dd>
+        </dl>
+      </article>
+    } @empty {
+      <p>Проверки не настроены.</p>
+    }
+  </div>
+  <div class="actions add-checks">
+    @for (protocol of protocols; track protocol) {
+      @if (!check(protocol)) {
+        <button
+          pButton
+          type="button"
+          severity="secondary"
+          (click)="edit(protocol)"
+        >
+          Добавить {{ label(protocol) }}
+        </button>
+      }
+    }
+  </div>
+</section>
+@for (protocol of protocols; track protocol) {
+  <p-dialog
+    [visible]="draft()?.protocol === protocol"
+    [modal]="true"
+    [header]="
+      (draft()?.original ? 'Редактировать проверку ' : 'Добавить проверку ') +
+      label(protocol)
+    "
+    [closeOnEscape]="!saving()"
+    [closable]="!saving()"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{ width: 'min(32rem, calc(100vw - 2rem))' }"
+    (visibleChange)="!$event && dismiss()"
+  >
+    @if (draft(); as form) {
+      @if (form.protocol === protocol) {
+        <form #editor="ngForm" (ngSubmit)="saveCheck()">
+          <fieldset [disabled]="saving()">
+            <label
+              >{{
+                protocol === "ICMP"
+                  ? "Цели (IP, по одному на строку)"
+                  : "Цели (IP:порт, по одной на строку)"
+              }}<textarea
+                pTextarea
+                required
+                rows="3"
+                name="targets"
+                [(ngModel)]="form.targets"
+              ></textarea>
+            </label>
+            @if (protocol === "UDP" || protocol === "DNS") {
+              <label
+                >Домен для DNS-запроса<input
+                  pInputText
+                  required
+                  name="dnsName"
+                  [(ngModel)]="form.dnsName"
+              /></label>
+            }
+            @if (protocol === "HTTPS" || protocol === "HTTP3") {
+              <label
+                >Имя сервера TLS<input
+                  pInputText
+                  required
+                  name="serverName"
+                  [(ngModel)]="form.serverName" /></label
+              ><label
+                >Путь запроса<input
+                  pInputText
+                  required
+                  name="requestPath"
+                  [(ngModel)]="form.requestPath"
+              /></label>
+            }
+            <div class="numeric">
+              <label
+                >Интервал, с<input
+                  pInputText
+                  type="number"
+                  min="1"
+                  max="3600"
+                  step="1"
+                  required
+                  name="interval"
+                  [(ngModel)]="form.intervalSeconds"
+              /></label>
+              <label
+                >Тайм-аут, с<input
+                  pInputText
+                  type="number"
+                  min="1"
+                  [max]="
+                    form.intervalSeconds && form.intervalSeconds < 30
+                      ? form.intervalSeconds
+                      : 30
+                  "
+                  step="1"
+                  required
+                  name="timeout"
+                  [(ngModel)]="form.timeoutSeconds"
+              /></label>
+            </div>
+            <div class="actions">
+              <button
+                pButton
+                type="button"
+                severity="secondary"
+                (click)="dismiss()"
+              >
+                Отмена</button
+              ><button
+                pButton
+                type="submit"
+                [disabled]="editor.invalid || saving()"
+              >
+                Сохранить
+              </button>
+            </div>
+          </fieldset>
+        </form>
+      }
+    }
+  </p-dialog>
+}
+<p-dialog
+  [visible]="windowDraft() !== null"
+  [modal]="true"
+  header="Окно оценки"
+  [closeOnEscape]="!saving()"
+  [closable]="!saving()"
+  [draggable]="false"
+  [resizable]="false"
+  (visibleChange)="!$event && dismiss()"
+>
+  @if (windowDraft(); as form) {
+    <form #windowEditor="ngForm" (ngSubmit)="saveWindow()">
+      <fieldset [disabled]="saving()">
+        <label
+          >Окно оценки, мин<input
+            pInputText
+            required
+            type="number"
+            min="1"
+            max="1440"
+            step="1"
+            name="window"
+            [(ngModel)]="form.minutes"
+        /></label>
+        <div class="actions">
+          <button
+            pButton
+            type="button"
+            severity="secondary"
+            (click)="dismiss()"
+          >
+            Отмена</button
+          ><button
+            pButton
+            type="submit"
+            [disabled]="windowEditor.invalid || saving()"
+          >
+            Сохранить
           </button>
         </div>
       </fieldset>
     </form>
-  } @else {
-    <p class="hint">Окно оценки: {{ settings().windowMinutes }} мин</p>
-    <div class="check-grid">
-      @for (check of settings().checks; track check.protocol) {
-        <article class="check-card">
-          <div class="card-title">
-            <h3>Проверка {{ check.protocol }}</h3>
-            <button
-              type="button"
-              pButton
-              severity="secondary"
-              [text]="true"
-              [rounded]="true"
-              [attr.aria-label]="'Редактировать проверку ' + check.protocol"
-              [title]="'Редактировать проверку ' + check.protocol"
-              (click)="edit()"
-            >
-              <span class="edit-icon" aria-hidden="true"></span>
-            </button>
-            <button
-              type="button"
-              pButton
-              severity="danger"
-              [text]="true"
-              [rounded]="true"
-              [attr.aria-label]="'Удалить проверку ' + check.protocol"
-              [title]="'Удалить проверку ' + check.protocol"
-              (click)="remove(check.protocol)"
-            >
-              <span class="delete-icon" aria-hidden="true"></span>
-            </button>
-          </div>
-          <p>
-            {{
-              check.protocol === "UDP"
-                ? "DNS-запрос"
-                : "Установка TCP-соединения"
-            }}
-          </p>
-          <dl>
-            <dt>Цели</dt>
-            <dd>{{ check.targets.join(", ") }}</dd>
-            @if (check.dnsName) {
-              <dt>Домен</dt>
-              <dd>{{ check.dnsName }}</dd>
-            }
-            <dt>Интервал</dt>
-            <dd>{{ check.intervalSeconds }} с</dd>
-            <dt>Тайм-аут</dt>
-            <dd>{{ check.timeoutSeconds }} с</dd>
-          </dl>
-        </article>
-      } @empty {
-        <p class="hint">Проверки не настроены.</p>
-      }
+  }
+</p-dialog>
+<p-dialog
+  [visible]="deleting() !== null"
+  [modal]="true"
+  [header]="
+    'Удалить проверку ' + (deleting() ? label(deleting()!.protocol) : '')
+  "
+  [closeOnEscape]="!saving()"
+  [closable]="!saving()"
+  [draggable]="false"
+  [resizable]="false"
+  (visibleChange)="!$event && dismiss()"
+>
+  @if (deleting(); as item) {
+    <p>Прекратить проверку {{ label(item.protocol) }} для всех подключений?</p>
+    <div class="actions">
+      <button
+        pButton
+        type="button"
+        severity="secondary"
+        [disabled]="saving()"
+        (click)="dismiss()"
+      >
+        Отмена</button
+      ><button
+        pButton
+        type="button"
+        severity="danger"
+        [disabled]="saving()"
+        (click)="remove()"
+      >
+        Удалить
+      </button>
     </div>
   }
-</section>
+</p-dialog>

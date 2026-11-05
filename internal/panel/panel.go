@@ -176,6 +176,7 @@ func registerPanelAPI(mux *http.ServeMux, snapshot, grafanaURL string, writes pa
 	registerMoveExit(api, writes.moveExit)
 	registerAWG(api, writes.awg)
 	registerQuality(api, snapshot, writes.quality)
+	registerDNS(api, writes.dnsPolicyPath, writes.dnsReportPath)
 	return api
 }
 
@@ -275,6 +276,8 @@ func Run() {
 	enableOrder := flag.Bool("enable-group-order", false, "enable confirmed group and exit ordering on the installed gateway")
 	enableBindings := flag.Bool("enable-bindings", false, "enable confirmed list binding changes on the installed gateway")
 	enableAWG := flag.Bool("enable-awg", false, "enable privileged AmneziaWG profile management on the installed gateway")
+	dnsReport := flag.String("dns-report", "/run/hestia-dns/report.json", "path to the DNS worker heartbeat and automatic membership report")
+	dnsPolicy := flag.String("dns-policy", "", "path to the panel-owned durable DNS policy; setting this path enables policy management")
 	qualitySettings := flag.String("quality-settings", "", "quality settings file (defaults to the installed settings for the managed gateway)")
 	qualityReport := flag.String("quality-report", "", "quality worker report file (defaults to the installed report for the managed gateway)")
 	openapi := flag.String("openapi", "", "write the generated OpenAPI contract at this path and exit")
@@ -297,6 +300,8 @@ func Run() {
 		log.Fatal(err)
 	}
 	var writes panelWrites
+	writes.dnsPolicyPath = *dnsPolicy
+	writes.dnsReportPath = *dnsReport
 	writes.quality = qualityFiles{settings: *qualitySettings, report: *qualityReport}
 	if sameSnapshotPath(*snapshot, installedSnapshot) {
 		if writes.quality.settings == "" {

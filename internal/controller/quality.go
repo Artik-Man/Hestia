@@ -87,7 +87,9 @@ func corroborated(candidate, current quality.Result) bool {
 		for _, target := range check.Targets {
 			previous, ok := baseline[measurement{check.Protocol, target.Target}]
 			if ok && target.Score != nil && target.Samples >= 3 && *target.Score > previous {
-				if addr, err := netip.ParseAddrPort(target.Target); err == nil {
+				if ip, err := netip.ParseAddr(target.Target); err == nil {
+					better[ip.Unmap()] = true
+				} else if addr, err := netip.ParseAddrPort(target.Target); err == nil {
 					better[addr.Addr().Unmap()] = true
 				}
 			}

@@ -14,6 +14,8 @@ type orderWriter func(context.Context, panelmodel.GroupOrderChange) error
 
 // panelWrites holds independently enabled privileged operations.
 type panelWrites struct {
+	dnsPolicyPath    string
+	dnsReportPath    string
 	quality          qualityFiles
 	physical         physicalHelper
 	deleteDomainList domainListDeleter
