@@ -20,6 +20,8 @@ import type { Group } from "../../services/api/generated/model/group";
 import type { Hysteria2Connection } from "../../services/api/generated/model/hysteria2Connection";
 import type { Hysteria2WriteRequest } from "../../services/api/generated/model/hysteria2WriteRequest";
 import { UnderlayPicker } from "../underlay-picker/underlay-picker.component";
+import { Toast } from "primeng/toast";
+import { Notifications } from "../../services/notifications.service";
 import { Tooltip } from "primeng/tooltip";
 import { isConnectionName } from "../../models/awg-connection";
 import { isHysteria2Connection } from "../../models/hysteria2-connection";
@@ -32,7 +34,14 @@ import {
 /** Hysteria2Editor edits a local draft and only submits it when the operator chooses Save. */
 @Component({
   selector: "hestia-hysteria2-editor",
-  imports: [UnderlayPicker, Tooltip, FormsModule, InputText, ButtonDirective],
+  imports: [
+    UnderlayPicker,
+    Toast,
+    Tooltip,
+    FormsModule,
+    InputText,
+    ButtonDirective,
+  ],
   templateUrl: "./hysteria2-editor.component.html",
   styleUrl: "./hysteria2-editor.component.css",
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -48,8 +57,7 @@ export class Hysteria2Editor implements OnInit, AfterViewInit {
   private readonly destroy = inject(DestroyRef);
   protected readonly reading = signal(false);
   protected readonly readFailed = signal(false);
-  protected readonly error = signal("");
-  protected readonly notice = signal("");
+  private readonly notifications = inject(Notifications);
   protected readonly busy = signal(false);
   protected name = "";
   protected group = "";
@@ -101,7 +109,8 @@ export class Hysteria2Editor implements OnInit, AfterViewInit {
     } catch {
       if (this.destroy.destroyed) return;
       this.readFailed.set(true);
-      this.error.set(
+      this.notifications.show(
+        "error",
         "Не удалось прочитать профиль Hysteria 2. Закройте редактор и попробуйте ещё раз.",
       );
     } finally {
@@ -131,7 +140,6 @@ export class Hysteria2Editor implements OnInit, AfterViewInit {
     field.value = "";
     if (!file || this.busy()) return;
     this.busy.set(true);
-    this.error.set("");
     try {
       if (file.size > 65536) throw new Error("Размер файла превышает 64 КиБ.");
       const text = await file.text();
@@ -148,7 +156,8 @@ export class Hysteria2Editor implements OnInit, AfterViewInit {
         this.serverName = normalizeHysteriaHost(parsed.serverName) ?? "";
         this.requiredCertificate = parsed.ca;
         this.clearCertificate();
-        this.notice.set(
+        this.notifications.show(
+          "success",
           parsed.ignoresSocks
             ? "Профиль загружен. Локальный SOCKS5 из файла пропущен."
             : "Профиль загружен.",
@@ -160,7 +169,8 @@ export class Hysteria2Editor implements OnInit, AfterViewInit {
         this.requiredCertificate = "";
       }
     } catch (error: unknown) {
-      this.error.set(
+      this.notifications.show(
+        "error",
         error instanceof Error ? error.message : "Не удалось прочитать файл.",
       );
     } finally {
@@ -189,7 +199,6 @@ export class Hysteria2Editor implements OnInit, AfterViewInit {
   /** save validates the draft and emits the confirmed public profile after gateway application. */
   protected async save(): Promise<void> {
     if (this.busy() || this.reading() || this.readFailed()) return;
-    this.error.set("");
     const server = normalizeHysteriaHost(this.server);
     const serverName = normalizeHysteriaHost(this.serverName);
     if (
@@ -202,11 +211,17 @@ export class Hysteria2Editor implements OnInit, AfterViewInit {
       !this.password ||
       (!this.connection() && !this.group)
     ) {
-      this.error.set("Проверьте название, группу, адрес, порт и пароль.");
+      this.notifications.show(
+        "error",
+        "Проверьте название, группу, адрес, порт и пароль.",
+      );
       return;
     }
     if (this.requiredCertificate && !this.certificatePEM) {
-      this.error.set("Выберите сертификат, указанный в tls.ca.");
+      this.notifications.show(
+        "error",
+        "Выберите сертификат, указанный в tls.ca.",
+      );
       return;
     }
     this.busy.set(true);
@@ -232,7 +247,8 @@ export class Hysteria2Editor implements OnInit, AfterViewInit {
       this.dialog.nativeElement.close();
       this.saved.emit(result);
     } catch {
-      this.error.set(
+      this.notifications.show(
+        "error",
         "Не удалось применить подключение. Проверьте параметры и доступность шлюза.",
       );
     } finally {

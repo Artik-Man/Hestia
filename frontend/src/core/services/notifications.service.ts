@@ -8,12 +8,16 @@ export class Notifications {
   private readonly document = inject(DOCUMENT);
   private readonly messages = inject(MessageService);
 
-  /** show announces a user-facing message using the panel's accessible severity styling. */
-  show(severity: "success" | "error" | "warn" | "info", summary: string): void {
+  /** show targets a dialog that stays open, the active native modal, or the page. */
+  show(
+    severity: "success" | "error" | "warn" | "info",
+    summary: string,
+    key?: string,
+  ): void {
     // Native modal dialogs make every element outside their subtree inert.
     const dialog = this.document.querySelector("dialog:modal:has(p-toast)");
     this.messages.add({
-      key: dialog?.id,
+      key: key ?? dialog?.id,
       severity,
       summary,
       styleClass: "gateway-toast-" + severity,

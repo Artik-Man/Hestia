@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component } from "@angular/core";
 import { RouterOutlet } from "@angular/router";
 import { Toast } from "primeng/toast";
+import { version } from "../../../../package.json";
 import { Menu } from "../menu/menu.component";
 
 /** Panel hosts gateway notifications, navigation and the active route. */
@@ -10,4 +11,6 @@ import { Menu } from "../menu/menu.component";
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: "./panel.component.html",
 })
-export class Panel {}
+export class Panel {
+  protected readonly version = version;
+}

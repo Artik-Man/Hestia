@@ -8,6 +8,12 @@
   [closeOnEscape]="!saving()"
   (visibleChange)="closed.emit()"
 >
+  <p-toast
+    key="traffic-settings"
+    class="gateway-toast"
+    position="top-right"
+    [life]="5500"
+  />
   @if (expected()) {
     <form [formGroup]="form" (ngSubmit)="save()" class="journal-form">
       <label
@@ -47,15 +53,11 @@
         </button>
       </div>
     </form>
-  } @else if (!error()) {
+  } @else if (needsReload()) {
+    <button pButton type="button" severity="secondary" (click)="reload()">
+      Загрузить актуальные настройки
+    </button>
+  } @else {
     <p role="status">Загрузка настроек…</p>
-  }
-  @if (error()) {
-    <p role="alert">{{ error() }}</p>
-    @if (!expected()) {
-      <button pButton type="button" severity="secondary" (click)="reload()">
-        Загрузить актуальные настройки
-      </button>
-    }
   }
 </p-dialog>

@@ -92,13 +92,6 @@ p-inputnumber {
   color: var(--ui-muted);
   margin: 5px 0 8px;
 }
-.dns-success {
-  color: var(--ui-accent);
-}
-p-message {
-  display: block;
-  margin: 8px 0;
-}
 @media (max-width: 480px) {
   .dns-tools {
     align-items: stretch;

@@ -211,7 +211,10 @@ test("quality page displays all ranked groups, keeps a measured zero, and persis
     assert.equal(await edit.getByText(/TCP|Окно оценки/).count(), 0);
     await edit.getByLabel("Интервал, с").fill("15");
     await edit.getByRole("button", { name: "Сохранить" }).click();
-    await page.getByText("Настройки проверок сохранены.").first().waitFor();
+    await page
+      .locator("hestia-panel > p-toast")
+      .getByText("Настройки проверок сохранены.")
+      .waitFor();
     await page.getByRole("dialog").waitFor({ state: "hidden" });
     assert.deepEqual(writes, [
       {
@@ -325,9 +328,9 @@ test("quality page displays all ranked groups, keeps a measured zero, and persis
     const targets = tcpDialog.getByLabel("Цели");
     await targets.fill("8.8.8.8\nmissing.example");
     await tcpDialog.getByRole("button", { name: "Сохранить" }).click();
-    await page
+    await tcpDialog
+      .locator("p-toast")
       .getByText("Ошибка DNS для missing.example: имя не найдено.")
-      .first()
       .waitFor();
     const targetField = await targets.elementHandle();
     await page.waitForFunction(
@@ -347,6 +350,10 @@ test("quality page displays all ranked groups, keeps a measured zero, and persis
         field.value === "1.1.1.1:443\n8.8.8.8:443\n1.1.1.1:8443",
       targetField,
     );
+    await tcpDialog
+      .locator("p-toast")
+      .getByText("Настройки проверок сохранены.")
+      .waitFor();
     await page.keyboard.press("Escape");
     await tcpDialog.waitFor({ state: "hidden" });
     const editTCP = page.getByRole("button", {

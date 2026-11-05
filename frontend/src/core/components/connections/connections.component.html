@@ -36,8 +36,8 @@
       />
     </div>
   </div>
-  @if (catalog.hysteriaFailed()) {
-    <p role="status">Не удалось загрузить подключения Hysteria 2.</p>
+  @if (catalog.hysteriaFailed() && rows().length) {
+    <p>Список подключений неполный: данные о Hysteria 2 недоступны.</p>
   }
   <div class="list-wrap">
     <table aria-label="Виртуальные подключения">
@@ -138,7 +138,11 @@
           <tr>
             <td colspan="6">
               {{
-                loadingProfiles() ? "Загрузка подключений…" : "Нет подключений"
+                loadingProfiles()
+                  ? "Загрузка подключений…"
+                  : catalog.hysteriaFailed()
+                    ? "Данные о подключениях Hysteria 2 недоступны."
+                    : "Нет подключений"
               }}
             </td>
           </tr>

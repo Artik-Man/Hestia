@@ -11,9 +11,7 @@
     </p>
   }
   @if (observationState() === "unavailable") {
-    <p-message severity="warn"
-      >Сведения об автоматическом прогреве недоступны.</p-message
-    >
+    <p class="hint">Сведения об автоматическом прогреве недоступны.</p>
   } @else if (report(); as data) {
     @if (data.policyRevision !== snapshot().revision) {
       <p role="status">Ожидаем наблюдения для действующих настроек.</p>
@@ -117,7 +115,7 @@
           pInputText
           placeholder="example.org"
           [value]="draft[list]()"
-          (input)="draft[list].set(domainInput.value); errors[list].set('')"
+          (input)="draft[list].set(domainInput.value)"
           [disabled]="disabled()"
           spellcheck="false"
           autocapitalize="none"
@@ -145,9 +143,6 @@
           </button>
         }
       </div>
-      @if (errors[list]()) {
-        <p-message severity="error">{{ errors[list]() }}</p-message>
-      }
     </form>
     <ul class="dns-rows">
       @for (name of snapshot().policy[list]; track name) {

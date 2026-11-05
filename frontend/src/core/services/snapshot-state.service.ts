@@ -8,7 +8,9 @@ import {
   startWith,
   Subject,
   timeout,
+  tap,
 } from "rxjs";
+import { Notifications } from "./notifications.service";
 import { PanelService } from "./api/generated/api/panel.service";
 import type { Snapshot } from "./api/generated/model/snapshot";
 import { isSnapshot } from "../models/snapshot";
@@ -23,6 +25,7 @@ type View =
 @Injectable({ providedIn: "root" })
 export class SnapshotState {
   private readonly api = inject(PanelService);
+  private readonly notifications = inject(Notifications);
   private readonly requests = new Subject<boolean>();
   readonly view = toSignal(
     this.requests.pipe(
@@ -36,6 +39,13 @@ export class SnapshotState {
               : { kind: "failed" },
           ),
           catchError(() => of<View>({ kind: "failed" })),
+          tap((view) => {
+            if (view.kind === "failed")
+              this.notifications.show(
+                "error",
+                "Не удалось загрузить конфигурацию шлюза.",
+              );
+          }),
         );
         return keepCurrent
           ? read

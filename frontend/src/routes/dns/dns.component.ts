@@ -12,7 +12,7 @@ import { FormControl, FormGroup, ReactiveFormsModule } from "@angular/forms";
 import { ButtonDirective } from "primeng/button";
 import { InputNumber } from "primeng/inputnumber";
 import { ToggleSwitch } from "primeng/toggleswitch";
-import { Message } from "primeng/message";
+import { Notifications } from "../../core/services/notifications.service";
 import { Subscription, timer, timeout } from "rxjs";
 import { GeoipSettings } from "../../core/components/geoip-settings/geoip-settings.component";
 import { PanelService } from "../../core/services/api/generated/api/panel.service";
@@ -38,7 +38,6 @@ import {
     ButtonDirective,
     InputNumber,
     ToggleSwitch,
-    Message,
     DnsNames,
     GeoipSettings,
   ],
@@ -58,8 +57,7 @@ export class DnsScreen {
   protected readonly reading = signal(false);
   protected readonly saving = signal(false);
   protected readonly needsReload = signal(false);
-  protected readonly error = signal("");
-  protected readonly success = signal("");
+  private readonly notifications = inject(Notifications);
   private warmRequest?: Subscription;
 
   protected readonly form = new FormGroup({
@@ -84,8 +82,6 @@ export class DnsScreen {
   protected loadPolicy(): void {
     if (this.reading() || this.saving()) return;
     this.reading.set(true);
-    this.error.set("");
-    this.success.set("");
     this.api
       .getDnsPolicy()
       .pipe(timeout(10000), takeUntilDestroyed(this.destroyRef))
@@ -111,7 +107,8 @@ export class DnsScreen {
   /** readFailure prevents writes from stale or unknown policy until a valid read succeeds. */
   private readFailure(): void {
     this.needsReload.set(true);
-    this.error.set(
+    this.notifications.show(
+      "error",
       "Не удалось прочитать действующие настройки DNS. Повторите загрузку.",
     );
   }
@@ -139,8 +136,8 @@ export class DnsScreen {
       settings = this.form.getRawValue();
     if (!snapshot) return;
     if (!validSettings(settings)) {
-      this.success.set("");
-      this.error.set(
+      this.notifications.show(
+        "error",
         "Проверьте границы чисел. Окно выдачи при сбое должно быть положительным и укладываться в срок хранения.",
       );
       return;
@@ -161,8 +158,6 @@ export class DnsScreen {
     if (!snapshot || this.saving() || this.reading() || this.needsReload())
       return;
     this.saving.set(true);
-    this.error.set("");
-    this.success.set("");
     this.api
       .updateDnsPolicy({ expectedRevision: snapshot.revision, policy })
       .pipe(timeout(10000), takeUntilDestroyed(this.destroyRef))
@@ -179,7 +174,8 @@ export class DnsScreen {
                   : 1)
           ) {
             this.needsReload.set(true);
-            this.error.set(
+            this.notifications.show(
+              "error",
               "Ответ шлюза не подтверждает изменение. Перечитайте настройки DNS.",
             );
             return;
@@ -187,7 +183,8 @@ export class DnsScreen {
           this.snapshot.set(body);
           if (!edit) this.form.reset(body.policy.settings);
           else if (edit.resetEditor) this.lists()?.clearEditor(edit.list);
-          this.success.set(
+          this.notifications.show(
+            "success",
             edit ? "Список сохранён." : "Настройки DNS сохранены.",
           );
           this.loadWarm();
@@ -196,7 +193,8 @@ export class DnsScreen {
           this.saving.set(false);
           const status = error instanceof HttpErrorResponse ? error.status : 0;
           this.needsReload.set(![400, 403, 413, 422].includes(status));
-          this.error.set(
+          this.notifications.show(
+            "error",
             status === 409
               ? "Настройки изменились. Перечитайте значения со шлюза перед повторным изменением."
               : status === 403

@@ -2,6 +2,7 @@ import { HttpErrorResponse } from "@angular/common/http";
 import { computed, inject, Injectable, signal } from "@angular/core";
 import { timeout } from "rxjs";
 import { isCountryMap, regionCodes } from "../models/geo-policy";
+import { Notifications } from "./notifications.service";
 import { PanelService } from "./api/generated/api/panel.service";
 import type { CountryMap } from "./api/generated/model/countryMap";
 
@@ -9,6 +10,7 @@ import type { CountryMap } from "./api/generated/model/countryMap";
 @Injectable({ providedIn: "root" })
 export class CountryMapState {
   private readonly api = inject(PanelService);
+  private readonly notifications = inject(Notifications);
   private readonly baseline = signal<CountryMap | null>(null);
   readonly value = signal<CountryMap | null>(null);
   readonly phase = signal<"idle" | "loading" | "saving" | "failed">("idle");
@@ -24,8 +26,6 @@ export class CountryMapState {
         ))
     );
   });
-  readonly saved = signal(false);
-  readonly warning = signal("");
 
   /** load fetches the authoritative map, leaving edits unavailable on an incomplete or failed read. */
   load(): void {
@@ -33,8 +33,6 @@ export class CountryMapState {
       return;
     this.phase.set("loading");
     this.value.set(null);
-    this.warning.set("");
-    this.saved.set(false);
     this.api
       .getCountryMap()
       .pipe(timeout(10000))
@@ -54,15 +52,16 @@ export class CountryMapState {
 
   /** readFailed offers a retry when the initial load cannot supply a complete map. */
   private readFailed(): void {
-    this.warning.set("Не удалось загрузить назначения со шлюза.");
+    this.notifications.show(
+      "error",
+      "Не удалось загрузить назначения со шлюза.",
+    );
     this.phase.set("failed");
   }
 
   /** edit updates the in-memory draft while keeping its original compare-and-set version. */
   edit(candidate: CountryMap): void {
     if (this.phase() !== "idle") return;
-    this.warning.set("");
-    this.saved.set(false);
     this.value.set(candidate);
   }
 
@@ -73,7 +72,6 @@ export class CountryMapState {
     if (!candidate || !baseline || !this.dirty() || this.phase() !== "idle")
       return;
     this.phase.set("saving");
-    this.warning.set("");
     this.api
       .updateCountryMap(candidate)
       .pipe(timeout(10000))
@@ -85,7 +83,7 @@ export class CountryMapState {
           }
           this.baseline.set(map);
           this.value.set(map);
-          this.saved.set(true);
+          this.notifications.show("success", "Маршруты по странам сохранены.");
           this.phase.set("idle");
         },
         error: (error: unknown) => {
@@ -98,7 +96,10 @@ export class CountryMapState {
 
   /** saveFailed preserves the draft for an explicit version-checked retry. */
   private saveFailed(): void {
-    this.warning.set("Не удалось подтвердить сохранение. Повторите попытку.");
+    this.notifications.show(
+      "error",
+      "Не удалось подтвердить сохранение маршрутов по странам. Повторите попытку.",
+    );
     this.phase.set("idle");
   }
 
@@ -129,10 +130,15 @@ export class CountryMapState {
           });
           this.phase.set("idle");
           if (this.dirty())
-            this.warning.set(
+            this.notifications.show(
+              "warn",
               "Карта изменилась. Проверьте выбор и сохраните ещё раз.",
             );
-          else this.saved.set(true);
+          else
+            this.notifications.show(
+              "success",
+              "Маршруты по странам сохранены.",
+            );
         },
         error: () => this.saveFailed(),
       });

@@ -138,6 +138,12 @@
   (onHide)="editorTrigger?.focus()"
 >
   @if (editor(); as values) {
+    <p-toast
+      [key]="editorToast"
+      class="gateway-toast"
+      position="top-right"
+      [life]="5500"
+    />
     <form class="list-editor-form" (submit)="$event.preventDefault(); save()">
       <label class="field" for="list-name">
         Название списка
@@ -261,9 +267,6 @@
       } @else {
         <p class="hint" role="status">Масок: {{ masks().length }}</p>
       }
-      @if (failure()) {
-        <p class="error" role="alert">{{ failure() }}</p>
-      }
       <div class="dialog-actions">
         @if (needsRefresh()) {
           <button
@@ -309,10 +312,13 @@
   (onHide)="editorTrigger?.focus()"
 >
   @if (deleting(); as list) {
+    <p-toast
+      [key]="deletionToast"
+      class="gateway-toast"
+      position="top-right"
+      [life]="5500"
+    />
     <p>Удалить доменный список «{{ list.name ?? list.id }}» и все его маски?</p>
-    @if (failure()) {
-      <p class="error" role="alert">{{ failure() }}</p>
-    }
     <div class="dialog-actions">
       @if (needsRefresh()) {
         <button

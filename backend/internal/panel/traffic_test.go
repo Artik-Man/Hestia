@@ -80,7 +80,7 @@ func TestTrafficHTTP(t *testing.T) {
 	}
 }
 
-// TestGeoIPJournalAPI checks country labels and filtering before pagination for old observations and protects the private provider credential in every response.
+// TestGeoIPJournalAPI checks current country labels, filtering before pagination and disclosure of the saved token only on successful settings requests.
 func TestGeoIPJournalAPI(t *testing.T) {
 	dir := t.TempDir()
 	store, err := traffic.Open(dir)
@@ -136,18 +136,34 @@ func TestGeoIPJournalAPI(t *testing.T) {
 		method string
 		body   any
 		want   int
+		token  string
 	}{
-		{http.MethodGet, nil, 200},
-		{http.MethodPut, map[string]string{"token": secret}, 200},
-		{http.MethodGet, nil, 200},
-		{http.MethodPut, map[string]string{"wrong": secret}, 422},
-		{http.MethodPut, map[string]string{"token": strings.Repeat(secret, 20)}, 422},
-		{http.MethodPut, map[string]string{"token": secret + " x"}, 422},
-		{http.MethodPut, map[string]string{"token": ""}, 200},
+		{http.MethodGet, nil, 200, ""},
+		{http.MethodPut, map[string]string{"token": secret}, 200, secret},
+		{http.MethodGet, nil, 200, secret},
+		{http.MethodPut, map[string]string{"wrong": secret}, 422, ""},
+		{http.MethodPut, map[string]string{"token": strings.Repeat(secret, 20)}, 422, ""},
+		{http.MethodPut, map[string]string{"token": secret + " x"}, 422, ""},
+		{http.MethodGet, nil, 200, secret},
+		{http.MethodPut, map[string]string{"token": ""}, 200, ""},
+		{http.MethodGet, nil, 200, ""},
 	} {
 		res = dnsRequest(t, h, req.method, geoIPSettingsPath, req.body, "")
-		if res.Code != req.want || strings.Contains(res.Body.String(), secret) {
-			t.Fatalf("unsafe or failed settings response: status %d, expected %d", res.Code, req.want)
+		if res.Code != req.want || res.Header().Get("Cache-Control") != "no-store" {
+			t.Fatalf("unexpected settings response: status %d, expected %d", res.Code, req.want)
+		}
+		if req.want != http.StatusOK {
+			if strings.Contains(res.Body.String(), secret) {
+				t.Fatal("settings error disclosed the token")
+			}
+			continue
+		}
+		var state struct {
+			Token      *string
+			Configured *bool
+		}
+		if json.Unmarshal(res.Body.Bytes(), &state) != nil || state.Token == nil || *state.Token != req.token || state.Configured == nil || *state.Configured != (req.token != "") {
+			t.Fatal("settings response did not report the stored token and its configured state")
 		}
 	}
 	req := httptest.NewRequest(http.MethodPut, geoIPSettingsPath, strings.NewReader(`{"token":"`+secret))

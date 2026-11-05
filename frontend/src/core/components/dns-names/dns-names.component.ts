@@ -3,13 +3,14 @@ import { DatePipe } from "@angular/common";
 import {
   ChangeDetectionStrategy,
   Component,
+  inject,
   input,
   output,
   signal,
 } from "@angular/core";
 import { InputText } from "primeng/inputtext";
 import { ButtonDirective } from "primeng/button";
-import { Message } from "primeng/message";
+import { Notifications } from "../../services/notifications.service";
 import {
   canonicalDomain,
   type CheckedSnapshot,
@@ -28,7 +29,7 @@ export interface NamesEdit {
 /** DnsNames renders observed automatic names and two independently editable operator lists. */
 @Component({
   selector: "hestia-dns-names",
-  imports: [Tooltip, DatePipe, InputText, ButtonDirective, Message],
+  imports: [Tooltip, DatePipe, InputText, ButtonDirective],
   templateUrl: "./dns-names.component.html",
   styleUrl: "../../../styles/dns.css",
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -43,7 +44,7 @@ export class DnsNames {
   readonly changeList = output<NamesEdit>();
   protected readonly editing = signal<string | null>(null);
   protected readonly draft = { manual: signal(""), exclusions: signal("") };
-  protected readonly errors = { manual: signal(""), exclusions: signal("") };
+  private readonly notifications = inject(Notifications);
   protected readonly percent = new Intl.NumberFormat("ru-RU", {
     style: "percent",
     maximumFractionDigits: 2,
@@ -54,14 +55,12 @@ export class DnsNames {
   protected edit(name: string, input: HTMLInputElement): void {
     this.editing.set(name);
     this.draft.exclusions.set(name);
-    this.errors.exclusions.set("");
     input.focus();
   }
 
   /** clearEditor clears only the confirmed list's input or an explicitly cancelled edit. */
   clearEditor(list: DnsList): void {
     this.draft[list].set("");
-    this.errors[list].set("");
     if (list === "exclusions") this.editing.set(null);
   }
 
@@ -72,26 +71,27 @@ export class DnsNames {
     const original =
       list === "exclusions" && fromEditor ? this.editing() : null;
     if (!name) {
-      this.errors[list].set(
+      this.notifications.show(
+        "error",
         "Введите точное доменное имя без маски или IP-адреса.",
       );
       return;
     }
     if (original && !values.includes(original)) {
-      this.errors[list].set(
+      this.notifications.show(
+        "error",
         "Исходное исключение изменилось. Отмените редактирование и выберите запись заново.",
       );
       return;
     }
     if (values.includes(name) && name !== original) {
-      this.errors[list].set("Такой домен уже есть в списке.");
+      this.notifications.show("error", "Такой домен уже есть в списке.");
       return;
     }
     if (!original && values.length >= 4096) {
-      this.errors[list].set("Достигнут предел в 4096 доменов.");
+      this.notifications.show("error", "Достигнут предел в 4096 доменов.");
       return;
     }
-    this.errors[list].set("");
     this.changeList.emit({
       list,
       names: original

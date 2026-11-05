@@ -98,11 +98,11 @@ func validToken(token string) bool {
 	return true
 }
 
-// Configured reports whether the service can query 2ip without disclosing its token.
-func (s *Enrichment) Configured() bool {
+// Token returns the saved 2ip key, or an empty string when enrichment is disabled.
+func (s *Enrichment) Token() string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	return s.token != ""
+	return s.token
 }
 
 // SetToken saves a new private key atomically and discards work queued for the old credential.

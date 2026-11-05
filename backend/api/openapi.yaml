@@ -295,7 +295,12 @@ components:
         configured:
           description: Ключ 2ip сохранён
           type: boolean
+        token:
+          description: Сохранённый ключ 2ip или пустая строка, если ключ не задан.
+          maxLength: 256
+          type: string
       required:
+        - token
         - configured
       type: object
     DNSGeoIPUpdate:
@@ -305,7 +310,6 @@ components:
           description: Новый ключ 2ip. Пустая строка отключает запросы к сервису.
           maxLength: 256
           type: string
-          writeOnly: true
       required:
         - token
       type: object
@@ -1773,7 +1777,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorModel"
           description: Service Unavailable
-      summary: Прочитать состояние ключа 2ip
+      summary: Прочитать сохранённый ключ 2ip
       tags:
         - Panel
     put:

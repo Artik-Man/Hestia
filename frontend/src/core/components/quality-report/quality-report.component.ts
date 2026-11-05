@@ -15,6 +15,7 @@ import {
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { HttpErrorResponse } from "@angular/common/http";
 import { FormsModule } from "@angular/forms";
+import { Toast } from "primeng/toast";
 import { ButtonDirective } from "primeng/button";
 import { Dialog } from "primeng/dialog";
 import { InputText } from "primeng/inputtext";
@@ -67,7 +68,15 @@ interface CheckDraft {
 /** QualityEditor owns independent dialogs for the individual checks and their shared scoring window. */
 @Component({
   selector: "hestia-quality-settings",
-  imports: [Tooltip, FormsModule, ButtonDirective, Dialog, InputText, Textarea],
+  imports: [
+    Toast,
+    Tooltip,
+    FormsModule,
+    ButtonDirective,
+    Dialog,
+    InputText,
+    Textarea,
+  ],
   templateUrl: "./quality-report.component.html",
   styleUrl: "../../../styles/quality.css",
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -165,6 +174,7 @@ export class QualityEditor {
       this.notices.show(
         "error",
         "Проверьте цели, параметры запроса, интервал и тайм-аут.",
+        "quality-settings",
       );
       return;
     }
@@ -241,6 +251,7 @@ export class QualityEditor {
     this.notices.show(
       "warn",
       "Настройка на шлюзе изменилась. Закройте окно и откройте её снова.",
+      "quality-settings",
     );
   }
 
@@ -269,6 +280,7 @@ export class QualityEditor {
             this.notices.show(
               "error",
               "Шлюз вернул некорректное подтверждение настроек.",
+              "quality-settings",
             );
             this.saved.emit();
             return;
@@ -282,7 +294,11 @@ export class QualityEditor {
               targets: original.targets.join("\n"),
             });
           } else this.dismiss();
-          this.notices.show("success", "Настройки проверок сохранены.");
+          this.notices.show(
+            "success",
+            "Настройки проверок сохранены.",
+            tcpDraft ? "quality-settings" : undefined,
+          );
           this.saved.emit();
         },
         error: (error: unknown) => {
@@ -301,6 +317,7 @@ export class QualityEditor {
           this.notices.show(
             "error",
             detail || "Не удалось сохранить настройки проверок.",
+            "quality-settings",
           );
           this.saved.emit();
         },

@@ -1,12 +1,6 @@
 <header class="intro">
   <h1>DNS</h1>
 </header>
-@if (error()) {
-  <p-message severity="error">{{ error() }}</p-message>
-}
-@if (success()) {
-  <p role="status" class="dns-success">{{ success() }}</p>
-}
 @if (needsReload()) {
   <button
     pButton

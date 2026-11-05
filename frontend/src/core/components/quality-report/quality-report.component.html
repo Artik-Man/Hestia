@@ -111,6 +111,12 @@
   >
     @if (draft(); as form) {
       @if (form.protocol === protocol) {
+        <p-toast
+          key="quality-settings"
+          class="gateway-toast"
+          position="top-right"
+          [life]="5500"
+        />
         <form
           #checkForm
           #editor="ngForm"
@@ -220,6 +226,12 @@
   (visibleChange)="!$event && dismiss()"
 >
   @if (windowDraft(); as form) {
+    <p-toast
+      key="quality-settings"
+      class="gateway-toast"
+      position="top-right"
+      [life]="5500"
+    />
     <form #windowEditor="ngForm" (ngSubmit)="saveWindow()">
       <fieldset [disabled]="saving()">
         <label
@@ -266,6 +278,12 @@
   (visibleChange)="!$event && dismiss()"
 >
   @if (deleting(); as item) {
+    <p-toast
+      key="quality-settings"
+      class="gateway-toast"
+      position="top-right"
+      [life]="5500"
+    />
     <p>Прекратить проверку {{ label(item.protocol) }} для всех подключений?</p>
     <div class="actions">
       <button

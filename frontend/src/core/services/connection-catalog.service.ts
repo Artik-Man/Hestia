@@ -82,6 +82,7 @@ export class ConnectionCatalog {
   reload(): void {
     this.loading.set(true);
     this.failed.set(false);
+    this.hysteriaFailed.set(false);
     this.requests.next();
   }
 

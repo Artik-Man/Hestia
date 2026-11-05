@@ -1,4 +1,9 @@
-<p-toast class="gateway-toast" position="top-right" [life]="5500" />
+<p-toast
+  [autoZIndex]="false"
+  class="gateway-toast"
+  position="top-right"
+  [life]="5500"
+/>
 <header class="mast">
   <div class="frame mast-inner">
     <div class="brand">
@@ -6,7 +11,7 @@
         >Hestia</span
       >
     </div>
-    <span class="mast-note">Панель шлюза</span>
+    <span class="mast-note">{{ version }}</span>
   </div>
 </header>
 <hestia-menu />

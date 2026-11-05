@@ -29,9 +29,6 @@ select {
 p {
   margin: 0.25rem 0;
 }
-.error {
-  color: var(--ui-danger);
-}
 
 .certificate-actions {
   display: flex;

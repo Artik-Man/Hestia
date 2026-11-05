@@ -90,7 +90,24 @@ test("domain lists persist after reload and compare edits against their original
       .click();
     await name.fill("Новые примеры");
     await save.click();
-    await dialog.getByRole("alert").waitFor();
+    await dialog
+      .locator("p-toast")
+      .getByText(/Конфликт сохранения/)
+      .waitFor();
+    const closeNotice = dialog
+      .locator("p-toast")
+      .getByRole("button", { name: "Закрыть" });
+    const controls = await dialog
+      .locator("button, input, textarea, [tabindex]")
+      .count();
+    for (let step = 0; step <= controls; step++) {
+      await page.keyboard.press("Tab");
+      if (await closeNotice.evaluate((button) => button.matches(":focus")))
+        break;
+    }
+    assert.ok(await closeNotice.evaluate((button) => button.matches(":focus")));
+    await page.keyboard.press("Enter");
+    await closeNotice.waitFor({ state: "hidden" });
     assert.equal(await name.inputValue(), "Новые примеры");
     assert.deepEqual(writes[1], {
       expected: {
@@ -129,6 +146,7 @@ test("domain lists persist after reload and compare edits against their original
     await name.fill("После проверки");
     await save.click();
     await dialog
+      .locator("p-toast")
       .getByRole("alert")
       .filter({ hasText: "Шлюз не подтвердил сохранение." })
       .waitFor();
@@ -152,7 +170,10 @@ test("domain lists persist after reload and compare edits against their original
     assert.equal(deletes.length, 0);
     await remove.click();
     await confirm.getByRole("button", { name: "Удалить", exact: true }).click();
-    await confirm.getByRole("alert").waitFor();
+    await confirm
+      .locator("p-toast")
+      .getByText(/Список изменился или шлюз занят/)
+      .waitFor();
     assert.deepEqual(deletes, [lists[0]]);
     assert.equal(
       await confirm

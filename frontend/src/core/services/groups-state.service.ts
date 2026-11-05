@@ -117,14 +117,13 @@ export class GroupsState {
     this.movement.set("Показан порядок шлюза.");
   }
 
-  readonly nameMessage = signal("");
-
   /** saveName validates the name locally, then preserves the draft on a recoverable gateway rejection. */
   saveName(previous: string | null, onComplete: () => void): void {
     if (this.pending() || this.dirty() || this.draft().changedSource) return;
     const name = this.newName().trim();
     if (!name || [...name].length > 80 || /\p{Cc}/u.test(name)) {
-      this.nameMessage.set(
+      this.notifications.show(
+        "error",
         "Введите от 1 до 80 символов без управляющих знаков.",
       );
       return;
@@ -136,11 +135,13 @@ export class GroupsState {
         (group) => group.id !== previous && (group.name ?? group.id) === name,
       )
     ) {
-      this.nameMessage.set("Группа с таким названием уже существует.");
+      this.notifications.show(
+        "error",
+        "Группа с таким названием уже существует.",
+      );
       return;
     }
     this.pending.set(true);
-    this.nameMessage.set("");
     const operation =
       previous === null
         ? this.api.createGroup({ name }, "response")

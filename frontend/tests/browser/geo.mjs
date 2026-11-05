@@ -101,7 +101,10 @@ test("country matrix keeps explicit choices when the default changes", async () 
       saved,
     );
     await page.goto("http://127.0.0.1/#/country-map");
-    await page.getByRole("alert").first().waitFor();
+    await page
+      .locator("p-toast")
+      .getByText("Не удалось загрузить назначения со шлюза.")
+      .waitFor();
     assert.equal(await page.getByRole("switch").count(), 0);
     await page
       .getByRole("button", { name: "Повторить загрузку" })
@@ -176,6 +179,10 @@ test("country matrix keeps explicit choices when the default changes", async () 
       gate.resolve();
     }
     await success;
+    await page
+      .locator("p-toast")
+      .getByText("Маршруты по странам сохранены.")
+      .waitFor();
     holdWrite = undefined;
     await page.waitForFunction(
       () => document.querySelector("#country-routing")?.disabled === false,
@@ -208,7 +215,14 @@ test("country matrix keeps explicit choices when the default changes", async () 
       const response = saveResponse(status);
       await save.press("Enter");
       await response;
-      await page.getByRole("alert").first().waitFor();
+      await page
+        .locator("p-toast")
+        .getByText(
+          status === 503
+            ? /Не удалось подтвердить сохранение маршрутов/
+            : /Карта изменилась/,
+        )
+        .waitFor();
       assert.equal(await enabled.isChecked(), false);
       assert.equal(saved.enabled, true);
     }

@@ -13,7 +13,7 @@ test("DNS edits independent lists, rejects stale writes and preserves draft sett
       viewport: { width: 360, height: 800 },
     });
     page.setDefaultTimeout(6000);
-    let hasKey = false;
+    let savedKey = "";
     const keyWrites = [];
     let revision = 0,
       available = true,
@@ -42,9 +42,11 @@ test("DNS edits independent lists, rejects stale writes and preserves draft sett
         if (route.request().method() === "PUT") {
           const { token } = route.request().postDataJSON();
           keyWrites.push(token);
-          hasKey = Boolean(token);
+          savedKey = token;
         }
-        return route.fulfill({ json: { configured: hasKey } });
+        return route.fulfill({
+          json: { configured: Boolean(savedKey), token: savedKey },
+        });
       }
       if (path === "/api/dns/policy") {
         if (route.request().method() === "PUT") {
@@ -88,21 +90,22 @@ test("DNS edits independent lists, rejects stale writes and preserves draft sett
       });
     });
     await page.goto("http://127.0.0.1/#/dns");
-    const key = page.getByLabel("Новый ключ API 2ip.io");
+    const key = page.getByLabel("Ключ API 2ip.io");
     await page.getByText("Ключ 2ip.io не задан.").waitFor();
-    assert.equal(await key.getAttribute("type"), "password");
+    assert.equal(await key.getAttribute("type"), "text");
     await key.fill("fixture-first");
     await page.getByRole("button", { name: "Сохранить ключ" }).click();
     await page.getByText("Ключ 2ip.io настроен.").waitFor();
-    assert.equal(await key.inputValue(), "");
+    assert.equal(await key.inputValue(), "fixture-first");
     await key.fill("fixture-replacement");
     await page.getByRole("button", { name: "Заменить ключ" }).click();
-    await page.getByText("Ключ заменён.").waitFor();
+    await page.locator("p-toast").getByText("Ключ заменён.").waitFor();
     await page.reload();
     await page.getByText("Ключ 2ip.io настроен.").waitFor();
-    assert.equal(await key.inputValue(), "");
+    assert.equal(await key.inputValue(), "fixture-replacement");
     await page.getByRole("button", { name: "Удалить ключ" }).click();
     await page.getByText("Ключ 2ip.io не задан.").waitFor();
+    assert.equal(await key.inputValue(), "");
     assert.deepEqual(keyWrites, ["fixture-first", "fixture-replacement", ""]);
     const automatic = page.getByRole("region", {
       name: "Автоматически добавленные",
@@ -154,7 +157,11 @@ test("DNS edits independent lists, rejects stale writes and preserves draft sett
     await page
       .getByRole("button", { name: "Сохранить настройки" })
       .press("Enter");
-    await page.getByText("Настройки DNS сохранены.").waitFor();
+    const savedNotice = page.locator("p-toast [role=alert]").filter({
+      hasText: "Настройки DNS сохранены.",
+    });
+    await savedNotice.getByRole("button", { name: "Закрыть" }).click();
+    await savedNotice.waitFor({ state: "hidden" });
     assert.equal(revision, 1);
     await threshold.fill("6");
     await threshold.press("Tab");
@@ -192,7 +199,10 @@ test("DNS edits independent lists, rejects stale writes and preserves draft sett
     assert.deepEqual(policy.exclusions, ["changed.example"]);
     await excludeInput.fill("changed.example");
     await excludeInput.press("Enter");
-    await excluded.getByText("Такой домен уже есть в списке.").waitFor();
+    await page
+      .locator("p-toast")
+      .getByText("Такой домен уже есть в списке.")
+      .waitFor();
     await manual
       .getByRole("button", { name: "Удалить из ручного списка: cdn.example" })
       .press("Enter");
@@ -201,12 +211,15 @@ test("DNS edits independent lists, rejects stale writes and preserves draft sett
     await page
       .getByRole("button", { name: "Сохранить настройки" })
       .press("Enter");
-    await page.getByText("Настройки DNS сохранены.").waitFor();
+    await savedNotice.waitFor();
     assert.equal(policy.settings.threshold, 6);
     revision++;
     await manualInput.fill("conflict.example");
     await manualInput.press("Enter");
-    await page.getByText(/Настройки изменились/).waitFor();
+    await page
+      .locator("p-toast")
+      .getByText(/Настройки изменились/)
+      .waitFor();
     assert.deepEqual(policy.manual, []);
     available = false;
     await page

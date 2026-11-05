@@ -505,9 +505,16 @@ p-toast.gateway-toast {
   position: fixed;
   top: 1rem;
   right: 1rem;
-  z-index: 1000;
+  /* Keep page notifications above PrimeNG dialogs and their dropdowns. */
+  z-index: 4000;
   width: min(24rem, calc(100vw - 2rem));
   pointer-events: none;
+}
+/* Reserve space for a message inside the dialog so its actions stay reachable. */
+.p-dialog p-toast.gateway-toast {
+  /* PrimeNG sets fixed positioning directly on the toast element. */
+  position: static !important;
+  width: 100%;
 }
 .gateway-toast-success,
 .gateway-toast-warn,

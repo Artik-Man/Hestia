@@ -82,7 +82,7 @@ func TestProviderWorker(t *testing.T) {
 		t.Fatal("unsafe key mode")
 	}
 	restored, err := NewEnrichment(dir, sets)
-	if err != nil || !restored.Configured() || restored.Country(ip.String()) != "CH" {
+	if err != nil || restored.Token() != "rotated" || restored.Country(ip.String()) != "CH" {
 		t.Fatalf("persisted correction: %v", err)
 	}
 	restored.flush(now.Add(cacheLife))
@@ -90,7 +90,7 @@ func TestProviderWorker(t *testing.T) {
 	if err != nil || string(record) != `{"version":3,"rules":[]}` || restored.Country(ip.String()) != "" {
 		t.Fatalf("expired route overlay: %s %v", record, err)
 	}
-	if err = restored.SetToken(""); err != nil || restored.Configured() {
+	if err = restored.SetToken(""); err != nil || restored.Token() != "" {
 		t.Fatalf("clear key: %v", err)
 	}
 }

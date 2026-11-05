@@ -882,7 +882,12 @@ test("Hysteria 2 imports a YAML and PEM pair, preserves the secret on rename and
         "server: vpn.example:4443\nauth: demo-password\ntls: { ca: ca.pem }\nsocks5: { listen: 127.0.0.1:1080 }",
       ),
     });
-    await expect(dialog.getByText(/Локальный SOCKS5/)).toBeVisible();
+    await expect(
+      dialog
+        .locator("p-toast")
+        .getByRole("alert")
+        .filter({ hasText: /Локальный SOCKS5/ }),
+    ).toBeVisible();
     await expect(dialog.getByLabel("Пароль", { exact: true })).toHaveAttribute(
       "type",
       "text",

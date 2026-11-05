@@ -114,6 +114,7 @@ test("groups preserve names, show modal and page Toasts, and require confirmatio
     await name.fill("main");
     await dialog.getByRole("button", { name: "Сохранить" }).click();
     await dialog
+      .locator("p-toast")
       .getByText("Группа с таким названием уже существует.")
       .waitFor();
     await name.fill("Занято на шлюзе");

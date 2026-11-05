@@ -16,9 +16,11 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { HttpErrorResponse } from "@angular/common/http";
 import type { TrafficSettings } from "../../services/api/generated/model/trafficSettings";
 import { timeout } from "rxjs";
+import { Toast } from "primeng/toast";
 import { ButtonDirective } from "primeng/button";
 import { DialogModule } from "primeng/dialog";
 import { InputText } from "primeng/inputtext";
+import { Notifications } from "../../services/notifications.service";
 import { PanelService } from "../../services/api/generated/api/panel.service";
 import {
   trafficLimits,
@@ -28,19 +30,26 @@ import {
 /** TrafficSettingsDialog reads effective limits on open and closes only after cancellation or a confirmed save. */
 @Component({
   selector: "hestia-traffic-settings",
-  imports: [ButtonDirective, DialogModule, InputText, ReactiveFormsModule],
+  imports: [
+    Toast,
+    ButtonDirective,
+    DialogModule,
+    InputText,
+    ReactiveFormsModule,
+  ],
   templateUrl: "./traffic-settings.component.html",
   styleUrl: "../../../styles/traffic-quality.css",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TrafficSettingsDialog {
   private readonly api = inject(PanelService);
+  private readonly notifications = inject(Notifications);
   private readonly destroyRef = inject(DestroyRef);
   readonly closed = output<void>();
   readonly saved = output<void>();
   protected readonly expected = signal<TrafficSettings | null>(null);
   protected readonly saving = signal(false);
-  protected readonly error = signal("");
+  protected readonly needsReload = signal(false);
   protected readonly limits = trafficLimits;
   protected readonly form = new FormGroup({
     maxMB: new FormControl(1024, {
@@ -70,7 +79,7 @@ export class TrafficSettingsDialog {
 
   /** reload replaces the draft and write precondition with the effective settings read from the gateway. */
   protected reload(): void {
-    this.error.set("");
+    this.needsReload.set(false);
     this.expected.set(null);
     this.api
       .getTrafficSettings()
@@ -80,9 +89,11 @@ export class TrafficSettingsDialog {
           if (validTrafficSettings(value)) {
             this.form.reset(value);
             this.expected.set(this.form.getRawValue());
-          } else this.error.set("Шлюз вернул некорректные настройки журнала.");
+          } else
+            this.requireReload("Шлюз вернул некорректные настройки журнала.");
         },
-        error: () => this.error.set("Не удалось прочитать настройки журнала."),
+        error: () =>
+          this.requireReload("Не удалось прочитать настройки журнала."),
       });
   }
 
@@ -90,7 +101,6 @@ export class TrafficSettingsDialog {
   protected save(): void {
     const expected = this.expected();
     if (!expected || this.form.invalid || this.saving()) return;
-    this.error.set("");
     this.saving.set(true);
     const requested = this.form.getRawValue();
     this.api
@@ -104,22 +114,41 @@ export class TrafficSettingsDialog {
             result.maxMB !== requested.maxMB ||
             result.retentionHours !== requested.retentionHours
           ) {
-            this.error.set("Шлюз не подтвердил настройки журнала.");
+            this.notifications.show(
+              "error",
+              "Шлюз не подтвердил настройки журнала.",
+              "traffic-settings",
+            );
             return;
           }
+          this.notifications.show("success", "Настройки журнала сохранены.");
           this.saved.emit();
         },
         error: (failure: unknown) => {
           this.saving.set(false);
           if (failure instanceof HttpErrorResponse && failure.status === 409) {
-            this.expected.set(null);
-            this.error.set(
+            this.requireReload(
               "Настройки изменились на шлюзе. Загрузите актуальные значения и проверьте лимиты перед сохранением.",
+              "warn",
             );
             return;
           }
-          this.error.set("Не удалось сохранить настройки журнала.");
+          this.notifications.show(
+            "error",
+            "Не удалось сохранить настройки журнала.",
+            "traffic-settings",
+          );
         },
       });
+  }
+
+  /** requireReload disables stale writes and leaves the dialog ready to fetch current settings. */
+  private requireReload(
+    message: string,
+    severity: "error" | "warn" = "error",
+  ): void {
+    this.expected.set(null);
+    this.needsReload.set(true);
+    this.notifications.show(severity, message, "traffic-settings");
   }
 }

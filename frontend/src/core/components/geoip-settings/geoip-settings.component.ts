@@ -10,10 +10,11 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { FormControl, ReactiveFormsModule } from "@angular/forms";
 import { ButtonDirective } from "primeng/button";
 import { InputText } from "primeng/inputtext";
+import { Notifications } from "../../services/notifications.service";
 import { timeout } from "rxjs";
 import { PanelService } from "../../services/api/generated/api/panel.service";
 
-/** GeoipSettings edits a write-only 2ip credential independently of DNS cache policy. */
+/** GeoipSettings displays and edits the saved 2ip credential independently of DNS cache policy. */
 @Component({
   selector: "hestia-geoip-settings",
   imports: [ButtonDirective, InputText, ReactiveFormsModule],
@@ -26,25 +27,25 @@ export class GeoipSettings {
   private readonly destroyRef = inject(DestroyRef);
   protected readonly token = new FormControl("", { nonNullable: true });
   protected readonly configured = signal<boolean | null>(null);
+  protected readonly savedToken = signal("");
   protected readonly busy = signal(false);
-  protected readonly error = signal("");
-  protected readonly replaced = signal(false);
+  private readonly notifications = inject(Notifications);
 
-  /** Reads only whether the gateway has a credential when the settings open. */
+  /** Loads the saved key when settings open. */
   constructor() {
     this.read();
   }
 
-  /** read refreshes confirmed state without exposing saved key material. */
+  /** read loads the confirmed key for display. */
   protected read(): void {
     this.submit();
   }
 
-  /** save submits a replacement key or an explicit removal, then clears the secret input. */
+  /** save submits a replacement key or an explicit removal, and displays the confirmed value. */
   protected save(remove = false): void {
     if (this.configured() === null) return;
     const token = remove ? "" : this.token.value.trim();
-    if (!remove && !token) return;
+    if (token === this.savedToken() || (!remove && !token)) return;
     this.submit(token);
   }
 
@@ -52,14 +53,10 @@ export class GeoipSettings {
   private submit(token?: string): void {
     if (this.busy()) return;
     this.busy.set(true);
-    this.error.set("");
-    this.replaced.set(false);
-    const expected = token === undefined ? undefined : Boolean(token);
     const request =
       token === undefined
         ? this.api.getDnsGeoip()
         : this.api.updateDnsGeoip({ token });
-    this.token.reset();
     request
       .pipe(timeout(10000), takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -70,9 +67,22 @@ export class GeoipSettings {
             body !== null &&
             "configured" in body &&
             typeof body.configured === "boolean" &&
-            (expected === undefined || body.configured === expected)
+            "token" in body &&
+            typeof body.token === "string" &&
+            body.token.length <= 256 &&
+            body.configured === Boolean(body.token) &&
+            (token === undefined || body.token === token)
           ) {
-            this.replaced.set(expected === true && this.configured() === true);
+            if (token !== undefined) {
+              const message = !token
+                ? "Ключ удалён."
+                : this.configured()
+                  ? "Ключ заменён."
+                  : "Ключ сохранён.";
+              this.notifications.show("success", message);
+            }
+            this.savedToken.set(body.token);
+            this.token.reset(body.token);
             this.configured.set(body.configured);
           } else {
             this.failed();
@@ -81,11 +91,12 @@ export class GeoipSettings {
         error: (error: unknown) => {
           this.busy.set(false);
           if (
-            expected !== undefined &&
+            token !== undefined &&
             error instanceof HttpErrorResponse &&
             [400, 413, 422].includes(error.status)
           ) {
-            this.error.set(
+            this.notifications.show(
+              "error",
               "Шлюз отклонил ключ. Проверьте значение и повторите сохранение.",
             );
             return;
@@ -98,7 +109,8 @@ export class GeoipSettings {
   /** failed hides stale key state until the operator reloads it. */
   private failed(): void {
     this.configured.set(null);
-    this.error.set(
+    this.notifications.show(
+      "error",
       "Не удалось подтвердить состояние ключа на шлюзе. Перечитайте настройки.",
     );
   }

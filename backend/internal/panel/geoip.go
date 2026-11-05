@@ -12,26 +12,32 @@ import (
 
 const geoIPSettingsPath = "/api/dns/geoip"
 
-// DNSGeoIPSettings reports whether new public destinations can be submitted to 2ip.
+// DNSGeoIPSettings reports the current 2ip key and whether enrichment is enabled.
 type DNSGeoIPSettings struct {
-	Configured bool `json:"configured" doc:"Ключ 2ip сохранён"`
+	Token      string `json:"token" maxLength:"256" doc:"Сохранённый ключ 2ip или пустая строка, если ключ не задан."`
+	Configured bool   `json:"configured" doc:"Ключ 2ip сохранён"`
 }
 
-// DNSGeoIPUpdate replaces the write-only 2ip token; an explicit empty value disables new requests.
+// DNSGeoIPUpdate replaces the saved 2ip token; an explicit empty value disables new requests.
 type DNSGeoIPUpdate struct {
-	Token string `json:"token" maxLength:"256" writeOnly:"true" doc:"Новый ключ 2ip. Пустая строка отключает запросы к сервису."`
+	Token string `json:"token" maxLength:"256" doc:"Новый ключ 2ip. Пустая строка отключает запросы к сервису."`
 }
 
 type geoIPSettingsOutput struct{ Body DNSGeoIPSettings }
 type geoIPSettingsInput struct{ Body DNSGeoIPUpdate }
 
-// registerGeoIP serves write-only provider configuration without exposing credentials in errors or GET responses.
+// geoIPSettings returns the token and its configured flag from a single saved value.
+func geoIPSettings(token string) *geoIPSettingsOutput {
+	return &geoIPSettingsOutput{Body: DNSGeoIPSettings{Token: token, Configured: token != ""}}
+}
+
+// registerGeoIP serves the saved provider key to the settings panel and omits it from errors.
 func registerGeoIP(api huma.API, provider *geoip.Enrichment) {
-	huma.Register(api, huma.Operation{OperationID: "getDnsGeoip", Tags: []string{"Panel"}, Method: http.MethodGet, Path: geoIPSettingsPath, Summary: "Прочитать состояние ключа 2ip", Errors: []int{503}}, func(context.Context, *struct{}) (*geoIPSettingsOutput, error) {
+	huma.Register(api, huma.Operation{OperationID: "getDnsGeoip", Tags: []string{"Panel"}, Method: http.MethodGet, Path: geoIPSettingsPath, Summary: "Прочитать сохранённый ключ 2ip", Errors: []int{503}}, func(context.Context, *struct{}) (*geoIPSettingsOutput, error) {
 		if provider == nil {
 			return nil, huma.Error503ServiceUnavailable("Настройки GeoIP недоступны")
 		}
-		return &geoIPSettingsOutput{Body: DNSGeoIPSettings{Configured: provider.Configured()}}, nil
+		return geoIPSettings(provider.Token()), nil
 	})
 	huma.Register(api, huma.Operation{OperationID: "updateDnsGeoip", RequestBody: &huma.RequestBody{Description: "Ключ для фоновых запросов GeoIP"}, Tags: []string{"Panel"}, Method: http.MethodPut, Path: geoIPSettingsPath, Summary: "Заменить или удалить ключ 2ip", MaxBodyBytes: 2048, Errors: []int{422, 503}}, func(_ context.Context, in *geoIPSettingsInput) (*geoIPSettingsOutput, error) {
 		if provider == nil {
@@ -44,7 +50,7 @@ func registerGeoIP(api huma.API, provider *geoip.Enrichment) {
 		if err != nil {
 			return nil, huma.Error503ServiceUnavailable("Не удалось сохранить настройки GeoIP")
 		}
-		return &geoIPSettingsOutput{Body: DNSGeoIPSettings{Configured: provider.Configured()}}, nil
+		return geoIPSettings(provider.Token()), nil
 	})
 }
 

@@ -14,5 +14,9 @@ export interface DNSGeoIPSettings {
      * Ключ 2ip сохранён
      */
     configured: boolean;
+    /**
+     * Сохранённый ключ 2ip или пустая строка, если ключ не задан.
+     */
+    token: string;
 }
 

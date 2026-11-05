@@ -31,8 +31,8 @@
 </header>
 <section aria-label="Записи журнала">
   @if (error()) {
-    <p role="alert" class="notice failure">
-      Не удалось загрузить события. Повторите запрос кнопкой «Обновить».
+    <p class="notice">
+      Записи недоступны. Повторите запрос кнопкой «Обновить».
     </p>
   }
   @if (!sourceAvailable()) {

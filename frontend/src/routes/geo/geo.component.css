@@ -101,14 +101,11 @@ td {
   text-align: right;
 }
 .save-status {
-  block-size: 3.75em;
+  block-size: 1.25em;
   line-height: 1.25;
   overflow: auto;
   font-size: 0.85rem;
   color: var(--ui-muted);
-}
-.save-status [role="alert"] {
-  color: var(--ui-warning);
 }
 @media (max-width: 600px) {
   .controls {

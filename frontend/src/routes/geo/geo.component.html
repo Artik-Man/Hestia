@@ -2,8 +2,8 @@
   <h1>Маршруты по странам</h1>
 </header>
 @if (inventory.view().kind === "failed") {
-  <p class="notice failure" role="alert">
-    Не удалось загрузить группы.
+  <p class="notice">
+    Группы подключений недоступны.
     <button pButton type="button" (click)="inventory.reload()">
       Повторить загрузку
     </button>
@@ -15,7 +15,7 @@
 } @else if (state.phase() === "loading") {
   <p role="status">Загружаем назначения стран…</p>
 } @else if (state.phase() === "failed") {
-  <p role="alert">{{ state.warning() }}</p>
+  <p class="notice">Назначения стран недоступны.</p>
   <button pButton type="button" (click)="state.load()">
     Повторить загрузку
   </button>
@@ -60,14 +60,10 @@
           Сохранить
         </button>
         <div class="save-status" aria-live="polite">
-          @if (state.warning()) {
-            <span role="alert">{{ state.warning() }}</span>
-          } @else if (state.phase() === "saving") {
+          @if (state.phase() === "saving") {
             <span>Сохраняем…</span>
           } @else if (state.dirty()) {
             <span>Есть изменения</span>
-          } @else if (state.saved()) {
-            <span>Сохранено</span>
           }
         </div>
       </div>

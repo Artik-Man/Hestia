@@ -1,3 +1,4 @@
+import { Toast } from "primeng/toast";
 import { Tooltip } from "primeng/tooltip";
 import { Notifications } from "../../services/notifications.service";
 import { groupName, isRuleList } from "../../models/snapshot";
@@ -53,6 +54,7 @@ function invalidMasks(masks: readonly string[]): readonly string[] {
 @Component({
   selector: "hestia-domain-lists",
   imports: [
+    Toast,
     Tooltip,
     ButtonDirective,
     Dialog,
@@ -68,6 +70,8 @@ function invalidMasks(masks: readonly string[]): readonly string[] {
 })
 export class DomainLists {
   private readonly notifications = inject(Notifications);
+  protected readonly editorToast = "domain-list-editor";
+  protected readonly deletionToast = "domain-list-deletion";
   protected readonly groupName = groupName;
   readonly lists = input.required<readonly RuleList[]>();
   readonly groups = input.required<readonly Group[]>();
@@ -76,7 +80,6 @@ export class DomainLists {
   private readonly api = inject(PanelService);
   private readonly snapshot = inject(SnapshotState);
   protected readonly pending = signal(false);
-  protected readonly failure = signal("");
   protected readonly needsRefresh = signal(false);
   protected readonly deleting = signal<RuleList | null>(null);
   protected readonly editor = signal<EditorValues | null>(null);
@@ -134,7 +137,6 @@ export class DomainLists {
   /** confirmDeletion retains the selected snapshot for the conditional DELETE after explicit confirmation. */
   protected confirmDeletion(list: RuleList, trigger: HTMLButtonElement): void {
     this.editorTrigger = trigger;
-    this.failure.set("");
     this.needsRefresh.set(false);
     this.deleting.set(list);
   }
@@ -173,18 +175,19 @@ export class DomainLists {
   /** reportDeletionFailure keeps the confirmation open and prevents retrying with stale list fields. */
   private reportDeletionFailure(status: number): void {
     this.needsRefresh.set(true);
-    this.failure.set(
+    this.notifications.show(
+      "error",
       status === 409
         ? "Список изменился или шлюз занят. Обновите списки перед повторной попыткой."
         : status === 404
           ? "Список больше не существует. Обновите списки."
           : "Шлюз не подтвердил удаление. Обновите списки, чтобы проверить результат.",
+      this.deletionToast,
     );
   }
 
   /** open stores form values and resets transient help state before PrimeNG displays the dialog. */
   private open(values: EditorValues): void {
-    this.failure.set("");
     this.needsRefresh.set(false);
     this.editor.set(values);
     this.groupControl.setValue(values.group);
@@ -213,7 +216,6 @@ export class DomainLists {
       ? this.api.updateDomainList(expected.id, { expected, list }, "response")
       : this.api.createDomainList(list, "response");
     this.pending.set(true);
-    this.failure.set("");
     this.groupControl.disable();
     operation.pipe(timeout(310000)).subscribe({
       next: (response) => {
@@ -249,20 +251,24 @@ export class DomainLists {
   /** reportFailure preserves the attempted edit and requires a new snapshot when the write outcome is uncertain. */
   private reportFailure(status: number): void {
     if (status === 422 || status === 413) {
-      this.failure.set(
+      this.notifications.show(
+        "error",
         status === 413
           ? "Список слишком большой для сохранения."
           : "Шлюз отклонил значения. Проверьте название, маски и выбранную группу.",
+        this.editorToast,
       );
       return;
     }
     this.needsRefresh.set(true);
-    this.failure.set(
+    this.notifications.show(
+      "error",
       status === 409
         ? "Конфликт сохранения. Название занято, список изменился или шлюз занят. Обновите списки перед повторной попыткой."
         : status === 404
           ? "Список или выбранная группа больше не существует. Обновите списки перед повторной попыткой."
           : "Шлюз не подтвердил сохранение. Обновите списки, чтобы проверить результат.",
+      this.editorToast,
     );
   }
 

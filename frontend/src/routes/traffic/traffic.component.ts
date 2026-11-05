@@ -23,6 +23,7 @@ import { InputText } from "primeng/inputtext";
 import { SelectModule } from "primeng/select";
 import { Table, TableModule } from "primeng/table";
 import type { TableLazyLoadEvent } from "primeng/types/table";
+import { Notifications } from "../../core/services/notifications.service";
 import { PanelService } from "../../core/services/api/generated/api/panel.service";
 import type { TrafficEvent } from "../../core/services/api/generated/model/trafficEvent";
 import { ConnectionCatalog } from "../../core/services/connection-catalog.service";
@@ -51,6 +52,7 @@ import { trafficLimits, validTrafficPage } from "./traffic-observations";
 export class TrafficScreen {
   private readonly api = inject(PanelService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly notifications = inject(Notifications);
   private readonly catalog = inject(ConnectionCatalog);
   private readonly table = viewChild(Table);
   protected readonly query = new FormControl("", { nonNullable: true });
@@ -195,7 +197,6 @@ export class TrafficScreen {
   private read(offset: number, limit: number): void {
     this.request?.unsubscribe();
     this.busy.set(true);
-    this.error.set(false);
     this.pageStart = offset;
     this.pageEnd = offset + limit;
     const snapshot = this.snapshot;
@@ -219,6 +220,7 @@ export class TrafficScreen {
             this.fail();
             return;
           }
+          this.error.set(false);
           this.snapshot = value.snapshot;
           this.total.set(value.total);
           if (this.windowStart() > 0 && this.windowStart() >= value.total) {
@@ -257,6 +259,8 @@ export class TrafficScreen {
   /** fail leaves a visible retry path without reporting a read failure as an empty journal. */
   private fail(): void {
     this.busy.set(false);
+    if (!this.error())
+      this.notifications.show("error", "Не удалось загрузить события журнала.");
     this.error.set(true);
     this.pageStart = 0;
     this.pageEnd = 0;

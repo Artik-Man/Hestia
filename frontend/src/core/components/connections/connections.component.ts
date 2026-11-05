@@ -147,8 +147,15 @@ export class Connections implements OnInit {
       );
   });
 
-  /** Reports catalog read failures through the active page or modal toast. */
+  /** Reports each catalog read failure through the active page or modal toast. */
   constructor() {
+    effect(() => {
+      if (this.catalog.hysteriaFailed())
+        this.messages.show(
+          "error",
+          "Не удалось загрузить подключения Hysteria 2.",
+        );
+    });
     effect(() => {
       if (this.catalog.failed())
         this.messages.show(

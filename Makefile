@@ -49,3 +49,7 @@ generate-api:
 .PHONY: stage1-fresh
 stage1-fresh:
 	bash deploy/stage1-awg-update.sh --fresh
+
+.PHONY: push
+push:
+	sh tools/push-version.sh

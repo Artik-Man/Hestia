@@ -1110,7 +1110,7 @@ export class PanelService extends BaseService {
     }
 
     /**
-     * Прочитать состояние ключа 2ip
+     * Прочитать сохранённый ключ 2ip
      * @endpoint get /api/dns/geoip
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.

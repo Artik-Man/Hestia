@@ -235,7 +235,10 @@ test("traffic journal reaches rows past 500 and refresh preserves its filters", 
     await dialog.getByLabel("Срок хранения, ч").fill("1");
     settings = { maxMB: 2048, retentionHours: 96 };
     await dialog.getByRole("button", { name: "Сохранить" }).click();
-    await dialog.getByText(/Настройки изменились на шлюзе/).waitFor();
+    await dialog
+      .locator("p-toast")
+      .getByText(/Настройки изменились на шлюзе/)
+      .waitFor();
     assert.deepEqual(writes, [
       {
         expected: { maxMB: 1024, retentionHours: 24 },
@@ -257,6 +260,10 @@ test("traffic journal reaches rows past 500 and refresh preserves its filters", 
     await dialog.getByLabel("Срок хранения, ч").fill("72");
     await dialog.getByRole("button", { name: "Сохранить" }).click();
     await dialog.waitFor({ state: "hidden" });
+    await page
+      .locator("p-toast")
+      .getByText("Настройки журнала сохранены.")
+      .waitFor();
     assert.deepEqual(settings, { maxMB: 512, retentionHours: 72 });
     sourceAvailable = false;
     await page.getByRole("button", { name: "Обновить журнал" }).click();

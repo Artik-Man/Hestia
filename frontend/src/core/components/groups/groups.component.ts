@@ -77,7 +77,6 @@ export class Groups implements OnInit {
   protected openEditor(dialog: HTMLDialogElement, group: string | null): void {
     this.editing = group;
     this.order.newName.set(group === null ? "" : this.groupName(group));
-    this.order.nameMessage.set("");
     this.changeDetector.detectChanges();
     dialog.showModal();
     dialog.querySelector("input")?.select();

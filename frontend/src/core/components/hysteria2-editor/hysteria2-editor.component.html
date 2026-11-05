@@ -1,9 +1,16 @@
 <dialog
+  id="hysteria2-editor"
   #dialog
   class="gateway-dialog"
   aria-labelledby="hy-title"
   (cancel)="close($event)"
 >
+  <p-toast
+    key="hysteria2-editor"
+    class="gateway-toast"
+    position="top-right"
+    [life]="5500"
+  />
   <form #form="ngForm" (ngSubmit)="save()">
     <h2 id="hy-title">
       {{
@@ -14,6 +21,8 @@
     </h2>
     @if (reading()) {
       <p role="status">Загрузка профиля…</p>
+    } @else if (readFailed()) {
+      <p>Профиль недоступен.</p>
     }
     <fieldset [disabled]="busy() || reading() || readFailed()">
       <label
@@ -24,9 +33,6 @@
           accept=".yaml,.yml"
           (change)="readFile(yamlFile, 'yaml')"
       /></label>
-      @if (notice()) {
-        <p role="status">{{ notice() }}</p>
-      }
       <label
         >Название подключения
         <input
@@ -131,9 +137,6 @@
         }
       }
     </fieldset>
-    @if (error()) {
-      <p class="error" role="alert">{{ error() }}</p>
-    }
     <div class="actions">
       <button
         pButton
