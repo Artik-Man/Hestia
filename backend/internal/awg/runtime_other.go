@@ -23,7 +23,7 @@ func (InstalledRuntime) ServeReadyConnector(context.Context, string) error {
 
 // RetireStoppedConnector accepts an absent manifest on development hosts and fails closed if cleanup needs Linux.
 func RetireStoppedConnector(_ context.Context, id string, slot int, legacy bool) error {
-	if !identifierPattern.MatchString(id) || slot < 0 || slot >= SlotCount {
+	if !ValidConnectionID(id) || slot < 0 || slot >= SlotCount {
 		return errors.New("invalid AWG runtime identity")
 	}
 	path := "/run/hestia-awg/routes.json"

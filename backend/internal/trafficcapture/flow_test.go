@@ -59,7 +59,7 @@ func TestRouteFormats(t *testing.T) {
 		"[2 0ms] inbound/socks[0]: inbound connection to multi.example:443",
 		"[2 0ms] router: resolved [192.0.2.1 192.0.2.2]",
 		"[2 1ms] outbound/block[closed-link]: blocked connection to multi.example:443",
-		"[3 1ms] router: pre-match: forward udp connection from 10.0.0.5 to 2001:db8::3 via outbound/wireguard[wg]",
+		"[3 1ms] router: pre-match: forward udp connection from 10.0.0.5 to 2001:db8::3 via outbound/wireguard[12345678-1234-4567-890a-123456789abc]",
 		"[4 0ms] inbound/socks[0]: inbound connection to 192.0.2.2:443",
 		"[4 0ms] router: sniffed protocol: tls, domain: host.example, client: chrome",
 		"[4 1ms] outbound/direct[wan]: outbound connection to 192.0.2.2:443",
@@ -75,7 +75,7 @@ func TestRouteFormats(t *testing.T) {
 	if events[1].Address != "" || events[1].Kind != traffic.Blocked || events[1].Connection != "" {
 		t.Fatalf("blocked: %+v", events[1])
 	}
-	if events[2].Port != 0 || events[2].Connection != "wg" || events[2].Protocol != "UDP" || events[2].Address != "2001:db8::3" {
+	if events[2].Port != 0 || events[2].Connection != "12345678-1234-4567-890a-123456789abc" || events[2].Protocol != "UDP" || events[2].Address != "2001:db8::3" {
 		t.Fatalf("fast path: %+v", events[2])
 	}
 	if events[3].Domain != "host.example" || events[3].Address != "192.0.2.2" {

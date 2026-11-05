@@ -1,7 +1,10 @@
 import { Injectable, inject, signal } from "@angular/core";
 import { PanelService } from "./api/generated/api/panel.service";
 import type { AWGUnderlayCandidate } from "./api/generated/model/aWGUnderlayCandidate";
-import { isUnderlayCandidate } from "../models/awg-connection";
+import {
+  isConnectionUUID,
+  isUnderlayCandidate,
+} from "../models/awg-connection";
 import { Subject, catchError, map, of, switchMap, timeout } from "rxjs";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 
@@ -17,7 +20,7 @@ export class ConnectionCatalog {
   readonly loading = signal(false);
   readonly failed = signal(false);
 
-  /** Publishes only the latest validated response and falls back to gateway IDs on a failed read. */
+  /** Publishes only the latest validated catalog and records failed reads. */
   constructor() {
     this.requests
       .pipe(
@@ -52,8 +55,19 @@ export class ConnectionCatalog {
     this.requests.next();
   }
 
-  /** name preserves the gateway ID when an exit has no public label or the catalog is unavailable. */
+  /** name resolves public labels and hides technical UUIDs even when the catalog is unavailable. */
   name(id: string): string {
-    return this.entries().get(id)?.name ?? id;
+    return (
+      this.entries().get(id)?.name ??
+      (isConnectionUUID(id) ? "Название недоступно" : id)
+    );
+  }
+
+  /** describe resolves connection UUIDs embedded in route diagnostics to their public labels. */
+  describe(message: string): string {
+    return message.replace(
+      /\b(?:g-)?[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\b/gu,
+      (token) => (token.startsWith("g-") ? token : this.name(token)),
+    );
   }
 }

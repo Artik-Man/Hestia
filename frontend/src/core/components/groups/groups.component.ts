@@ -22,7 +22,6 @@ import { FormsModule } from "@angular/forms";
 import { Toast } from "primeng/toast";
 import { InputText } from "primeng/inputtext";
 import { ButtonDirective } from "primeng/button";
-import { RouterLink } from "@angular/router";
 import type { Snapshot } from "../../services/api/generated/model/snapshot";
 import { groupName } from "../../models/snapshot";
 import { GroupsState } from "../../services/groups-state.service";
@@ -36,7 +35,6 @@ import { GroupsState } from "../../services/groups-state.service";
     Toast,
     InputText,
     ButtonDirective,
-    RouterLink,
     CdkDrag,
     CdkDropList,
     CdkDragHandle,

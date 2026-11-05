@@ -12,6 +12,7 @@
 export interface AWGConnectionProfile { 
     group: string;
     id: string;
+    name: string;
     priority: number;
     profile: string;
     /**

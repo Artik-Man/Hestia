@@ -15,6 +15,7 @@ type orderWriter func(context.Context, panelmodel.GroupOrderChange) error
 
 // panelWrites holds independently enabled privileged operations.
 type panelWrites struct {
+	countryMap       countryMapAccess
 	traffic          *traffic.Store
 	dnsPolicyPath    string
 	dnsReportPath    string

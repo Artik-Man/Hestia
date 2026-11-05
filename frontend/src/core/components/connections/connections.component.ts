@@ -31,7 +31,7 @@ import {
   isUnderlayCandidate,
 } from "../../models/awg-connection";
 
-/** Connections merges gateway exits and saved profiles by connection name. */
+/** Connections merges gateway exits and saved profiles by stable routing ID. */
 @Component({
   selector: "hestia-connections",
   imports: [
@@ -85,9 +85,6 @@ export class Connections implements OnInit {
   protected readonly editing = signal<AWGConnection | null>(null);
   protected readonly deleting = signal<string | null>(null);
   protected readonly awgConnections = signal<readonly AWGConnection[]>([]);
-  protected readonly existingAWGIDs = computed(() =>
-    this.awgConnections().map((connection) => connection.id),
-  );
   private profileRead = 0;
   protected readonly loadingProfiles = signal(false);
   private readonly snapshot = inject(SnapshotState);
@@ -117,7 +114,13 @@ export class Connections implements OnInit {
           ? profile.status === "ready"
           : exit?.available;
         const entry = this.catalog.entries().get(id);
-        return { id, profile, entry, name: entry?.name ?? id, available };
+        return {
+          id,
+          profile,
+          entry,
+          name: profile?.name ?? this.catalog.name(id),
+          available,
+        };
       })
       .filter(
         (row) =>
@@ -255,7 +258,7 @@ export class Connections implements OnInit {
 
   /** deleteConnection removes one stored profile after explicit browser confirmation and refreshes public metadata. */
   protected async deleteConnection(connection: AWGConnection): Promise<void> {
-    if (!window.confirm(`Удалить профиль «${connection.id}»?`)) return;
+    if (!window.confirm(`Удалить профиль «${connection.name}»?`)) return;
     this.deleting.set(connection.id);
     try {
       await firstValueFrom(this.panel.deleteAWGConnection(connection.id));
@@ -265,7 +268,10 @@ export class Connections implements OnInit {
       this.catalog.reload();
       void this.loadAWGConnections();
       this.snapshot.reload(true, true);
-      this.messages.show("success", `Подключение «${connection.id}» удалено.`);
+      this.messages.show(
+        "success",
+        `Подключение «${connection.name}» удалено.`,
+      );
     } catch (error: unknown) {
       this.messages.show(
         "error",

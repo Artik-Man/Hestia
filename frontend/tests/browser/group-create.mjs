@@ -68,7 +68,13 @@ test("groups preserve names, show modal and page Toasts, and require confirmatio
       );
       return route.fulfill({ path: fileURLToPath(asset) });
     });
-    await page.goto("http://127.0.0.1/#/groups");
+    await page.goto("http://127.0.0.1/#/groups?group=main");
+    const groupHeading = page.getByRole("heading", {
+      name: "main",
+      exact: true,
+    });
+    await groupHeading.waitFor();
+    assert.equal(await groupHeading.getByRole("link").count(), 0);
     const create = page.getByRole("button", {
       name: "Создать группу",
       exact: true,

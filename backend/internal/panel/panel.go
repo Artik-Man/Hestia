@@ -183,6 +183,7 @@ func registerPanelAPI(mux *http.ServeMux, snapshot, grafanaURL string, writes pa
 	registerAWG(api, writes.awg)
 	registerQuality(api, snapshot, writes.quality)
 	registerTraffic(api, writes.traffic)
+	registerCountryMap(api, writes.countryMap)
 	registerDNS(api, writes.dnsPolicyPath, writes.dnsReportPath)
 	return api
 }
@@ -292,6 +293,7 @@ func runPanel() error {
 	enableAWG := flag.Bool("enable-awg", false, "enable privileged AmneziaWG profile management on the installed gateway")
 	dnsReport := flag.String("dns-report", "/run/hestia-dns/report.json", "path to the DNS worker heartbeat and automatic membership report")
 	dnsPolicy := flag.String("dns-policy", "", "path to the panel-owned durable DNS policy; setting this path enables policy management")
+	countryMap := flag.String("country-map", "", "durable country assignments file for a custom snapshot")
 	trafficCapture := flag.Bool("traffic-capture", false, "subscribe to local gateway traffic with an explicit traffic-dir on a custom snapshot")
 	trafficDir := flag.String("traffic-dir", "", "private traffic journal directory (defaults to /var/lib/hestia-traffic on the managed gateway)")
 	qualitySettings := flag.String("quality-settings", "", "quality settings file (defaults to the installed settings for the managed gateway)")
@@ -320,6 +322,14 @@ func runPanel() error {
 	writes.dnsReportPath = *dnsReport
 	writes.quality = qualityFiles{settings: *qualitySettings, report: *qualityReport}
 	managed := sameSnapshotPath(*snapshot, installedSnapshot)
+	if managed {
+		if *countryMap != "" {
+			return errors.New("managed gateways use the installed country map")
+		}
+		writes.countryMap = binding.Installed().CountryMap
+	} else if *countryMap != "" {
+		writes.countryMap = binding.CustomCountryMap(*snapshot, *countryMap)
+	}
 	if managed && *trafficDir == "" {
 		*trafficDir = "/var/lib/hestia-traffic"
 	}

@@ -35,9 +35,7 @@ export class QualityScreen {
   protected readonly label = qualityLabel;
   protected readonly busy = signal(false);
   private request?: Subscription;
-  protected readonly numberFormat = new Intl.NumberFormat("ru-RU", {
-    maximumFractionDigits: 2,
-  });
+  protected readonly roundScore = Math.round;
   protected readonly dateFormat = new Intl.DateTimeFormat("ru-RU", {
     dateStyle: "short",
     timeStyle: "medium",
@@ -54,7 +52,8 @@ export class QualityScreen {
   }
 
   /** reload supersedes the previous read and accepts only a valid gateway report. */
-  protected reload(): void {
+  protected reload(refreshNames = false): void {
+    if (refreshNames) this.catalog.reload();
     this.request?.unsubscribe();
     this.busy.set(true);
     this.request = this.api

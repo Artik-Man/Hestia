@@ -349,7 +349,7 @@ func (p RoutePolicy) probeMarkedEgress(ctx context.Context, dnsServer string) er
 
 // RetireStoppedConnector removes residual guarded policy for a stopped instance only after checking ownership and outbound drain.
 func RetireStoppedConnector(ctx context.Context, id string, slot int, legacy bool) error {
-	if !identifierPattern.MatchString(id) {
+	if !ValidConnectionID(id) {
 		return errors.New("invalid AWG runtime identity")
 	}
 	policy, err := newSlotRoutePolicy(ExecRouteRunner{}, slot)
@@ -386,7 +386,7 @@ func (p RoutePolicy) manifest(id string) routeManifest {
 
 // ConfirmConnectorGuards proves a named unit can be stopped while its outbound stays configured, without changing any route.
 func ConfirmConnectorGuards(ctx context.Context, id string, slot int) error {
-	if !identifierPattern.MatchString(id) {
+	if !ValidConnectionID(id) {
 		return errors.New("invalid AWG runtime identity")
 	}
 	policy, err := newSlotRoutePolicy(ExecRouteRunner{}, slot)

@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Artik-Man/Hestia/internal/awg"
 	"github.com/Artik-Man/Hestia/internal/traffic"
 )
 
@@ -17,11 +18,11 @@ const maxPending = 4096
 const attributionWindow = 5 * time.Second
 
 var (
-	fastForward    = regexp.MustCompile(`^pre-match: forward (tcp|udp) connection from [^ ]+ to ([^ ]+) via (outbound/[a-z0-9-]+\[[a-z][a-z0-9-]{0,62}\])$`)
+	fastForward    = regexp.MustCompile(`^pre-match: forward (tcp|udp) connection from [^ ]+ to ([^ ]+) via (outbound/[a-z0-9-]+\[` + awg.ConnectionIDPattern + `\])$`)
 	contextLine    = regexp.MustCompile(`^\[([0-9]{1,10}) [^\] ]{1,24}\] ([^: ]+): ([^\r\n]+)$`)
 	clientInbound  = regexp.MustCompile(`^inbound/(?:tun|socks)\[([a-zA-Z0-9-]+)\]$`)
-	clientOutbound = regexp.MustCompile(`^(?:outbound/[a-z0-9-]+|endpoint/wireguard)\[([a-z][a-z0-9-]{0,62})\]$`)
-	groupRoute     = regexp.MustCompile(`^route\(([a-z][a-z0-9-]{0,62})\)$`)
+	clientOutbound = regexp.MustCompile(`^(?:outbound/[a-z0-9-]+|endpoint/wireguard)\[(` + awg.ConnectionIDPattern + `)\]$`)
+	groupRoute     = regexp.MustCompile(`^route\((` + awg.ConnectionIDPattern + `)\)$`)
 	hostName       = regexp.MustCompile(`^[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)*\.?$`)
 )
 

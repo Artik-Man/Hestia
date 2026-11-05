@@ -10,6 +10,7 @@ import (
 
 	"github.com/Artik-Man/Hestia/internal/awg"
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
+	"github.com/google/uuid"
 )
 
 type fakeAWGWriter struct {
@@ -29,7 +30,7 @@ func (f *fakeAWGWriter) Create(_ context.Context, request panelmodel.AWGSaveRequ
 	if f.connections == nil {
 		f.connections = map[string]panelmodel.AWGConnection{}
 	}
-	connection := panelmodel.AWGConnection{ID: request.ID, Group: request.Group, Priority: int(request.Priority), Status: "configured"}
+	connection := panelmodel.AWGConnection{Name: request.Name, ID: request.ID, Group: request.Group, Priority: int(request.Priority), Status: "configured"}
 	f.connections[request.ID] = connection
 	return connection, nil
 }
@@ -69,25 +70,33 @@ func TestAWGAPISecretSafeLifecycle(t *testing.T) {
 	if check.Code != http.StatusOK || strings.Contains(check.Body.String(), secret) || writer.profile != profile {
 		t.Fatalf("unsafe or failed check response: %d %s", check.Code, check.Body.String())
 	}
-	saveBody, _ := json.Marshal(panelmodel.AWGSaveRequest{ID: "awg-one", Group: "fi", Priority: 1, Profile: profile})
+	saveBody, _ := json.Marshal(panelmodel.AWGCreateRequest{Name: "Офис № 1", Group: "fi", Priority: 1, Profile: profile})
 	save := httptest.NewRecorder()
 	handler.ServeHTTP(save, httptest.NewRequest(http.MethodPost, "/api/awg", strings.NewReader(string(saveBody))))
 	if save.Code != http.StatusOK || strings.Contains(save.Body.String(), secret) || !strings.Contains(save.Body.String(), `"status":"configured"`) {
 		t.Fatalf("unsafe or failed save response: %d %s", save.Code, save.Body.String())
 	}
+	var created panelmodel.AWGConnection
+	if json.Unmarshal(save.Body.Bytes(), &created) != nil || created.Name != "Офис № 1" {
+		t.Fatal("missing display name")
+	}
+	id, err := uuid.Parse(created.ID)
+	if err != nil || id.Version() != 4 || id.String() != created.ID {
+		t.Fatal("missing server assigned UUID")
+	}
 	update := httptest.NewRecorder()
-	updateBody := `{"group":"ru","priority":2,"profile":` + string(mustJSON(t, profile)) + `}`
-	handler.ServeHTTP(update, httptest.NewRequest(http.MethodPut, "/api/awg/awg-one", strings.NewReader(updateBody)))
+	updateBody := `{"name":"Резерв","group":"ru","priority":2,"profile":` + string(mustJSON(t, profile)) + `}`
+	handler.ServeHTTP(update, httptest.NewRequest(http.MethodPut, "/api/awg/"+created.ID, strings.NewReader(updateBody)))
 	if update.Code != http.StatusOK || strings.Contains(update.Body.String(), secret) || !strings.Contains(update.Body.String(), `"group":"ru"`) {
 		t.Fatalf("unsafe or failed update response: %d %s", update.Code, update.Body.String())
 	}
 	list := httptest.NewRecorder()
 	handler.ServeHTTP(list, httptest.NewRequest(http.MethodGet, "/api/awg", nil))
-	if list.Code != http.StatusOK || strings.Contains(list.Body.String(), secret) || !strings.Contains(list.Body.String(), "awg-one") {
+	if list.Code != http.StatusOK || strings.Contains(list.Body.String(), secret) || !strings.Contains(list.Body.String(), created.ID) || !strings.Contains(list.Body.String(), "Резерв") {
 		t.Fatalf("unsafe or failed list response: %d %s", list.Code, list.Body.String())
 	}
 	remove := httptest.NewRecorder()
-	handler.ServeHTTP(remove, httptest.NewRequest(http.MethodDelete, "/api/awg/awg-one", nil))
+	handler.ServeHTTP(remove, httptest.NewRequest(http.MethodDelete, "/api/awg/"+created.ID, nil))
 	if remove.Code != http.StatusNoContent {
 		t.Fatalf("delete returned %d: %s", remove.Code, remove.Body.String())
 	}
@@ -137,7 +146,7 @@ func (f *fakeAWGWriter) ReadProfile(_ context.Context, id string) (panelmodel.AW
 	if !ok {
 		return panelmodel.AWGConnectionProfile{}, awgHTTPFailure{status: http.StatusNotFound}
 	}
-	return panelmodel.AWGConnectionProfile{ID: connection.ID, Group: connection.Group, Priority: connection.Priority, Profile: f.profile}, nil
+	return panelmodel.AWGConnectionProfile{Name: connection.Name, ID: connection.ID, Group: connection.Group, Priority: connection.Priority, Profile: f.profile}, nil
 }
 
 // TestAWGEditorRead checks that only a valid per-ID response contains the full normalized secret and forbids caching.
@@ -147,7 +156,7 @@ func TestAWGEditorRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	writer := &fakeAWGWriter{connections: map[string]panelmodel.AWGConnection{"vpn": {ID: "vpn", Group: "home", Priority: 2}}, profile: string(parsed.SecretConfig)}
+	writer := &fakeAWGWriter{connections: map[string]panelmodel.AWGConnection{"vpn": {Name: "Офис", ID: "vpn", Group: "home", Priority: 2}}, profile: string(parsed.SecretConfig)}
 	handler := panelHandler("", "", nil, panelWrites{awg: writer})
 	for _, scenario := range []struct {
 		path   string
@@ -206,11 +215,15 @@ func TestAWGOptionalPlacement(t *testing.T) {
 		method, path, body string
 		ok                 bool
 	}{
-		{"POST", "/api/awg", `{"id":"wg","group":"fi","profile":"sensitive-profile"}`, true},
+		{"POST", "/api/awg", `{"name":"Офис","group":"fi","profile":"sensitive-profile"}`, true},
 		{"PUT", "/api/awg/wg", `{"profile":"sensitive-profile"}`, true},
 		{"PUT", "/api/awg/wg", `{"priority":0,"profile":"sensitive-profile"}`, false},
 		{"PUT", "/api/awg/wg", `{"group":null,"profile":"sensitive-profile"}`, false},
 		{"POST", "/api/awg", `{"id":"wg","profile":"sensitive-profile"}`, false},
+		{"POST", "/api/awg", `{"id":"wg","group":"fi","profile":"sensitive-profile"}`, false},
+		{"POST", "/api/awg", `{"name":" ","group":"fi","profile":"sensitive-profile"}`, false},
+		{"POST", "/api/awg", `{"id":"chosen","name":"Офис","group":"fi","profile":"sensitive-profile"}`, false},
+		{"PUT", "/api/awg/wg", `{"name":"","profile":"sensitive-profile"}`, false},
 	} {
 		result := httptest.NewRecorder()
 		handler.ServeHTTP(result, httptest.NewRequest(tc.method, tc.path, strings.NewReader(tc.body)))

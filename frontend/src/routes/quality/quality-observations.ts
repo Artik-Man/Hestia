@@ -80,8 +80,8 @@ function validDomain(text: string): boolean {
   );
 }
 
-/** validCheck checks protocol-specific settings before display or submission. */
-export function validCheck(value: unknown): value is Check {
+/** validCheck checks saved settings, or allows raw TCP target strings in a save request for server-side normalization. */
+export function validCheck(value: unknown, tcpInput = false): value is Check {
   if (!record(value) || !validProtocol(value.protocol)) return false;
   const dns = value.protocol === "UDP" || value.protocol === "DNS";
   const http = value.protocol === "HTTPS" || value.protocol === "HTTP3";
@@ -97,7 +97,9 @@ export function validCheck(value: unknown): value is Check {
       value.protocol === "ICMP"
         ? typeof target === "string" &&
           validLiteral(target.includes(":") ? "[" + target + "]" : target)
-        : validTarget(target, dns),
+        : tcpInput && value.protocol === "TCP"
+          ? typeof target === "string" && !!target.trim()
+          : validTarget(target, dns),
     ) &&
     (http
       ? typeof value.serverName === "string" &&
@@ -121,7 +123,7 @@ export function isQualitySettings(value: unknown): value is QualitySettings {
     whole(value.windowMinutes, 1, 1440) &&
     Array.isArray(value.checks) &&
     value.checks.length <= qualityProtocols.length &&
-    value.checks.every(validCheck) &&
+    value.checks.every((check) => validCheck(check)) &&
     new Set(value.checks.map((c) => c.protocol)).size === value.checks.length
   );
 }

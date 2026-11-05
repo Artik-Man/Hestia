@@ -32,7 +32,7 @@ AllowedIPs = 0.0.0.0/0
 // TestAWGEngineCreateUpdateDelete covers committed activation, same-ID updates, and removal through one profile journal.
 func TestAWGEngineCreateUpdateDelete(t *testing.T) {
 	e := connectorTestEngine(t)
-	request := panelmodel.AWGSaveRequest{ID: "awg-one", Group: "fi", Priority: 1, Profile: connectorTestConfig}
+	request := panelmodel.AWGSaveRequest{Name: "Сервер дома", ID: "12345678-1234-4abc-8123-456789abcdef", Group: "fi", Priority: 1, Profile: connectorTestConfig}
 	if err := e.ApplyAWG(context.Background(), request, false); err != nil {
 		t.Fatalf("create connector failed: %v", err)
 	}
@@ -41,7 +41,7 @@ func TestAWGEngineCreateUpdateDelete(t *testing.T) {
 		t.Fatalf("created profile generation is not ready: %#v, %v", profile, err)
 	}
 	updated := request
-	updated.Group, updated.Priority = "ru", 1
+	updated.Name, updated.Group, updated.Priority = "Офис 2", "ru", 1
 	updated.Profile = strings.Replace(connectorTestConfig, "10.66.66.2/32", "10.66.66.3/32", 1)
 	if err := e.ApplyAWG(context.Background(), updated, true); err != nil {
 		t.Fatalf("same-ID update failed: %v", err)
@@ -49,6 +49,14 @@ func TestAWGEngineCreateUpdateDelete(t *testing.T) {
 	profile, err = readStoredProfile(e.dir)
 	if err != nil || profile.Connectors[0].Group != "ru" || profile.Connectors[0].Priority != 1 || profile.Groups[1].Exits[0] != request.ID {
 		t.Fatalf("updated profile generation is inconsistent: %#v, %v", profile, err)
+	}
+	saved, err := e.ReadAWGProfile(request.ID)
+	if err != nil || saved.ID != request.ID || saved.Name != updated.Name {
+		t.Fatalf("editor lost name or identity: %v", err)
+	}
+	catalog, err := e.UnderlayCandidates()
+	if err != nil || !slices.Contains(catalog, panelmodel.AWGUnderlayCandidate{ID: request.ID, Type: "wireguard", Name: updated.Name}) {
+		t.Fatalf("catalog lost name or identity: %v", err)
 	}
 	if err := e.DeleteAWG(context.Background(), request.ID); err != nil {
 		t.Fatalf("delete connector failed: %v", err)
@@ -120,7 +128,7 @@ func TestAWGStage1CompilerLifecycle(t *testing.T) {
 		t.Fatal(err)
 	}
 	writeTestDigests(t, e.dir)
-	request := panelmodel.AWGSaveRequest{ID: "awg-trial", Group: "default", Priority: 2, Profile: connectorTestConfig}
+	request := panelmodel.AWGSaveRequest{Name: "Офис Москва", ID: "943dcd5f-96ab-4a3b-841b-55d8bcafdc62", Group: "default", Priority: 2, Profile: connectorTestConfig}
 	if err := e.ApplyAWG(ctx, request, false); err != nil {
 		t.Fatalf("create: %v", err)
 	}
@@ -588,19 +596,27 @@ func TestReadAWGProfileReturnsOnlyCommittedSecret(t *testing.T) {
 	}
 }
 
-// TestAWGUnderlayGraph rejects direct and transitive cycles and deletion of an exit used by another connector.
+// TestAWGUnderlayGraph keeps UUID references through rename, rejects cycles and protects dependent connections from deletion.
 func TestAWGUnderlayGraph(t *testing.T) {
 	e := connectorTestEngine(t)
 	ctx := context.Background()
-	one := panelmodel.AWGSaveRequest{ID: "one", Group: "fi", Priority: 1, Profile: connectorTestConfig}
-	two := panelmodel.AWGSaveRequest{ID: "two", Group: "ru", Priority: 1, Profile: connectorTestConfig, Underlays: []string{"one"}}
-	three := panelmodel.AWGSaveRequest{ID: "three", Group: "ru", Priority: 1, Profile: connectorTestConfig, Underlays: []string{"two", "one"}}
+	one := panelmodel.AWGSaveRequest{Name: "Офис 1", ID: "0a1b2c3d-e4f5-4567-89ab-cdef12345678", Group: "fi", Priority: 1, Profile: connectorTestConfig}
+	two := panelmodel.AWGSaveRequest{ID: "two", Group: "ru", Priority: 1, Profile: connectorTestConfig, Underlays: []string{one.ID}}
+	three := panelmodel.AWGSaveRequest{ID: "three", Group: "ru", Priority: 1, Profile: connectorTestConfig, Underlays: []string{"two", one.ID}}
 	for _, r := range []panelmodel.AWGSaveRequest{one, two, three} {
 		if err := e.ApplyAWG(ctx, r, false); err != nil {
 			t.Fatal(err)
 		}
 	}
-	for _, values := range [][]string{{"one"}, {"three"}, {"two", "two"}, {"missing"}} {
+	one.Name = "Резервный офис"
+	if err := e.ApplyAWG(ctx, one, true); err != nil {
+		t.Fatal(err)
+	}
+	dependency, err := e.ReadAWGProfile(two.ID)
+	if err != nil || !slices.Equal(dependency.Underlays, []string{one.ID}) {
+		t.Fatalf("rename broke dependent transport: %v", err)
+	}
+	for _, values := range [][]string{{one.ID}, {"three"}, {"two", "two"}, {"missing"}} {
 		one.Underlays = values
 		if err := e.ApplyAWG(ctx, one, true); !errors.Is(err, ErrInvalidConnector) {
 			t.Fatalf("invalid selection %v: %v", values, err)
@@ -618,7 +634,7 @@ func TestAWGUnderlayGraph(t *testing.T) {
 		t.Fatal(err)
 	}
 	read, err = e.ReadAWGProfile("three")
-	if err != nil || !slices.Equal(read.Underlays, []string{"two", "one"}) {
+	if err != nil || !slices.Equal(read.Underlays, []string{"two", one.ID}) {
 		t.Fatal("legacy client cleared preferences")
 	}
 	three.Underlays = []string{}

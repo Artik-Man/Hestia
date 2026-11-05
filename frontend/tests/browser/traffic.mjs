@@ -11,11 +11,13 @@ test("traffic journal reaches rows past 500 and refresh preserves its filters", 
   try {
     const page = await browser.newPage();
     page.setDefaultTimeout(5000);
+    let catalogAvailable = false;
     let revision = 1;
     let settings = { maxMB: 1024, retentionHours: 24 };
     const requests = [];
     const writes = [];
     const now = Date.now();
+    const officeID = "01550000-1111-4222-8333-444455556666";
     const events = Array.from({ length: 10020 }, (_, i) => ({
       id: String(i),
       time: new Date(now - i * 100).toISOString(),
@@ -24,7 +26,8 @@ test("traffic journal reaches rows past 500 and refresh preserves its filters", 
       address: "192.0.2.1",
       port: 443,
       kind: "observed",
-      connection: i % 4 ? "FI-1" : "RU-1",
+      connection: i % 4 ? officeID : "RU-1",
+      reason: "outbound[dns-" + officeID + "]",
       namespace: "test",
       networkInterface: "ppp0",
     }));
@@ -62,7 +65,7 @@ test("traffic journal reaches rows past 500 and refresh preserves its filters", 
             total: matching.length,
             events: matching.slice(offset, offset + limit),
             snapshot: q.get("snapshot") || String(revision),
-            outputs: ["FI-1", "RU-1"],
+            outputs: [officeID, "RU-1"],
             lost: 0,
             sourceAvailable: true,
             lastInterruption: new Date(now - 60000).toISOString(),
@@ -71,8 +74,12 @@ test("traffic journal reaches rows past 500 and refresh preserves its filters", 
       }
       if (url.pathname === "/api/navigation")
         return route.fulfill({ json: { grafanaUrl: "" } });
+      if (url.pathname === "/api/awg-underlays" && !catalogAvailable)
+        return route.fulfill({ status: 503 });
       if (url.pathname === "/api/awg-underlays")
-        return route.fulfill({ json: [] });
+        return route.fulfill({
+          json: [{ id: officeID, name: "Офис", type: "wireguard" }],
+        });
       if (url.pathname.startsWith("/api/"))
         throw Error("Unexpected request " + url.pathname);
       return route.fulfill({
@@ -86,6 +93,13 @@ test("traffic journal reaches rows past 500 and refresh preserves its filters", 
       });
     });
     await page.goto("http://127.0.0.1/#/traffic");
+    await page
+      .getByText("Название недоступно", { exact: true })
+      .first()
+      .waitFor();
+    catalogAvailable = true;
+    await page.getByRole("button", { name: "Обновить журнал" }).click();
+    await page.getByText("Офис", { exact: true }).first().waitFor();
     await page
       .getByRole("button", { name: "flow-0.example", exact: true })
       .waitFor();
@@ -108,6 +122,11 @@ test("traffic journal reaches rows past 500 and refresh preserves its filters", 
       .getByRole("dialog")
       .getByText("ppp0", { exact: false })
       .waitFor();
+    await page
+      .getByRole("dialog")
+      .getByText("outbound[dns-Офис]", { exact: true })
+      .waitFor();
+    assert.ok(!(await page.locator("body").innerText()).includes(officeID));
     await page.keyboard.press("Escape");
     assert.ok((await page.locator("tbody tr").count()) < 500);
     assert.ok(

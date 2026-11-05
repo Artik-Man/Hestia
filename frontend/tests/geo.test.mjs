@@ -1,29 +1,37 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {
-  initializeCountryMap,
-  readCountryMap,
-  regionCodes,
-} from "../src/core/models/geo-policy.ts";
+import { isCountryMap, regionCodes } from "../src/core/models/geo-policy.ts";
 
-/** Verifies the initial map covers each country exactly once and starts disabled. */
-test("a new map assigns every country to the initial default", () => {
-  const map = initializeCountryMap("first");
-  assert.equal(map.enabled, false);
+/** Checks the versioned API snapshot has every supported country and one explicit assignment per code. */
+test("country map accepts a complete versioned response", () => {
   assert.equal(regionCodes.length, 249);
-  assert.deepEqual(
-    Object.keys(map.assignments).sort(),
-    [...regionCodes].sort(),
+  assert.equal(new Set(regionCodes).size, 249);
+  const assignments = Object.fromEntries(
+    regionCodes.map((code) => [code, "first"]),
   );
-  assert.deepEqual(new Set(Object.values(map.assignments)), new Set(["first"]));
+  assert.equal(
+    isCountryMap({ version: "v1", enabled: false, assignments }),
+    true,
+  );
+  delete assignments.DE;
+  assert.equal(
+    isCountryMap({ version: "v1", enabled: true, assignments }),
+    false,
+  );
 });
 
-/** Verifies restored state preserves both the switch and individual assignments. */
-test("restoring a local map preserves every explicit selection", () => {
-  const map = initializeCountryMap("first");
-  const edited = {
-    enabled: true,
-    assignments: { ...map.assignments, DE: "second" },
-  };
-  assert.deepEqual(readCountryMap(JSON.stringify(edited)), edited);
+/** Rejects malformed network responses before their selections reach the screen. */
+test("country map rejects corrupt assignments, versions and switches", () => {
+  const assignments = Object.fromEntries(
+    regionCodes.map((code) => [code, "first"]),
+  );
+  const valid = { enabled: false, version: "v1", assignments };
+  for (const invalid of [
+    null,
+    { ...valid, version: "" },
+    { ...valid, enabled: "false" },
+    { ...valid, assignments: { ...assignments, DE: "" } },
+    { ...valid, assignments: { ...assignments, XX: "second" } },
+  ])
+    assert.equal(isCountryMap(invalid), false);
 });

@@ -19,6 +19,7 @@ test("quality page displays all ranked groups, keeps a measured zero, and persis
   };
   let settings = { windowMinutes: 60, checks: [udp, tcp] };
   const writes = [];
+  let catalogAvailable = false;
   let confirmed = true;
   let fresh = true;
   const browser = await chromium.launch({
@@ -31,6 +32,8 @@ test("quality page displays all ranked groups, keeps a measured zero, and persis
       const path = new URL(route.request().url()).pathname;
       if (path === "/api/navigation")
         return route.fulfill({ json: { grafanaUrl: "" } });
+      if (path === "/api/awg-underlays" && !catalogAvailable)
+        return route.fulfill({ status: 503 });
       if (path === "/api/awg-underlays")
         return route.fulfill({
           json: [
@@ -44,13 +47,13 @@ test("quality page displays all ranked groups, keeps a measured zero, and persis
           available: true,
           active: confirmed && id === "b",
           result: {
-            overall: id === "b" ? 0 : null,
+            overall: id === "b" ? 85.47 : null,
             checks: settings.checks.map((check) => ({
               protocol: check.protocol,
               samples: id === "b" ? 1 : 0,
               successes: 0,
               localErrors: 0,
-              score: id === "b" ? 0 : null,
+              score: id === "b" ? (check.protocol === "TCP" ? 85.5 : 0) : null,
               targets: check.targets.map((target) => ({
                 target,
                 samples: id === "b" ? 1 : 0,
@@ -77,7 +80,26 @@ test("quality page displays all ranked groups, keeps a measured zero, and persis
         const protocol = path.split("/").at(-1);
         const method = route.request().method();
         if (method === "PUT") {
-          const check = route.request().postDataJSON();
+          const input = route.request().postDataJSON();
+          let check = input;
+          if (protocol === "TCP") {
+            if (input.targets.includes("missing.example"))
+              return route.fulfill({
+                status: 422,
+                json: {
+                  detail: "Ошибка DNS для missing.example: имя не найдено.",
+                },
+              });
+            assert.deepEqual(input.targets, [
+              "example.org",
+              "8.8.8.8",
+              "example.org:8443",
+            ]);
+            check = {
+              ...input,
+              targets: ["1.1.1.1:443", "8.8.8.8:443", "1.1.1.1:8443"],
+            };
+          }
           assert.equal(protocol, check.protocol);
           const exists = settings.checks.some((c) => c.protocol === protocol);
           settings = {
@@ -120,12 +142,20 @@ test("quality page displays all ranked groups, keeps a measured zero, and persis
       });
     });
     await page.goto("http://127.0.0.1/#/quality");
+    await page.getByRole("rowheader", { name: "b", exact: true }).waitFor();
+    catalogAvailable = true;
+    await page.getByRole("button", { name: "Обновить", exact: true }).click();
+    await page.getByRole("rowheader", { name: "Бета", exact: true }).waitFor();
     await page.getByRole("heading", { name: "Пустая группа" }).waitFor();
     const table = page.getByRole("table").first();
     const first = table.getByRole("row").nth(1);
     assert.match(await first.innerText(), /Бета/);
     assert.match(await first.innerText(), /Активно/);
-    assert.match(await first.innerText(), /0\s*\/\s*100/);
+    await table
+      .getByRole("columnheader", { name: "Качество связи", exact: true })
+      .waitFor();
+    for (const score of ["0%", "86%", "85%"])
+      await first.getByText(score, { exact: true }).waitFor();
     assert.match(await table.getByRole("row").nth(2).innerText(), /Нет данных/);
     const open = async (name) => {
       await page.getByRole("button", { name, exact: true }).click();
@@ -245,6 +275,44 @@ test("quality page displays all ranked groups, keeps a measured zero, and persis
     await page.locator("time").waitFor({ state: "detached" });
     await first.getByText("Активный выход неизвестен").waitFor();
     assert.equal(writes.length, 7);
+
+    const tcpDialog = await open("Редактировать проверку TCP");
+    const targets = tcpDialog.getByLabel("Цели");
+    await targets.fill("8.8.8.8\nmissing.example");
+    await tcpDialog.getByRole("button", { name: "Сохранить" }).click();
+    await page
+      .getByText("Ошибка DNS для missing.example: имя не найдено.")
+      .first()
+      .waitFor();
+    const targetField = await targets.elementHandle();
+    await page.waitForFunction(
+      (field) => document.activeElement === field,
+      targetField,
+    );
+    assert.equal(await targets.inputValue(), "8.8.8.8\nmissing.example");
+    assert.deepEqual(
+      settings.checks.find((c) => c.protocol === "TCP"),
+      tcp,
+    );
+    await targets.fill("example.org\n8.8.8.8\nexample.org:8443");
+    await tcpDialog.getByRole("button", { name: "Сохранить" }).click();
+    await page.waitForFunction(
+      (field) =>
+        document.activeElement === field &&
+        field.value === "1.1.1.1:443\n8.8.8.8:443\n1.1.1.1:8443",
+      targetField,
+    );
+    await page.keyboard.press("Escape");
+    await tcpDialog.waitFor({ state: "hidden" });
+    const editTCP = page.getByRole("button", {
+      name: "Редактировать проверку TCP",
+      exact: true,
+    });
+    await page.waitForFunction(
+      (button) => document.activeElement === button,
+      await editTCP.elementHandle(),
+    );
+    assert.equal(writes.length, 8);
   } finally {
     await browser.close();
   }

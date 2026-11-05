@@ -12,8 +12,10 @@ import (
 	"regexp"
 
 	"github.com/Artik-Man/Hestia/internal/awg"
+	"github.com/Artik-Man/Hestia/internal/binding"
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/google/uuid"
 )
 
 const maxAWGRequestBytes = 40 * 1024
@@ -33,7 +35,7 @@ type awgWriter interface {
 
 type awgCheckInput struct{ Body panelmodel.AWGCheckRequest }
 type awgCheckOutput struct{ Body panelmodel.AWGCheckResult }
-type awgSaveInput struct{ Body panelmodel.AWGSaveRequest }
+type awgSaveInput struct{ Body panelmodel.AWGCreateRequest }
 type awgSaveOutput struct{ Body panelmodel.AWGConnection }
 type awgUpdateInput struct {
 	ID   string `path:"id" minLength:"1"`
@@ -75,16 +77,21 @@ func registerAWG(api huma.API, write awgWriter) {
 	})
 	huma.Register(api, huma.Operation{
 		OperationID: "createAWGConnection", Tags: []string{"Panel"}, Method: http.MethodPost, Path: "/api/awg",
-		Summary: "Сохранить профиль AmneziaWG и назначение группе", MaxBodyBytes: maxAWGRequestBytes, SkipValidateBody: true,
+		Summary: "Сохранить профиль AmneziaWG и назначение группе", MaxBodyBytes: maxAWGRequestBytes,
 		Errors: []int{http.StatusRequestEntityTooLarge, http.StatusUnprocessableEntity, http.StatusConflict, http.StatusServiceUnavailable},
 	}, func(ctx context.Context, in *awgSaveInput) (*awgSaveOutput, error) {
-		if err := validateAWGSave(in.Body, false); err != nil {
+		id, err := uuid.NewRandom()
+		if err != nil {
+			return nil, mapAWGError(err)
+		}
+		request := panelmodel.AWGSaveRequest{ID: id.String(), Name: in.Body.Name, Group: in.Body.Group, Priority: in.Body.Priority, Profile: in.Body.Profile, Underlays: in.Body.Underlays}
+		if err := validateAWGSave(request, false); err != nil {
 			return nil, huma.Error422UnprocessableEntity("Некорректные данные подключения AmneziaWG")
 		}
 		if write == nil {
 			return nil, huma.Error503ServiceUnavailable("Управление AmneziaWG не включено")
 		}
-		connection, err := write.Create(ctx, in.Body)
+		connection, err := write.Create(ctx, request)
 		if err != nil {
 			return nil, mapAWGError(err)
 		}
@@ -119,7 +126,7 @@ func registerAWG(api huma.API, write awgWriter) {
 		Summary: "Открыть один сохранённый профиль WireGuard для редактирования, включая ключи",
 		Errors:  []int{http.StatusNotFound, http.StatusConflict, http.StatusServiceUnavailable},
 	}, func(ctx context.Context, in *awgIDInput) (*awgProfileOutput, error) {
-		if !awgIDPattern.MatchString(in.ID) {
+		if !awg.ValidConnectionID(in.ID) {
 			return nil, huma.Error404NotFound("Подключение WireGuard не найдено")
 		}
 		if write == nil {
@@ -129,7 +136,7 @@ func registerAWG(api huma.API, write awgWriter) {
 		if err != nil {
 			return nil, mapAWGError(err)
 		}
-		if profile.ID != in.ID || profile.Priority < 1 || validateAWGSave(panelmodel.AWGSaveRequest{ID: profile.ID, Group: profile.Group, Priority: panelmodel.AWGPriority(profile.Priority), Underlays: profile.Underlays, Profile: profile.Profile}, false) != nil {
+		if profile.ID != in.ID || profile.Priority < 1 || validateAWGSave(panelmodel.AWGSaveRequest{Name: profile.Name, ID: profile.ID, Group: profile.Group, Priority: panelmodel.AWGPriority(profile.Priority), Underlays: profile.Underlays, Profile: profile.Profile}, false) != nil {
 			return nil, mapAWGError(errors.New("invalid profile response"))
 		}
 		parsed, err := awg.Parse([]byte(profile.Profile))
@@ -140,11 +147,11 @@ func registerAWG(api huma.API, write awgWriter) {
 	})
 	huma.Register(api, huma.Operation{
 		OperationID: "updateAWGConnection", Tags: []string{"Panel"}, Method: http.MethodPut, Path: "/api/awg/{id}",
-		Summary: "Обновить сохранённое подключение AmneziaWG", MaxBodyBytes: maxAWGRequestBytes, SkipValidateBody: true,
+		Summary: "Обновить сохранённое подключение AmneziaWG", MaxBodyBytes: maxAWGRequestBytes,
 		Errors: []int{http.StatusNotFound, http.StatusUnprocessableEntity, http.StatusServiceUnavailable},
 	}, func(ctx context.Context, in *awgUpdateInput) (*awgUpdateOutput, error) {
-		request := panelmodel.AWGSaveRequest{Underlays: in.Body.Underlays, ID: in.ID, Group: string(in.Body.Group), Priority: in.Body.Priority, Profile: in.Body.Profile}
-		if !awgIDPattern.MatchString(in.ID) {
+		request := panelmodel.AWGSaveRequest{Name: string(in.Body.Name), Underlays: in.Body.Underlays, ID: in.ID, Group: string(in.Body.Group), Priority: in.Body.Priority, Profile: in.Body.Profile}
+		if !awg.ValidConnectionID(in.ID) {
 			return nil, huma.Error404NotFound("Подключение AmneziaWG не найдено")
 		}
 		if err := validateAWGSave(request, true); err != nil {
@@ -163,7 +170,7 @@ func registerAWG(api huma.API, write awgWriter) {
 		OperationID: "deleteAWGConnection", Tags: []string{"Panel"}, Method: http.MethodDelete, Path: "/api/awg/{id}",
 		Summary: "Удалить подключение AmneziaWG", Errors: []int{http.StatusNotFound, http.StatusConflict, http.StatusServiceUnavailable},
 	}, func(ctx context.Context, in *awgIDInput) (*struct{}, error) {
-		if !awgIDPattern.MatchString(in.ID) {
+		if !awg.ValidConnectionID(in.ID) {
 			return nil, huma.Error404NotFound("Подключение AmneziaWG не найдено")
 		}
 		if write == nil {
@@ -200,9 +207,16 @@ func mapAWGError(err error) error {
 	return huma.Error503ServiceUnavailable("Операция AmneziaWG не подтверждена")
 }
 
-// validateAWGSave rejects invalid IDs, group assignment, priority, and oversized private profile content.
+// validateAWGSave validates identity, visible name, placement and profile size, allowing settings to be omitted on update.
 func validateAWGSave(request panelmodel.AWGSaveRequest, update bool) error {
-	if !awgIDPattern.MatchString(request.ID) || !awg.ValidUnderlays(request.ID, request.Underlays) || ((!update || request.Group != "") && !awgIDPattern.MatchString(request.Group)) || request.Priority < 0 || len(request.Profile) == 0 || len(request.Profile) > maxAWGRequestBytes {
+	if (!update || request.Name != "") && binding.ValidateGroupName(request.Name) != nil {
+		return errors.New("invalid AWG name")
+	}
+	if (!update || request.Group != "") && !awgIDPattern.MatchString(request.Group) {
+		return errors.New("invalid AWG group")
+	}
+	if !awg.ValidConnectionID(request.ID) || !awg.ValidUnderlays(request.ID, request.Underlays) ||
+		request.Priority < 0 || len(request.Profile) == 0 || len(request.Profile) > maxAWGRequestBytes {
 		return errors.New("invalid AWG save request")
 	}
 	return nil

@@ -38,6 +38,10 @@ components:
           type: string
         ipv6Blocked:
           type: boolean
+        name:
+          maxLength: 80
+          minLength: 1
+          type: string
         priority:
           format: int64
           minimum: 1
@@ -55,6 +59,7 @@ components:
           maxItems: 64
           type: array
       required:
+        - name
         - id
         - group
         - priority
@@ -70,6 +75,10 @@ components:
         id:
           minLength: 1
           type: string
+        name:
+          maxLength: 80
+          minLength: 1
+          type: string
         priority:
           format: int64
           minimum: 1
@@ -84,18 +93,20 @@ components:
           maxItems: 64
           type: array
       required:
+        - name
         - id
         - group
         - priority
         - profile
       type: object
-    AWGSaveRequest:
+    AWGCreateRequest:
       additionalProperties: false
       properties:
         group:
           minLength: 1
           type: string
-        id:
+        name:
+          maxLength: 80
           minLength: 1
           type: string
         priority:
@@ -112,7 +123,7 @@ components:
           maxItems: 64
           type: array
       required:
-        - id
+        - name
         - group
         - profile
       type: object
@@ -139,6 +150,10 @@ components:
       additionalProperties: false
       properties:
         group:
+          minLength: 1
+          type: string
+        name:
+          maxLength: 80
           minLength: 1
           type: string
         priority:
@@ -229,6 +244,26 @@ components:
         - localErrors
         - score
         - targets
+      type: object
+    CountryMap:
+      additionalProperties: false
+      properties:
+        assignments:
+          additionalProperties:
+            type: string
+          maxProperties: 249
+          minProperties: 249
+          type: object
+        enabled:
+          type: boolean
+        version:
+          maxLength: 64
+          minLength: 1
+          type: string
+      required:
+        - enabled
+        - assignments
+        - version
       type: object
     DNSClientUDP:
       additionalProperties: false
@@ -1069,7 +1104,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AWGSaveRequest"
+              $ref: "#/components/schemas/AWGCreateRequest"
         required: true
       responses:
         "200":
@@ -1345,7 +1380,7 @@ paths:
           schema:
             maxLength: 63
             minLength: 1
-            pattern: ^[a-z][a-z0-9-]{0,62}$
+            pattern: ^([a-z][a-z0-9-]{0,62}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$
             type: string
       requestBody:
         content:
@@ -1455,6 +1490,85 @@ paths:
                 $ref: "#/components/schemas/ErrorModel"
           description: Service Unavailable
       summary: Переименовать прямое подключение
+      tags:
+        - Panel
+  /api/country-map:
+    get:
+      operationId: getCountryMap
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CountryMap"
+          description: OK
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Conflict
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Прочитать маршруты по странам
+      tags:
+        - Panel
+    put:
+      operationId: updateCountryMap
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CountryMap"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CountryMap"
+          description: OK
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Conflict
+        "413":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Request Entity Too Large
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Сохранить маршруты по странам
       tags:
         - Panel
   /api/dns/policy:
@@ -2136,6 +2250,7 @@ paths:
       tags:
         - Panel
     put:
+      description: Цель TCP принимает IP-адрес или доменное имя с необязательным портом (по умолчанию 443). Сервер один раз запрашивает A-запись каждого имени, выбирает первый допустимый публичный IPv4 и возвращает сохранённые цели в формате IP:порт. Ошибка разрешения отклоняет весь запрос с HTTP 422.
       operationId: putQualityCheck
       parameters:
         - in: path
@@ -2186,6 +2301,7 @@ paths:
         - Panel
   /api/quality/settings:
     put:
+      description: Цель TCP принимает IP-адрес или доменное имя с необязательным портом (по умолчанию 443). Сервер один раз запрашивает A-запись каждого имени, выбирает первый допустимый публичный IPv4 и возвращает сохранённые цели в формате IP:порт. Ошибка разрешения отклоняет весь запрос с HTTP 422.
       operationId: updateQualitySettings
       requestBody:
         content:

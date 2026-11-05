@@ -44,7 +44,7 @@ func readyAWG(directory string) (map[string]runtimeGeneration, error) {
 		if c.Status != "ready" {
 			continue
 		}
-		if !awgID(c.ID) || c.Slot < 0 || c.Slot >= len(used) || used[c.Slot] {
+		if !awg.ValidConnectionID(c.ID) || c.Slot < 0 || c.Slot >= len(used) || used[c.Slot] {
 			return nil, ErrUnavailable
 		}
 		if _, duplicate := ready[c.ID]; duplicate {

@@ -38,6 +38,13 @@ def identifier(value: str) -> str:
     return value
 
 
+def connection_id(value: str) -> str:
+    """Accept a stable connector UUID or a legacy routing tag for an installed exit."""
+    if isinstance(value, str) and re.fullmatch(r"[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}", value):
+        return value
+    return identifier(value)
+
+
 def group_name(value: str) -> str:
     """Return a valid group display name, preserving its Unicode text and internal spaces."""
     require(
@@ -271,7 +278,7 @@ def compare_backend_files(candidate: Path, installed: Path) -> None:
 
 def awg_metadata(directory: Path, connector_id: str) -> dict:
     """Load one root-private connector metadata file without reading or returning its secret profile."""
-    identifier(connector_id)
+    connection_id(connector_id)
     path = directory / "awg" / connector_id / "metadata.json"
     try:
         fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
@@ -283,7 +290,9 @@ def awg_metadata(directory: Path, connector_id: str) -> dict:
             result = json.loads(raw, object_pairs_hook=unique)
     except (OSError, ValueError, json.JSONDecodeError):
         raise ValueError("missing or invalid connector metadata") from None
-    fields(result, "id group priority status ipv6Blocked type ipv4Address dnsIPv4" + (" slot" if "slot" in result else "") + (" underlays" if "underlays" in result else ""))
+    fields(result, "id group priority status ipv6Blocked type ipv4Address dnsIPv4" + (" slot" if "slot" in result else "") + (" underlays" if "underlays" in result else "") + (" name" if "name" in result else ""))
+    if "name" in result:
+        group_name(result["name"])
     connector_slot(result)
     require(
         result["id"] == connector_id
@@ -312,7 +321,7 @@ def validate_underlays(profile: dict) -> None:
         choices = connector.get("underlays", [])
         require(isinstance(choices, list) and len(choices) <= 64, "invalid underlay list")
         for exit_id in choices:
-            identifier(exit_id)
+            connection_id(exit_id)
         require(len(set(choices)) == len(choices), "repeated underlay")
         nodes[connector["id"]] = choices
     verified, visiting = set(), set()
@@ -346,7 +355,8 @@ def connector_outbounds(connectors: list[dict], directory: Path) -> tuple[list[d
     for connector in connectors:
         metadata = awg_metadata(directory, connector["id"])
         require(
-            metadata["group"] == connector["group"]
+            metadata.get("name") == connector.get("name")
+            and metadata["group"] == connector["group"]
             and metadata["priority"] == connector["priority"]
             and metadata["type"] == connector["type"]
             and metadata["ipv6Blocked"] == connector["ipv6Blocked"],
@@ -390,7 +400,7 @@ def transport_fragments(profile: dict, directory: Path) -> tuple[list[dict], lis
             continue
         config = configparser.ConfigParser(interpolation=None, delimiters=("=",))
         try:
-            config.read_string(asset(directory / "awg" / identifier(connector["id"]), "profile.conf"))
+            config.read_string(asset(directory / "awg" / connection_id(connector["id"]), "profile.conf"))
             host, sep, number = config["Peer"]["Endpoint"].rpartition(":")
             require(sep and number.isdecimal() and host and ":" not in host, "invalid transport endpoint")
             peer_port = port(int(number))
@@ -401,7 +411,7 @@ def transport_fragments(profile: dict, directory: Path) -> tuple[list[dict], lis
             tag = f"_wg-transport-{slot}-{index}"
             listeners.append({"type": "direct", "tag": tag, "listen": "127.0.0.1",
                               "listen_port": 20000 + slot * 128 + index, "network": "udp"})
-            rules.append({"inbound": [tag], "action": "route", "outbound": identifier(candidate),
+            rules.append({"inbound": [tag], "action": "route", "outbound": connection_id(candidate),
                           "override_address": host, "override_port": peer_port, "udp_connect": True})
     return listeners, rules
 
@@ -554,8 +564,10 @@ def compile_profile(profile: dict, directory: Path) -> tuple[dict, dict]:
             servers.append(server)
     connector_ids = set()
     for connector in connectors:
-        fields(connector, "id type group priority ipv6Blocked status" + (" slot" if "slot" in connector else "") + (" underlays" if "underlays" in connector else ""))
-        tag = identifier(connector["id"])
+        fields(connector, "id type group priority ipv6Blocked status" + (" slot" if "slot" in connector else "") + (" underlays" if "underlays" in connector else "") + (" name" if "name" in connector else ""))
+        if "name" in connector:
+            group_name(connector["name"])
+        tag = connection_id(connector["id"])
         require(
             connector["type"] in {"wireguard", "amneziawg"}
             and identifier(connector["group"])
@@ -965,8 +977,9 @@ def synchronize_connector_assignments(profile: dict, groups: list[dict], stage: 
 
 def stage_move_exit(base: Path, stage: Path, exit_id: str, expected_group: str, target_group: str, priority: int) -> None:
     """Move an exit to the requested one-based group priority without reopening original VPN assets."""
-    for value in (exit_id, expected_group, target_group):
-        identifier(value)
+    connection_id(exit_id)
+    identifier(expected_group)
+    identifier(target_group)
     profile, snapshot, backend = managed_profile(base)
     groups = profile["groups"]
     by_id = {group["id"]: group for group in groups}
@@ -1010,7 +1023,7 @@ def stage_order(base: Path, stage: Path, groups: list[dict]) -> None:
         )
         members.remove(group_id)
         for exit_id in group["exits"]:
-            require(identifier(exit_id) in exits, "unknown or repeated exit")
+            require(connection_id(exit_id) in exits, "unknown or repeated exit")
             exits.remove(exit_id)
     require(not exits, "missing exit")
     desired_groups = []
@@ -1084,7 +1097,7 @@ def main() -> None:
         for connector in profile.get("connectors", []):
             if connector["status"] == "ready":
                 mode = "manual" if connector.get("underlays") else "auto"
-                plan = [identifier(connector["id"]), connector_slot(connector), mode]
+                plan = [connection_id(connector["id"]), connector_slot(connector), mode]
                 if mode == "manual":
                     plan.append(len(connector["underlays"]))
                 print(*plan)
@@ -1093,7 +1106,7 @@ def main() -> None:
         profile, _, _ = managed_profile(Path(sys.argv[2]))
         for connector in profile.get("connectors", []):
             if connector["status"] == "ready":
-                print(identifier(connector["id"]))
+                print(connection_id(connector["id"]))
         return
     if len(sys.argv) == 3 and sys.argv[1] == "--validate-managed":
         managed_profile(Path(sys.argv[2]))

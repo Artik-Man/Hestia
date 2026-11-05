@@ -25,7 +25,7 @@ import { AWGConnection } from '../model/aWGConnection';
 // @ts-ignore
 import { AWGConnectionProfile } from '../model/aWGConnectionProfile';
 // @ts-ignore
-import { AWGSaveRequest } from '../model/aWGSaveRequest';
+import { AWGCreateRequest } from '../model/aWGCreateRequest';
 // @ts-ignore
 import { AWGUnderlayCandidate } from '../model/aWGUnderlayCandidate';
 // @ts-ignore
@@ -36,6 +36,8 @@ import { AppliedBinding } from '../model/appliedBinding';
 import { AppliedOrder } from '../model/appliedOrder';
 // @ts-ignore
 import { BindingChange } from '../model/bindingChange';
+// @ts-ignore
+import { CountryMap } from '../model/countryMap';
 // @ts-ignore
 import { DNSPolicySnapshot } from '../model/dNSPolicySnapshot';
 // @ts-ignore
@@ -305,17 +307,17 @@ export class PanelService extends BaseService {
     /**
      * Сохранить профиль AmneziaWG и назначение группе
      * @endpoint post /api/awg
-     * @param aWGSaveRequest 
+     * @param aWGCreateRequest 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public createAWGConnection(aWGSaveRequest: AWGSaveRequest, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<AWGConnection>;
-    public createAWGConnection(aWGSaveRequest: AWGSaveRequest, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<AWGConnection>>;
-    public createAWGConnection(aWGSaveRequest: AWGSaveRequest, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<AWGConnection>>;
-    public createAWGConnection(aWGSaveRequest: AWGSaveRequest, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
-        if (aWGSaveRequest === null || aWGSaveRequest === undefined) {
-            throw new Error('Required parameter aWGSaveRequest was null or undefined when calling createAWGConnection.');
+    public createAWGConnection(aWGCreateRequest: AWGCreateRequest, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<AWGConnection>;
+    public createAWGConnection(aWGCreateRequest: AWGCreateRequest, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<AWGConnection>>;
+    public createAWGConnection(aWGCreateRequest: AWGCreateRequest, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<AWGConnection>>;
+    public createAWGConnection(aWGCreateRequest: AWGCreateRequest, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (aWGCreateRequest === null || aWGCreateRequest === undefined) {
+            throw new Error('Required parameter aWGCreateRequest was null or undefined when calling createAWGConnection.');
         }
 
         let localVarHeaders = this.defaultHeaders;
@@ -358,7 +360,7 @@ export class PanelService extends BaseService {
         return this.httpClient.request<AWGConnection>('post', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
-                body: aWGSaveRequest,
+                body: aWGCreateRequest,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,
@@ -909,6 +911,59 @@ export class PanelService extends BaseService {
         let localVarPath = `/api/awg/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<AWGConnectionProfile>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Прочитать маршруты по странам
+     * @endpoint get /api/country-map
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public getCountryMap(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<CountryMap>;
+    public getCountryMap(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<CountryMap>>;
+    public getCountryMap(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<CountryMap>>;
+    public getCountryMap(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+
+        let localVarHeaders = this.defaultHeaders;
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/country-map`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<CountryMap>('get', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
                 responseType: <any>responseType_,
@@ -1607,6 +1662,7 @@ export class PanelService extends BaseService {
 
     /**
      * Добавить или изменить одну проверку связи
+     * Цель TCP принимает IP-адрес или доменное имя с необязательным портом (по умолчанию 443). Сервер один раз запрашивает A-запись каждого имени, выбирает первый допустимый публичный IPv4 и возвращает сохранённые цели в формате IP:порт. Ошибка разрешения отклоняет весь запрос с HTTP 422.
      * @endpoint put /api/quality/checks/{protocol}
      * @param protocol 
      * @param qualityCheck 
@@ -2027,6 +2083,73 @@ export class PanelService extends BaseService {
     }
 
     /**
+     * Сохранить маршруты по странам
+     * @endpoint put /api/country-map
+     * @param countryMap 
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public updateCountryMap(countryMap: CountryMap, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<CountryMap>;
+    public updateCountryMap(countryMap: CountryMap, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<CountryMap>>;
+    public updateCountryMap(countryMap: CountryMap, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<CountryMap>>;
+    public updateCountryMap(countryMap: CountryMap, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (countryMap === null || countryMap === undefined) {
+            throw new Error('Required parameter countryMap was null or undefined when calling updateCountryMap.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/country-map`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<CountryMap>('put', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: countryMap,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
      * Сохранить настройки DNS и списки при совпадении ревизии
      * @endpoint put /api/dns/policy
      * @param dNSPolicyUpdate 
@@ -2166,6 +2289,7 @@ export class PanelService extends BaseService {
 
     /**
      * Сохранить общие для всех выходов параметры проверок связи
+     * Цель TCP принимает IP-адрес или доменное имя с необязательным портом (по умолчанию 443). Сервер один раз запрашивает A-запись каждого имени, выбирает первый допустимый публичный IPv4 и возвращает сохранённые цели в формате IP:порт. Ошибка разрешения отклоняет весь запрос с HTTP 422.
      * @endpoint put /api/quality/settings
      * @param qualitySettings 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.

@@ -9,9 +9,9 @@
  */
 
 
-export interface AWGSaveRequest { 
+export interface AWGCreateRequest { 
     group: string;
-    id: string;
+    name: string;
     priority?: number;
     profile: string;
     /**

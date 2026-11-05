@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
-	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
@@ -35,7 +34,7 @@ func runAWGRuntimeCommand(id string) int {
 // runAWGRetireCommand retires only verified routes of a stopped instance during a locked installer migration or rollback.
 func runAWGRetireCommand(id, number string, legacy bool) int {
 	slot, err := strconv.Atoi(number)
-	if os.Geteuid() != 0 || !regexp.MustCompile(`^[a-z][a-z0-9-]{0,62}$`).MatchString(id) || err != nil || strconv.Itoa(slot) != number || slot < 0 || slot >= awg.SlotCount || (legacy && slot != 0) {
+	if os.Geteuid() != 0 || !awg.ValidConnectionID(id) || err != nil || strconv.Itoa(slot) != number || slot < 0 || slot >= awg.SlotCount || (legacy && slot != 0) {
 		fmt.Fprintln(os.Stderr, "invalid AWG retirement request")
 		return 1
 	}

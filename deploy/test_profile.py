@@ -186,11 +186,12 @@ class ProfileTests(unittest.TestCase):
 
     def test_amneziawg_connector_compiles_marked_ipv4_exit_and_dns(self):
         """Compile a metadata-only AWG exit while keeping its private config out of sing-box output."""
-        connector = "awg-test"
+        connector = "12345678-1234-4abc-8abc-123456789abc"
         directory = self.base / "awg" / connector
         directory.mkdir(parents=True, mode=0o700)
         metadata = {
             "id": connector,
+            "name": "Офис № 2",
             "group": "finland",
             "priority": 2,
             "status": "configured",
@@ -207,6 +208,7 @@ class ProfileTests(unittest.TestCase):
         self.profile["connectors"] = [
             {
                 "id": connector,
+                "name": "Офис № 2",
                 "type": "amneziawg",
                 "group": "finland",
                 "priority": 2,
@@ -222,7 +224,7 @@ class ProfileTests(unittest.TestCase):
         self.assertEqual(direct, {"type": "block", "tag": connector})
         self.assertEqual(
             engine["dns"]["servers"][-1],
-            {"type": "udp", "tag": "dns-awg-test", "server": "1.1.1.1", "detour": connector},
+            {"type": "udp", "tag": "dns-" + connector, "server": "1.1.1.1", "detour": connector},
         )
         self.assertNotIn("secret-marker", json.dumps(engine))
 

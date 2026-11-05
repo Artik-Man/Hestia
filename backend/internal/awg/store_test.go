@@ -1,11 +1,14 @@
 package awg
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
+	"syscall"
 	"testing"
+	"time"
 )
 
 // TestStoreSaveLoadListAndDelete verifies persistence permissions, metadata redaction, and replacement semantics.
@@ -92,5 +95,116 @@ func TestStoreRejectsUnsafeIdentityAndPermissions(t *testing.T) {
 	}
 	if _, _, err := store.Load("awg-test"); err == nil {
 		t.Fatal("Load accepted a group-readable secret file")
+	}
+}
+
+// TestProfileListingAlongsideCatalog verifies repeated helper-style opens and lists finish while a catalog reader holds the installer lock.
+func TestProfileListingAlongsideCatalog(t *testing.T) {
+	store, err := OpenStore(filepath.Join(t.TempDir(), "awg"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	const id = "awg-test"
+	if err := store.Save(Metadata{ID: id, Group: "fi", Priority: 1}, []byte(validProfile)); err != nil {
+		t.Fatal(err)
+	}
+	reader, err := os.Open(store.lockPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer reader.Close()
+	if err := syscall.Flock(int(reader.Fd()), syscall.LOCK_SH); err != nil {
+		t.Fatal(err)
+	}
+
+	done := make(chan error, 1)
+	go func() {
+		for range 3 {
+			reopened, err := OpenStoreWithLock(store.directory, store.lockPath)
+			if err != nil {
+				done <- err
+				return
+			}
+			rows, err := reopened.List()
+			if err != nil {
+				done <- err
+				return
+			}
+			if len(rows) != 1 || rows[0].ID != id {
+				done <- fmt.Errorf("unexpected public metadata: %+v", rows)
+				return
+			}
+		}
+		done <- nil
+	}()
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-time.After(3 * time.Second):
+		if err := syscall.Flock(int(reader.Fd()), syscall.LOCK_UN); err != nil {
+			t.Fatal(err)
+		}
+		<-done
+		t.Fatal("listing public profiles waited for a concurrent catalog reader")
+	}
+}
+
+// TestListRecoversAfterCatalogReaderLeaves checks that an interrupted replacement is restored before returning metadata, with exclusive access.
+func TestListRecoversAfterCatalogReaderLeaves(t *testing.T) {
+	store, err := OpenStore(filepath.Join(t.TempDir(), "awg"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	const id = "awg-test"
+	if err := store.Save(Metadata{ID: id, Group: "fi", Priority: 1}, []byte(validProfile)); err != nil {
+		t.Fatal(err)
+	}
+	backup := store.backupPath(id)
+	if err := os.Rename(filepath.Join(store.directory, id), backup); err != nil {
+		t.Fatal(err)
+	}
+
+	reader, err := os.Open(store.lockPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer reader.Close()
+	if err := syscall.Flock(int(reader.Fd()), syscall.LOCK_SH); err != nil {
+		t.Fatal(err)
+	}
+	started := make(chan struct{})
+	done := make(chan error, 1)
+	go func() {
+		close(started)
+		rows, err := store.List()
+		if err == nil && (len(rows) != 1 || rows[0].ID != id) {
+			err = fmt.Errorf("unexpected recovered metadata: %+v", rows)
+		}
+		done <- err
+	}()
+	<-started
+	select {
+	case err := <-done:
+		t.Fatalf("list completed before exclusive recovery was possible: %v", err)
+	case <-time.After(100 * time.Millisecond):
+	}
+	if _, err := os.Lstat(backup); err != nil {
+		t.Fatalf("backup changed while shared reader held the lock: %v", err)
+	}
+	if err := syscall.Flock(int(reader.Fd()), syscall.LOCK_UN); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("recovery did not finish after the catalog reader left")
+	}
+	if _, err := os.Lstat(backup); !os.IsNotExist(err) {
+		t.Fatalf("backup remains after recovery: %v", err)
 	}
 }

@@ -14,6 +14,7 @@ export interface AWGConnection {
     group: string;
     id: string;
     ipv6Blocked: boolean;
+    name: string;
     priority: number;
     status: AWGConnection.StatusEnum;
     underlays?: Array<string>;

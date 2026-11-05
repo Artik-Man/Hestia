@@ -56,7 +56,7 @@ func validateAWGTree(path string) error {
 	var total int64
 	for _, entry := range entries {
 		id := entry.Name()
-		if !awgID(id) || !entry.IsDir() {
+		if !awg.ValidConnectionID(id) || !entry.IsDir() {
 			return ErrUnavailable
 		}
 		connectorPath := filepath.Join(path, id)
@@ -109,7 +109,7 @@ func readAWGDirectory(path, id string, total *int64) (awg.Metadata, awg.Profile,
 	var metadata awgStoredMetadata
 	decoder := json.NewDecoder(bytes.NewReader(metadataBytes))
 	decoder.DisallowUnknownFields()
-	if decoder.Decode(&metadata) != nil || decoder.Decode(new(any)) != io.EOF || metadata.ID != id || !awg.ValidUnderlays(id, metadata.Underlays) || !awgID(metadata.Group) || metadata.Priority < 1 || metadata.Slot < 0 || metadata.Slot >= awg.SlotCount || (metadata.Status != "configured" && metadata.Status != "ready") || (metadata.Protocol != "wireguard" && metadata.Protocol != "amneziawg") {
+	if decoder.Decode(&metadata) != nil || decoder.Decode(new(any)) != io.EOF || metadata.ID != id || (metadata.Name != "" && ValidateGroupName(metadata.Name) != nil) || !awg.ValidUnderlays(id, metadata.Underlays) || !awgID(metadata.Group) || metadata.Priority < 1 || metadata.Slot < 0 || metadata.Slot >= awg.SlotCount || (metadata.Status != "configured" && metadata.Status != "ready") || (metadata.Protocol != "wireguard" && metadata.Protocol != "amneziawg") {
 		return awg.Metadata{}, awg.Profile{}, ErrUnavailable
 	}
 	profileBytes, err := os.ReadFile(filepath.Join(path, "profile.conf"))

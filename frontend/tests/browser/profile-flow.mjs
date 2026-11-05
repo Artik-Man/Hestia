@@ -43,16 +43,16 @@ export async function openNew(page) {
 }
 
 /** savedRow limits profile actions to the named connector, across the three connection tables. */
-export function savedRow(page, id) {
+export function savedRow(page, name) {
   return page
     .getByRole("table")
     .getByRole("row")
-    .filter({ has: page.getByRole("rowheader", { name: id, exact: true }) });
+    .filter({ has: page.getByRole("rowheader", { name, exact: true }) });
 }
 
 /** assign fills the public identity and initial group without accessing any secret. */
-export async function assign(dialog, id, group) {
-  await dialog.locator("#profile-id").fill(id);
+export async function assign(dialog, name, group) {
+  await dialog.getByLabel("Название подключения", { exact: true }).fill(name);
   const select = dialog.getByRole("combobox");
   if (await select.evaluate((element) => element.tagName === "SELECT"))
     await select.selectOption(group.id);
@@ -67,29 +67,27 @@ export async function assign(dialog, id, group) {
 }
 
 /** edit opens the stored profile through the row action and requires an explicit detail request. */
-export async function edit(page, id) {
+export async function edit(page, id, name) {
   await perform(page, "GET", "/api/awg/" + id, () =>
-    savedRow(page, id)
-      .getByRole("button", { name: "Редактировать профиль " + id })
+    savedRow(page, name)
+      .getByRole("button", { name: "Редактировать профиль " + name })
       .click(),
   );
   const dialog = page.getByRole("dialog");
   await dialog.waitFor();
   assert.equal(await page.getByRole("dialog").count(), 1);
   await dialog.locator("#wg-PrivateKey").waitFor();
-  assert.ok(
-    await dialog
-      .locator("#profile-id")
-      .evaluate((element) => element.readOnly || element.disabled),
-  );
+  const field = dialog.getByLabel("Название подключения", { exact: true });
+  assert.ok(await field.isEditable());
+  assert.equal(await field.inputValue(), name);
   return dialog;
 }
 
 /** exercise imports one profile, reopens it after a reload and deletes only its unique test ID. */
 export async function exercise(page, url, file, afterImport) {
   page.setDefaultTimeout(15000);
-  const id = "e2e-" + randomUUID();
-  const path = "/api/awg/" + id;
+  const name = "Тест WireGuard " + randomUUID();
+  let id;
   const snapshot = await perform(page, "GET", "/api/groups-and-rules", () =>
     page.goto(url),
   );
@@ -99,7 +97,7 @@ export async function exercise(page, url, file, afterImport) {
     (!process.env.HESTIA_E2E_GROUP && groups[0]);
   assert.ok(group, "Test requires an existing group");
   const dialog = await openNew(page);
-  await assign(dialog, id, group);
+  await assign(dialog, name, group);
   const chooser = page.waitForEvent("filechooser");
   await dialog
     .getByRole("button", { name: "Импортировать .conf", exact: true })
@@ -127,29 +125,31 @@ export async function exercise(page, url, file, afterImport) {
   page.on("request", trackRequest);
   page.on("response", trackResponse);
   try {
-    await perform(page, "POST", "/api/awg", () =>
+    const created = await perform(page, "POST", "/api/awg", () =>
       dialog
         .getByRole("button", { name: "Сохранить", exact: true })
         .press("Enter"),
     );
+    id = (await created.json()).id;
+    assert.match(id, /^[0-9a-f-]{36}$/);
     await dialog.waitFor({ state: "hidden" });
-    const row = savedRow(page, id);
+    const row = savedRow(page, name);
     await row.waitFor();
     await page.goto("about:blank");
     await perform(page, "GET", "/api/awg", () => page.goto(url));
     await row.waitFor();
-    const existing = await edit(page, id);
+    const existing = await edit(page, id, name);
     assert.ok(
       await existing.locator("#wg-PrivateKey").inputValue(),
       "saved private key missing",
     );
     await existing.getByRole("button", { name: "Отмена", exact: true }).click();
     page.once("dialog", async (prompt) => {
-      if (prompt.type() === "confirm" && prompt.message().includes(id))
+      if (prompt.type() === "confirm" && prompt.message().includes(name))
         await prompt.accept();
       else await prompt.dismiss();
     });
-    await perform(page, "DELETE", path, () =>
+    await perform(page, "DELETE", "/api/awg/" + id, () =>
       row.getByRole("button", { name: /Удалить/ }).press("Enter"),
     );
     await row.waitFor({ state: "detached" });
@@ -159,6 +159,25 @@ export async function exercise(page, url, file, afterImport) {
   } catch (error) {
     if (saveRequested && !conflict) {
       await page.goto(url);
+      // A lost create response leaves only this run's randomly tagged name to locate its record.
+      if (!id) {
+        const records = await page.evaluate(async () => {
+          const response = await fetch("/api/awg", { redirect: "error" });
+          if (!response.ok) throw new Error("Cannot inspect test profiles");
+          return response.json();
+        });
+        const matches = records.filter((item) => item.name === name);
+        assert.ok(
+          matches.length <= 1,
+          "Cleanup requires an unambiguous test profile",
+        );
+        id = matches[0]?.id;
+      }
+      if (!id) throw error;
+      assert.match(
+        id,
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+      );
       const status = await page.evaluate(
         async (path) =>
           (
@@ -168,7 +187,7 @@ export async function exercise(page, url, file, afterImport) {
               signal: AbortSignal.timeout(120000),
             })
           ).status,
-        path,
+        "/api/awg/" + id,
       );
       if (status !== 404 && (status < 200 || status >= 300))
         throw new Error(`Cleanup failed for ${id}: HTTP ${status}`, {

@@ -64,11 +64,7 @@
                 </th>
                 <td>
                   @if (list.group) {
-                    <a
-                      routerLink="/groups"
-                      [queryParams]="{ group: list.group }"
-                      >{{ groupName(groups(), list.group) }}</a
-                    >
+                    {{ groupName(groups(), list.group) }}
                   } @else {
                     Группа не назначена
                   }

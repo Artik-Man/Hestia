@@ -1,44 +1,5 @@
 @let item = detail();
 @switch (item.kind) {
-  @case ("group") {
-    <section aria-label="Настройки группы">
-      @if (item.group.isDefault) {
-        <span class="default">По умолчанию</span>
-      }
-      <h2>Подключения группы</h2>
-      <ol class="detail-rows">
-        @for (exit of item.group.exits; track exit.id) {
-          <li>
-            <span>{{ catalog.name(exit.id) }}</span>
-            <span class="health" [class.up]="exit.available"
-              ><span class="dot"></span
-              >{{ exit.available ? "Доступен" : "Недоступен" }}</span
-            >
-          </li>
-        } @empty {
-          <li class="muted">Нет настроенных выходов</li>
-        }
-      </ol>
-    </section>
-    <section>
-      <h2>Привязанные доменные списки</h2>
-      <ul class="detail-rows">
-        @for (list of item.lists; track list.id) {
-          <li>
-            <a routerLink="/domain-lists" [queryParams]="{ list: list.id }">{{
-              list.name ?? list.id
-            }}</a
-            ><span class="state" [class.on]="list.enabled">{{
-              list.enabled ? "Включён" : "Выключен"
-            }}</span>
-          </li>
-        } @empty {
-          <li class="muted">Нет привязанных доменных списков</li>
-        }
-      </ul>
-    </section>
-    <a routerLink="/groups">Перейти к управлению группами</a>
-  }
   @case ("list") {
     <section>
       <h2>Настройки списка</h2>
@@ -46,11 +7,7 @@
         <dt>Группа</dt>
         <dd>
           @if (item.list.group) {
-            <a
-              routerLink="/groups"
-              [queryParams]="{ group: item.list.group }"
-              >{{ groupName(snapshot().groups, item.list.group) }}</a
-            >
+            {{ groupName(snapshot().groups, item.list.group) }}
           } @else {
             Группа не назначена
           }

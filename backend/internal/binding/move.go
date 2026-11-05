@@ -6,13 +6,14 @@ import (
 	"slices"
 	"strconv"
 
+	"github.com/Artik-Man/Hestia/internal/awg"
 	"github.com/Artik-Man/Hestia/internal/controller"
 )
 
 // MoveExit places an installed exit at the requested one-based priority if its current owner matches expectedGroup.
 // It preserves all other memberships and profile secrets through the same verified transaction used for group order changes.
 func (e Engine) MoveExit(ctx context.Context, id, expectedGroup, targetGroup string, priority int) error {
-	if !awgID(id) || ValidateGroupID(expectedGroup) != nil || ValidateGroupID(targetGroup) != nil || priority < 1 {
+	if !awg.ValidConnectionID(id) || ValidateGroupID(expectedGroup) != nil || ValidateGroupID(targetGroup) != nil || priority < 1 {
 		return ErrInvalidOrder
 	}
 	var expected controller.Config

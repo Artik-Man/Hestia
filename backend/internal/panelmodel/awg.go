@@ -21,6 +21,7 @@ func (ids *UnderlayIDs) UnmarshalJSON(data []byte) error {
 
 // AWGConnection contains public AmneziaWG metadata and never includes profile or key material.
 type AWGConnection struct {
+	Name           string      `json:"name" minLength:"1" maxLength:"80"`
 	Underlays      UnderlayIDs `json:"underlays,omitzero" maxItems:"64" nullable:"false"`
 	ActiveUnderlay string      `json:"activeUnderlay,omitempty"`
 	ID             string      `json:"id" minLength:"1"`
@@ -42,8 +43,18 @@ type AWGCheckResult struct {
 	RouteReady bool   `json:"routeReady"`
 }
 
+// AWGCreateRequest carries the visible name and settings for a new connection; the server assigns its ID.
+type AWGCreateRequest struct {
+	Name      string      `json:"name" minLength:"1" maxLength:"80"`
+	Underlays UnderlayIDs `json:"underlays,omitzero" maxItems:"64" nullable:"false" doc:"Идентификаторы выходов в порядке предпочтения; пустой список — обычный маршрут"`
+	Group     string      `json:"group" minLength:"1"`
+	Priority  AWGPriority `json:"priority,omitempty" minimum:"1"`
+	Profile   string      `json:"profile" minLength:"1"`
+}
+
 // AWGSaveRequest stores one validated profile and its selected group position.
 type AWGSaveRequest struct {
+	Name      string      `json:"name" minLength:"1" maxLength:"80"`
 	Underlays UnderlayIDs `json:"underlays,omitzero" maxItems:"64" nullable:"false" doc:"Идентификаторы выходов в порядке предпочтения; пустой список — обычный маршрут"`
 	ID        string      `json:"id" minLength:"1"`
 	Group     string      `json:"group" minLength:"1"`
@@ -53,6 +64,7 @@ type AWGSaveRequest struct {
 
 // AWGUpdateRequest replaces mutable settings while the path keeps the connection ID stable.
 type AWGUpdateRequest struct {
+	Name      AWGUpdateName  `json:"name,omitempty" minLength:"1" maxLength:"80"`
 	Underlays UnderlayIDs    `json:"underlays,omitzero" maxItems:"64" nullable:"false" doc:"Идентификаторы выходов в порядке предпочтения; пустой список — обычный маршрут"`
 	Group     AWGUpdateGroup `json:"group,omitempty" minLength:"1"`
 	Priority  AWGPriority    `json:"priority,omitempty" minimum:"1"`
@@ -66,6 +78,7 @@ type AWGIDRequest struct {
 
 // AWGConnectionProfile contains the complete normalized secret configuration for editing one connection.
 type AWGConnectionProfile struct {
+	Name      string      `json:"name" minLength:"1" maxLength:"80"`
 	Underlays UnderlayIDs `json:"underlays,omitzero" maxItems:"64" nullable:"false" doc:"Идентификаторы выходов в порядке предпочтения; пустой список — обычный маршрут"`
 	ID        string      `json:"id" minLength:"1"`
 	Group     string      `json:"group" minLength:"1"`
@@ -103,5 +116,18 @@ func (g *AWGUpdateGroup) UnmarshalJSON(data []byte) error {
 		return errors.New("group must be a nonempty identifier")
 	}
 	*g = AWGUpdateGroup(id)
+	return nil
+}
+
+// AWGUpdateName distinguishes omitted names from invalid explicit empty or null names.
+type AWGUpdateName string
+
+// UnmarshalJSON accepts a nonempty name for subsequent display-name validation.
+func (n *AWGUpdateName) UnmarshalJSON(data []byte) error {
+	var value string
+	if json.Unmarshal(data, &value) != nil || value == "" {
+		return errors.New("name must be a nonempty string")
+	}
+	*n = AWGUpdateName(value)
 	return nil
 }

@@ -9,12 +9,14 @@ Group=hestia-panel
 StateDirectory=hestia-quality-settings hestia-dns-policy hestia-traffic
 StateDirectoryMode=0755
 SupplementaryGroups=hestia-snapshot
+# The panel writes assignments; the root helper reads them with its normal group permissions.
+ExecStartPre=+/usr/bin/install -d -o hestia-panel -g root -m 2750 /var/lib/hestia-country-map
 ExecStart=/usr/local/bin/hestia-panel -listen @PANEL_LISTEN@ -assets /usr/local/share/hestia-panel/current -snapshot /etc/hestia/snapshot.json -dns-policy /var/lib/hestia-dns-policy/policy.json -enable-bindings -enable-group-order -enable-domain-lists -enable-group-create -enable-group-delete -enable-exit-move -enable-awg
 Restart=on-failure
 RestartSec=3s
 ProtectSystem=strict
 ProtectHome=yes
-ReadWritePaths=/run/amneziawg /etc/hestia /run/hestia-awg /run/hestia-install.lock -/etc/NetworkManager/system-connections
+ReadWritePaths=/var/lib/hestia-country-map /run/amneziawg /etc/hestia /run/hestia-awg /run/hestia-install.lock -/etc/NetworkManager/system-connections
 CapabilityBoundingSet=CAP_NET_ADMIN CAP_SETUID CAP_SETGID CAP_CHOWN
 AmbientCapabilities=
 

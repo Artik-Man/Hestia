@@ -125,7 +125,8 @@ export class TrafficScreen {
   }
 
   /** refresh anchors a new time window at the present and resets scrolling without changing any filter. */
-  protected refresh(): void {
+  protected refresh(refreshNames = false): void {
+    if (refreshNames) this.catalog.reload();
     this.request?.unsubscribe();
     const now = Date.now();
     this.filters = {

@@ -19,7 +19,12 @@ import { FormBuilder, ReactiveFormsModule } from "@angular/forms";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { firstValueFrom } from "rxjs";
 import type { Group } from "../../services/api/generated/model/group";
-import { isAWGConnection, isUnderlayOrder } from "../../models/awg-connection";
+import {
+  isAWGConnection,
+  isConnectionUUID,
+  isConnectionName,
+  isUnderlayOrder,
+} from "../../models/awg-connection";
 import type { AWGConnection } from "../../services/api/generated/model/aWGConnection";
 import { PanelService } from "../../services/api/generated/api/panel.service";
 import { ConnectionCatalog } from "../../services/connection-catalog.service";
@@ -50,7 +55,6 @@ import {
 })
 export class ProfileDraft implements OnChanges, AfterViewInit {
   readonly groups = input.required<readonly Group[]>();
-  readonly existingIDs = input<readonly string[]>([]);
   readonly connection = input<AWGConnection | null>(null);
   readonly closed = output<void>();
   readonly saved = output<AWGConnection>();
@@ -134,7 +138,7 @@ export class ProfileDraft implements OnChanges, AfterViewInit {
   private initialized: string | null | undefined;
   private revision = 0;
   protected readonly form = this.builder.group({
-    id: "",
+    name: "",
     group: "",
   });
 
@@ -164,7 +168,7 @@ export class ProfileDraft implements OnChanges, AfterViewInit {
       this.groups().find((item) => item.isDefault) ??
       (this.groups().length === 1 ? this.groups()[0] : undefined);
     this.form.reset({
-      id: id ?? "",
+      name: this.connection()?.name ?? "",
       group: this.connection()?.group ?? initialGroup?.id ?? "",
     });
     if (id) void this.loadProfile(id);
@@ -187,6 +191,8 @@ export class ProfileDraft implements OnChanges, AfterViewInit {
         data === null ||
         !("id" in data) ||
         data.id !== id ||
+        !("name" in data) ||
+        !isConnectionName(data.name) ||
         !("profile" in data) ||
         typeof data.profile !== "string" ||
         !("group" in data) ||
@@ -204,7 +210,7 @@ export class ProfileDraft implements OnChanges, AfterViewInit {
         throw new Error("Invalid underlay priority list");
       this.underlays.set(underlays);
       const fields = parseWireGuardConfig(data.profile);
-      this.form.reset({ id, group: data.group });
+      this.form.reset({ name: data.name, group: data.group });
       this.values.set(fields);
     } catch (error: unknown) {
       if (this.destroy.destroyed || revision !== this.revision) return;
@@ -271,20 +277,13 @@ export class ProfileDraft implements OnChanges, AfterViewInit {
   /** submit creates or updates the edited record once, retaining its draft when validation or gateway activation fails. */
   protected async submit(): Promise<void> {
     if (this.reading() || this.unavailable() || this.submitting()) return;
-    const { id, group } = this.form.getRawValue();
+    const { name: enteredName, group } = this.form.getRawValue();
+    const name = enteredName.trim();
     const target = this.target();
-    if (
-      !/^[a-z][a-z0-9-]{0,62}$/u.test(id) ||
-      (target !== null && id !== target) ||
-      (target === null &&
-        (this.existingIDs().includes(id) ||
-          this.groups().some(
-            (g) => g.id === id || g.exits.some((e) => e.id === id),
-          )))
-    ) {
+    if (!isConnectionName(name)) {
       this.messages.show(
         "error",
-        "Введите свободное название длиной до 63 символов. Начните со строчной латинской буквы, далее можно использовать строчные буквы, цифры и дефис.",
+        "Введите название подключения длиной от 1 до 80 символов без управляющих знаков.",
       );
       return;
     }
@@ -295,16 +294,19 @@ export class ProfileDraft implements OnChanges, AfterViewInit {
     this.submitting.set(true);
     try {
       const profile = buildWireGuardConfig(this.values());
-      const request = { profile, underlays: this.underlays() };
+      const request = { name, profile, underlays: this.underlays() };
       const connection: unknown = await firstValueFrom(
         target
           ? this.panel.updateAWGConnection(target, request)
-          : this.panel.createAWGConnection({ id, group, ...request }),
+          : this.panel.createAWGConnection({ group, ...request }),
       );
       if (this.destroy.destroyed) return;
       if (
         !isAWGConnection(connection) ||
-        connection.id !== id ||
+        (target
+          ? connection.id !== target
+          : !isConnectionUUID(connection.id)) ||
+        connection.name !== name ||
         (!target && connection.group !== group)
       ) {
         this.messages.show(
@@ -315,7 +317,10 @@ export class ProfileDraft implements OnChanges, AfterViewInit {
       }
       this.values.set({});
       this.dialog.nativeElement.close();
-      this.messages.show("success", `Подключение «${id}» сохранено.`);
+      this.messages.show(
+        "success",
+        `Подключение «${connection.name}» сохранено.`,
+      );
       this.saved.emit(connection);
     } catch (error: unknown) {
       if (!this.destroy.destroyed)

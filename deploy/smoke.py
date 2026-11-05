@@ -14,6 +14,9 @@ from pathlib import Path
 from urllib.parse import quote
 
 
+CONNECTION_ID = re.compile(r"[a-z][a-z0-9-]{0,62}|[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}")
+
+
 def run(*args):
     """Read one local diagnostic command within a one-second timeout."""
     return subprocess.check_output(
@@ -23,7 +26,7 @@ def run(*args):
 
 def fresh_awg_heartbeat(exit_id: str) -> bool:
     """Match the watcher's identity, age and file ownership checks on one runtime marker."""
-    if not re.fullmatch(r"[a-z][a-z0-9-]{0,62}", exit_id):
+    if not CONNECTION_ID.fullmatch(exit_id):
         return False
     path = Path("/run/hestia-awg") / ("health.json." + exit_id)
     try:
@@ -39,7 +42,7 @@ def fresh_awg_heartbeat(exit_id: str) -> bool:
         record = json.loads(raw)
         if (not isinstance(record, dict) or set(record) - {"id", "status", "updatedAt", "activeUnderlay"}
                 or not {"id","status","updatedAt"}.issubset(record)
-                or ("activeUnderlay" in record and (not isinstance(record["activeUnderlay"], str) or not re.fullmatch(r"[a-z][a-z0-9-]{0,62}",record["activeUnderlay"]) or record["activeUnderlay"] == exit_id))
+                or ("activeUnderlay" in record and (not isinstance(record["activeUnderlay"], str) or not CONNECTION_ID.fullmatch(record["activeUnderlay"]) or record["activeUnderlay"] == exit_id))
                 or record["id"] != exit_id or record["status"] != "ready"):
             return False
         timestamp = datetime.fromisoformat(record["updatedAt"].replace("Z", "+00:00"))

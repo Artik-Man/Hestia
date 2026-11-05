@@ -27,15 +27,13 @@
         <fieldset [disabled]="reading() || submitting()">
           <legend>Подключение</legend>
           <div class="metadata-grid">
-            <label for="profile-id"
+            <label for="profile-name"
               >Название подключения
               <input
                 pInputText
-                id="profile-id"
-                formControlName="id"
-                maxlength="63"
+                id="profile-name"
+                formControlName="name"
                 required
-                [readOnly]="target() !== null"
               />
             </label>
             @if (!target()) {

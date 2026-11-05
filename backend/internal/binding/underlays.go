@@ -94,10 +94,14 @@ func (e Engine) connectionCatalog() ([]panelmodel.AWGUnderlayCandidate, error) {
 		candidates = append(candidates, panelmodel.AWGUnderlayCandidate{ID: item.ID, Type: item.Type, Name: name})
 	}
 	for _, item := range profile.Connectors {
-		if !awgID(item.ID) || (item.Type != "wireguard" && item.Type != "amneziawg") {
+		if !awg.ValidConnectionID(item.ID) || (item.Name != "" && ValidateGroupName(item.Name) != nil) || (item.Type != "wireguard" && item.Type != "amneziawg") {
 			return nil, ErrUnavailable
 		}
-		candidates = append(candidates, panelmodel.AWGUnderlayCandidate{ID: item.ID, Type: item.Type})
+		name := item.Name
+		if name == "" {
+			name = item.ID
+		}
+		candidates = append(candidates, panelmodel.AWGUnderlayCandidate{ID: item.ID, Type: item.Type, Name: name})
 	}
 	return candidates, nil
 }

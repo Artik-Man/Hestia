@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Source in trusted gateway installers under their installation lock.
 
+awg_connection_id_pattern='^([a-z][a-z0-9-]{0,62}|[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12})$'
+
 # inspect_legacy_awg verifies an existing singleton unit before migration and records its active state.
 inspect_legacy_awg() {
     local path=/etc/systemd/system/hestia-awg.service state hash
@@ -32,7 +34,7 @@ stop_legacy_awg() {
     if ((legacy_awg_active)); then
         systemctl stop hestia-awg.service || return 1
         if [[ -e /run/hestia-awg/routes.json || -L /run/hestia-awg/routes.json ]]; then
-            [[ $id =~ ^[a-z][a-z0-9-]{0,62}$ ]] || return 1
+            [[ $id =~ $awg_connection_id_pattern ]] || return 1
             "$binary" -awg-retire-legacy "$id" 0 || return 1
         fi
     fi
@@ -63,7 +65,7 @@ restart_ready_awg() {
     plan=$(python3 -I "$compiler" --awg-start-plan /etc/hestia) || return 1
     while read -r id slot mode count; do
         [[ -n $id ]] || continue
-        [[ $id =~ ^[a-z][a-z0-9-]{0,62}$ && $slot =~ ^([0-9]|[1-4][0-9])$ && ($mode == auto || $mode == manual) ]] || return 1
+        [[ $id =~ $awg_connection_id_pattern && $slot =~ ^([0-9]|[1-4][0-9])$ && ($mode == auto || $mode == manual) ]] || return 1
         unit=hestia-awg@${id}.service
         marker=/run/hestia-awg/ready.${id}
         systemctl stop "$unit" || return 1
@@ -86,7 +88,7 @@ confirm_manual_awg() {
     plan=$(python3 -I "$compiler" --awg-start-plan /etc/hestia) || return 1
     while read -r id slot mode count; do
         if [[ $mode == manual ]]; then
-            [[ $id =~ ^[a-z][a-z0-9-]{0,62}$ ]] || return 1
+            [[ $id =~ $awg_connection_id_pattern ]] || return 1
             [[ $count =~ ^([1-9]|[1-5][0-9]|6[0-4])$ ]] || return 1
             wait_awg_proof /usr/local/bin/hestia "$id" "$slot" ready "$((30 + 12 * count))" || return 1
         fi

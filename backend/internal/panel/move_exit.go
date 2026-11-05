@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/Artik-Man/Hestia/internal/awg"
 	"github.com/Artik-Man/Hestia/internal/binding"
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
 	"github.com/danielgtaylor/huma/v2"
@@ -11,7 +12,7 @@ import (
 
 type exitMover func(context.Context, panelmodel.ExitMoveCommand) error
 type moveExitInput struct {
-	ID   string `path:"id" minLength:"1" maxLength:"63" pattern:"^[a-z][a-z0-9-]{0,62}$"`
+	ID   string `path:"id" minLength:"1" maxLength:"63" pattern:"^([a-z][a-z0-9-]{0,62}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$"`
 	Body panelmodel.ExitGroupChange
 }
 type moveExitOutput struct {
@@ -25,7 +26,7 @@ func registerMoveExit(api huma.API, move exitMover) {
 		Summary: "Перенести подключение в другую группу", MaxBodyBytes: 1024,
 		Errors: []int{http.StatusRequestEntityTooLarge, http.StatusNotFound, http.StatusConflict, http.StatusUnprocessableEntity, http.StatusServiceUnavailable},
 	}, func(ctx context.Context, in *moveExitInput) (*moveExitOutput, error) {
-		if binding.ValidateGroupID(in.ID) != nil || binding.ValidateGroupID(in.Body.ExpectedGroup) != nil || binding.ValidateGroupID(in.Body.Group) != nil {
+		if !awg.ValidConnectionID(in.ID) || in.ID == "deny" || binding.ValidateGroupID(in.Body.ExpectedGroup) != nil || binding.ValidateGroupID(in.Body.Group) != nil {
 			return nil, huma.Error422UnprocessableEntity("Некорректный ID подключения или группы")
 		}
 		if move == nil {

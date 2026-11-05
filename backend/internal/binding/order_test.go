@@ -167,3 +167,44 @@ func TestDeleteGroupGuards(t *testing.T) {
 		}
 	}
 }
+
+// TestCountryAssignmentBlocksDeletion verifies group removal and policy writes obey the same lock and dependencies.
+func TestCountryAssignmentBlocksDeletion(t *testing.T) {
+	e := testEngine(t)
+	e.countryMapPath = filepath.Join(t.TempDir(), "policy.json")
+	snapshot := []byte(`{"groups":[{"id":"main"},{"id":"backup"}],"healthy":{}}`)
+	if err := os.WriteFile(filepath.Join(e.dir, "snapshot.json"), snapshot, 0640); err != nil {
+		t.Fatal(err)
+	}
+	reader, err := e.acquire(false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	policy, err := e.CountryMap(nil)
+	reader.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	info, err := os.Stat(e.countryMapPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.Mode().Perm() != 0640 {
+		t.Fatalf("policy mode %o prevents bounded helper access or exposes assignments", info.Mode().Perm())
+	}
+	policy.Assignments["FI"] = "backup"
+	if _, err := e.CountryMap(&policy); err != nil {
+		t.Fatal(err)
+	}
+	if err := e.DeleteGroup(context.Background(), "backup"); !errors.Is(err, ErrConflict) {
+		t.Fatalf("assigned group deletion: %v", err)
+	}
+	lock, err := e.acquire(true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer lock.Close()
+	if _, err := e.CountryMap(nil); !errors.Is(err, ErrConflict) {
+		t.Fatalf("read during group transaction: %v", err)
+	}
+}

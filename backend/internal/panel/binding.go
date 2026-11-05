@@ -106,7 +106,7 @@ func runInstalledHelper[T panelmodel.RuleList | panelmodel.DomainListUpdate | pa
 					return huma.Error409Conflict("Переименование доступно для прямого подключения при свободной конфигурации")
 				}
 				if mode == "-delete-group" {
-					return huma.Error409Conflict("Группа содержит подключения, назначена по умолчанию или конфигурация сейчас меняется")
+					return huma.Error409Conflict("Группа содержит подключения, используется в маршрутизации по странам, назначена по умолчанию или конфигурация сейчас меняется")
 				}
 				return huma.Error409Conflict("Конфигурация изменилась или выполняется другая операция")
 			}

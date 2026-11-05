@@ -29,14 +29,12 @@
     @if (item.group) {
       <dt>Группа</dt>
       <dd>
-        <a routerLink="/groups" [queryParams]="{ group: item.group }">{{
-          item.group
-        }}</a>
+        {{ catalog.describe(item.group) }}
       </dd>
     }
     @if (item.reason) {
       <dt>Причина выбора</dt>
-      <dd>{{ item.reason }}</dd>
+      <dd>{{ catalog.describe(item.reason) }}</dd>
     }
     <dt>Результат</dt>
     <dd>
@@ -51,7 +49,7 @@
         @case ("blocked") {
           Заблокировано
           @if (item.blockReason) {
-            · {{ item.blockReason }}
+            · {{ catalog.describe(item.blockReason) }}
           }
         }
         @case ("unconfirmed") {

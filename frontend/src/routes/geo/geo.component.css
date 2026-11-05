@@ -88,3 +88,39 @@ td {
 .intro {
   padding-bottom: 12px;
 }
+
+.controls {
+  grid-template-columns: minmax(0, 1fr) minmax(10rem, 15rem);
+  align-items: start;
+  gap: 16px;
+}
+.description,
+.save-controls {
+  display: grid;
+  gap: 7px;
+}
+.save-controls {
+  justify-items: end;
+  text-align: right;
+}
+.save-status {
+  block-size: 3.75em;
+  line-height: 1.25;
+  overflow: auto;
+  font-size: 0.85rem;
+  color: var(--ui-muted);
+}
+.save-status [role="alert"] {
+  color: var(--ui-warning);
+}
+@media (max-width: 600px) {
+  .controls {
+    grid-template-columns: 1fr;
+  }
+  .save-controls {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    justify-items: start;
+    text-align: left;
+  }
+}

@@ -39,12 +39,13 @@ var managedFiles = []string{"profile.json", "profile-source.sha256", "sing-box.j
 
 // Engine operates on fixed trusted installation paths. Its commands take structured arguments without a shell.
 type Engine struct {
-	dir, lock   string
-	snapshotGID int
-	run         func(context.Context, string, ...string) error
-	unitCheck   func() (bool, error)
-	readyWait   func(context.Context, string) error
-	guardCheck  func(context.Context, string, int) error
+	dir, lock      string
+	countryMapPath string
+	snapshotGID    int
+	run            func(context.Context, string, ...string) error
+	unitCheck      func() (bool, error)
+	readyWait      func(context.Context, string) error
+	guardCheck     func(context.Context, string, int) error
 }
 
 // Installed returns the engine for the installer-managed Debian gateway.
@@ -55,7 +56,7 @@ func Installed() Engine {
 			gid = value
 		}
 	}
-	return Engine{dir: "/etc/hestia", lock: "/run/hestia-install.lock", snapshotGID: gid, run: runCommand}
+	return Engine{countryMapPath: "/var/lib/hestia-country-map/policy.json", dir: "/etc/hestia", lock: "/run/hestia-install.lock", snapshotGID: gid, run: runCommand}
 }
 
 // runCommand executes one bounded local command and keeps private command output out of errors.

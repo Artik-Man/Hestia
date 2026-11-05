@@ -1,9 +1,6 @@
 <header class="intro">
   <h1>Маршруты по странам</h1>
 </header>
-@if (draft.warning()) {
-  <p class="notice failure" role="alert">{{ draft.warning() }}</p>
-}
 @if (inventory.view().kind === "failed") {
   <p class="notice failure" role="alert">
     Не удалось загрузить группы.
@@ -15,33 +12,64 @@
   <p role="status">Загружаем группы…</p>
 } @else if (!groups().length) {
   <p class="notice">Для назначения стран нужна группа подключений.</p>
-} @else if (draft.value(); as map) {
+} @else if (state.phase() === "loading") {
+  <p role="status">Загружаем назначения стран…</p>
+} @else if (state.phase() === "failed") {
+  <p role="alert">{{ state.warning() }}</p>
+  <button pButton type="button" (click)="state.load()">
+    Повторить загрузку
+  </button>
+} @else if (state.value(); as map) {
   <section class="map-card" aria-label="Настройки маршрутизации по странам">
     <div class="controls">
-      <div class="switch-label">
-        <p-toggleswitch
-          inputId="country-routing"
-          [ngModel]="map.enabled"
-          (ngModelChange)="toggle($event)"
-        />
-        <label for="country-routing"
-          >Выбирать группу по стране назначения</label
-        >
-      </div>
-      <p class="hint">
-        Доменное правило имеет приоритет над выбором по стране.
-      </p>
-      @if (defaultGroup(); as fallback) {
+      <div class="description">
+        <div class="switch-label">
+          <p-toggleswitch
+            inputId="country-routing"
+            [disabled]="state.phase() === 'saving'"
+            [ngModel]="map.enabled"
+            (ngModelChange)="toggle($event)"
+          />
+          <label for="country-routing"
+            >Выбирать группу по стране назначения</label
+          >
+        </div>
         <p class="hint">
-          Если страна IP-адреса неизвестна, используется группа по умолчанию:
-          <strong>{{ fallback.name ?? fallback.id }}</strong
-          >.
+          Доменное правило имеет приоритет над выбором по стране.
         </p>
-      }
-      <p class="hint">
-        Локальный черновик в этом браузере. Изменения сохраняются здесь и не
-        применяются к шлюзу.
-      </p>
+        @if (defaultGroup(); as fallback) {
+          <p class="hint">
+            Если страна IP-адреса неизвестна, используется группа по умолчанию:
+            <strong>{{ fallback.name ?? fallback.id }}</strong
+            >.
+          </p>
+        }
+        <p class="hint">
+          Настройки сохраняются на шлюзе. Применение к трафику пока в
+          разработке.
+        </p>
+      </div>
+      <div class="save-controls">
+        <button
+          pButton
+          type="button"
+          [disabled]="!state.dirty() || state.phase() === 'saving'"
+          (click)="state.save()"
+        >
+          Сохранить
+        </button>
+        <div class="save-status" aria-live="polite">
+          @if (state.warning()) {
+            <span role="alert">{{ state.warning() }}</span>
+          } @else if (state.phase() === "saving") {
+            <span>Сохраняем…</span>
+          } @else if (state.dirty()) {
+            <span>Есть изменения</span>
+          } @else if (state.saved()) {
+            <span>Сохранено</span>
+          }
+        </div>
+      </div>
     </div>
     <div
       class="table-wrap"
@@ -63,6 +91,7 @@
                 <button
                   pButton
                   type="button"
+                  [disabled]="state.phase() === 'saving'"
                   (click)="assign(group.id)"
                   [attr.aria-label]="label"
                   [pTooltip]="label"
@@ -87,6 +116,7 @@
                 <td>
                   <p-radiobutton
                     [name]="'country-' + country.code"
+                    [disabled]="state.phase() === 'saving'"
                     [value]="group.id"
                     [ngModel]="map.assignments[country.code]"
                     (ngModelChange)="assign(group.id, country.code)"
@@ -117,17 +147,4 @@
       </table>
     </div>
   </section>
-} @else if (!defaultGroup()) {
-  <p class="notice" role="status">
-    Чтобы настроить маршрутизацию по странам, назначьте группу по умолчанию в
-    разделе «Группы подключений».
-  </p>
-} @else if (draft.warning()) {
-  <p class="notice">
-    Можно заменить повреждённый черновик новой выключенной картой. Все страны
-    получат текущую группу по умолчанию.
-    <button pButton type="button" (click)="recreate()">
-      Заменить повреждённый черновик
-    </button>
-  </p>
 }

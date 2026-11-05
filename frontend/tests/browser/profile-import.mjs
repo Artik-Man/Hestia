@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 import { expect } from "playwright/test";
@@ -15,10 +16,11 @@ import {
 const origin = "http://127.0.0.1";
 const wifiID = "00330000-1111-4222-8333-444455556666";
 const url = origin + "/#/connections";
+const storedID = "10330000-1111-4222-8333-444455556666";
 const group = {
   id: "test",
   isDefault: true,
-  exits: [{ id: "existing", available: true }],
+  exits: [{ id: storedID, available: true }],
 };
 const required = {
   Address: "10.66.0.2/32",
@@ -54,7 +56,8 @@ async function fixture(
   { includeOrphan = false, hasRadio = true, directName } = {},
 ) {
   const publicRecord = {
-    id: "existing",
+    id: storedID,
+    name: "existing",
     group: "test",
     priority: 2,
     status: "ready",
@@ -66,6 +69,7 @@ async function fixture(
     records.set("pending", {
       ...publicRecord,
       id: "pending",
+      name: "pending",
       status: "checking",
       priority: 3,
     });
@@ -166,9 +170,10 @@ async function fixture(
           direct,
           { id: "wan-b", type: "direct" },
           { id: "unmatched", type: "direct" },
-          ...[...records.keys()].map((id) => ({
+          ...[...records.values()].map(({ id, name }) => ({
+            name,
             id,
-            type: id === "existing" ? "amneziawg" : "wireguard",
+            type: id === storedID ? "amneziawg" : "wireguard",
           })),
         ],
       });
@@ -181,16 +186,14 @@ async function fixture(
     if (pathname === "/api/awg" && req.method() === "GET")
       return route.fulfill({ json: [...records.values()] });
     const id = pathname.split("/")[3];
-    if (
-      /^\/api\/awg\/[a-z][a-z0-9-]*$/.test(pathname) &&
-      req.method() === "GET"
-    ) {
+    if (/^\/api\/awg\/[a-z0-9-]+$/.test(pathname) && req.method() === "GET") {
       state.details.push(id);
       if (!records.has(id)) return route.fulfill({ status: 404 });
-      const { group, priority } = records.get(id);
+      const { name, group, priority } = records.get(id);
       return route.fulfill({
         json: {
           id,
+          name,
           group,
           priority,
           underlays: records.get(id).underlays ?? [],
@@ -212,9 +215,10 @@ async function fixture(
           json: { detail: "invalid profile" },
         });
       }
-      const tag = req.method() === "PUT" ? id : data.id;
+      const tag = req.method() === "PUT" ? id : randomUUID();
       const record = {
         id: tag,
+        name: data.name,
         group: records.get(tag)?.group ?? data.group,
         underlays: data.underlays,
         priority: records.get(tag)?.priority ?? records.size + 2,
@@ -281,7 +285,7 @@ test("the keyboard menu imports editable WireGuard fields and an ambiguous save 
       exercise(page, url, file(config)),
       /POST \/api\/awg: HTTP 502/,
     );
-    assert.deepEqual([...records.keys()], ["existing"]);
+    assert.deepEqual([...records.keys()], [storedID]);
   } finally {
     await browser.close();
   }
@@ -380,7 +384,7 @@ test("one dialog creates manually, reopens all stored keys, retains drafts on fa
     );
     assert.equal(state.writes.length, 0);
     const dialog = await openNew(page);
-    await assign(dialog, "manual-test", group);
+    await assign(dialog, "Офис № 2", group);
     for (const [name, value] of Object.entries(required))
       await dialog.locator("#wg-" + name).fill(value);
     await dialog
@@ -397,14 +401,19 @@ test("one dialog creates manually, reopens all stored keys, retains drafts on fa
     assert.equal(records.size, 2);
     assert.equal(state.writes[0].data.group, "test");
     assert.ok(!Object.hasOwn(state.writes[0].data, "priority"));
-    assert.equal(records.get("manual-test").priority, 3);
+    assert.ok(!Object.hasOwn(state.writes[0].data, "id"));
+    const createdID = [...records.values()].find(
+      (record) => record.name === "Офис № 2",
+    ).id;
+    assert.equal(records.get(createdID).priority, 3);
+    assert.ok(!(await page.locator("body").innerText()).includes(createdID));
     assert.equal(
       await savedRow(page, "existing")
         .getByText("Доступно", { exact: true })
         .count(),
       1,
     );
-    const existing = await edit(page, "existing");
+    const existing = await edit(page, storedID, "existing");
     assert.equal(await existing.locator("#profile-priority").count(), 0);
     for (const [name, value] of Object.entries({ ...required, ...optional })) {
       const input = existing.locator("#wg-" + name);
@@ -426,19 +435,22 @@ test("one dialog creates manually, reopens all stored keys, retains drafts on fa
     );
     assert.ok(await trigger.isVisible());
     assert.equal(state.writes.length, 1);
-    const current = await edit(page, "existing");
+    const current = await edit(page, storedID, "existing");
     assert.equal(
       await current.locator("#wg-Endpoint").inputValue(),
       required.Endpoint,
     );
     await current.locator("#wg-Endpoint").fill("203.0.113.3:443");
+    await current
+      .getByLabel("Название подключения", { exact: true })
+      .fill("Рабочий VPN");
     state.rejectNext = true;
     const submit = current.getByRole("button", {
       name: "Сохранить",
       exact: true,
     });
     await assert.rejects(
-      perform(page, "PUT", "/api/awg/existing", () => submit.press("Enter")),
+      perform(page, "PUT", "/api/awg/" + storedID, () => submit.press("Enter")),
       /HTTP 422/,
     );
     await current.getByRole("alert").first().waitFor();
@@ -446,20 +458,22 @@ test("one dialog creates manually, reopens all stored keys, retains drafts on fa
       await current.locator("#wg-Endpoint").inputValue(),
       "203.0.113.3:443",
     );
-    assert.equal(profiles.get("existing"), config);
-    await perform(page, "PUT", "/api/awg/existing", () =>
+    assert.equal(profiles.get(storedID), config);
+    await perform(page, "PUT", "/api/awg/" + storedID, () =>
       submit.press("Enter"),
     );
     await current.waitFor({ state: "detached" });
     for (const field of ["group", "priority"])
       assert.ok(!Object.hasOwn(state.writes.at(-1).data, field));
-    assert.equal(records.get("existing").group, "test");
-    assert.equal(records.get("existing").priority, 2);
-    const saved = profiles.get("existing");
+    assert.equal(records.get(storedID).group, "test");
+    assert.equal(records.get(storedID).priority, 2);
+    await savedRow(page, "Рабочий VPN").waitFor();
+    assert.equal(records.get(storedID).name, "Рабочий VPN");
+    const saved = profiles.get(storedID);
     assert.match(saved, /Endpoint\s*=\s*203\.0\.113\.3:443/);
     for (const value of [required.PrivateKey, ...Object.values(optional)])
       assert.ok(saved.includes(value));
-    const remove = savedRow(page, "manual-test").getByRole("button", {
+    const remove = savedRow(page, "Офис № 2").getByRole("button", {
       name: /Удалить/,
     });
     assert.equal((await remove.innerText()).trim(), "");
@@ -475,12 +489,12 @@ test("one dialog creates manually, reopens all stored keys, retains drafts on fa
     );
     page.once("dialog", (prompt) => prompt.dismiss());
     await remove.press("Enter");
-    assert.ok(records.has("manual-test"));
+    assert.ok(records.has(createdID));
     page.once("dialog", (prompt) => prompt.accept());
-    await perform(page, "DELETE", "/api/awg/manual-test", () =>
+    await perform(page, "DELETE", "/api/awg/" + createdID, () =>
       remove.press("Enter"),
     );
-    assert.deepEqual([...records.keys()], ["existing"]);
+    assert.deepEqual([...records.keys()], [storedID]);
     assert.ok(await add.isVisible());
   } finally {
     await browser.close();
@@ -495,7 +509,7 @@ test("ordered transports persist and the automatic mode clears all explicit choi
     const page = await browser.newPage({ serviceWorkers: "block" });
     const { state } = await fixture(page);
     await perform(page, "GET", "/api/awg", () => page.goto(url));
-    let dialog = await edit(page, "existing");
+    let dialog = await edit(page, storedID, "existing");
     const trigger = dialog.locator("#underlay-trigger");
     assert.match(await trigger.innerText(), /Любое интернет-подключение/);
     await trigger.click();
@@ -512,18 +526,18 @@ test("ordered transports persist and the automatic mode clears all explicit choi
       .filter({ hasText: "wan-b" })
       .dragTo(rows.filter({ hasText: "wan-a" }));
     assert.match(await trigger.innerText(), /wan-b → wan-a/);
-    await perform(page, "PUT", "/api/awg/existing", () =>
+    await perform(page, "PUT", "/api/awg/" + storedID, () =>
       dialog.getByRole("button", { name: "Сохранить", exact: true }).click(),
     );
     await dialog.waitFor({ state: "detached" });
     assert.deepEqual(state.writes.at(-1).data.underlays, ["wan-b", "wan-a"]);
-    dialog = await edit(page, "existing");
+    dialog = await edit(page, storedID, "existing");
     assert.match(await trigger.innerText(), /wan-b → wan-a/);
     await trigger.click();
     await dialog
       .getByRole("checkbox", { name: "Любое интернет-подключение" })
       .check();
-    await perform(page, "PUT", "/api/awg/existing", () =>
+    await perform(page, "PUT", "/api/awg/" + storedID, () =>
       dialog.getByRole("button", { name: "Сохранить", exact: true }).click(),
     );
     assert.deepEqual(state.writes.at(-1).data.underlays, []);
@@ -649,10 +663,10 @@ test("selecting a named Ethernet transport saves its routing ID in the VPN profi
   const { state } = await fixture(page, { directName: label });
   await page.goto(url);
 
-  const editor = await edit(page, "existing");
+  const editor = await edit(page, storedID, "existing");
   await editor.locator("#underlay-trigger").click();
   await editor.getByRole("checkbox", { name: label, exact: true }).check();
-  await perform(page, "PUT", "/api/awg/existing", () =>
+  await perform(page, "PUT", "/api/awg/" + storedID, () =>
     editor.getByRole("button", { name: "Сохранить", exact: true }).click(),
   );
   assert.equal(state.writes.length, 1);

@@ -173,11 +173,7 @@
           >
             <span aria-hidden="true">⠿</span>
           </button>
-          <h3>
-            <a routerLink="/groups" [queryParams]="{ group: group.id }">{{
-              groupName(group.id)
-            }}</a>
-          </h3>
+          <h3>{{ groupName(group.id) }}</h3>
           <button
             pButton
             type="button"

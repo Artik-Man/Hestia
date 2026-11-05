@@ -19,6 +19,7 @@ import (
 var ErrInvalidConnector = errors.New("invalid WireGuard connector change")
 
 type connectorProfile struct {
+	Name        string   `json:"name,omitempty"`
 	Underlays   []string `json:"underlays,omitempty"`
 	Slot        int      `json:"slot,omitempty"`
 	ID          string   `json:"id"`
@@ -60,7 +61,7 @@ type storedProfile struct {
 
 // ApplyAWG stages profile metadata and secret files in the binding journal, then activates only after the runtime probe.
 func (e Engine) ApplyAWG(ctx context.Context, request panelmodel.AWGSaveRequest, update bool) error {
-	if !awgID(request.ID) || !awg.ValidUnderlays(request.ID, request.Underlays) || ((!update || request.Group != "") && !awgID(request.Group)) || request.Priority < 0 {
+	if !awg.ValidConnectionID(request.ID) || (request.Name != "" && ValidateGroupName(request.Name) != nil) || !awg.ValidUnderlays(request.ID, request.Underlays) || ((!update || request.Group != "") && !awgID(request.Group)) || request.Priority < 0 {
 		return ErrInvalidConnector
 	}
 	parsed, err := awg.Parse([]byte(request.Profile))
@@ -87,7 +88,7 @@ func (e Engine) ApplyAWG(ctx context.Context, request panelmodel.AWGSaveRequest,
 
 // DeleteAWG removes one connector and its group membership through the same service-and-route journal as profile changes.
 func (e Engine) DeleteAWG(ctx context.Context, id string) error {
-	if !awgID(id) {
+	if !awg.ValidConnectionID(id) {
 		return ErrNotFound
 	}
 	check := func(data []byte, staged bool) error {
@@ -171,7 +172,10 @@ func stageAWGChange(ctx context.Context, engine Engine, stage string, request pa
 	if update && index < 0 {
 		return ErrNotFound
 	}
-	// Older clients omit the preference on PUT. An explicit empty array restores automatic routing.
+	if update && request.Name == "" {
+		request.Name = current.Connectors[index].Name
+	}
+	// An omitted preference preserves transports. An explicit empty array restores automatic routing.
 	if update && request.Underlays == nil {
 		request.Underlays = current.Connectors[index].Underlays
 	}
@@ -221,7 +225,7 @@ func stageAWGChange(ctx context.Context, engine Engine, stage string, request pa
 			return err
 		}
 	}
-	connector := connectorProfile{Underlays: request.Underlays, Slot: slot, ID: request.ID, Type: parsed.Protocol, Group: request.Group, Priority: priority, IPv6Blocked: parsed.IPv6Blocked, Status: "ready"}
+	connector := connectorProfile{Name: request.Name, Underlays: request.Underlays, Slot: slot, ID: request.ID, Type: parsed.Protocol, Group: request.Group, Priority: priority, IPv6Blocked: parsed.IPv6Blocked, Status: "ready"}
 	current.Healthy[request.ID] = true
 	if index >= 0 {
 		current.Connectors[index] = connector
@@ -231,7 +235,7 @@ func stageAWGChange(ctx context.Context, engine Engine, stage string, request pa
 	if !validUnderlayGraph(current) {
 		return ErrInvalidConnector
 	}
-	metadata := awg.Metadata{Underlays: request.Underlays, Slot: slot, ID: request.ID, Group: request.Group, Priority: priority, Status: "ready", IPv6Blocked: parsed.IPv6Blocked, Protocol: parsed.Protocol, IPv4Address: parsed.IPv4Address, DNSIPv4: parsed.DNSIPv4}
+	metadata := awg.Metadata{Name: request.Name, Underlays: request.Underlays, Slot: slot, ID: request.ID, Group: request.Group, Priority: priority, Status: "ready", IPv6Blocked: parsed.IPv6Blocked, Protocol: parsed.Protocol, IPv4Address: parsed.IPv4Address, DNSIPv4: parsed.DNSIPv4}
 	if err := os.MkdirAll(filepath.Join(stage, awgTreeName), 0700); err != nil {
 		return ErrUnavailable
 	}
@@ -532,7 +536,7 @@ func updateStagedMetadata(stage string, connector connectorProfile) error {
 // ReadAWGProfile returns the normalized settings and keys of one committed profile under the installer's shared lock.
 func (e Engine) ReadAWGProfile(id string) (panelmodel.AWGConnectionProfile, error) {
 	var result panelmodel.AWGConnectionProfile
-	if !awgID(id) {
+	if !awg.ValidConnectionID(id) {
 		return result, ErrNotFound
 	}
 	lock, err := e.acquire(false)
@@ -562,5 +566,5 @@ func (e Engine) ReadAWGProfile(id string) (panelmodel.AWGConnectionProfile, erro
 	if err != nil {
 		return result, err
 	}
-	return panelmodel.AWGConnectionProfile{Underlays: metadata.Underlays, ID: metadata.ID, Group: metadata.Group, Priority: metadata.Priority, Profile: string(profile.SecretConfig)}, nil
+	return panelmodel.AWGConnectionProfile{Name: metadata.DisplayName(), Underlays: metadata.Underlays, ID: metadata.ID, Group: metadata.Group, Priority: metadata.Priority, Profile: string(profile.SecretConfig)}, nil
 }

@@ -32,6 +32,7 @@
             [attr.aria-label]="
               'Редактировать проверку ' + label(check.protocol)
             "
+            [attr.data-quality-editor]="check.protocol"
             (click)="edit(check.protocol)"
             [pTooltip]="'Редактировать проверку ' + label(check.protocol)"
             tooltipEvent="both"
@@ -83,6 +84,7 @@
           pButton
           type="button"
           severity="secondary"
+          [attr.data-quality-editor]="protocol"
           (click)="edit(protocol)"
         >
           Добавить {{ label(protocol) }}
@@ -104,18 +106,28 @@
     [draggable]="false"
     [resizable]="false"
     [style]="{ width: 'min(32rem, calc(100vw - 2rem))' }"
+    (onHide)="focusCheck(protocol)"
     (visibleChange)="!$event && dismiss()"
   >
     @if (draft(); as form) {
       @if (form.protocol === protocol) {
-        <form #editor="ngForm" (ngSubmit)="saveCheck()">
+        <form
+          #checkForm
+          #editor="ngForm"
+          tabindex="-1"
+          (keydown.escape)="dismiss(); $event.stopPropagation()"
+          (ngSubmit)="saveCheck(checkForm)"
+        >
           <fieldset [disabled]="saving()">
             <label
               >{{
                 protocol === "ICMP"
                   ? "Цели (IP, по одному на строку)"
-                  : "Цели (IP:порт, по одной на строку)"
+                  : protocol === "TCP"
+                    ? "Цели (IP или домен, по одной на строку; порт по умолчанию 443)"
+                    : "Цели (IP:порт, по одной на строку)"
               }}<textarea
+                #targetsField
                 pTextarea
                 required
                 rows="3"
@@ -182,7 +194,7 @@
                 severity="secondary"
                 (click)="dismiss()"
               >
-                Отмена</button
+                {{ protocol === "TCP" ? "Закрыть" : "Отмена" }}</button
               ><button
                 pButton
                 type="submit"

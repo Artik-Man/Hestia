@@ -44,10 +44,11 @@ systemctl stop 'hestia-awg@*.service'
     echo "Legacy route ownership remains; fresh install stopped" >&2
     exit 1
 }
+awg_connection_id_pattern='^([a-z][a-z0-9-]{0,62}|[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12})$'
 shopt -s nullglob
 for record in /run/hestia-awg/routes.json.*; do
     id=${record##*/routes.json.}
-    [[ $id =~ ^[a-z][a-z0-9-]{0,62}$ && ! -L $record && -f $record && $(stat -c '%u:%a:%h' "$record") == 0:600:1 ]] || exit 1
+    [[ $id =~ $awg_connection_id_pattern && ! -L $record && -f $record && $(stat -c '%u:%a:%h' "$record") == 0:600:1 ]] || exit 1
     slot=$(python3 -I -c 'import json, sys; print(int(json.load(open(sys.argv[1]))["table"]) - 202)' "$record")
     ./hestia -awg-retire "$id" "$slot"
 done

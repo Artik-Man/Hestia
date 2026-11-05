@@ -16,6 +16,7 @@ import (
 	"github.com/Artik-Man/Hestia/internal/binding"
 	"github.com/Artik-Man/Hestia/internal/controller"
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
+	"github.com/google/uuid"
 )
 
 const (
@@ -94,6 +95,12 @@ func runAWGCommand(mode string, input io.Reader, output io.Writer) int {
 			return 42
 		}
 		update := mode == "-awg-update"
+		if !update {
+			id, err := uuid.Parse(request.ID)
+			if err != nil || id.Version() != 4 || id.Variant() != uuid.RFC4122 || id.String() != request.ID || binding.ValidateGroupName(request.Name) != nil {
+				return 42
+			}
+		}
 		if err := binding.Installed().ApplyAWG(ctx, request, update); err != nil {
 			fmt.Fprintln(os.Stderr, "AWG connection transaction was not committed")
 			if errors.Is(err, binding.ErrNotFound) {
@@ -175,5 +182,5 @@ func publicAWGConnection(c awg.Metadata) panelmodel.AWGConnection {
 			active = selected
 		}
 	}
-	return panelmodel.AWGConnection{ID: c.ID, Group: c.Group, Priority: c.Priority, Status: status, IPv6Blocked: c.IPv6Blocked, Underlays: c.Underlays, ActiveUnderlay: active}
+	return panelmodel.AWGConnection{Name: c.DisplayName(), ID: c.ID, Group: c.Group, Priority: c.Priority, Status: status, IPv6Blocked: c.IPv6Blocked, Underlays: c.Underlays, ActiveUnderlay: active}
 }

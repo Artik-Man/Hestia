@@ -82,16 +82,7 @@ func probe(parent context.Context, p Path, c Check, target string) outcome {
 	}
 	stop := context.AfterFunc(ctx, func() { _ = conn.Close() })
 	defer stop()
-	var bits [2]byte
-	if _, err := rand.Read(bits[:]); err != nil {
-		return localError
-	}
-	name, err := dnsmessage.NewName(strings.TrimSuffix(c.DNSName, ".") + ".")
-	if err != nil {
-		return localError
-	}
-	query := dnsmessage.Message{Header: dnsmessage.Header{ID: binary.BigEndian.Uint16(bits[:]), RecursionDesired: true}, Questions: []dnsmessage.Question{{Name: name, Type: dnsmessage.TypeA, Class: dnsmessage.ClassINET}}}
-	packet, err := query.Pack()
+	query, packet, err := makeAQuery(c.DNSName)
 	if err != nil {
 		return localError
 	}
@@ -118,6 +109,21 @@ func probe(parent context.Context, p Path, c Check, target string) outcome {
 	}
 }
 
+// makeAQuery builds one recursive A/IN question with a fresh transaction ID and absolute name.
+func makeAQuery(host string) (dnsmessage.Message, []byte, error) {
+	var bits [2]byte
+	if _, err := rand.Read(bits[:]); err != nil {
+		return dnsmessage.Message{}, nil, err
+	}
+	name, err := dnsmessage.NewName(strings.TrimSuffix(host, ".") + ".")
+	if err != nil {
+		return dnsmessage.Message{}, nil, err
+	}
+	query := dnsmessage.Message{Header: dnsmessage.Header{ID: binary.BigEndian.Uint16(bits[:]), RecursionDesired: true}, Questions: []dnsmessage.Question{{Name: name, Type: dnsmessage.TypeA, Class: dnsmessage.ClassINET}}}
+	packet, err := query.Pack()
+	return query, packet, err
+}
+
 // matchesQuery ties a DNS reply to the outstanding A/IN question and transaction.
 func matchesQuery(response, query *dnsmessage.Message) bool {
 	if !response.Response || response.ID != query.ID || response.OpCode != 0 || len(response.Questions) != 1 {
@@ -138,9 +144,18 @@ func dnsOutcome(response *dnsmessage.Message, protocol string) outcome {
 	if response.Truncated {
 		return failure
 	}
+	if _, ok := firstAnswerIPv4(response, netip.Addr.IsGlobalUnicast); ok {
+		return success
+	}
+	return failure
+}
+
+// firstAnswerIPv4 returns the first eligible A record for the queried name or its CNAME chain.
+// Addresses belonging to unrelated owners never qualify. Following aliases consumes them to bound cycles.
+func firstAnswerIPv4(response *dnsmessage.Message, eligible func(netip.Addr) bool) (netip.Addr, bool) {
 	name := strings.ToLower(response.Questions[0].Name.String())
 	aliases := map[string]string{}
-	addresses := map[string]bool{}
+	addresses := map[string]netip.Addr{}
 	for _, answer := range response.Answers {
 		if answer.Header.Class != dnsmessage.ClassINET {
 			continue
@@ -149,22 +164,22 @@ func dnsOutcome(response *dnsmessage.Message, protocol string) outcome {
 		switch data := answer.Body.(type) {
 		case *dnsmessage.AResource:
 			addr := netip.AddrFrom4(data.A)
-			if addr.IsGlobalUnicast() {
-				addresses[owner] = true
+			if !addresses[owner].IsValid() && eligible(addr) {
+				addresses[owner] = addr
 			}
 		case *dnsmessage.CNAMEResource:
 			aliases[owner] = strings.ToLower(data.CNAME.String())
 		}
 	}
 	for name != "" {
-		if addresses[name] {
-			return success
+		if addr, ok := addresses[name]; ok {
+			return addr, true
 		}
 		next := aliases[name]
 		delete(aliases, name)
 		name = next
 	}
-	return failure
+	return netip.Addr{}, false
 }
 
 // resolveTCP follows a truncated resolver answer once on the same pinned path and within the original deadline.

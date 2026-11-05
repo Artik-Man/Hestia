@@ -1,6 +1,29 @@
 import type { AWGUnderlayCandidate } from "../services/api/generated/model/aWGUnderlayCandidate";
 import type { AWGConnection } from "../services/api/generated/model/aWGConnection";
 
+/** isConnectionUUID recognizes canonical UUIDs that must stay out of user-facing labels. */
+export function isConnectionUUID(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/u.test(
+    value,
+  );
+}
+
+/** isExitID accepts a routing UUID or a configured gateway exit identifier. */
+function isExitID(value: string): boolean {
+  return isConnectionUUID(value) || /^[a-z][a-z0-9-]{0,62}$/u.test(value);
+}
+
+/** isConnectionName checks the gateway's public display name contract in Unicode code points. */
+export function isConnectionName(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    value.length > 0 &&
+    value === value.trim() &&
+    !/\p{Cc}/u.test(value) &&
+    [...value].length <= 80
+  );
+}
+
 /** isUnderlayCandidate accepts only supported public transport records with a gateway identifier. */
 export function isUnderlayCandidate(
   value: unknown,
@@ -10,13 +33,8 @@ export function isUnderlayCandidate(
     value !== null &&
     "id" in value &&
     typeof value.id === "string" &&
-    /^[a-z][a-z0-9-]{0,62}$/.test(value.id) &&
-    (!("name" in value) ||
-      (typeof value.name === "string" &&
-        value.name.length > 0 &&
-        value.name === value.name.trim() &&
-        !/\p{Cc}/u.test(value.name) &&
-        [...value.name].length <= 80)) &&
+    isExitID(value.id) &&
+    (!("name" in value) || isConnectionName(value.name)) &&
     "type" in value &&
     (value.type === "direct" ||
       value.type === "wireguard" ||
@@ -33,10 +51,7 @@ export function isUnderlayOrder(
     Array.isArray(value) &&
     value.length <= 64 &&
     value.every(
-      (id: unknown) =>
-        typeof id === "string" &&
-        id !== owner &&
-        /^[a-z][a-z0-9-]{0,62}$/.test(id),
+      (id: unknown) => typeof id === "string" && id !== owner && isExitID(id),
     ) &&
     new Set(value).size === value.length
   );
@@ -48,7 +63,9 @@ export function isAWGConnection(value: unknown): value is AWGConnection {
   return (
     "id" in value &&
     typeof value.id === "string" &&
-    /^[a-z][a-z0-9-]{0,62}$/.test(value.id) &&
+    isExitID(value.id) &&
+    "name" in value &&
+    isConnectionName(value.name) &&
     "group" in value &&
     typeof value.group === "string" &&
     /^[a-z][a-z0-9-]{0,62}$/.test(value.group) &&

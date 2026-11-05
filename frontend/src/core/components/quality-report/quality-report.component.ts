@@ -1,12 +1,16 @@
 import { Tooltip } from "primeng/tooltip";
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
+  Injector,
   inject,
-  input,
+  model,
   output,
   signal,
+  viewChild,
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { HttpErrorResponse } from "@angular/common/http";
@@ -15,7 +19,7 @@ import { ButtonDirective } from "primeng/button";
 import { Dialog } from "primeng/dialog";
 import { InputText } from "primeng/inputtext";
 import { Textarea } from "primeng/textarea";
-import { Observable, timeout } from "rxjs";
+import { finalize, Observable, timeout } from "rxjs";
 import { PanelService } from "../../services/api/generated/api/panel.service";
 import type { QualityCheck } from "../../services/api/generated/model/qualityCheck";
 import type { QualitySettings } from "../../services/api/generated/model/qualitySettings";
@@ -69,7 +73,7 @@ interface CheckDraft {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class QualityEditor {
-  readonly settings = input.required<QualitySettings>();
+  readonly settings = model.required<QualitySettings>();
   readonly saved = output<void>();
   protected readonly draft = signal<CheckDraft | null>(null);
   protected readonly windowDraft = signal<{
@@ -81,6 +85,10 @@ export class QualityEditor {
   protected readonly protocols = qualityProtocols;
   protected readonly descriptions = descriptions;
   protected readonly label = qualityLabel;
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
+  private readonly targetsField =
+    viewChild<ElementRef<HTMLTextAreaElement>>("targetsField");
   private readonly api = inject(PanelService);
   private readonly notices = inject(Notifications);
   private readonly destroyRef = inject(DestroyRef);
@@ -119,8 +127,18 @@ export class QualityEditor {
     this.deleting.set(null);
   }
 
+  /** focusCheck returns keyboard focus to the edit or add button for a closed check dialog. */
+  protected focusCheck(protocol: Protocol): void {
+    if (!this.draft())
+      this.host.nativeElement
+        .querySelector<HTMLButtonElement>(
+          '[data-quality-editor="' + protocol + '"]',
+        )
+        ?.focus();
+  }
+
   /** saveCheck writes only the check shown in the current dialog and verifies its confirmation. */
-  protected saveCheck(): void {
+  protected saveCheck(form: HTMLFormElement): void {
     const draft = this.draft();
     if (!draft || this.saving()) return;
     if (!this.current(draft.protocol, draft.original)) return;
@@ -143,15 +161,29 @@ export class QualityEditor {
           }
         : {}),
     };
-    if (!validCheck(item)) {
+    if (!validCheck(item, true)) {
       this.notices.show(
         "error",
         "Проверьте цели, параметры запроса, интервал и тайм-аут.",
       );
       return;
     }
-    this.persist(this.api.putQualityCheck(protocol, item), (settings) =>
-      settings.checks.some((check) => sameQualityCheck(check, item)),
+    if (protocol === "TCP") form.focus();
+    this.persist(
+      this.api.putQualityCheck(protocol, item),
+      (settings) => {
+        const check = settings.checks.find(
+          (check) => check.protocol === protocol,
+        );
+        if (!check) return false;
+        if (protocol !== "TCP") return sameQualityCheck(check, item);
+        return (
+          check.targets.length === item.targets.length &&
+          check.intervalSeconds === item.intervalSeconds &&
+          check.timeoutSeconds === item.timeoutSeconds
+        );
+      },
+      protocol === "TCP" ? draft : undefined,
     );
   }
 
@@ -212,14 +244,24 @@ export class QualityEditor {
     );
   }
 
-  /** persist submits one scoped operation and closes its dialog after verifying the returned settings. */
+  /** persist verifies a scoped write and refreshes the TCP editor with saved endpoints or closes the completed dialog. */
   private persist(
     request: Observable<QualitySettings>,
     confirmed: (settings: QualitySettings) => boolean,
+    tcpDraft?: CheckDraft,
   ): void {
     this.saving.set(true);
     request
-      .pipe(timeout(15000), takeUntilDestroyed(this.destroyRef))
+      .pipe(
+        timeout(tcpDraft ? 30000 : 15000),
+        finalize(() => {
+          if (tcpDraft && !this.destroyRef.destroyed)
+            afterNextRender(() => this.targetsField()?.nativeElement.focus(), {
+              injector: this.injector,
+            });
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
       .subscribe({
         next: (body: unknown) => {
           this.saving.set(false);
@@ -231,7 +273,15 @@ export class QualityEditor {
             this.saved.emit();
             return;
           }
-          this.dismiss();
+          this.settings.set(body);
+          if (tcpDraft) {
+            const original = this.check(tcpDraft.protocol)!;
+            this.draft.set({
+              ...tcpDraft,
+              original,
+              targets: original.targets.join("\n"),
+            });
+          } else this.dismiss();
           this.notices.show("success", "Настройки проверок сохранены.");
           this.saved.emit();
         },

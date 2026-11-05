@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   isQualityReport,
   isQualitySettings,
+  validCheck,
 } from "../src/routes/quality/quality-observations.ts";
 
 const udp = {
@@ -141,4 +142,16 @@ test("validates ICMP, resolver and TLS service check fields independently", () =
       false,
     );
   }
+});
+
+test("raw TCP targets are accepted only on input, including when TCP is the second saved check", () => {
+  const tcp = {
+    protocol: "TCP",
+    targets: ["example.org", "1.1.1.1"],
+    intervalSeconds: 30,
+    timeoutSeconds: 3,
+  };
+  assert.equal(validCheck(tcp, true), true);
+  assert.equal(isQualitySettings({ ...settings, checks: [udp, tcp] }), false);
+  assert.equal(validCheck({ ...udp, targets: tcp.targets }, true), false);
 });

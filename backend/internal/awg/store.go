@@ -21,6 +21,7 @@ const (
 
 // Metadata is the non-secret public description persisted for one configured connector.
 type Metadata struct {
+	Name        string   `json:"name,omitempty"`
 	Underlays   []string `json:"underlays,omitempty"`
 	Slot        int      `json:"slot,omitempty"`
 	ID          string   `json:"id"`
@@ -31,6 +32,14 @@ type Metadata struct {
 	Protocol    string   `json:"type"`
 	IPv4Address string   `json:"ipv4Address"`
 	DNSIPv4     string   `json:"dnsIPv4"`
+}
+
+// DisplayName returns the saved label or the original label of a profile created before names were stored separately.
+func (m Metadata) DisplayName() string {
+	if m.Name == "" {
+		return m.ID
+	}
+	return m.Name
 }
 
 // Store persists normalized profiles and public metadata in private per-connector directories.
@@ -74,7 +83,7 @@ func OpenStoreWithLock(directory, lockPath string) (*Store, error) {
 		return nil, errors.New("cannot secure AWG profile storage")
 	}
 	store := &Store{directory: directory, lockPath: lockPath}
-	if err := store.withLock(func() error { return store.recover() }); err != nil {
+	if err := store.readDirectory(func([]os.DirEntry) error { return nil }); err != nil {
 		return nil, err
 	}
 	return store, nil
@@ -82,7 +91,7 @@ func OpenStoreWithLock(directory, lockPath string) (*Store, error) {
 
 // Save validates and atomically replaces one connector directory with root-only config and metadata.
 func (s *Store) Save(metadata Metadata, raw []byte) error {
-	if !identifierPattern.MatchString(metadata.ID) || !ValidUnderlays(metadata.ID, metadata.Underlays) || !identifierPattern.MatchString(metadata.Group) || metadata.Priority < 1 || metadata.Slot < 0 || metadata.Slot >= SlotCount {
+	if !ValidConnectionID(metadata.ID) || !ValidUnderlays(metadata.ID, metadata.Underlays) || !identifierPattern.MatchString(metadata.Group) || metadata.Priority < 1 || metadata.Slot < 0 || metadata.Slot >= SlotCount {
 		return errors.New("invalid AWG connection metadata")
 	}
 	profile, err := Parse(raw)
@@ -94,7 +103,7 @@ func (s *Store) Save(metadata Metadata, raw []byte) error {
 	metadata.Protocol = profile.Protocol
 	metadata.IPv4Address = profile.IPv4Address
 	metadata.DNSIPv4 = profile.DNSIPv4
-	return s.withLock(func() error {
+	return s.withLock(syscall.LOCK_EX, func() error {
 		return s.replace(metadata, profile.SecretConfig)
 	})
 }
@@ -102,16 +111,9 @@ func (s *Store) Save(metadata Metadata, raw []byte) error {
 // List returns sorted public metadata without reading or returning private profiles.
 func (s *Store) List() ([]Metadata, error) {
 	var result []Metadata
-	err := s.withLock(func() error {
-		if err := s.recover(); err != nil {
-			return err
-		}
-		entries, err := os.ReadDir(s.directory)
-		if err != nil {
-			return errors.New("cannot list AWG profiles")
-		}
+	err := s.readDirectory(func(entries []os.DirEntry) error {
 		for _, entry := range entries {
-			if !entry.IsDir() || !identifierPattern.MatchString(entry.Name()) {
+			if !entry.IsDir() || !ValidConnectionID(entry.Name()) {
 				continue
 			}
 			metadata, err := s.readMetadata(entry.Name())
@@ -129,10 +131,10 @@ func (s *Store) List() ([]Metadata, error) {
 func (s *Store) Load(id string) (Metadata, []byte, error) {
 	var metadata Metadata
 	var config []byte
-	if !identifierPattern.MatchString(id) {
+	if !ValidConnectionID(id) {
 		return metadata, nil, errors.New("invalid AWG connection ID")
 	}
-	err := s.withLock(func() error {
+	err := s.withLock(syscall.LOCK_EX, func() error {
 		if err := s.recover(); err != nil {
 			return err
 		}
@@ -159,7 +161,7 @@ func (s *Store) Load(id string) (Metadata, []byte, error) {
 func (s *Store) LoadReadyForRuntime(ids ...string) (Metadata, []byte, error) {
 	var selected Metadata
 	var profile []byte
-	if len(ids) > 1 || (len(ids) == 1 && !identifierPattern.MatchString(ids[0])) {
+	if len(ids) > 1 || (len(ids) == 1 && !ValidConnectionID(ids[0])) {
 		return selected, nil, errors.New("invalid AWG runtime identity")
 	}
 	info, err := os.Lstat(s.directory)
@@ -175,7 +177,7 @@ func (s *Store) LoadReadyForRuntime(ids ...string) (Metadata, []byte, error) {
 		return selected, nil, errors.New("AWG runtime storage is unavailable")
 	}
 	for _, entry := range entries {
-		if !entry.IsDir() || !identifierPattern.MatchString(entry.Name()) || (len(ids) == 1 && entry.Name() != ids[0]) {
+		if !entry.IsDir() || !ValidConnectionID(entry.Name()) || (len(ids) == 1 && entry.Name() != ids[0]) {
 			continue
 		}
 		metadata, err := s.readMetadata(entry.Name())
@@ -206,10 +208,10 @@ func (s *Store) LoadReadyForRuntime(ids ...string) (Metadata, []byte, error) {
 
 // Delete atomically removes one configured connection, restoring it if the directory swap fails.
 func (s *Store) Delete(id string) error {
-	if !identifierPattern.MatchString(id) {
+	if !ValidConnectionID(id) {
 		return errors.New("invalid AWG connection ID")
 	}
-	return s.withLock(func() error {
+	return s.withLock(syscall.LOCK_EX, func() error {
 		if err := s.recover(); err != nil {
 			return err
 		}
@@ -306,7 +308,7 @@ func (s *Store) recover() error {
 		name := entry.Name()
 		if strings.HasPrefix(name, ".delete-") {
 			id := strings.TrimPrefix(name, ".delete-")
-			if !identifierPattern.MatchString(id) || !entry.IsDir() {
+			if !ValidConnectionID(id) || !entry.IsDir() {
 				return errors.New("invalid AWG deletion recovery entry")
 			}
 			if err := os.RemoveAll(filepath.Join(s.directory, name)); err != nil {
@@ -318,7 +320,7 @@ func (s *Store) recover() error {
 			continue
 		}
 		id := strings.TrimPrefix(name, ".backup-")
-		if !identifierPattern.MatchString(id) || !entry.IsDir() {
+		if !ValidConnectionID(id) || !entry.IsDir() {
 			return errors.New("invalid AWG recovery entry")
 		}
 		backup, target := filepath.Join(s.directory, name), filepath.Join(s.directory, id)
@@ -341,14 +343,47 @@ func (s *Store) backupPath(id string) string { return filepath.Join(s.directory,
 // deletePath returns the fixed sibling tombstone path for one validated connector ID.
 func (s *Store) deletePath(id string) string { return filepath.Join(s.directory, ".delete-"+id) }
 
-// withLock takes an exclusive filesystem lock around recovery and one store operation.
-func (s *Store) withLock(operation func() error) error {
+// readDirectory runs read under a shared installer lock when the store is clean.
+// After an interrupted write it reacquires an exclusive lock, recovers the
+// current state, and supplies fresh entries while still holding that lock.
+func (s *Store) readDirectory(read func([]os.DirEntry) error) error {
+	var recoveryNeeded bool
+	err := s.withLock(syscall.LOCK_SH, func() error {
+		entries, err := os.ReadDir(s.directory)
+		if err != nil {
+			return errors.New("cannot inspect AWG storage")
+		}
+		for _, entry := range entries {
+			if strings.HasPrefix(entry.Name(), ".backup-") || strings.HasPrefix(entry.Name(), ".delete-") {
+				recoveryNeeded = true
+				return nil
+			}
+		}
+		return read(entries)
+	})
+	if err != nil || !recoveryNeeded {
+		return err
+	}
+	return s.withLock(syscall.LOCK_EX, func() error {
+		if err := s.recover(); err != nil {
+			return err
+		}
+		entries, err := os.ReadDir(s.directory)
+		if err != nil {
+			return errors.New("cannot inspect recovered AWG storage")
+		}
+		return read(entries)
+	})
+}
+
+// withLock takes the specified shared or exclusive installer lock and excludes pending binding transactions.
+func (s *Store) withLock(mode int, operation func() error) error {
 	file, err := os.OpenFile(s.lockPath, os.O_RDWR|syscall.O_NOFOLLOW, 0)
 	if err != nil {
 		return errors.New("cannot lock AWG storage")
 	}
 	defer file.Close()
-	if err := syscall.Flock(int(file.Fd()), syscall.LOCK_EX); err != nil {
+	if err := syscall.Flock(int(file.Fd()), mode); err != nil {
 		return errors.New("cannot lock AWG storage")
 	}
 	defer syscall.Flock(int(file.Fd()), syscall.LOCK_UN)
@@ -407,7 +442,7 @@ func ValidUnderlays(id string, choices []string) bool {
 	}
 	seen := make(map[string]bool, len(choices))
 	for _, candidate := range choices {
-		if !identifierPattern.MatchString(candidate) || candidate == id || seen[candidate] {
+		if !ValidConnectionID(candidate) || candidate == id || seen[candidate] {
 			return false
 		}
 		seen[candidate] = true

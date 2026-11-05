@@ -11,6 +11,7 @@
 
 export interface AWGUpdateRequest { 
     group?: string;
+    name?: string;
     priority?: number;
     profile: string;
     /**

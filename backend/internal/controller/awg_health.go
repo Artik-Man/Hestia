@@ -4,18 +4,17 @@ import (
 	"encoding/json"
 	"io"
 	"os"
-	"regexp"
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/Artik-Man/Hestia/internal/awg"
 )
 
 const (
 	awgHealthPath   = "/run/hestia-awg/health.json"
 	awgHealthMaxAge = 5 * time.Second
 )
-
-var awgHealthID = regexp.MustCompile(`^[a-z][a-z0-9-]{0,62}$`)
 
 type awgHealthRecord struct {
 	ActiveUnderlay string    `json:"activeUnderlay,omitempty"`
@@ -32,7 +31,7 @@ func AWGHeartbeatHealthy(id string) bool {
 
 // AWGTransportHealth returns the active transport ID and freshness for one independently verified tunnel heartbeat.
 func AWGTransportHealth(id string) (string, bool) {
-	if !awgHealthID.MatchString(id) {
+	if !awg.ValidConnectionID(id) {
 		return "", false
 	}
 	return readAWGHeartbeat(awgHealthPath+"."+id, id)
@@ -72,7 +71,7 @@ func readAWGHeartbeat(path, id string) (string, bool) {
 
 // validAWGHealthRecord checks connector identity, status and bounded timestamp freshness without filesystem access.
 func validAWGHealthRecord(record awgHealthRecord, id string, now time.Time) bool {
-	if record.ActiveUnderlay != "" && (!awgHealthID.MatchString(record.ActiveUnderlay) || record.ActiveUnderlay == id) {
+	if record.ActiveUnderlay != "" && (!awg.ValidConnectionID(record.ActiveUnderlay) || record.ActiveUnderlay == id) {
 		return false
 	}
 	if record.ID != id || record.Status != "ready" || record.UpdatedAt.IsZero() {

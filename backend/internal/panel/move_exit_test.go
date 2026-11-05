@@ -38,12 +38,13 @@ func TestMoveExitValidation(t *testing.T) {
 // TestMoveExitConfirmation verifies that the source precondition reaches the writer and a conflict cannot be echoed as success.
 func TestMoveExitConfirmation(t *testing.T) {
 	const source = "home"
+	const id = "12345678-1234-4abc-8abc-123456789abc"
 	for _, tc := range []struct {
 		expected string
 		status   int
 	}{{source, 200}, {"former", 409}} {
 		writes := panelWrites{moveExit: func(_ context.Context, change panelmodel.ExitMoveCommand) error {
-			if change.ID != "awg-home" || change.Group != "work" || change.ExpectedGroup != tc.expected || change.Priority != 2 {
+			if change.ID != id || change.Group != "work" || change.ExpectedGroup != tc.expected || change.Priority != 2 {
 				t.Fatalf("unexpected request %+v", change)
 			}
 			if change.ExpectedGroup != source {
@@ -51,7 +52,7 @@ func TestMoveExitConfirmation(t *testing.T) {
 			}
 			return nil
 		}}
-		req := httptest.NewRequest(http.MethodPut, "/api/connections/awg-home/group", strings.NewReader(`{"expectedGroup":"`+tc.expected+`","group":"work","priority":2}`))
+		req := httptest.NewRequest(http.MethodPut, "/api/connections/"+id+"/group", strings.NewReader(`{"expectedGroup":"`+tc.expected+`","group":"work","priority":2}`))
 		req.Header.Set("Content-Type", "application/json")
 		res := httptest.NewRecorder()
 		panelHandler("", "", nil, writes).ServeHTTP(res, req)
@@ -60,7 +61,7 @@ func TestMoveExitConfirmation(t *testing.T) {
 		}
 		if res.Code == 200 {
 			var got panelmodel.ExitGroupAssignment
-			if json.Unmarshal(res.Body.Bytes(), &got) != nil || got.ID != "awg-home" || got.Group != "work" || got.Priority != 2 {
+			if json.Unmarshal(res.Body.Bytes(), &got) != nil || got.ID != id || got.Group != "work" || got.Priority != 2 {
 				t.Errorf("wrong assignment: %s", res.Body)
 			}
 		}

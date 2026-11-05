@@ -85,10 +85,10 @@
                   type="button"
                   class="icon-action"
                   #editTrigger
-                  [attr.aria-label]="'Редактировать профиль ' + row.id"
+                  [attr.aria-label]="'Редактировать профиль ' + row.name"
                   [disabled]="deleting() === row.id"
                   (click)="editConnection(profile, editTrigger)"
-                  [pTooltip]="'Редактировать профиль ' + row.id"
+                  [pTooltip]="'Редактировать профиль ' + row.name"
                   tooltipEvent="both"
                 >
                   <span class="edit-icon" aria-hidden="true"></span>
@@ -99,10 +99,10 @@
                   pButton
                   type="button"
                   class="icon-action delete-action connection-remove"
-                  [attr.aria-label]="'Удалить подключение ' + row.id"
+                  [attr.aria-label]="'Удалить подключение ' + row.name"
                   [disabled]="deleting() === row.id"
                   (click)="deleteConnection(profile)"
-                  [pTooltip]="'Удалить подключение ' + row.id"
+                  [pTooltip]="'Удалить подключение ' + row.name"
                   tooltipEvent="both"
                 >
                   <span class="delete-icon" aria-hidden="true"></span>
@@ -131,7 +131,6 @@
   <hestia-profile-draft
     [groups]="groups()"
     [connection]="editing()"
-    [existingIDs]="existingAWGIDs()"
     (closed)="closeEditor()"
     (saved)="addSavedConnection($event)"
   />

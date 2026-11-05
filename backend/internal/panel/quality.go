@@ -20,7 +20,10 @@ import (
 // qualityFiles identifies panel-owned settings and the gateway worker's atomically published report.
 type qualityFiles struct {
 	settings, report string
+	dnsServer        string // Empty selects the system nameserver for save-time TCP hostname resolution.
 }
+
+const qualityTargetInputDescription = "Цель TCP принимает IP-адрес или доменное имя с необязательным портом (по умолчанию 443). Сервер один раз запрашивает A-запись каждого имени, выбирает первый допустимый публичный IPv4 и возвращает сохранённые цели в формате IP:порт. Ошибка разрешения отклоняет весь запрос с HTTP 422."
 
 type qualityReportOutput struct{ Body panelmodel.QualityReport }
 type qualitySettingsInput struct{ Body quality.Settings }
@@ -81,16 +84,33 @@ func registerQuality(api huma.API, snapshot string, files qualityFiles) {
 	})
 	huma.Register(api, huma.Operation{
 		OperationID: "updateQualitySettings", Tags: []string{"Panel"}, Method: http.MethodPut, Path: "/api/quality/settings",
-		Summary: "Сохранить общие для всех выходов параметры проверок связи", MaxBodyBytes: 8192,
+		Summary: "Сохранить общие для всех выходов параметры проверок связи", Description: qualityTargetInputDescription, MaxBodyBytes: 8192,
 		Errors: []int{http.StatusRequestEntityTooLarge, http.StatusUnprocessableEntity, http.StatusServiceUnavailable},
-	}, func(_ context.Context, in *qualitySettingsInput) (*qualitySettingsOutput, error) {
+	}, func(ctx context.Context, in *qualitySettingsInput) (*qualitySettingsOutput, error) {
+		tcp := -1
+		for i, check := range in.Body.Checks {
+			if check.Protocol == quality.TCP {
+				if tcp >= 0 {
+					return nil, huma.Error422UnprocessableEntity("Допустима одна проверка TCP")
+				}
+				tcp = i
+			}
+		}
+		if tcp >= 0 {
+			if err := in.Body.Checks[tcp].NormalizeTCPInput(ctx, files.dnsServer); err != nil {
+				return nil, huma.Error422UnprocessableEntity(err.Error())
+			}
+		}
 		writes.Lock()
 		defer writes.Unlock()
 		return files.save(in.Body)
 	})
-	huma.Register(api, huma.Operation{OperationID: "putQualityCheck", Tags: []string{"Panel"}, Method: http.MethodPut, Path: "/api/quality/checks/{protocol}", Summary: "Добавить или изменить одну проверку связи", MaxBodyBytes: 8192, Errors: []int{422, 503}}, func(_ context.Context, in *qualityCheckInput) (*qualitySettingsOutput, error) {
+	huma.Register(api, huma.Operation{OperationID: "putQualityCheck", Tags: []string{"Panel"}, Method: http.MethodPut, Path: "/api/quality/checks/{protocol}", Summary: "Добавить или изменить одну проверку связи", Description: qualityTargetInputDescription, MaxBodyBytes: 8192, Errors: []int{422, 503}}, func(ctx context.Context, in *qualityCheckInput) (*qualitySettingsOutput, error) {
 		if in.Body.Protocol != in.Protocol {
 			return nil, huma.Error422UnprocessableEntity("Тип проверки в адресе и настройках должен совпадать")
+		}
+		if err := in.Body.NormalizeTCPInput(ctx, files.dnsServer); err != nil {
+			return nil, huma.Error422UnprocessableEntity(err.Error())
 		}
 		return change(func(settings *quality.Settings) {
 			for i, check := range settings.Checks {

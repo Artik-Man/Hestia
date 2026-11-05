@@ -15,7 +15,6 @@ import { PanelService } from "../../services/api/generated/api/panel.service";
 import { SnapshotState } from "../../services/snapshot-state.service";
 import { timeout } from "rxjs";
 import { FormControl, ReactiveFormsModule } from "@angular/forms";
-import { RouterLink } from "@angular/router";
 import type { Group } from "../../services/api/generated/model/group";
 import type { RuleList } from "../../services/api/generated/model/ruleList";
 import { ButtonDirective } from "primeng/button";
@@ -60,7 +59,6 @@ function invalidMasks(masks: readonly string[]): readonly string[] {
     InputText,
     Popover,
     ReactiveFormsModule,
-    RouterLink,
     Select,
     Textarea,
   ],
