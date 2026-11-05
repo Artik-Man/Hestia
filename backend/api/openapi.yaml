@@ -1072,6 +1072,9 @@ components:
           description: Страна реального IP назначения по текущей базе GeoIP (ISO 3166-1 alpha-2)
           pattern: ^[A-Z]{2}$
           type: string
+        countryName:
+          description: Название страны на русском языке для отображения и текстового поиска
+          type: string
         dnsQueryId:
           type: string
         domain:
@@ -2936,6 +2939,14 @@ paths:
           schema:
             description: Верхняя граница последовательности записей из первой страницы
             maxLength: 20
+            type: string
+        - description: Подстрока отображаемого названия страны назначения без учёта регистра
+          explode: false
+          in: query
+          name: country
+          schema:
+            description: Подстрока отображаемого названия страны назначения без учёта регистра
+            maxLength: 255
             type: string
       responses:
         "200":

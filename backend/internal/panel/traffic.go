@@ -5,11 +5,14 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/Artik-Man/Hestia/internal/geoip"
 	"github.com/Artik-Man/Hestia/internal/traffic"
 	"github.com/danielgtaylor/huma/v2"
+	"golang.org/x/text/language"
+	"golang.org/x/text/language/display"
 )
 
 type trafficInput struct {
@@ -21,6 +24,7 @@ type trafficInput struct {
 	Offset   int    `query:"offset" doc:"Число пропускаемых совпадений от начала выборки" minimum:"0" maximum:"2147483647"`
 	Limit    int    `query:"limit" doc:"Максимум возвращаемых строк, до 500" default:"100" minimum:"1" maximum:"500"`
 	Snapshot string `query:"snapshot" doc:"Верхняя граница последовательности записей из первой страницы" maxLength:"20"`
+	Country  string `query:"country" doc:"Подстрока отображаемого названия страны назначения без учёта регистра" maxLength:"255"`
 }
 
 type trafficPageOutput struct{ Body traffic.TrafficPage }
@@ -32,11 +36,34 @@ type trafficSettingsIO struct {
 
 // registerTraffic exposes bounded journal windows and durable storage settings to the local panel.
 func registerTraffic(api huma.API, store *traffic.Store, countries *geoip.Index, provider *geoip.Enrichment) {
+	names := map[string]string{"": "Не определена"}
+	for _, code := range strings.Fields(geoip.CountryCodes) {
+		names[code] = display.Russian.Regions().Name(language.MustParseRegion(code))
+	}
+	resolve := func(address, fakeIP string) string {
+		if address == "" || address == fakeIP {
+			return ""
+		}
+		if code := provider.Country(address); code != "" {
+			return code
+		}
+		return countries.Country(address)
+	}
 	huma.Register(api, huma.Operation{OperationID: "getTraffic", Tags: []string{"Panel"}, Method: http.MethodGet, Path: "/api/traffic", Summary: "Прочитать страницу журнала трафика", Errors: []int{422, 503}}, func(ctx context.Context, in *trafficInput) (*trafficPageOutput, error) {
 		if store == nil {
 			return nil, trafficError(nil)
 		}
 		q := traffic.Query{Text: in.Query, Protocol: in.Protocol, Output: in.Output, Offset: in.Offset, Limit: in.Limit, Snapshot: in.Snapshot}
+		if term := strings.ToLower(strings.TrimSpace(in.Country)); term != "" {
+			matches := make(map[string]bool)
+			for code, label := range names {
+				matches[code] = strings.Contains(strings.ToLower(label), term)
+			}
+			q.MatchCountry = func(address, fakeIP string) (string, bool) {
+				code := resolve(address, fakeIP)
+				return code, matches[code]
+			}
+		}
 		var err error
 		if in.From != "" {
 			q.From, err = time.Parse(time.RFC3339Nano, in.From)
@@ -56,11 +83,11 @@ func registerTraffic(api huma.API, store *traffic.Store, countries *geoip.Index,
 		}
 		for i := range page.Events {
 			event := &page.Events[i]
-			if event.Address != event.FakeIP {
-				event.Country = provider.Country(event.Address)
-				if event.Country == "" {
-					event.Country = countries.Country(event.Address)
-				}
+			if q.MatchCountry == nil {
+				event.Country = resolve(event.Address, event.FakeIP)
+			}
+			if event.Country != "" {
+				event.CountryName = names[event.Country]
 			}
 		}
 		return &trafficPageOutput{Body: page}, nil

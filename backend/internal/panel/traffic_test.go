@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -79,7 +80,7 @@ func TestTrafficHTTP(t *testing.T) {
 	}
 }
 
-// TestGeoIPJournalAPI verifies lookup for old observations and protects the private provider credential in every response.
+// TestGeoIPJournalAPI checks country labels and filtering before pagination for old observations and protects the private provider credential in every response.
 func TestGeoIPJournalAPI(t *testing.T) {
 	dir := t.TempDir()
 	store, err := traffic.Open(dir)
@@ -87,7 +88,7 @@ func TestGeoIPJournalAPI(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer store.Close()
-	dbBytes := append([]byte{'H', 'G', 'I', '1', 0, 0, 0, 1}, 9, 9, 9, 0, 9, 9, 9, 255, 'C', 'H')
+	dbBytes := append([]byte{'H', 'G', 'I', '1', 0, 0, 0, 2}, 9, 9, 9, 0, 9, 9, 9, 255, 'C', 'H', 11, 0, 0, 0, 11, 0, 0, 255, 'S', 'E')
 	file := filepath.Join(dir, "geo.bin")
 	if err = os.WriteFile(file, dbBytes, 0600); err != nil {
 		t.Fatal(err)
@@ -101,7 +102,7 @@ func TestGeoIPJournalAPI(t *testing.T) {
 		t.Fatal(err)
 	}
 	h := panelHandler("", "", nil, panelWrites{traffic: store, trafficCountries: db, enrichment: provider})
-	for _, e := range []traffic.TrafficEvent{{Address: "9.9.9.9"}, {Address: "", Domain: "vk.ru", FakeIP: "9.9.9.9"}} {
+	for _, e := range []traffic.TrafficEvent{{Address: "9.9.9.9"}, {Address: "11.0.0.1"}, {Address: "", Domain: "vk.ru", FakeIP: "9.9.9.9"}} {
 		e.Time = time.Now()
 		e.Protocol = "TCP"
 		e.Kind = traffic.Unconfirmed
@@ -111,8 +112,24 @@ func TestGeoIPJournalAPI(t *testing.T) {
 	}
 	res := dnsRequest(t, h, http.MethodGet, "/api/traffic", nil, "")
 	var page traffic.TrafficPage
-	if res.Code != 200 || json.Unmarshal(res.Body.Bytes(), &page) != nil || len(page.Events) != 2 || page.Events[0].Country != "" || page.Events[1].Country != "CH" {
+	if res.Code != 200 || json.Unmarshal(res.Body.Bytes(), &page) != nil || len(page.Events) != 3 || page.Events[0].Country != "" || page.Events[1].CountryName != "Швеция" || page.Events[2].CountryName != "Швейцария" {
 		t.Fatalf("journal: %s", res.Body.String())
+	}
+	for _, tc := range []struct {
+		term   string
+		offset string
+		total  int
+		code   string
+	}{
+		{"  шВ  ", "0", 2, "SE"},
+		{"шв", "1", 2, "CH"},
+		{"опреДел", "0", 1, ""},
+	} {
+		var filtered traffic.TrafficPage
+		res = dnsRequest(t, h, http.MethodGet, "/api/traffic?limit=1&offset="+tc.offset+"&country="+url.QueryEscape(tc.term), nil, "")
+		if res.Code != 200 || json.Unmarshal(res.Body.Bytes(), &filtered) != nil || filtered.Total != tc.total || len(filtered.Events) != 1 || filtered.Events[0].Country != tc.code {
+			t.Fatalf("country query %q, offset %s: %s", tc.term, tc.offset, res.Body.String())
+		}
 	}
 	const secret = "private-test-token"
 	for _, req := range []struct {

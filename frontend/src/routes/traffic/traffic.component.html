@@ -68,7 +68,7 @@
     <ng-template #header>
       <tr>
         <th scope="col">Домен или IP</th>
-        <th scope="col" rowspan="2">Страна</th>
+        <th scope="col">Страна</th>
         <th scope="col">Протокол</th>
         <th scope="col">Дата и время</th>
         <th scope="col">Выход</th>
@@ -82,6 +82,16 @@
             aria-label="Домен или IP"
             placeholder="Домен или IP"
             [formControl]="query"
+          />
+        </th>
+        <th>
+          <input
+            pInputText
+            type="search"
+            maxlength="255"
+            aria-label="Страна"
+            placeholder="Страна"
+            [formControl]="country"
           />
         </th>
         <th>
@@ -133,7 +143,10 @@
             }
           </td>
           <td>
-            {{ row.country ? countryNames.of(row.country) : "Не определена" }}
+            {{
+              row.countryName ??
+                (row.country ? countryNames.of(row.country) : "Не определена")
+            }}
           </td>
           <td>{{ row.protocol }}</td>
           <td>

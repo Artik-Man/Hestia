@@ -17,6 +17,10 @@ export interface TrafficEvent {
      * Страна реального IP назначения по текущей базе GeoIP (ISO 3166-1 alpha-2)
      */
     country?: string;
+    /**
+     * Название страны на русском языке для отображения и текстового поиска
+     */
+    countryName?: string;
     dnsQueryId?: string;
     domain?: string;
     fakeIP?: string;

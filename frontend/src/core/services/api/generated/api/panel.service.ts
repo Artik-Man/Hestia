@@ -1495,14 +1495,15 @@ export class PanelService extends BaseService {
      * @param offset Число пропускаемых совпадений от начала выборки
      * @param limit Максимум возвращаемых строк, до 500
      * @param snapshot Верхняя граница последовательности записей из первой страницы
+     * @param country Подстрока отображаемого названия страны назначения без учёта регистра
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public getTraffic(query?: string, protocol?: 'TCP' | 'UDP', output?: string, from?: string, until?: string, offset?: number, limit?: number, snapshot?: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<TrafficPage>;
-    public getTraffic(query?: string, protocol?: 'TCP' | 'UDP', output?: string, from?: string, until?: string, offset?: number, limit?: number, snapshot?: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<TrafficPage>>;
-    public getTraffic(query?: string, protocol?: 'TCP' | 'UDP', output?: string, from?: string, until?: string, offset?: number, limit?: number, snapshot?: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<TrafficPage>>;
-    public getTraffic(query?: string, protocol?: 'TCP' | 'UDP', output?: string, from?: string, until?: string, offset?: number, limit?: number, snapshot?: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public getTraffic(query?: string, protocol?: 'TCP' | 'UDP', output?: string, from?: string, until?: string, offset?: number, limit?: number, snapshot?: string, country?: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<TrafficPage>;
+    public getTraffic(query?: string, protocol?: 'TCP' | 'UDP', output?: string, from?: string, until?: string, offset?: number, limit?: number, snapshot?: string, country?: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<TrafficPage>>;
+    public getTraffic(query?: string, protocol?: 'TCP' | 'UDP', output?: string, from?: string, until?: string, offset?: number, limit?: number, snapshot?: string, country?: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<TrafficPage>>;
+    public getTraffic(query?: string, protocol?: 'TCP' | 'UDP', output?: string, from?: string, until?: string, offset?: number, limit?: number, snapshot?: string, country?: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
 
         let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
 
@@ -1573,6 +1574,15 @@ export class PanelService extends BaseService {
             localVarQueryParameters,
             'snapshot',
             <any>snapshot,
+            QueryParamStyle.Form,
+            false,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'country',
+            <any>country,
             QueryParamStyle.Form,
             false,
         );

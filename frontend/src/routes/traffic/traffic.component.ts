@@ -54,6 +54,7 @@ export class TrafficScreen {
   private readonly catalog = inject(ConnectionCatalog);
   private readonly table = viewChild(Table);
   protected readonly query = new FormControl("", { nonNullable: true });
+  protected readonly country = new FormControl("", { nonNullable: true });
   protected readonly protocol = new FormControl<"TCP" | "UDP" | "">("", {
     nonNullable: true,
   });
@@ -110,6 +111,7 @@ export class TrafficScreen {
   ]);
   private filters!: {
     query?: string;
+    country?: string;
     protocol?: "TCP" | "UDP";
     output?: string;
     from: string;
@@ -125,6 +127,7 @@ export class TrafficScreen {
     this.catalog.reload();
     merge(
       this.query.valueChanges.pipe(debounceTime(200), distinctUntilChanged()),
+      this.country.valueChanges.pipe(debounceTime(200), distinctUntilChanged()),
       this.protocol.valueChanges,
       this.output.valueChanges,
       this.period.valueChanges,
@@ -141,6 +144,7 @@ export class TrafficScreen {
     const now = Date.now();
     this.filters = {
       query: this.query.value.trim() || undefined,
+      country: this.country.value.trim() || undefined,
       protocol: this.protocol.value || undefined,
       output: this.output.value || undefined,
       until: new Date(now).toISOString(),
@@ -205,6 +209,7 @@ export class TrafficScreen {
         offset,
         limit,
         snapshot,
+        this.filters.country,
       )
       .pipe(timeout(15000), takeUntilDestroyed(this.destroyRef))
       .subscribe({

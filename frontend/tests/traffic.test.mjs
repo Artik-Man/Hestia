@@ -32,6 +32,13 @@ test("traffic page validates the window and the source before accepting observat
   }
   assert.ok(
     !validTrafficPage(
+      { ...page, events: [{ ...event, country: "SE", countryName: 123 }] },
+      1,
+      500,
+    ),
+  );
+  assert.ok(
+    !validTrafficPage(
       {
         ...page,
         events: [

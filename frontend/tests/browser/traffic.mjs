@@ -33,6 +33,9 @@ test("traffic journal reaches rows past 500 and refresh preserves its filters", 
       namespace: "test",
       networkInterface: "ppp0",
     }));
+    events[600].country = "SE";
+    events[601].country = "CH";
+    const names = new Intl.DisplayNames("ru", { type: "region" });
     await page.route("**/*", async (route) => {
       const url = new URL(route.request().url());
       if (url.pathname === "/api/traffic/settings") {
@@ -54,6 +57,10 @@ test("traffic journal reaches rows past 500 and refresh preserves its filters", 
         const matching = events.filter(
           (e) =>
             (!q.has("query") || e.domain.includes(q.get("query"))) &&
+            (!q.has("country") ||
+              (e.country ? names.of(e.country) : "Не определена")
+                .toLowerCase()
+                .includes(q.get("country").toLowerCase())) &&
             (!q.has("protocol") || e.protocol === q.get("protocol")) &&
             (!q.has("output") ||
               "connection:" + e.connection === q.get("output")) &&
@@ -173,7 +180,19 @@ test("traffic journal reaches rows past 500 and refresh preserves its filters", 
     assert.ok(
       requests.some((q) => Number(q.offset) > 500 && q.snapshot === "1"),
     );
-    await page.getByRole("searchbox").fill("flow-119");
+    const country = page.getByRole("searchbox", { name: "Страна" });
+    await country.fill("шв");
+    await page.getByRole("cell", { name: "Швеция", exact: true }).waitFor();
+    await page.getByRole("cell", { name: "Швейцария", exact: true }).waitFor();
+    await page.getByText("Найдено событий: 2", { exact: true }).waitFor();
+    assert.equal(requests.at(-1).offset, "0");
+    await page.getByRole("button", { name: "Обновить журнал" }).click();
+    await page.getByText("Найдено событий: 2", { exact: true }).waitFor();
+    assert.equal(requests.at(-1).country, "шв");
+    await country.fill("");
+    await page
+      .getByRole("searchbox", { name: "Домен или IP" })
+      .fill("flow-119");
     await page.getByRole("combobox", { name: "Протокол", exact: true }).click();
     await page.getByRole("option", { name: "UDP", exact: true }).click();
     await page.getByRole("combobox", { name: "Выход", exact: true }).click();

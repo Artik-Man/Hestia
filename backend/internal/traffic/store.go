@@ -341,7 +341,22 @@ func (s *Store) Page(ctx context.Context, q Query) (TrafficPage, error) {
 		where += " AND (instr(domain,?)>0 OR instr(address,?)>0 OR instr(fake_ip,?)>0)"
 		args = append(args, term, term, term)
 	}
-	if err = tx.QueryRowContext(ctx, "SELECT count(*)"+where, args...).Scan(&page.Total); err != nil {
+	var matched map[int64]string
+	if q.MatchCountry != nil {
+		matched, page.Total, err = countryWindow(ctx, tx, where, args, q)
+		if err != nil {
+			return page, err
+		}
+		if len(matched) == 0 {
+			return page, tx.Commit()
+		}
+		where = " FROM events WHERE seq IN (" + strings.Repeat("?,", len(matched)-1) + "?)"
+		args = make([]any, 0, len(matched))
+		for seq := range matched {
+			args = append(args, seq)
+		}
+		q.Offset = 0
+	} else if err = tx.QueryRowContext(ctx, "SELECT count(*)"+where, args...).Scan(&page.Total); err != nil {
 		return page, err
 	}
 	rows, err = tx.QueryContext(ctx, "SELECT seq,event"+where+" ORDER BY stamp DESC,seq DESC LIMIT ? OFFSET ?", append(args, q.Limit, q.Offset)...)
@@ -360,10 +375,40 @@ func (s *Store) Page(ctx context.Context, q Query) (TrafficPage, error) {
 			return page, err
 		}
 		e.ID = strconv.FormatInt(seq, 10)
+		if matched != nil {
+			e.Country = matched[seq]
+		}
 		page.Events = append(page.Events, e)
 	}
 	if err = rows.Err(); err != nil {
 		return page, err
 	}
 	return page, tx.Commit()
+}
+
+// countryWindow counts all matching destinations but retains only the requested window of IDs and their resolved countries.
+func countryWindow(ctx context.Context, tx *sql.Tx, where string, args []any, q Query) (map[int64]string, int, error) {
+	rows, err := tx.QueryContext(ctx, "SELECT seq,address,fake_ip"+where+" ORDER BY stamp DESC,seq DESC", args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+	selected := make(map[int64]string)
+	total := 0
+	for rows.Next() {
+		var seq int64
+		var address, fakeIP string
+		if err := rows.Scan(&seq, &address, &fakeIP); err != nil {
+			return nil, 0, err
+		}
+		code, matches := q.MatchCountry(address, fakeIP)
+		if !matches {
+			continue
+		}
+		if total >= q.Offset && len(selected) < q.Limit {
+			selected[seq] = code
+		}
+		total++
+	}
+	return selected, total, rows.Err()
 }

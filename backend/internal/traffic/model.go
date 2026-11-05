@@ -17,6 +17,7 @@ type TrafficEvent struct {
 	Protocol         string    `json:"protocol" enum:"TCP,UDP"`
 	Address          string    `json:"address"`
 	Country          string    `json:"country,omitempty" pattern:"^[A-Z]{2}$" doc:"Страна реального IP назначения по текущей базе GeoIP (ISO 3166-1 alpha-2)"`
+	CountryName      string    `json:"countryName,omitempty" doc:"Название страны на русском языке для отображения и текстового поиска"`
 	Port             int       `json:"port" minimum:"0" maximum:"65535"`
 	Domain           string    `json:"domain,omitempty"`
 	FakeIP           string    `json:"fakeIP,omitempty"`
@@ -59,4 +60,6 @@ type Query struct {
 	From, Until                      time.Time
 	Text, Protocol, Output, Snapshot string
 	Offset, Limit                    int
+	// MatchCountry resolves a destination to its current country code and whether it matches the active filter.
+	MatchCountry func(address, fakeIP string) (code string, matches bool)
 }

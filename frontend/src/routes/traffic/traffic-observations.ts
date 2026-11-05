@@ -52,6 +52,9 @@ function validEvent(value: unknown): value is TrafficEvent {
       (!value["address"] ||
         typeof value["country"] !== "string" ||
         !/^[A-Z]{2}$/u.test(value["country"]))) ||
+    (value["countryName"] !== undefined &&
+      (typeof value["countryName"] !== "string" ||
+        !value["countryName"].trim())) ||
     !integer(value["port"], 0, 65535)
   )
     return false;
