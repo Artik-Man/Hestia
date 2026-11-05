@@ -301,3 +301,56 @@ func TestDNSWorkerIntegration(t *testing.T) {
 	}
 	waitForReport(t, dir, snap.Revision, nil)
 }
+
+// TestUDPClientRetry sends two identical datagrams through the same source socket and checks the real worker heartbeat.
+func TestUDPClientRetry(t *testing.T) {
+	dir := t.TempDir()
+	store := dnspolicy.Store{Path: filepath.Join(dir, "policy.json")}
+	snapshot, err := store.Read()
+	if err != nil {
+		t.Fatal(err)
+	}
+	snapshot.Policy.Settings.Threshold = 1
+	snapshot, err = store.Apply(snapshot.Revision, snapshot.Policy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	auth := startAuthority(t)
+	endpoint, _ := localWorker(t, store, auth, dir)
+	conn, err := net.DialTimeout("udp4", endpoint, time.Second)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	if err := conn.SetDeadline(time.Now().Add(4 * time.Second)); err != nil {
+		t.Fatal(err)
+	}
+	const name = "retry.example"
+	q := dnsmessage.Question{Name: dnsmessage.MustNewName(name + "."), Type: dnsmessage.TypeA, Class: dnsmessage.ClassINET}
+	request := dnsmessage.Message{Header: dnsmessage.Header{ID: 42, RecursionDesired: true}, Questions: []dnsmessage.Question{q}}
+	packet, err := request.Pack()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for range 2 {
+		if _, err := conn.Write(packet); err != nil {
+			t.Fatal(err)
+		}
+		buf := make([]byte, 512)
+		n, err := conn.Read(buf)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var reply dnsmessage.Message
+		if err := reply.Unpack(buf[:n]); err != nil || !reply.Response || reply.RCode != dnsmessage.RCodeSuccess || reply.ID != 42 || !slices.Equal(reply.Questions, request.Questions) || len(reply.Answers) != 1 {
+			t.Fatalf("reply: %+v %v", reply, err)
+		}
+	}
+	// A fresh identity forces the final heartbeat to postdate both duplicate packets.
+	clientAnswer(t, endpoint, "udp4", name, 43)
+	waitForReport(t, dir, snapshot.Revision, []dnspolicy.DNSWarmName{{Domain: name, ClientRequests: 2}})
+	report, err := dnspolicy.ReadWarmReport(filepath.Join(dir, "report.json"), time.Now())
+	if err != nil || report.ClientUDP == nil || report.ClientUDP.Attempts != 3 || report.ClientUDP.RetriedAttempts != 1 || auth.received(name, dnsmessage.TypeA) != 1 {
+		t.Fatalf("report=%+v err=%v upstream=%d", report, err, auth.received(name, dnsmessage.TypeA))
+	}
+}

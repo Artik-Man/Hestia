@@ -1,0 +1,20 @@
+=== RUN   TestAutomaticExclusionResumeAndWindowExpiry
+2000/01/01 03:11:00 DNS warm name=automatic.example type=1 exit=test-exit resolver=test-resolver positive=true ttl=2h0m0s
+2000/01/01 03:40:00 DNS warm name=automatic.example type=1 exit=test-exit resolver=test-resolver positive=true ttl=2h0m0s
+2000/01/01 03:50:00 DNS warm name=automatic.example type=1 exit=test-exit resolver=test-resolver positive=true ttl=2h0m0s
+--- PASS: TestAutomaticExclusionResumeAndWindowExpiry (0.08s)
+=== RUN   TestScheduledRefreshUsesEarlierOfIntervalAndTTL
+=== RUN   TestScheduledRefreshUsesEarlierOfIntervalAndTTL/interval-first
+2000/01/01 03:01:00 DNS warm name=rotation.example type=1 exit=test-exit resolver=test-resolver positive=true ttl=10m0s
+=== RUN   TestScheduledRefreshUsesEarlierOfIntervalAndTTL/ttl-first
+2000/01/01 03:00:18 DNS warm name=rotation.example type=1 exit=test-exit resolver=test-resolver positive=true ttl=20s
+--- PASS: TestScheduledRefreshUsesEarlierOfIntervalAndTTL (0.04s)
+    --- PASS: TestScheduledRefreshUsesEarlierOfIntervalAndTTL/interval-first (0.02s)
+    --- PASS: TestScheduledRefreshUsesEarlierOfIntervalAndTTL/ttl-first (0.02s)
+=== RUN   TestSplitWarmRepeatedRevocation
+2000/01/01 03:00:18 DNS warm name=cdn.example type=1 exit=ru resolver=ru-resolver positive=true ttl=20s
+2000/01/01 03:00:36 DNS warm name=cdn.example type=1 exit=ru resolver=ru-resolver positive=true ttl=20s
+2000/01/01 03:01:30 DNS warm name=cdn.example type=1 exit=ru resolver=ru-resolver positive=true ttl=20s
+--- PASS: TestSplitWarmRepeatedRevocation (0.01s)
+PASS
+ok  	github.com/Artik-Man/Hestia/internal/dnsresolver	1.470s

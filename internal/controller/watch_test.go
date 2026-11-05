@@ -151,3 +151,26 @@ func TestAWGHealthRecordFreshness(t *testing.T) {
 		}
 	}
 }
+
+// TestWatcherCarrierFailover reads the link state every reconciliation and recovers without a config rewrite.
+func TestWatcherCarrierFailover(t *testing.T) {
+	tr := &selectorTransport{selected: "direct-test"}
+	w := newWatcher(&http.Client{Transport: tr}, "http://gateway.test")
+	w.devices = map[string]string{"direct-test": "eth0", "awg-test": "awg0"}
+	links := map[string]bool{"eth0": true, "awg0": true}
+	w.carrier = func(name string) bool { return links[name] }
+	w.healthyAWG = func(string) bool { return true }
+	snapshot := []byte(`{"groups":[{"id":"default","exits":["direct-test","awg-test"]}],"lists":[],"healthy":{"direct-test":true,"awg-test":true},"connectorKinds":{"awg-test":"awg"}}`)
+	for _, phase := range []struct {
+		eth, awg bool
+		want     string
+	}{
+		{true, true, "direct-test"}, {false, true, "awg-test"}, {false, false, "deny"}, {true, false, "direct-test"},
+	} {
+		links["eth0"], links["awg0"] = phase.eth, phase.awg
+		_, err := w.step(context.Background(), snapshot)
+		if err != nil || tr.selected != phase.want {
+			t.Fatalf("carrier %+v: selected %q, err %v", phase, tr.selected, err)
+		}
+	}
+}

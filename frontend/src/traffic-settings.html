@@ -1,0 +1,61 @@
+<p-dialog
+  header="Настройки журнала"
+  [visible]="true"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [closable]="!saving()"
+  [closeOnEscape]="!saving()"
+  (visibleChange)="closed.emit()"
+>
+  @if (expected()) {
+    <form [formGroup]="form" (ngSubmit)="save()" class="journal-form">
+      <label
+        >Объём, МБ<input
+          pInputText
+          type="number"
+          min="1"
+          [max]="limits.maxMB"
+          step="1"
+          formControlName="maxMB"
+      /></label>
+      <label
+        >Срок хранения, ч<input
+          pInputText
+          type="number"
+          min="1"
+          [max]="limits.retentionHours"
+          step="1"
+          formControlName="retentionHours"
+      /></label>
+      @if (form.invalid) {
+        <p role="alert">
+          Введите целые положительные значения в допустимых пределах.
+        </p>
+      }
+      <div class="journal-actions">
+        <button
+          pButton
+          type="button"
+          severity="secondary"
+          [disabled]="saving()"
+          (click)="closed.emit()"
+        >
+          Отмена</button
+        ><button pButton type="submit" [disabled]="form.invalid || saving()">
+          Сохранить
+        </button>
+      </div>
+    </form>
+  } @else if (!error()) {
+    <p role="status">Загрузка настроек…</p>
+  }
+  @if (error()) {
+    <p role="alert">{{ error() }}</p>
+    @if (!expected()) {
+      <button pButton type="button" severity="secondary" (click)="reload()">
+        Загрузить актуальные настройки
+      </button>
+    }
+  }
+</p-dialog>

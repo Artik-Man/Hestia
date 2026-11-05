@@ -1,14 +1,13 @@
 <header class="intro">
   <p class="kicker"><span class="bar"></span>Маршрутизация</p>
-  <h1>Карта стран</h1>
+  <h1>Маршрутизация по странам</h1>
   <p class="lede">
-    Выбор группы по стране IP, когда доменные правила не сработали.
+    Группа подключения по стране IP-адреса, если не сработало доменное правило.
   </p>
 </header>
-<p class="notice">
-  Действующая карта пока недоступна. Здесь можно составить черновик и проверить
-  приоритет правил. Изменения хранятся в памяти вкладки до перезагрузки.
-</p>
+@if (draft.warning()) {
+  <p class="notice failure" role="alert">{{ draft.warning() }}</p>
+}
 @if (inventory.view().kind === "failed") {
   <p class="notice failure" role="alert">
     Не удалось загрузить группы.
@@ -18,156 +17,118 @@
   </p>
 } @else if (inventory.view().kind === "loading") {
   <p role="status">Загружаем группы…</p>
-}
-<section class="policy-card">
-  <h2>Назначения стран</h2>
-  <p class="hint">Правило отдельной страны имеет приоритет над блоками.</p>
-  <form (submit)="$event.preventDefault(); saveCountry()" class="fields">
-    <label
-      >Страна<select
-        [formControl]="country"
-        (change)="selectCountry(country.value)"
+} @else if (!groups().length) {
+  <p class="notice">Для назначения стран нужна группа подключений.</p>
+} @else if (draft.value(); as map) {
+  <section class="map-card" aria-label="Настройки маршрутизации по странам">
+    <div class="controls">
+      <label class="switch-label"
+        ><input
+          #enabled
+          type="checkbox"
+          role="switch"
+          [checked]="map.enabled"
+          (change)="toggle(enabled.checked)"
+        />
+        Выбирать группу по стране назначения</label
       >
-        <option value="">Выберите страну</option>
-        @for (item of countries; track item.code) {
-          <option [value]="item.code">
-            {{ item.label }} ({{ item.code }})
-          </option>
-        }
-      </select></label
+      @if (defaultGroup(); as fallback) {
+        <p class="hint">
+          Если страна IP-адреса неизвестна, используется группа по умолчанию:
+          <strong>{{ fallback.name ?? fallback.id }}</strong
+          >.
+        </p>
+      }
+      <p class="hint">
+        Локальный черновик в этом браузере. Изменения сохраняются здесь и не
+        применяются к шлюзу.
+      </p>
+    </div>
+    <div
+      class="table-wrap"
+      tabindex="0"
+      role="region"
+      aria-label="Назначения стран"
     >
-    <label
-      >Группа страны<select [formControl]="countryGroup">
-        <option value="">Выберите группу</option>
-        @for (group of groups(); track group.id) {
-          <option [value]="group.id">{{ group.name ?? group.id }}</option>
-        }
-      </select></label
-    >
-    <button type="submit" [disabled]="!groups().length">
-      Внести в черновик
-    </button>
-  </form>
-  @if (countryError()) {
-    <p role="alert">{{ countryError() }}</p>
-  }
-  <ul class="detail-rows">
-    @for (rule of map().countries; track rule.country) {
-      <li>
-        <span
-          ><b>{{ countryLabel(rule.country) }}</b> →
-          {{ groupName(groups(), rule.group) }}</span
-        ><button
-          type="button"
-          (click)="removeCountry(rule.country)"
-          [attr.aria-label]="'Удалить назначение ' + countryLabel(rule.country)"
-        >
-          Удалить
-        </button>
-      </li>
-    } @empty {
-      <li class="muted">В черновике нет назначений для отдельных стран.</li>
-    }
-  </ul>
-</section>
-<section class="policy-card">
-  <h2>Блоки стран</h2>
-  <p class="hint">
-    Если страна входит в несколько блоков, применяется первый в списке.
+      <table aria-label="Группы подключений по странам">
+        <thead>
+          <tr>
+            <th scope="col">Страна</th>
+            @for (group of groups(); track group.id) {
+              <th scope="col">
+                @let label =
+                  "Назначить группу „" +
+                  (group.name ?? group.id) +
+                  "“ всем странам";
+                {{ group.name ?? group.id }}
+                <button
+                  type="button"
+                  (click)="assign(group.id)"
+                  [attr.aria-label]="label"
+                >
+                  <span aria-hidden="true">↓</span>
+                  <span class="bulk-tip" aria-hidden="true">{{ label }}</span>
+                </button>
+              </th>
+            }
+            @for (id of missingGroups(); track id) {
+              <th scope="col">{{ id }}<small>Группа удалена</small></th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (country of countries; track country.code) {
+            <tr>
+              <th scope="row">
+                {{ country.label }}
+              </th>
+              @for (group of groups(); track group.id) {
+                <td>
+                  <label
+                    ><input
+                      type="radio"
+                      [name]="'country-' + country.code"
+                      [value]="group.id"
+                      [checked]="map.assignments[country.code] === group.id"
+                      (change)="assign(group.id, country.code)"
+                      [attr.aria-label]="
+                        country.label + ' — ' + (group.name ?? group.id)
+                      "
+                  /></label>
+                </td>
+              }
+              @for (id of missingGroups(); track id) {
+                <td>
+                  @if (map.assignments[country.code] === id) {
+                    <input
+                      type="radio"
+                      disabled
+                      checked
+                      [name]="'country-' + country.code"
+                      [attr.aria-label]="
+                        country.label + ' — удалённая группа ' + id
+                      "
+                    />
+                  }
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+} @else if (!defaultGroup()) {
+  <p class="notice" role="status">
+    Чтобы настроить маршрутизацию по странам, назначьте группу по умолчанию в
+    разделе «Группы подключений».
   </p>
-  <ol class="detail-rows">
-    @for (block of map().blocks; track block.name; let i = $index) {
-      <li>
-        <div>
-          <b>{{ i + 1 }}. {{ block.name }}</b> →
-          {{ groupName(groups(), block.group) }}<br />{{
-            block.countries.join(
-              ",
-        "
-            )
-          }}
-        </div>
-        <div class="actions">
-          <button
-            type="button"
-            [disabled]="i === 0"
-            (click)="moveBlock(i, -1)"
-            [attr.aria-label]="'Поднять блок ' + block.name"
-          >
-            Выше</button
-          ><button
-            type="button"
-            [disabled]="i === map().blocks.length - 1"
-            (click)="moveBlock(i, 1)"
-            [attr.aria-label]="'Опустить блок ' + block.name"
-          >
-            Ниже</button
-          ><button type="button" (click)="editBlock(block)">Изменить</button
-          ><button type="button" (click)="removeBlock(block.name)">
-            Удалить
-          </button>
-        </div>
-      </li>
-    } @empty {
-      <li class="muted">В черновике нет блоков.</li>
-    }
-  </ol>
-  <form class="fields" (submit)="$event.preventDefault(); saveBlock()">
-    <label>Название блока<input [formControl]="blockName" /></label>
-    <label
-      >Коды стран<input [formControl]="blockCountries" placeholder="DE, FR, IT"
-    /></label>
-    <label
-      >Группа блока<select [formControl]="blockGroup">
-        <option value="">Выберите группу</option>
-        @for (group of groups(); track group.id) {
-          <option [value]="group.id">{{ group.name ?? group.id }}</option>
-        }
-      </select></label
-    >
-    <button type="submit" [disabled]="!groups().length">
-      {{ editingBlock() ? "Обновить блок" : "Добавить блок" }}
+} @else if (draft.warning()) {
+  <p class="notice">
+    Можно заменить повреждённый черновик новой выключенной картой. Все страны
+    получат текущую группу по умолчанию.
+    <button type="button" (click)="recreate()">
+      Заменить повреждённый черновик
     </button>
-    @if (editingBlock()) {
-      <button type="button" (click)="clearBlock()">Отменить изменение</button>
-    }
-  </form>
-  @if (blockError()) {
-    <p role="alert">{{ blockError() }}</p>
-  }
-</section>
-<section class="policy-card">
-  <h2>Остальной мир</h2>
-  <label
-    >Группа для известных стран без совпадения<select
-      #world
-      [value]="map().world"
-      (change)="setWorld(world.value)"
-    >
-      <option value="">Группа по умолчанию</option>
-      @for (group of groups(); track group.id) {
-        <option [value]="group.id">{{ group.name ?? group.id }}</option>
-      }
-    </select></label
-  >
-  <p class="hint">Если страна неизвестна, применяется группа по умолчанию.</p>
-</section>
-<section class="policy-card">
-  <h2>Проверка черновика</h2>
-  <label
-    >Страна назначения<select
-      #sample
-      [value]="previewCountry()"
-      (change)="previewCountry.set(sample.value)"
-    >
-      <option value="">Страна не определена</option>
-      @for (item of countries; track item.code) {
-        <option [value]="item.code">{{ item.label }} ({{ item.code }})</option>
-      }
-    </select></label
-  >
-  <p class="result" aria-live="polite">{{ preview() }}</p>
-</section>
-<button type="button" class="refresh" (click)="reset()">
-  Сбросить черновик карты
-</button>
+  </p>
+}

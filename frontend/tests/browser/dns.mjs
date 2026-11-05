@@ -16,6 +16,11 @@ test("DNS edits independent lists, rejects stale writes and preserves draft sett
     let revision = 0,
       available = true,
       reportRows = true;
+    let clientUdp = {
+      attempts: 1,
+      retriedAttempts: 0,
+      unclassifiedAttempts: 0,
+    };
     let policy = {
       settings: {
         automaticEnabled: true,
@@ -51,6 +56,9 @@ test("DNS edits independent lists, rejects stale writes and preserves draft sett
             : [];
         return route.fulfill({
           json: {
+            clientUdp: reportRows
+              ? clientUdp
+              : { attempts: 0, retriedAttempts: 0, unclassifiedAttempts: 0 },
             observedAt: new Date().toISOString(),
             policyRevision: revision,
             automatic,
@@ -78,6 +86,15 @@ test("DNS edits independent lists, rejects stale writes and preserves draft sett
     });
     const manual = page.getByRole("region", { name: "Добавленные вручную" });
     await automatic.getByText("cdn.example", { exact: true }).waitFor();
+    await automatic
+      .getByText(/UDP без замеченного повтора — 100\s*%/)
+      .waitFor();
+    clientUdp = { attempts: 3, retriedAttempts: 1, unclassifiedAttempts: 1 };
+    await page.reload();
+    await automatic.getByText(/UDP без замеченного повтора — 50\s*%/).waitFor();
+    await automatic
+      .getByText(/всего попыток 3, потребовали повтора 1.*Вне расчёта 1/s)
+      .waitFor();
     assert.deepEqual(
       (await page.locator("hestia-dns-names h2").allTextContents()).map(
         (heading) => heading.trim(),
@@ -178,6 +195,9 @@ test("DNS edits independent lists, rejects stale writes and preserves draft sett
     await page.reload();
     await automatic
       .getByText("Автоматически добавленных доменов пока нет.")
+      .waitFor();
+    await automatic
+      .getByText("С запуска службы UDP-запросов от маршрутизатора ещё не было.")
       .waitFor();
     await excluded.getByText("changed.example", { exact: true }).waitFor();
   } finally {

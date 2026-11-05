@@ -19,8 +19,8 @@ const (
 	qualityRuntimeDir   = "/run/hestia-quality"
 )
 
-// startQuality starts independent probes on the paths exported from the installed backend generation.
-func startQuality(ctx context.Context) (*quality.Engine, error) {
+// readQualityPaths reads the path bindings exported from the installed backend generation.
+func readQualityPaths() ([]quality.Path, error) {
 	data, err := os.ReadFile(filepath.Join(qualityRuntimeDir, "paths.json"))
 	if err != nil {
 		return nil, err
@@ -29,12 +29,28 @@ func startQuality(ctx context.Context) (*quality.Engine, error) {
 	if err := json.Unmarshal(data, &paths); err != nil {
 		return nil, err
 	}
+	return paths, nil
+}
+
+// startQuality installs device bindings before loading probe settings so a settings error still permits carrier checks.
+func (w *watcher) startQuality(ctx context.Context) error {
+	paths, err := readQualityPaths()
+	if err != nil {
+		return err
+	}
+	w.devices = make(map[string]string, len(paths))
+	for _, path := range paths {
+		if path.Device != "" || path.SocksAddress != "" {
+			w.devices[path.ID] = path.Device
+		}
+	}
 	engine, err := quality.NewEngine(qualitySettingsFile)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	go engine.Run(ctx, func(context.Context) ([]quality.Path, error) { return paths, nil })
-	return engine, nil
+	w.quality = engine
+	return nil
 }
 
 // qualityOrder ranks eligible exits by their complete arithmetic mean, retaining current preference on a tie.

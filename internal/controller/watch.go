@@ -10,11 +10,14 @@ import (
 	"time"
 
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
+	"github.com/Artik-Man/Hestia/internal/physical"
 	"github.com/Artik-Man/Hestia/internal/quality"
 	"github.com/Artik-Man/Hestia/internal/routing"
 )
 
 type watcher struct {
+	devices    map[string]string
+	carrier    func(string) bool
 	quality    *quality.Engine
 	client     *http.Client
 	base       string
@@ -26,7 +29,7 @@ type watcher struct {
 
 // newWatcher starts reconciliation with no desired snapshot or confirmed targets.
 func newWatcher(client *http.Client, base string) *watcher {
-	return &watcher{client: client, base: base, confirmed: make(map[string]string), healthyAWG: AWGHeartbeatHealthy}
+	return &watcher{client: client, base: base, confirmed: make(map[string]string), healthyAWG: AWGHeartbeatHealthy, carrier: func(device string) bool { return physical.CarrierAt("/sys/class/net", device) }}
 }
 
 // CheckSnapshot validates a candidate without connecting to sing-box.
@@ -77,7 +80,8 @@ func (w *watcher) sync(ctx context.Context) ([]Result, error) {
 	var failures []error
 	health := make(map[string]bool, len(w.desired.Healthy))
 	for id, available := range w.desired.Healthy {
-		health[id] = available
+		device, mapped := w.devices[id]
+		health[id] = available && (w.devices == nil || mapped) && (device == "" || w.carrier(device))
 	}
 	for id, kind := range w.desired.ConnectorKinds {
 		if kind == "awg" && !w.healthyAWG(id) {
@@ -119,7 +123,7 @@ func (w *watcher) sync(ctx context.Context) ([]Result, error) {
 				exit = qualityTarget(group, current)
 				if exit != "" {
 					target = exit
-					if group.Connections[0].Result.Overall != nil {
+					if health[current] && group.Connections[0].Result.Overall != nil {
 						reason = "quality_scores"
 					}
 				}
@@ -158,6 +162,9 @@ func Watch(ctx context.Context, path string, interval time.Duration, enableQuali
 	client := newClient()
 	defer client.CloseIdleConnections()
 	w := newWatcher(client, localAPI)
+	if enableQuality {
+		w.devices = make(map[string]string)
+	}
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	lastError := ""
@@ -165,11 +172,8 @@ func Watch(ctx context.Context, path string, interval time.Duration, enableQuali
 	for ctx.Err() == nil {
 		if enableQuality && w.quality == nil && time.Since(lastProbeInit) >= 5*time.Second {
 			lastProbeInit = time.Now()
-			engine, initErr := startQuality(ctx)
-			if initErr != nil {
+			if initErr := w.startQuality(ctx); initErr != nil {
 				warn(fmt.Errorf("quality measurements unavailable: %w", initErr))
-			} else {
-				w.quality = engine
 			}
 		}
 		data, readErr := os.ReadFile(path)

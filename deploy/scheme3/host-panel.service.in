@@ -6,7 +6,7 @@ After=network-online.target
 [Service]
 User=hestia-panel
 Group=hestia-panel
-StateDirectory=hestia-quality-settings hestia-dns-policy
+StateDirectory=hestia-quality-settings hestia-dns-policy hestia-traffic
 StateDirectoryMode=0755
 SupplementaryGroups=hestia-snapshot
 ExecStart=/opt/hestia-scheme3-app/current/hestia-panel -listen @LAN_IP@:8080 -assets /opt/hestia-scheme3-app/current/browser -snapshot /etc/hestia/snapshot.json -dns-policy /var/lib/hestia-dns-policy/policy.json -enable-domain-lists -enable-group-create -enable-group-order -enable-group-delete -enable-exit-move -enable-awg

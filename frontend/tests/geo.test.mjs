@@ -1,45 +1,29 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { previewCountry } from "../src/geo-policy.ts";
+import {
+  initializeCountryMap,
+  readCountryMap,
+  regionCodes,
+} from "../src/geo-policy.ts";
 
-const groups = [{ id: "fallback", isDefault: true, exits: [] }];
-const policy = {
-  countries: [{ country: "DE", group: "country" }],
-  blocks: [
-    { name: "West", countries: ["DE", "FR"], group: "first" },
-    { name: "Europe", countries: ["DE", "FR"], group: "second" },
-  ],
-  world: "rest",
-};
-
-test("individual country wins over overlapping blocks", () => {
-  assert.deepEqual(previewCountry("DE", policy, groups), {
-    reason: "country",
-    group: "country",
-  });
-});
-test("overlapping blocks follow draft order", () => {
-  assert.equal(previewCountry("FR", policy, groups).group, "first");
-  assert.equal(
-    previewCountry(
-      "FR",
-      { ...policy, blocks: [...policy.blocks].reverse() },
-      groups,
-    ).group,
-    "second",
+/** Verifies the initial map covers each country exactly once and starts disabled. */
+test("a new map assigns every country to the initial default", () => {
+  const map = initializeCountryMap("first");
+  assert.equal(map.enabled, false);
+  assert.equal(regionCodes.length, 249);
+  assert.deepEqual(
+    Object.keys(map.assignments).sort(),
+    [...regionCodes].sort(),
   );
+  assert.deepEqual(new Set(Object.values(map.assignments)), new Set(["first"]));
 });
-test("unknown country uses the default even with a rest-of-world rule", () => {
-  assert.deepEqual(previewCountry("", policy, groups), {
-    reason: "unknown",
-    group: "fallback",
-  });
-  assert.deepEqual(previewCountry("BR", policy, groups), {
-    reason: "world",
-    group: "rest",
-  });
-  assert.deepEqual(previewCountry("BR", { ...policy, world: "" }, groups), {
-    reason: "default",
-    group: "fallback",
-  });
+
+/** Verifies restored state preserves both the switch and individual assignments. */
+test("restoring a local map preserves every explicit selection", () => {
+  const map = initializeCountryMap("first");
+  const edited = {
+    enabled: true,
+    assignments: { ...map.assignments, DE: "second" },
+  };
+  assert.deepEqual(readCountryMap(JSON.stringify(edited)), edited);
 });

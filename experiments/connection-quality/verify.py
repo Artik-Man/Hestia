@@ -62,6 +62,36 @@ def verify_services(fault: bool) -> None:
     raise ValueError(f"missing scoped service observations (fault={fault}): {observed}")
 
 
+def wait_link_order(active: str, order: list[str], available: set[str]) -> None:
+    """Observe the next ranked table and live selector while the previous high score is still in the hour window."""
+    end = time.monotonic() + 5
+    last = []
+    while time.monotonic() < end:
+        rows = read("8080/api/quality")["groups"][0]["connections"]
+        last = [(x["id"], x["available"], x["active"], x["result"]["overall"]) for x in rows]
+        ids = [r[0] for r in last]
+        if ((not order or ids == order)
+                and {r[0] for r in last if r[1]} == available
+                and [r[0] for r in last if r[2]] == ([] if active == "deny" else [active])
+                and read("9090/proxies/finland")["now"] == active
+                and all(r[3] is not None for r in last)):
+            print(json.dumps({"carrier": sorted(available), "selector": active, "rank": last}), flush=True)
+            return
+        time.sleep(.1)
+    raise ValueError(f"carrier failover {active} missing: {last}")
+
+
+def test_carrier() -> None:
+    """Drop each remote veth carrier with both exits enabled; verify immediate failover, deny and recovery."""
+    for device, state, target, order, available in (
+        ("two", "down", "one", ["one", "two"], {"one"}),
+        ("one", "down", "deny", [], set()),
+        ("two", "up", "two", ["two", "one"], {"two"}),
+    ):
+        subprocess.run(["ip", "netns", "exec", device, "ip", "link", "set", "dest", state], check=True)
+        wait_link_order(target, order, available)
+
+
 if __name__ == "__main__":
     wait_for("one", False)
     Path("one/drop-udp").touch()
@@ -76,3 +106,4 @@ if __name__ == "__main__":
     Path("one/fail-http3").touch()
     subprocess.run(["ip", "netns", "exec", "one", "sysctl", "-q", "-w", "net.ipv4.icmp_echo_ignore_all=1"], check=True)
     verify_services(True)
+    test_carrier()

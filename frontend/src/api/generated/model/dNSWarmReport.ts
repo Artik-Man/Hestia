@@ -8,10 +8,12 @@
  * Do not edit the class manually.
  */
 import { DNSWarmName } from './dNSWarmName';
+import { DNSClientUDP } from './dNSClientUDP';
 
 
 export interface DNSWarmReport { 
     automatic: Array<DNSWarmName>;
+    clientUdp?: DNSClientUDP;
     observedAt: string;
     policyRevision: number;
 }

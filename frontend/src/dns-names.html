@@ -24,6 +24,29 @@
           data.observedAt | date: "dd.MM.yyyy HH:mm:ss"
         }}</time>
       </p>
+      @if (data.clientUdp; as udp) {
+        @let classified = udp.attempts - udp.unclassifiedAttempts;
+        <p class="hint">
+          @if (classified > 0) {
+            <strong
+              >UDP без замеченного повтора —
+              {{
+                percent.format((classified - udp.retriedAttempts) / classified)
+              }}</strong
+            ><br />
+            От маршрутизатора с запуска службы: всего попыток
+            {{ udp.attempts }}, потребовали повтора {{ udp.retriedAttempts }}.
+          } @else if (udp.attempts === 0) {
+            С запуска службы UDP-запросов от маршрутизатора ещё не было.
+          } @else {
+            Доля UDP-попыток без повтора пока неизвестна. Всего попыток
+            {{ udp.attempts }}.
+          }
+          @if (udp.unclassifiedAttempts) {
+            Вне расчёта {{ udp.unclassifiedAttempts }}.
+          }
+        </p>
+      }
       <ul class="dns-rows">
         @for (row of data.automatic; track row.domain) {
           <li>

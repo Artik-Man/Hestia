@@ -25,7 +25,7 @@ export type Page = (typeof pages)[number];
 export const featurePages = [
   {
     path: "country-map",
-    label: "Карта стран",
+    label: "Маршруты по странам",
     loadComponent: () => import("./geo").then((m) => m.GeoScreen),
   },
   {

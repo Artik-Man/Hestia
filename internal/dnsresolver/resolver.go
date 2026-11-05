@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"net"
+	"net/netip"
 	"slices"
 	"sync"
 	"time"
@@ -44,6 +45,7 @@ type demandEvent struct {
 
 // Resolver coordinates router-originated queries, independent resolver contexts and policy-driven warmup.
 type Resolver struct {
+	udp        udpTracker
 	store      dnspolicy.Store
 	routes     Routes
 	cachePath  string
@@ -87,15 +89,29 @@ func New(store dnspolicy.Store, routes Routes, cachePath string) *Resolver {
 // Resolve answers one standard DNS question; the caller admits only router-facing traffic. A path
 // or policy failure produces SERVFAIL; a malformed packet returns an error without any upstream call.
 func (r *Resolver) Resolve(ctx context.Context, packet []byte) ([]byte, error) {
+	return r.resolve(ctx, packet, netip.AddrPort{})
+}
+
+// ResolveUDP answers an admitted router datagram and counts one demand per observed transaction.
+func (r *Resolver) ResolveUDP(ctx context.Context, peer netip.AddrPort, packet []byte) ([]byte, error) {
+	return r.resolve(ctx, packet, peer)
+}
+
+// resolve handles a parsed question, identifying retransmissions only for UDP peers.
+func (r *Resolver) resolve(ctx context.Context, packet []byte, peer netip.AddrPort) ([]byte, error) {
 	q, err := parseQuestion(packet)
 	if err != nil {
 		return nil, err
 	}
+
 	policy, err := r.store.Read()
 	if err != nil {
 		return failure(q), nil
 	}
-	r.observe(q)
+	retry := peer.IsValid() && r.udp.record(udpKey{peer, q.message.ID, q.name, q.keyType, q.message.Questions[0].Class}, time.Duration(policy.Policy.Settings.WindowHours)*time.Hour)
+	if !retry {
+		r.observe(q)
+	}
 	allowed, err := r.routes.Allowed(ctx, q.name)
 	if err != nil || len(allowed) == 0 {
 		return failure(q), nil
@@ -362,9 +378,12 @@ func (r *Resolver) observe(q question) {
 
 // membership prunes expired observations and returns per-name client counts and observed address types.
 func (r *Resolver) membership(p dnspolicy.Policy, now time.Time) (map[string]int, map[string][]dnsmessage.Type, bool) {
+	cutoff := now.Add(-time.Duration(p.Settings.WindowHours) * time.Hour)
+	r.udp.mu.Lock()
+	r.udp.pruneLocked(cutoff)
+	r.udp.mu.Unlock()
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	cutoff := now.Add(-time.Duration(p.Settings.WindowHours) * time.Hour)
 	counts := make(map[string]int)
 	types := make(map[string][]dnsmessage.Type)
 	for name, events := range r.demand {

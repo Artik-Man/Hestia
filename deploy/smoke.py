@@ -48,17 +48,34 @@ def fresh_awg_heartbeat(exit_id: str) -> bool:
         return False
 
 
-def expected_target(config: dict, group: dict) -> str:
-    """Return the highest-priority configured exit with a fresh heartbeat where required."""
+def online_devices(backend: dict) -> dict[str, bool]:
+    """Read current carrier for every bound direct exit from the verified running backend generation."""
+    devices = {}
+    for item in backend.get("outbounds", []):
+        name = item.get("bind_interface")
+        if item.get("type") != "direct" or not name or item["tag"] == "deny":
+            continue
+        if not isinstance(name, str) or not re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_.-]{0,14}", name):
+            devices[item["tag"]] = False
+            continue
+        try:
+            devices[item["tag"]] = (Path("/sys/class/net") / name / "carrier").read_text().strip() == "1"
+        except OSError:
+            devices[item["tag"]] = False
+    return devices
+
+
+def expected_target(config: dict, group: dict, devices: dict[str, bool] | None = None) -> str:
+    """Return the first enabled exit with live carrier and a fresh tunnel heartbeat where applicable."""
     for exit_id in group["exits"]:
-        if config["healthy"].get(exit_id) and (
+        if config["healthy"].get(exit_id) and (devices is None or devices.get(exit_id, True)) and (
             config.get("connectorKinds", {}).get(exit_id) != "awg" or fresh_awg_heartbeat(exit_id)
         ):
             return exit_id
     return "deny"
 
 
-def quality_targets(config: dict) -> dict[str, str]:
+def quality_targets(config: dict, devices: dict[str, bool]) -> dict[str, str]:
     """Read only fresh controller confirmations for the current topology, retaining availability as a hard gate."""
     path = Path("/run/hestia-quality/report.json")
     try:
@@ -76,7 +93,7 @@ def quality_targets(config: dict) -> dict[str, str]:
             raise ValueError("quality report and selector membership differ")
         active = [row["id"] for row in rows if row["active"]]
         if active:
-            if len(active) != 1 or expected_target(config, {"exits": active}) != active[0]:
+            if len(active) != 1 or expected_target(config, {"exits": active}, devices) != active[0]:
                 raise ValueError("quality controller selected an unavailable exit")
             selected[group["id"]] = active[0]
     return selected
@@ -102,7 +119,8 @@ def verify(*, fresh: bool = True):
     live = Path(
         f"/proc/{pid}/root/run/credentials/hestia-sing-box.service/sing-box.json"
     )
-    if live.read_bytes() != Path("/etc/hestia/sing-box.json").read_bytes():
+    generation = live.read_bytes()
+    if generation != Path("/etc/hestia/sing-box.json").read_bytes():
         raise ValueError(
             "running backend credential differs from the installed configuration"
         )
@@ -125,10 +143,11 @@ def verify(*, fresh: bool = True):
                 confirmed[event["group"]] = event["selector_target"]
 
     config = json.loads(Path("/etc/hestia/snapshot.json").read_text())
-    quality = quality_targets(config)
+    devices = online_devices(json.loads(generation))
+    quality = quality_targets(config, devices)
     for group in config["groups"]:
         tag = group["id"]
-        wanted = quality.get(tag, expected_target(config, group))
+        wanted = quality.get(tag, expected_target(config, group, devices))
         if fresh and confirmed.get(tag) != wanted:
             raise ValueError(f"controller has not confirmed {tag} -> {wanted}")
         api = http.client.HTTPConnection("127.0.0.1", 9090, timeout=0.5)

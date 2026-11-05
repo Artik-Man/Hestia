@@ -4,6 +4,7 @@ set -euo pipefail
 [[ $(hostname) == lima-hestia-load-01 && $$ == 1 && $(id -u) == 0 ]]
 [[ $(ip -o link show | wc -l) -eq 1 && -z $(ip route show default) ]]
 mount --make-rprivate /
+mount -t sysfs -o ro sysfs /sys
 mount --bind "$PWD" /mnt
 cd /mnt
 chmod 0755 .

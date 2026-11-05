@@ -1,0 +1,16 @@
+2026-11-05, macOS ARM64, Go 1.27.3, sing-box 1.14.4, рабочее дерево поверх 0c9b759.
+Команда: HESTIA_TEST_SING_BOX=/tmp/hestia-fakeip-lab/sing-box-1.14.4-darwin-arm64/sing-box go test -count=1 -v ./internal/trafficcapture
+Четыре локальных SOCKS-соединения, динамическая SQLite, проверка количества записей и зарегистрированных потерь.
+Фрагменты вывода sing-box (ANSI-оформление удалено):
+[3720894394 3ms] inbound/socks[0]: inbound connection to 127.0.0.1:50591
+[3720894394 3ms] router: match[2] ip_cidr=127.0.0.1/32 => route(home)
+[3720894394 4ms] outbound/direct[direct]: outbound connection to 127.0.0.1:50591
+[4014622144 0ms] inbound/socks[0]: inbound connection to localhost:50591
+[4014622144 0ms] outbound/direct[direct]: outbound connection to localhost:50591
+[4014622144 3ms] dns: lookup succeed for localhost: 127.0.0.1 ::1
+[979032182 0ms] router: match[0] ip_cidr=127.0.0.2/32 => reject
+[979032182 0ms] router: connection closed: rejected
+[2877790223 0ms] router: match[1] ip_cidr=127.0.0.3/32 => route(off)
+[2877790223 0ms] outbound/block[off]: blocked connection to 127.0.0.3:50591
+--- PASS: TestLocalSingBoxJournal (2.29s)
+PASS

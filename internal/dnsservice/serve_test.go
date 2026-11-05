@@ -26,6 +26,11 @@ func (r *listenerResolver) Resolve(context.Context, []byte) ([]byte, error) {
 	return r.reply, nil
 }
 
+// ResolveUDP returns the canned listener response for an admitted datagram.
+func (r *listenerResolver) ResolveUDP(ctx context.Context, _ netip.AddrPort, packet []byte) ([]byte, error) {
+	return r.Resolve(ctx, packet)
+}
+
 // listenerPackets constructs an A query and a large DNS response to check UDP limits and stream framing.
 func listenerPackets(t *testing.T) ([]byte, []byte) {
 	t.Helper()

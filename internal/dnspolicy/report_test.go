@@ -40,6 +40,17 @@ func TestReadWarmReport(t *testing.T) {
 			t.Fatalf("accepted invalid report of length %d", len(bad))
 		}
 	}
+	for _, counters := range []string{`{}`, `{"attempts":1}`, `{"attempts":0,"retriedAttempts":1}`, `{"attempts":2,"retriedAttempts":2}`, `{"attempts":1,"retriedAttempts":-1,"unclassifiedAttempts":0}`, `{"attempts":4,"retriedAttempts":3,"unclassifiedAttempts":1}`, `{"attempts":1,"retriedAttempts":0,"unclassifiedAttempts":2}`} {
+		publish(strings.Replace(message(now, "[]"), `"automatic":`, `"clientUdp":`+counters+`,"automatic":`, 1))
+		if _, err := ReadWarmReport(path, now); err == nil {
+			t.Fatalf("invalid UDP counters accepted: %s", counters)
+		}
+	}
+	publish(strings.Replace(message(now, "[]"), `"automatic":`, `"clientUdp":{"attempts":3,"retriedAttempts":2,"unclassifiedAttempts":0},"automatic":`, 1))
+	withCounters, err := ReadWarmReport(path, now)
+	if err != nil || withCounters.ClientUDP == nil || *withCounters.ClientUDP != (DNSClientUDP{Attempts: 3, RetriedAttempts: 2}) {
+		t.Fatalf("invalid counters: %+v %v", withCounters, err)
+	}
 	publish(message(now.Add(-15*time.Second), "[]"))
 	empty, err := ReadWarmReport(path, now)
 	if err != nil || empty.Automatic == nil || len(empty.Automatic) != 0 {

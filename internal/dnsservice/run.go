@@ -108,7 +108,8 @@ func runWorker(ctx context.Context, resolver *dnsresolver.Resolver, reportPath s
 				_ = os.Remove(reportPath)
 				continue
 			}
-			report := dnspolicy.DNSWarmReport{ObservedAt: when, PolicyRevision: revision, Automatic: make([]dnspolicy.DNSWarmName, 0, len(counts))}
+			quality := resolver.ClientUDPStats()
+			report := dnspolicy.DNSWarmReport{ClientUDP: &quality, ObservedAt: when, PolicyRevision: revision, Automatic: make([]dnspolicy.DNSWarmName, 0, len(counts))}
 			for _, name := range slices.Sorted(maps.Keys(counts)) {
 				report.Automatic = append(report.Automatic, dnspolicy.DNSWarmName{Domain: name, ClientRequests: counts[name]})
 			}

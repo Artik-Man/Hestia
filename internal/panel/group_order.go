@@ -6,6 +6,7 @@ import (
 
 	"github.com/Artik-Man/Hestia/internal/binding"
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
+	"github.com/Artik-Man/Hestia/internal/traffic"
 	"github.com/danielgtaylor/huma/v2"
 )
 
@@ -14,6 +15,7 @@ type orderWriter func(context.Context, panelmodel.GroupOrderChange) error
 
 // panelWrites holds independently enabled privileged operations.
 type panelWrites struct {
+	traffic          *traffic.Store
 	dnsPolicyPath    string
 	dnsReportPath    string
 	quality          qualityFiles

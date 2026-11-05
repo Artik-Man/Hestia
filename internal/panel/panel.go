@@ -4,6 +4,7 @@ package panel
 import (
 	"bytes"
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"io/fs"
@@ -12,16 +13,21 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
+	"syscall"
 	"time"
 	"unicode"
 
 	"github.com/Artik-Man/Hestia/internal/binding"
 	"github.com/Artik-Man/Hestia/internal/controller"
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
+	"github.com/Artik-Man/Hestia/internal/traffic"
+	"github.com/Artik-Man/Hestia/internal/trafficcapture"
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humago"
 )
@@ -176,6 +182,7 @@ func registerPanelAPI(mux *http.ServeMux, snapshot, grafanaURL string, writes pa
 	registerMoveExit(api, writes.moveExit)
 	registerAWG(api, writes.awg)
 	registerQuality(api, snapshot, writes.quality)
+	registerTraffic(api, writes.traffic)
 	registerDNS(api, writes.dnsPolicyPath, writes.dnsReportPath)
 	return api
 }
@@ -265,6 +272,13 @@ func validateGrafanaURL(value string) error {
 
 // Run loads the browser bundle once and starts the HTTP listener. Snapshot errors remain retryable.
 func Run() {
+	if err := runPanel(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+// runPanel resolves flags, runs the gateway HTTP service and closes resources before reporting errors.
+func runPanel() error {
 	listen := flag.String("listen", "127.0.0.1:8080", "private LAN or loopback IP and port")
 	snapshot := flag.String("snapshot", "", "controller snapshot file (required)")
 	assets := flag.String("assets", "", "browser build directory containing index.html (required)")
@@ -278,32 +292,50 @@ func Run() {
 	enableAWG := flag.Bool("enable-awg", false, "enable privileged AmneziaWG profile management on the installed gateway")
 	dnsReport := flag.String("dns-report", "/run/hestia-dns/report.json", "path to the DNS worker heartbeat and automatic membership report")
 	dnsPolicy := flag.String("dns-policy", "", "path to the panel-owned durable DNS policy; setting this path enables policy management")
+	trafficCapture := flag.Bool("traffic-capture", false, "subscribe to local gateway traffic with an explicit traffic-dir on a custom snapshot")
+	trafficDir := flag.String("traffic-dir", "", "private traffic journal directory (defaults to /var/lib/hestia-traffic on the managed gateway)")
 	qualitySettings := flag.String("quality-settings", "", "quality settings file (defaults to the installed settings for the managed gateway)")
 	qualityReport := flag.String("quality-report", "", "quality worker report file (defaults to the installed report for the managed gateway)")
 	openapi := flag.String("openapi", "", "write the generated OpenAPI contract at this path and exit")
 	flag.Parse()
 	if *openapi != "" {
 		if err := WriteOpenAPI(*openapi); err != nil {
-			log.Fatal(err)
+			return err
 		}
-		return
+		return nil
 	}
 	if *snapshot == "" || *assets == "" {
 		flag.Usage()
 		os.Exit(2)
 	}
 	if err := validateGrafanaURL(*grafanaURL); err != nil {
-		log.Fatal(err)
+		return err
 	}
 	bundle, err := readAssets(*assets)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	var writes panelWrites
 	writes.dnsPolicyPath = *dnsPolicy
 	writes.dnsReportPath = *dnsReport
 	writes.quality = qualityFiles{settings: *qualitySettings, report: *qualityReport}
-	if sameSnapshotPath(*snapshot, installedSnapshot) {
+	managed := sameSnapshotPath(*snapshot, installedSnapshot)
+	if managed && *trafficDir == "" {
+		*trafficDir = "/var/lib/hestia-traffic"
+	}
+	if *trafficCapture && *trafficDir == "" {
+		return errors.New("traffic-capture requires traffic-dir or a managed gateway")
+	}
+	if *trafficDir != "" {
+		store, storeErr := traffic.Open(*trafficDir)
+		if storeErr != nil {
+			log.Printf("cannot open traffic journal: %v", storeErr)
+		} else {
+			writes.traffic = store
+			defer store.Close()
+		}
+	}
+	if managed {
 		if writes.quality.settings == "" {
 			writes.quality.settings = "/var/lib/hestia-quality-settings/settings.json"
 		}
@@ -312,7 +344,7 @@ func Run() {
 		}
 	}
 	if (*enableDomainLists || *enableGroupDelete || *enableExitMove || *enableBindings || *enableOrder || *enableGroupCreate || *enableAWG) && *snapshot != installedSnapshot {
-		log.Fatal("routing changes require /etc/hestia/snapshot.json")
+		return errors.New("routing changes require /etc/hestia/snapshot.json")
 	}
 	if *enableDomainLists {
 		writes.createDomainList = createInstalledDomainList
@@ -342,9 +374,42 @@ func Run() {
 	}
 	h, err := localHandler(*listen, panelHandler(*snapshot, *grafanaURL, bundle, writes))
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	server := &http.Server{Addr: *listen, Handler: h, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second, WriteTimeout: 5 * time.Minute, IdleTimeout: 60 * time.Second}
 	log.Printf("serving Hestia panel on %s", server.Addr)
-	log.Fatal(server.ListenAndServe())
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	return servePanel(ctx, server, writes.traffic, managed || *trafficCapture)
+}
+
+// servePanel drains HTTP requests and stops journal workers before the caller closes the store.
+func servePanel(ctx context.Context, server *http.Server, store *traffic.Store, capture bool) error {
+	ctx, cancel := context.WithCancel(ctx)
+	var workers sync.WaitGroup
+	if store != nil {
+		workers.Go(func() { maintainTraffic(ctx, store) })
+		if capture {
+			workers.Go(func() { trafficcapture.Run(ctx, store) })
+		}
+	}
+	defer func() { cancel(); workers.Wait() }()
+	served := make(chan error, 1)
+	go func() { served <- server.ListenAndServe() }()
+	select {
+	case err := <-served:
+		return err
+	case <-ctx.Done():
+	}
+	shutdown, stop := context.WithTimeout(context.Background(), 10*time.Second)
+	defer stop()
+	drainErr := server.Shutdown(shutdown)
+	if drainErr != nil {
+		_ = server.Close()
+	}
+	serveErr := <-served
+	if !errors.Is(serveErr, http.ErrServerClosed) {
+		return serveErr
+	}
+	return drainErr
 }

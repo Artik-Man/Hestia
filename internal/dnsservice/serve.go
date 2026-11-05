@@ -16,6 +16,7 @@ import (
 // responder resolves one DNS request received on the authorized router-facing listener.
 type responder interface {
 	Resolve(context.Context, []byte) ([]byte, error)
+	ResolveUDP(context.Context, netip.AddrPort, []byte) ([]byte, error)
 }
 
 // serve binds TCP and UDP to the same address and admits only packets from the configured router.
@@ -83,7 +84,7 @@ func serveDatagrams(ctx context.Context, socket *net.UDPConn, router netip.Addr,
 			defer func() { <-slots }()
 			request, cancel := context.WithTimeout(ctx, 5*time.Second)
 			defer cancel()
-			response, err := resolver.Resolve(request, packet)
+			response, err := resolver.ResolveUDP(request, peer, packet)
 			if err == nil && len(response) > 0 {
 				if response = datagramReply(packet, response); len(response) > 0 {
 					_, _ = socket.WriteToUDPAddrPort(response, peer)

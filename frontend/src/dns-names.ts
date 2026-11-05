@@ -43,6 +43,10 @@ export class DnsNames {
   protected readonly editing = signal<string | null>(null);
   protected readonly draft = { manual: signal(""), exclusions: signal("") };
   protected readonly errors = { manual: signal(""), exclusions: signal("") };
+  protected readonly percent = new Intl.NumberFormat("ru-RU", {
+    style: "percent",
+    maximumFractionDigits: 2,
+  });
   protected readonly lists = ["exclusions", "manual"] as const;
 
   /** edit copies the selected exclusion into its editor without removing the existing rule. */

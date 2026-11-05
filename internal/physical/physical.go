@@ -57,6 +57,16 @@ func (m Manager) nm(ctx context.Context, args ...string) (string, error) {
 	return strings.TrimSpace(string(output)), nil
 }
 
+// CarrierAt reports whether Linux currently detects a link on the named device.
+// A removed or disabled device, including an unreadable carrier attribute, is offline.
+func CarrierAt(sysfs, name string) bool {
+	if !deviceName.MatchString(name) {
+		return false
+	}
+	data, err := os.ReadFile(filepath.Join(sysfs, name, "carrier"))
+	return err == nil && strings.TrimSpace(string(data)) == "1"
+}
+
 // interfaces reports only Ethernet-type kernel interfaces with backing hardware; unplugged devices remain visible.
 func (m Manager) interfaces() ([]panelmodel.PhysicalInterface, error) {
 	sys, _ := m.paths()
@@ -85,8 +95,7 @@ func (m Manager) interfaces() ([]panelmodel.PhysicalInterface, error) {
 				break
 			}
 		}
-		carrier, _ := os.ReadFile(filepath.Join(base, "carrier"))
-		list = append(list, panelmodel.PhysicalInterface{InterfaceName: name, Kind: kind, Present: true, Online: strings.TrimSpace(string(carrier)) == "1", ExitIDs: []string{}})
+		list = append(list, panelmodel.PhysicalInterface{InterfaceName: name, Kind: kind, Present: true, Online: CarrierAt(sys, name), ExitIDs: []string{}})
 	}
 	return list, nil
 }

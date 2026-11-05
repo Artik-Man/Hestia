@@ -1,76 +1,185 @@
 <header class="intro">
-  <p class="kicker"><span class="bar"></span> Диагностика</p>
-  <div class="title-line"><h1>Журнал трафика</h1></div>
-  <p class="lede">
-    Новые потоки, решения маршрутизации и связанные попытки DNS.
-  </p>
-</header>
-<section aria-labelledby="traffic-filters">
-  <h2 id="traffic-filters">Поиск событий</h2>
-  <div class="filters">
-    <label
-      >Домен или IP назначения<input
-        type="search"
-        placeholder="Фрагмент домена или адреса"
-        [formControl]="queryControl"
-    /></label>
-    <label
-      >Протокол<select [formControl]="protocolControl">
-        <option value="">Все протоколы</option>
-        <option value="TCP">TCP</option>
-        <option value="UDP">UDP</option>
-      </select></label
-    >
-    <label
-      >Период<select [formControl]="periodControl">
-        @for (hours of periods; track hours) {
-          <option [ngValue]="hours">Последние {{ hours }} ч</option>
-        }
-      </select></label
-    >
-    <button type="button" class="refresh" (click)="resetFilters()">
-      Сбросить фильтры
-    </button>
+  <div class="title-line">
+    <h1>Журнал трафика</h1>
+    <div class="journal-actions">
+      <button
+        pButton
+        type="button"
+        severity="secondary"
+        aria-label="Обновить журнал"
+        title="Обновить журнал"
+        [disabled]="busy()"
+        (click)="refresh()"
+      >
+        <svg data-p-icon="refresh" aria-hidden="true"></svg
+        ><span>Обновить</span>
+      </button>
+      <button
+        pButton
+        type="button"
+        severity="secondary"
+        aria-label="Настройки журнала"
+        title="Настройки журнала"
+        (click)="showSettings.set(true)"
+      >
+        <span class="settings-icon" aria-hidden="true">⚙</span>
+      </button>
+    </div>
   </div>
-</section>
-<section aria-labelledby="traffic-results">
-  <h2 id="traffic-results">Записи потоков</h2>
-  <hestia-traffic-events
-    [events]="null"
-    [query]="query()"
-    [protocol]="protocol()"
-    [periodHours]="period()"
-  />
-</section>
-<section aria-labelledby="retention-heading">
-  <h2 id="retention-heading">Хранение журнала</h2>
-  <p class="hint">
-    Исходный срок хранения — 24 часа. Действующее значение на шлюзе пока
-    недоступно.
-  </p>
-  <button
-    type="button"
-    class="refresh"
-    [attr.aria-expanded]="editRetention()"
-    (click)="editRetention.set(!editRetention())"
+</header>
+<section aria-label="Записи журнала">
+  @if (error()) {
+    <p role="alert" class="notice failure">
+      Не удалось загрузить события. Повторите запрос кнопкой «Обновить».
+    </p>
+  }
+  @if (!sourceAvailable()) {
+    <p class="notice" role="status">
+      Источник событий недоступен. Ниже показаны сохранённые записи.
+    </p>
+  }
+  @if (lastInterruption(); as interruptedAt) {
+    <p class="notice" role="status">
+      Последний перерыв сбора — {{ timestamp(interruptedAt) }}. Часть событий
+      могла быть пропущена.
+    </p>
+  }
+  @if (lost() > 0) {
+    <p class="notice" role="status">Потеряно событий: {{ lost() }}</p>
+  }
+  <p-table
+    [value]="rows()"
+    [scrollable]="true"
+    [virtualScroll]="true"
+    [virtualScrollItemSize]="56"
+    scrollHeight="420px"
+    [lazy]="true"
+    [lazyLoadOnInit]="false"
+    [virtualScrollDelay]="50"
+    (onLazyLoad)="viewport($event)"
+    [tableStyle]="{ 'min-width': '46rem', 'table-layout': 'fixed' }"
   >
-    {{ editRetention() ? "Закрыть настройки" : "Настроить срок" }}
-  </button>
-  @if (editRetention()) {
-    <div class="settings">
-      <label
-        >Срок хранения, часы<input
-          type="number"
-          min="1"
-          step="1"
-          [formControl]="retention"
-      /></label>
-      @if (retention.invalid) {
-        <p role="alert">Укажите целое число часов больше нуля.</p>
-      }
-      <p class="hint">
-        Черновик для этой страницы. Применение на шлюзе пока недоступно.
-      </p>
+    <ng-template #header>
+      <tr>
+        <th scope="col">Домен или IP</th>
+        <th scope="col">Протокол</th>
+        <th scope="col">Дата и время</th>
+        <th scope="col">Выход</th>
+      </tr>
+      <tr>
+        <th>
+          <input
+            pInputText
+            type="search"
+            maxlength="255"
+            aria-label="Домен или IP"
+            placeholder="Домен или IP"
+            [formControl]="query"
+          />
+        </th>
+        <th>
+          <p-select
+            ariaLabel="Протокол"
+            [options]="protocols"
+            optionLabel="label"
+            optionValue="value"
+            [formControl]="protocol"
+            appendTo="body"
+          />
+        </th>
+        <th>
+          <p-select
+            ariaLabel="Период"
+            [options]="periods"
+            optionLabel="label"
+            optionValue="value"
+            [formControl]="period"
+            appendTo="body"
+          />
+        </th>
+        <th>
+          <p-select
+            ariaLabel="Выход"
+            [options]="outputs()"
+            optionLabel="label"
+            optionValue="value"
+            [formControl]="output"
+            appendTo="body"
+          />
+        </th>
+      </tr>
+    </ng-template>
+    <ng-template #body let-row
+      ><tr class="flow-row">
+        @if (row) {
+          <td>
+            <button
+              type="button"
+              class="flow-link"
+              [title]="row.domain || row.address || row.fakeIP"
+              (click)="selected.set(row)"
+            >
+              {{ row.domain || row.address || row.fakeIP }}
+            </button>
+            @if (row.domain && row.address) {
+              <small>{{ row.address }}</small>
+            }
+          </td>
+          <td>{{ row.protocol }}</td>
+          <td>
+            <time [attr.datetime]="row.time">{{ timestamp(row.time) }}</time>
+          </td>
+          <td [title]="exitName(row)">{{ exitName(row) }}</td>
+        } @else {
+          <td colspan="4">Загрузка…</td>
+        }
+      </tr></ng-template
+    >
+  </p-table>
+  @if (total() > windowSize && rows().length) {
+    <div class="journal-window">
+      <button
+        pButton
+        type="button"
+        severity="secondary"
+        [disabled]="busy() || windowStart() === 0"
+        (click)="moveWindow(windowStart() - windowSize)"
+      >
+        Новее
+      </button>
+      <span
+        >{{ windowStart() + 1 }}–{{ windowStart() + rows().length }} из
+        {{ total() }}</span
+      >
+      <button
+        pButton
+        type="button"
+        severity="secondary"
+        [disabled]="busy() || windowStart() + windowSize >= total()"
+        (click)="moveWindow(windowStart() + windowSize)"
+      >
+        Старее
+      </button>
     </div>
   }
+  <p class="hint journal-status" role="status">
+    @if (busy()) {
+      Загрузка событий…
+    } @else if (!error()) {
+      @if (rows().length) {
+        Найдено событий: {{ total() }}
+      } @else {
+        За выбранный период подходящих записей нет.
+      }
+    }
+  </p>
 </section>
+@if (selected(); as item) {
+  <hestia-traffic-details [event]="item" (closed)="selected.set(null)" />
+}
+@if (showSettings()) {
+  <hestia-traffic-settings
+    (closed)="showSettings.set(false)"
+    (saved)="showSettings.set(false); refresh()"
+  />
+}

@@ -1,0 +1,12 @@
+2026-11-05 MSK · hestia-stage1 · 0c9b759 · hestia-dns.service
+15:42:24–15:42:27 tcpdump: пять входящих запросов google.com от 192.168.1.1 к 192.168.1.133:53: A, AAAA, MX, TXT, NS.
+15:42:39 DNS warm name=google.com type=28 exit=keenetic-direct resolver=8.8.8.8: read udp 192.168.1.133:33626->8.8.8.8:53: i/o timeout
+15:42:41.813829773 GET /api/dns/warm: policyRevision=0, google.com clientRequests=5
+15:42:42 DNS warm name=google.com type=28 exit=keenetic-direct resolver=8.8.8.8 positive=true ttl=2m7s
+15:43:19.811717996 GET /api/dns/warm: google.com clientRequests=5
+15:44:37 DNS warm name=google.com type=28 exit=keenetic-direct resolver=8.8.8.8 positive=true ttl=3m27s
+15:45:11.81205973 Playwright + GET /api/dns/warm: policyRevision=1; google.com excluded, not manual, absent from automatic after reload.
+15:46:25 and 15:47:15 systemd stopped and started hestia-dns.service.
+15:55:33.67839483 GET /api/dns/warm: policyRevision=1, automatic=[].
+15:55:35 GET /api/dns/policy: exclusions=["google.com"], manual=[]; active worker PID 29962 (previously 29693).
+Journal interval 15:45:11.813–15:55:35 MSK: zero "DNS warm name=google.com " entries.

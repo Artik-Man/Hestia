@@ -1,76 +1,74 @@
-.filters,
-.settings {
+.journal-actions {
   display: flex;
-  align-items: end;
-  gap: 14px;
-  flex-wrap: wrap;
-  margin: 14px 0;
-}
-label {
-  display: grid;
-  gap: 6px;
-  color: #435c56;
-  font-weight: 600;
-  font-size: 14px;
-  min-width: 0;
-}
-input,
-select {
-  height: 42px;
-  width: 100%;
-  min-width: 0;
-  border: 1px solid #bdcec8;
-  border-radius: 6px;
-  padding: 6px 10px;
-  font: inherit;
-  color: #182f37;
-  background: #fff;
-}
-input:focus-visible,
-select:focus-visible,
-summary:focus-visible {
-  outline: 3px solid #168164;
-  outline-offset: 2px;
-}
-.settings {
-  background: white;
-  border: 1px solid #d1dcda;
-  border-radius: 10px;
-  padding: 16px;
   align-items: center;
+  gap: 0.5rem;
 }
-.observation {
-  margin-top: 12px;
-  padding: 14px 18px;
-  background: white;
-  border: 1px solid #d1dcda;
-  border-radius: 10px;
-  overflow-wrap: anywhere;
+.settings-icon {
+  font: 1.4rem/1 system-ui;
 }
-.observation summary {
+th input,
+th p-select {
+  width: 100%;
+}
+.flow-row {
+  height: 56px;
+}
+.flow-row td {
+  padding: 0.25rem 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.flow-link,
+.flow-row small {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.flow-link {
+  border: 0;
+  background: transparent;
+  color: #18654e;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  padding: 0;
   cursor: pointer;
-  min-height: 30px;
 }
-.notice p,
-h2 + .hint {
-  margin-top: 6px;
+.flow-link:hover {
+  text-decoration: underline;
 }
-section > .refresh {
-  margin-top: 12px;
+.flow-row small,
+.journal-status {
+  color: #53696c;
+}
+.journal-form,
+.journal-form label {
+  display: grid;
+  gap: 0.45rem;
+}
+.journal-form {
+  gap: 1rem;
+}
+.journal-form .journal-actions {
+  justify-content: flex-end;
+}
+.journal-status,
+.notice {
+  margin-block: 0.75rem;
 }
 @media (max-width: 620px) {
-  .filters {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .journal-actions button span:not(.settings-icon) {
+    display: none;
   }
-  .filters label:first-child {
-    grid-column: 1/-1;
-  }
-  .filters button {
-    min-height: 42px;
-  }
-  .settings {
-    align-items: stretch;
-    flex-direction: column;
-  }
+}
+
+.journal-window {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-block: 0.75rem;
 }

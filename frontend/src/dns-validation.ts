@@ -88,14 +88,29 @@ export function validSnapshot(v: unknown): v is CheckedSnapshot {
   );
 }
 
+/** validClientUdp checks the optional router-side attempt counters published by newer workers. */
+function validClientUdp(v: unknown): boolean {
+  return (
+    v === undefined ||
+    (object(v) &&
+      integer(v["attempts"], 0) &&
+      integer(v["unclassifiedAttempts"], 0, v["attempts"]) &&
+      integer(v["retriedAttempts"], 0) &&
+      (v["retriedAttempts"] === 0 ||
+        v["retriedAttempts"] < v["attempts"] - v["unclassifiedAttempts"]))
+  );
+}
+
 /** validWarm checks that observation rows identify unique domains and actual client counts. */
 export function validWarm(v: unknown): v is CheckedWarm {
   if (
     !object(v) ||
     !integer(v["policyRevision"], 0) ||
+    !validClientUdp(v["clientUdp"]) ||
     typeof v["observedAt"] !== "string" ||
     !Number.isFinite(Date.parse(v["observedAt"])) ||
-    !Array.isArray(v["automatic"])
+    !Array.isArray(v["automatic"]) ||
+    v["automatic"].length > 32768
   )
     return false;
   const seen = new Set<string>();

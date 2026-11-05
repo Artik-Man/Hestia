@@ -9,7 +9,7 @@
   "scripts": {
     "build": "ng build",
     "test": "node --test tests/*.test.mjs",
-    "test:browser": "node --test tests/browser/profile-import.mjs tests/browser/group-create.mjs tests/browser/connection-move.mjs tests/browser/domain-list-save.mjs tests/browser/quality.mjs tests/browser/dns.mjs && npm run test:browser:dns-api:built",
+    "test:browser": "node --test tests/browser/geo.mjs tests/browser/profile-import.mjs tests/browser/group-create.mjs tests/browser/connection-move.mjs tests/browser/domain-list-save.mjs tests/browser/quality.mjs tests/browser/traffic.mjs tests/browser/dns.mjs && npm run test:browser:dns-api:built",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint src --max-warnings 0",
@@ -17,7 +17,7 @@
     "test:e2e": "node --test tests/browser/profile-live.mjs",
     "test:e2e:domain-list": "node --test tests/browser/domain-list-live.mjs",
     "test:browser:dns-api": "npm run build && npm run test:browser:dns-api:built",
-    "test:browser:dns-api:built": "HESTIA_DNS_BROWSER_TEST=1 go test -count=1 -timeout=2m -run \"^TestDNSPanelPlaywright$\" -v ../internal/panel"
+    "test:browser:dns-api:built": "HESTIA_DNS_BROWSER_TEST=1 go test -count=1 -timeout=2m -run \"^TestDNS(Panel|Worker)Playwright$\" -v ../internal/panel ../internal/dnsservice"
   },
   "dependencies": {
     "@angular/cdk": "21.2.14",

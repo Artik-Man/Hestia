@@ -1,26 +1,54 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { filterFlows } from "../src/traffic-observations.ts";
+import {
+  validTrafficPage,
+  validTrafficSettings,
+} from "../src/traffic-observations.ts";
 
-test("IPv6 without a domain survives combined search, protocol and time filters", () => {
-  const at = Date.parse("2026-11-04T09:00:00Z");
+/** Covers bounded viewport allocation, stable snapshots and rejection of malformed evidence. */
+test("traffic page validates the window and the source before accepting observations", () => {
   const event = {
-    id: "match",
+    id: "1",
+    time: "2026-11-05T12:00:00Z",
     address: "2001:db8::9",
-    fakeIP: null,
-    domain: null,
+    port: 443,
+    kind: "unconfirmed",
     protocol: "UDP",
-    time: "2026-11-04T08:00:00Z",
   };
-  const events = [
-    event,
-    { ...event, id: "tcp", protocol: "TCP" },
-    { ...event, id: "old", time: "2026-11-04T07:59:59Z" },
-    { ...event, id: "future", time: "2026-11-04T09:00:01Z" },
-    { ...event, id: "v4", address: "198.51.100.9" },
-  ];
-  assert.deepEqual(
-    filterFlows(events, " DB8:: ", "UDP", 1, at).map((row) => row.id),
-    ["match"],
+  const page = {
+    total: 2,
+    lost: 0,
+    events: [event],
+    outputs: [],
+    snapshot: "2",
+    sourceAvailable: false,
+  };
+  assert.ok(validTrafficPage(page, 1, 500, "2"));
+  assert.ok(!validTrafficPage(page, 1, 500, "3"));
+  assert.ok(
+    !validTrafficPage({ ...page, lastInterruption: "unknown" }, 1, 500),
   );
+  assert.ok(!validTrafficPage({ ...page, total: 2 ** 32 }, 1, 500));
+  assert.ok(
+    !validTrafficPage(
+      { ...page, events: [{ ...event, kind: "observed" }] },
+      1,
+      500,
+    ),
+  );
+  assert.ok(!validTrafficPage(page, 0, 500));
+  assert.ok(
+    validTrafficPage(
+      { ...page, events: [{ ...event, address: "", domain: "example.org" }] },
+      1,
+      500,
+    ),
+  );
+});
+
+/** Covers both limits and rejects invalid or malformed wire-level quantities. */
+test("journal settings require bounded positive whole numbers", () => {
+  assert.ok(validTrafficSettings({ maxMB: 1024, retentionHours: 24 }));
+  assert.ok(!validTrafficSettings({ maxMB: 0, retentionHours: 24 }));
+  assert.ok(!validTrafficSettings({ maxMB: 1024, retentionHours: 1.5 }));
 });

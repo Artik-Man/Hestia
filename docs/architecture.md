@@ -139,18 +139,13 @@ flowchart TD
     Match --> Best{"Нашлись совпадения?"}
     Best -->|Да| Specific["Оставить самые конкретные совпадения"]
     Specific --> Ranked["Выбрать первую из совпавших групп в массиве"]
-    Best -->|Нет| Known{"GeoIP определил страну?"}
+    Best -->|Нет| Enabled{"Карта включена?"}
+    Name -->|Нет| Enabled
+    Enabled -->|Да| Known{"GeoIP определил страну?"}
+    Enabled -->|Нет| Default["Выбрать группу по умолчанию"]
     Known -->|Нет| Default
-    Known -->|Да| Country{"Есть запись самой страны?"}
-    Country -->|Да| Mapped["Выбрать группу записи"]
-    Country -->|Нет| Bloc{"Есть блок с этой страной?"}
-    Bloc -->|Да| First["Взять первый подходящий блок сверху"]
-    First --> Mapped
-    Bloc -->|Нет| World{"Задан «Остальной мир»?"}
-    World -->|Да| Mapped
-    World -->|Нет| Default["Выбрать группу по умолчанию"]
+    Known -->|Да| Mapped["Выбрать назначенную стране группу"]
     Mapped --> Group
-    Name -->|Нет| Default
     Default --> Group["Получить список выходов страны"]
     Ranked --> Group
     Group --> Live{"Есть живой выход в списке?"}

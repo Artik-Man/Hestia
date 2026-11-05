@@ -16,8 +16,16 @@ type DNSWarmName struct {
 	ClientRequests int    `json:"clientRequests" minimum:"1"`
 }
 
+// DNSClientUDP counts admitted, valid router UDP attempts and those subsequently retried since worker startup.
+type DNSClientUDP struct {
+	UnclassifiedAttempts int64 `json:"unclassifiedAttempts" minimum:"0"`
+	Attempts             int64 `json:"attempts" minimum:"0"`
+	RetriedAttempts      int64 `json:"retriedAttempts" minimum:"0"`
+}
+
 // DNSWarmReport identifies when and under which policy the DNS worker observed automatic membership.
 type DNSWarmReport struct {
+	ClientUDP      *DNSClientUDP `json:"clientUdp,omitempty"`
 	ObservedAt     time.Time     `json:"observedAt"`
 	PolicyRevision int           `json:"policyRevision" minimum:"0"`
 	Automatic      []DNSWarmName `json:"automatic" nullable:"false"`
@@ -50,6 +58,11 @@ func ReadWarmReport(path string, now time.Time) (DNSWarmReport, error) {
 		return DNSWarmReport{}, errors.New("DNS report exceeds size limit")
 	}
 	var wire struct {
+		ClientUDP *struct {
+			UnclassifiedAttempts *int64 `json:"unclassifiedAttempts"`
+			Attempts             *int64 `json:"attempts"`
+			RetriedAttempts      *int64 `json:"retriedAttempts"`
+		} `json:"clientUdp"`
 		ObservedAt     time.Time     `json:"observedAt"`
 		PolicyRevision *int          `json:"policyRevision"`
 		Automatic      []DNSWarmName `json:"automatic"`
@@ -73,5 +86,15 @@ func ReadWarmReport(path string, now time.Time) (DNSWarmReport, error) {
 		}
 		seen[row.Domain] = true
 	}
-	return DNSWarmReport{ObservedAt: wire.ObservedAt, PolicyRevision: *wire.PolicyRevision, Automatic: wire.Automatic}, nil
+	var quality *DNSClientUDP
+	if v := wire.ClientUDP; v != nil {
+		if v.Attempts == nil || v.RetriedAttempts == nil || v.UnclassifiedAttempts == nil {
+			return DNSWarmReport{}, errors.New("incomplete client UDP counters")
+		}
+		quality = &DNSClientUDP{Attempts: *v.Attempts, RetriedAttempts: *v.RetriedAttempts, UnclassifiedAttempts: *v.UnclassifiedAttempts}
+		if quality.UnclassifiedAttempts < 0 || quality.UnclassifiedAttempts > quality.Attempts || quality.RetriedAttempts < 0 || (quality.RetriedAttempts > 0 && quality.RetriedAttempts >= quality.Attempts-quality.UnclassifiedAttempts) {
+			return DNSWarmReport{}, errors.New("invalid client UDP counters")
+		}
+	}
+	return DNSWarmReport{ClientUDP: quality, ObservedAt: wire.ObservedAt, PolicyRevision: *wire.PolicyRevision, Automatic: wire.Automatic}, nil
 }

@@ -70,8 +70,45 @@ test("separates valid empty telemetry from unavailable or malformed observations
     automatic: [],
   };
   assert.ok(validWarm(report));
+  const aboveLimit = Array.from({ length: 32769 }, (_, i) => ({
+    domain: "d" + i + ".example",
+    clientRequests: 1,
+  }));
+  assert.ok(!validWarm({ ...report, automatic: aboveLimit }));
   assert.ok(!validWarm(null));
   assert.ok(
     !validWarm({ ...report, automatic: [{ domain: "a", clientRequests: -1 }] }),
   );
+});
+
+/** Covers backwards-compatible telemetry, true zero demand and impossible retry counters at the network boundary. */
+test("accepts optional client UDP counts without accepting corrupt retry rates", () => {
+  const report = {
+    observedAt: "2026-11-05T00:00:00Z",
+    policyRevision: 1,
+    automatic: [],
+  };
+  for (const clientUdp of [
+    undefined,
+    { attempts: 0, retriedAttempts: 0, unclassifiedAttempts: 0 },
+    { attempts: 4, retriedAttempts: 1, unclassifiedAttempts: 2 },
+    { attempts: 3, retriedAttempts: 0, unclassifiedAttempts: 3 },
+  ])
+    assert.ok(validWarm({ ...report, clientUdp }));
+  for (const clientUdp of [
+    null,
+    {},
+    { attempts: 1, retriedAttempts: 0 },
+    { attempts: 3, retriedAttempts: 1, unclassifiedAttempts: 2 },
+    { attempts: 2, retriedAttempts: 0, unclassifiedAttempts: 3 },
+    { attempts: 0, retriedAttempts: 1, unclassifiedAttempts: 0 },
+    { attempts: 3, retriedAttempts: 3, unclassifiedAttempts: 0 },
+    { attempts: 3.5, retriedAttempts: 0, unclassifiedAttempts: 0 },
+    {
+      attempts: Number.MAX_SAFE_INTEGER + 1,
+      retriedAttempts: 0,
+      unclassifiedAttempts: 0,
+    },
+  ])
+    assert.ok(!validWarm({ ...report, clientUdp }));
 });

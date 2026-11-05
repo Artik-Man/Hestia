@@ -1,0 +1,5 @@
+2026-11-05 16:36 MSK, hestia-load-01, loopback-only network namespace
+Linux 6.1.0-53-cloud-arm64 aarch64 GNU/Linux
+4445b5f8d8d32306b1273399a598b23bbcc3b05a7883ab661400099df13f1b06  hestia-panel
+d953af885f11d6b547c21a3c0ffe70796963afc802fab959d548311002b4908a  sing-box
+{"observations": [{"id": "3", "time": "2026-11-05T13:36:39.497099605Z", "protocol": "UDP", "address": "127.0.0.1", "port": 18083, "kind": "unconfirmed", "connection": "lab-exit"}, {"id": "2", "time": "2026-11-05T13:36:39.494168772Z", "protocol": "TCP", "address": "127.0.0.1", "port": 18081, "kind": "unconfirmed", "connection": "lab-exit"}, {"id": "1", "time": "2026-11-05T13:36:39.484349382Z", "protocol": "TCP", "address": "127.0.0.1", "port": 18081, "kind": "unconfirmed", "connection": "lab-exit"}], "lost": 0, "settingsAfterRestart": {"maxMB": 16, "retentionHours": 72}, "paging": "passed", "lastInterruption": "2026-11-05T13:36:39.711Z"}
