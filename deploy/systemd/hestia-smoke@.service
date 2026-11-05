@@ -1,0 +1,12 @@
+[Unit]
+Description=Verify Hestia routing services and the loaded backend configuration (%i)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 -I /usr/local/lib/hestia/smoke.py --%i
+TimeoutStartSec=8s
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+CapabilityBoundingSet=CAP_SYS_PTRACE CAP_DAC_READ_SEARCH

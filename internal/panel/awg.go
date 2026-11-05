@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"regexp"
 
+	"github.com/Artik-Man/Hestia/internal/awg"
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
 	"github.com/danielgtaylor/huma/v2"
 )
@@ -25,6 +26,8 @@ type awgWriter interface {
 	Create(context.Context, panelmodel.AWGSaveRequest) (panelmodel.AWGConnection, error)
 	Update(context.Context, panelmodel.AWGSaveRequest) (panelmodel.AWGConnection, error)
 	List(context.Context) ([]panelmodel.AWGConnection, error)
+	Underlays(context.Context) ([]panelmodel.AWGUnderlayCandidate, error)
+	ReadProfile(context.Context, string) (panelmodel.AWGConnectionProfile, error)
 	Delete(context.Context, string) error
 }
 
@@ -40,7 +43,14 @@ type awgUpdateOutput struct{ Body panelmodel.AWGConnection }
 type awgListOutput struct {
 	Body []panelmodel.AWGConnection `json:"connections" nullable:"false"`
 }
-type awgDeleteInput struct {
+type awgUnderlaysOutput struct {
+	Body []panelmodel.AWGUnderlayCandidate `nullable:"false"`
+}
+type awgProfileOutput struct {
+	CacheControl string `header:"Cache-Control"`
+	Body         panelmodel.AWGConnectionProfile
+}
+type awgIDInput struct {
 	ID string `path:"id" minLength:"1"`
 }
 
@@ -68,7 +78,7 @@ func registerAWG(api huma.API, write awgWriter) {
 		Summary: "Сохранить профиль AmneziaWG и назначение группе", MaxBodyBytes: maxAWGRequestBytes, SkipValidateBody: true,
 		Errors: []int{http.StatusRequestEntityTooLarge, http.StatusUnprocessableEntity, http.StatusConflict, http.StatusServiceUnavailable},
 	}, func(ctx context.Context, in *awgSaveInput) (*awgSaveOutput, error) {
-		if err := validateAWGSave(in.Body); err != nil {
+		if err := validateAWGSave(in.Body, false); err != nil {
 			return nil, huma.Error422UnprocessableEntity("Некорректные данные подключения AmneziaWG")
 		}
 		if write == nil {
@@ -93,16 +103,51 @@ func registerAWG(api huma.API, write awgWriter) {
 		}
 		return &awgListOutput{Body: connections}, nil
 	})
+	huma.Register(api, huma.Operation{OperationID: "listAWGUnderlays", Tags: []string{"Panel"}, Method: http.MethodGet, Path: "/api/awg-underlays", Summary: "Получить подключения для транспорта WireGuard", Errors: []int{http.StatusConflict, http.StatusServiceUnavailable}},
+		func(ctx context.Context, _ *struct{}) (*awgUnderlaysOutput, error) {
+			if write == nil {
+				return nil, huma.Error503ServiceUnavailable("Управление WireGuard не включено")
+			}
+			result, err := write.Underlays(ctx)
+			if err != nil {
+				return nil, mapAWGError(err)
+			}
+			return &awgUnderlaysOutput{Body: result}, nil
+		})
+	huma.Register(api, huma.Operation{
+		OperationID: "getAWGConnectionProfile", Tags: []string{"Panel"}, Method: http.MethodGet, Path: "/api/awg/{id}",
+		Summary: "Открыть один сохранённый профиль WireGuard для редактирования, включая ключи",
+		Errors:  []int{http.StatusNotFound, http.StatusConflict, http.StatusServiceUnavailable},
+	}, func(ctx context.Context, in *awgIDInput) (*awgProfileOutput, error) {
+		if !awgIDPattern.MatchString(in.ID) {
+			return nil, huma.Error404NotFound("Подключение WireGuard не найдено")
+		}
+		if write == nil {
+			return nil, huma.Error503ServiceUnavailable("Управление WireGuard не включено")
+		}
+		profile, err := write.ReadProfile(ctx, in.ID)
+		if err != nil {
+			return nil, mapAWGError(err)
+		}
+		if profile.ID != in.ID || profile.Priority < 1 || validateAWGSave(panelmodel.AWGSaveRequest{ID: profile.ID, Group: profile.Group, Priority: panelmodel.AWGPriority(profile.Priority), Underlays: profile.Underlays, Profile: profile.Profile}, false) != nil {
+			return nil, mapAWGError(errors.New("invalid profile response"))
+		}
+		parsed, err := awg.Parse([]byte(profile.Profile))
+		if err != nil || profile.Profile != string(parsed.SecretConfig) {
+			return nil, mapAWGError(errors.New("unexpected profile format"))
+		}
+		return &awgProfileOutput{CacheControl: "no-store", Body: profile}, nil
+	})
 	huma.Register(api, huma.Operation{
 		OperationID: "updateAWGConnection", Tags: []string{"Panel"}, Method: http.MethodPut, Path: "/api/awg/{id}",
 		Summary: "Обновить сохранённое подключение AmneziaWG", MaxBodyBytes: maxAWGRequestBytes, SkipValidateBody: true,
 		Errors: []int{http.StatusNotFound, http.StatusUnprocessableEntity, http.StatusServiceUnavailable},
 	}, func(ctx context.Context, in *awgUpdateInput) (*awgUpdateOutput, error) {
-		request := panelmodel.AWGSaveRequest{ID: in.ID, Group: in.Body.Group, Priority: in.Body.Priority, Profile: in.Body.Profile}
+		request := panelmodel.AWGSaveRequest{Underlays: in.Body.Underlays, ID: in.ID, Group: string(in.Body.Group), Priority: in.Body.Priority, Profile: in.Body.Profile}
 		if !awgIDPattern.MatchString(in.ID) {
 			return nil, huma.Error404NotFound("Подключение AmneziaWG не найдено")
 		}
-		if err := validateAWGSave(request); err != nil {
+		if err := validateAWGSave(request, true); err != nil {
 			return nil, huma.Error422UnprocessableEntity("Некорректные данные подключения AmneziaWG")
 		}
 		if write == nil {
@@ -116,8 +161,8 @@ func registerAWG(api huma.API, write awgWriter) {
 	})
 	huma.Register(api, huma.Operation{
 		OperationID: "deleteAWGConnection", Tags: []string{"Panel"}, Method: http.MethodDelete, Path: "/api/awg/{id}",
-		Summary: "Удалить подключение AmneziaWG", Errors: []int{http.StatusNotFound, http.StatusServiceUnavailable},
-	}, func(ctx context.Context, in *awgDeleteInput) (*struct{}, error) {
+		Summary: "Удалить подключение AmneziaWG", Errors: []int{http.StatusNotFound, http.StatusConflict, http.StatusServiceUnavailable},
+	}, func(ctx context.Context, in *awgIDInput) (*struct{}, error) {
 		if !awgIDPattern.MatchString(in.ID) {
 			return nil, huma.Error404NotFound("Подключение AmneziaWG не найдено")
 		}
@@ -156,14 +201,14 @@ func mapAWGError(err error) error {
 }
 
 // validateAWGSave rejects invalid IDs, group assignment, priority, and oversized private profile content.
-func validateAWGSave(request panelmodel.AWGSaveRequest) error {
-	if !awgIDPattern.MatchString(request.ID) || !awgIDPattern.MatchString(request.Group) || request.Priority < 1 || len(request.Profile) == 0 || len(request.Profile) > maxAWGRequestBytes {
+func validateAWGSave(request panelmodel.AWGSaveRequest, update bool) error {
+	if !awgIDPattern.MatchString(request.ID) || !awg.ValidUnderlays(request.ID, request.Underlays) || ((!update || request.Group != "") && !awgIDPattern.MatchString(request.Group)) || request.Priority < 0 || len(request.Profile) == 0 || len(request.Profile) > maxAWGRequestBytes {
 		return errors.New("invalid AWG save request")
 	}
 	return nil
 }
 
-// installedAWGWriter invokes only fixed root-helper modes and returns metadata-only JSON responses.
+// installedAWGWriter invokes fixed root-helper modes; only ReadProfile returns saved secrets.
 type installedAWGWriter struct{}
 
 // Check submits a candidate to the root helper and returns only an explicit successful runtime result.
@@ -190,9 +235,16 @@ func (installedAWGWriter) List(ctx context.Context) ([]panelmodel.AWGConnection,
 	return result, runAWGHelper(ctx, "-awg-list", struct{}{}, &result)
 }
 
+// ReadProfile requests one full secret profile by ID over the helper's private stdout pipe.
+func (installedAWGWriter) ReadProfile(ctx context.Context, id string) (panelmodel.AWGConnectionProfile, error) {
+	var result panelmodel.AWGConnectionProfile
+	err := runAWGHelper(ctx, "-awg-read", panelmodel.AWGIDRequest{ID: id}, &result)
+	return result, err
+}
+
 // Delete asks the root helper to remove one fixed-ID connection and its private profile.
 func (installedAWGWriter) Delete(ctx context.Context, id string) error {
-	return runAWGHelper(ctx, "-awg-delete", panelmodel.AWGDeleteRequest{ID: id}, nil)
+	return runAWGHelper(ctx, "-awg-delete", panelmodel.AWGIDRequest{ID: id}, nil)
 }
 
 // runAWGHelper passes bounded typed input through stdin to one fixed helper mode without exposing it in argv or logs.
@@ -227,4 +279,11 @@ func runAWGHelper(ctx context.Context, mode string, input any, output any) error
 		return errors.New("invalid AWG helper response")
 	}
 	return nil
+}
+
+// Underlays retrieves eligible public exit identities without reading any secret configuration.
+func (installedAWGWriter) Underlays(ctx context.Context) ([]panelmodel.AWGUnderlayCandidate, error) {
+	var result []panelmodel.AWGUnderlayCandidate
+	err := runAWGHelper(ctx, "-awg-underlays", struct{}{}, &result)
+	return result, err
 }

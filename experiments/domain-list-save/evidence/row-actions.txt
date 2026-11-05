@@ -1,0 +1,5 @@
+2026-11-04 | hestia-stage1 | hestia SHA-256 8f1dcbf887c88dfb674c8aaf12e7c3ff607b4ee6e9dde01b6ddc6362240282d0
+Before: 2 groups, 2 lists, AWG InvocationID=13667f69a40b4c898f865b385dd41aa0
+✔ gateway creates, edits and deletes a domain list through its row actions (6952.551542ms)
+Created, edited, cancelled deletion and deleted l-2e27160f0768e7964a5990b8a7f70660. POST 201, PUT 200, DELETE 204; checked after reload.
+After: 2 groups, 2 lists, same AWG InvocationID; all four services active.

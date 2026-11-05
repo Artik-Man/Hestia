@@ -9,14 +9,19 @@ import (
 )
 
 type healthRecord struct {
-	ID        string    `json:"id"`
-	UpdatedAt time.Time `json:"updatedAt"`
-	Status    string    `json:"status"`
+	ID             string    `json:"id"`
+	UpdatedAt      time.Time `json:"updatedAt"`
+	Status         string    `json:"status"`
+	ActiveUnderlay string    `json:"activeUnderlay,omitempty"`
 }
 
 // writeHealthRecord atomically publishes a small non-secret readiness record with explicit owner, group and mode.
-func writeHealthRecord(path, id string, uid, gid int, updatedAt time.Time) error {
-	data, err := json.Marshal(healthRecord{ID: id, UpdatedAt: updatedAt, Status: "ready"})
+func writeHealthRecord(path, id string, uid, gid int, updatedAt time.Time, active ...string) error {
+	record := healthRecord{ID: id, UpdatedAt: updatedAt, Status: "ready"}
+	if len(active) > 0 {
+		record.ActiveUnderlay = active[0]
+	}
+	data, err := json.Marshal(record)
 	if err != nil {
 		return errors.New("cannot encode AWG health record")
 	}

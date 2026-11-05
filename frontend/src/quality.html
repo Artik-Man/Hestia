@@ -1,60 +1,135 @@
 <header class="intro">
-  <p class="kicker"><span class="bar"></span> Диагностика</p>
-  <div class="title-line"><h1>Качество связи</h1></div>
-  <p class="lede">
-    Сравнение путей к одной цели и причины переключений внутри группы.
-  </p>
+  <div class="title-line">
+    <h1>Качество связи</h1>
+    <button
+      pButton
+      type="button"
+      severity="secondary"
+      [disabled]="busy()"
+      (click)="reload()"
+    >
+      Обновить
+    </button>
+  </div>
 </header>
-@let current = state.view();
-@switch (current.kind) {
-  @case ("loading") {
-    <p class="notice" role="status">Загружаем группы и выходы…</p>
-  }
-  @case ("failed") {
-    <div class="notice failure" role="alert">
-      <h2>Не удалось загрузить конфигурацию</h2>
-      <button type="button" class="refresh" (click)="state.reload()">
-        Повторить загрузку
-      </button>
-    </div>
-  }
-  @case ("ready") {
-    <hestia-quality-comparison
-      [groups]="current.snapshot.groups"
-      [report]="null"
-    />
-  }
-}
-
-<section aria-labelledby="controller-window">
-  <h2 id="controller-window">Окно оценки стабильности</h2>
-  <p class="hint">
-    Контроллер использует этот интервал при выборе выхода. Исходное окно — 60
-    минут. Действующее значение пока недоступно.
+@if (failed()) {
+  <p class="notice failure" role="alert">
+    Не удалось получить актуальные результаты со шлюза.
+    @if (report()) {
+      Показан последний полученный снимок.
+    }
   </p>
-  <button
-    type="button"
-    class="refresh"
-    [attr.aria-expanded]="editWindow()"
-    (click)="editWindow.set(!editWindow())"
-  >
-    {{ editWindow() ? "Закрыть настройки" : "Настроить окно оценки" }}
-  </button>
-  @if (editWindow()) {
-    <div class="settings">
-      <label
-        >Окно оценки, минут<input
-          type="number"
-          step="1"
-          min="1"
-          [formControl]="controllerMinutes"
-      /></label>
-      @if (controllerMinutes.invalid) {
-        <p role="alert">Введите целое число минут больше нуля.</p>
-      }
-      <p class="hint">
-        Черновик для этой страницы. Применение на шлюзе пока недоступно.
-      </p>
+}
+@if (report(); as data) {
+  <hestia-quality-settings [settings]="data.settings" (saved)="reload()" />
+  <section aria-labelledby="groups-title">
+    <div class="section-heading">
+      <h2 id="groups-title">Группы подключений</h2>
     </div>
-  }
-</section>
+    @if (data.capturedAt) {
+      <p class="hint">
+        Измерения на
+        <time [attr.datetime]="data.capturedAt">{{
+          timestamp(data.capturedAt)
+        }}</time>
+      </p>
+    }
+    @for (group of data.groups; track group.id) {
+      @let confirmed = data.capturedAt && hasActive(group);
+      <article class="quality-group">
+        <h3>{{ group.name || group.id }}</h3>
+        <p-table
+          [value]="group.connections"
+          dataKey="id"
+          [tableStyle]="{ 'min-width': '40rem', 'table-layout': 'auto' }"
+        >
+          <ng-template #header>
+            <tr>
+              <th scope="col">Подключение</th>
+              <th scope="col">Статус</th>
+              @for (check of data.settings.checks; track check.protocol) {
+                <th scope="col">{{ check.protocol }}</th>
+              }
+              <th scope="col">Общая оценка</th>
+            </tr>
+          </ng-template>
+          <ng-template #body let-row>
+            <tr>
+              <th scope="row">{{ catalog.name(row.id) }}</th>
+              <td>
+                <span
+                  class="state"
+                  [class.on]="data.capturedAt && row.active"
+                  >{{
+                    !row.available
+                      ? "Недоступно"
+                      : !confirmed
+                        ? "Активный выход неизвестен"
+                        : row.active
+                          ? "Активно"
+                          : "В резерве"
+                  }}</span
+                >
+              </td>
+              @for (check of data.settings.checks; track check.protocol) {
+                @let item = result(row, check.protocol);
+                <td>
+                  @if (
+                    item && item.score !== null && item.score !== undefined
+                  ) {
+                    <strong>{{ numberFormat.format(item.score) }}</strong> / 100
+                  } @else {
+                    Нет данных
+                  }
+                  @if (item) {
+                    <details>
+                      <summary>
+                        Успешно {{ item.successes }} из {{ item.samples }}
+                      </summary>
+                      @for (target of item.targets; track target.target) {
+                        <p>
+                          {{ target.target }} · {{ target.successes }} из
+                          {{ target.samples }}
+                          @if (target.localErrors) {
+                            · Ошибки измерителя: {{ target.localErrors }}
+                          }
+                          @if (target.dnsErrors) {
+                            · Ошибки DNS: {{ target.dnsErrors }}
+                            @for (
+                              code of target.dnsResponseCodes | keyvalue;
+                              track code.key
+                            ) {
+                              · RCODE {{ code.key }} — {{ code.value }}
+                            }
+                          }
+                        </p>
+                      }
+                    </details>
+                  }
+                </td>
+              }
+              <td>
+                <strong>{{
+                  row.result.overall === null
+                    ? "Нет данных"
+                    : numberFormat.format(row.result.overall) + " / 100"
+                }}</strong>
+              </td>
+            </tr>
+          </ng-template>
+          <ng-template #emptymessage
+            ><tr>
+              <td [attr.colspan]="data.settings.checks.length + 3">
+                В группе нет подключений
+              </td>
+            </tr></ng-template
+          >
+        </p-table>
+      </article>
+    } @empty {
+      <p class="notice">Нет настроенных групп</p>
+    }
+  </section>
+} @else if (!failed()) {
+  <p class="notice" role="status">Загружаем проверки и результаты…</p>
+}

@@ -1,0 +1,18 @@
+lima-hestia-load-01
+nmcli tool, version 1.42.4
+e82a22632c336f9e1a7866ee1c7beb9b356aab5b3089f46f31e9bce10b24fa49  physical.test
+=== RUN   TestPhysicalInventoryWithoutManager
+--- PASS: TestPhysicalInventoryWithoutManager (0.00s)
+=== RUN   TestWiFiProfileLifecycle
+--- PASS: TestWiFiProfileLifecycle (0.01s)
+=== RUN   TestForeignActiveWiFi
+--- PASS: TestForeignActiveWiFi (0.00s)
+=== RUN   TestNetworkManagerOffline
+--- PASS: TestNetworkManagerOffline (0.01s)
+=== RUN   TestPrivateProfileOwnership
+--- PASS: TestPrivateProfileOwnership (0.00s)
+=== RUN   TestUnknownConnectedWiFi
+--- PASS: TestUnknownConnectedWiFi (0.00s)
+=== RUN   TestSavePreservesConcurrentForeignAssociation
+--- PASS: TestSavePreservesConcurrentForeignAssociation (0.00s)
+PASS

@@ -3,16 +3,11 @@ package awg
 import (
 	"context"
 	"errors"
+	"fmt"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
-)
-
-const (
-	policyMark     = "0x202"
-	policyTable    = "202"
-	policyPriority = "1002"
-	awgInterface   = "awg0"
 )
 
 var (
@@ -27,15 +22,35 @@ type RouteRunner interface {
 
 // RoutePolicy manages only the AWG mark/table rules and never changes the main routing table.
 type RoutePolicy struct {
-	runner RouteRunner
+	runner        RouteRunner
+	mark          string
+	table         string
+	priority      string
+	priorityValue int
+	device        string
+	markValue     int
 }
 
-// NewRoutePolicy binds an injected command runner to the fixed first-release AWG policy values.
+// NewRoutePolicy binds an injected command runner to the legacy slot-zero AWG policy.
 func NewRoutePolicy(runner RouteRunner) RoutePolicy {
-	return RoutePolicy{runner: runner}
+	policy, _ := newSlotRoutePolicy(runner, 0)
+	return policy
 }
 
-// Preflight rejects occupied priorities, overlapping marks, the reserved route table, or an existing awg0 device.
+// newSlotRoutePolicy derives a disjoint IPv4/IPv6 policy for one validated persistent allocation.
+func newSlotRoutePolicy(runner RouteRunner, slot int) (RoutePolicy, error) {
+	if slot < 0 || slot >= SlotCount {
+		return RoutePolicy{}, errors.New("invalid AWG runtime slot")
+	}
+	return RoutePolicy{
+		runner: runner, markValue: 0x202 + slot, priorityValue: 1002 + slot,
+		mark:  fmt.Sprintf("0x%x", 0x202+slot),
+		table: strconv.Itoa(202 + slot), priority: strconv.Itoa(1002 + slot),
+		device: "awg" + strconv.Itoa(slot),
+	}, nil
+}
+
+// Preflight rejects occupied priorities, overlapping marks, the reserved route table, or an existing slot device.
 func (p RoutePolicy) Preflight(ctx context.Context) error {
 	if p.runner == nil {
 		return errors.New("AWG route runner is unavailable")
@@ -45,10 +60,14 @@ func (p RoutePolicy) Preflight(ctx context.Context) error {
 		if err != nil {
 			return errors.New("cannot inspect routing rules")
 		}
-		if err := inspectRules(string(rules), policyMark, policyPriority); err != nil {
+		owned, err := p.inspectOwnedRule(string(rules))
+		if err != nil {
 			return err
 		}
-		routes, err := p.runner.Run(ctx, family, "route", "show", "table", policyTable)
+		if owned {
+			return errors.New("AWG routing priority is occupied")
+		}
+		routes, err := p.runner.Run(ctx, family, "route", "show", "table", p.table)
 		if err != nil || strings.TrimSpace(string(routes)) != "" {
 			return errors.New("AWG route table is occupied")
 		}
@@ -57,7 +76,7 @@ func (p RoutePolicy) Preflight(ctx context.Context) error {
 	if err != nil {
 		return errors.New("cannot inspect network interfaces")
 	}
-	if hasInterface(string(links), awgInterface) {
+	if hasInterface(string(links), p.device) {
 		return errors.New("AWG interface name is already occupied")
 	}
 	return nil
@@ -77,12 +96,12 @@ func (p RoutePolicy) EnsureGuards(ctx context.Context) error {
 	if err := p.inspectPolicyState(ctx, false); err != nil {
 		return err
 	}
-	if _, err := p.runner.Run(ctx, "-4", "route", "add", "unreachable", "default", "table", policyTable, "metric", "32767"); err != nil {
+	if _, err := p.runner.Run(ctx, "-4", "route", "add", "unreachable", "default", "table", p.table, "metric", "32767"); err != nil {
 		if !p.exactGuardExists(ctx, "-4") {
 			return errors.New("cannot install IPv4 AWG fail-closed route")
 		}
 	}
-	if _, err := p.runner.Run(ctx, "-6", "route", "add", "unreachable", "default", "table", policyTable, "metric", "32767"); err != nil {
+	if _, err := p.runner.Run(ctx, "-6", "route", "add", "unreachable", "default", "table", p.table, "metric", "32767"); err != nil {
 		if !p.exactGuardExists(ctx, "-6") {
 			return errors.New("cannot install IPv6 AWG fail-closed route")
 		}
@@ -99,10 +118,8 @@ func (p RoutePolicy) InstallMarkRules(ctx context.Context) error {
 		if p.exactMarkRuleExists(ctx, family) {
 			continue
 		}
-		if _, err := p.runner.Run(ctx, family, "rule", "add", "priority", policyPriority, "fwmark", policyMark+"/0xffffffff", "lookup", policyTable); err != nil {
-			if family == "-6" {
-				_ = p.runnerRemove(ctx, "-4", "rule", "del", "priority", policyPriority, "fwmark", policyMark+"/0xffffffff", "lookup", policyTable)
-			}
+		if _, err := p.runner.Run(ctx, family, "rule", "add", "priority", p.priority, "fwmark", p.mark+"/0xffffffff", "lookup", p.table); err != nil {
+			// Keep any existing family guarded until an explicit drained teardown.
 			return errors.New("cannot install AWG fail-closed mark rule")
 		}
 	}
@@ -117,18 +134,18 @@ func (p RoutePolicy) AdoptOwnedState(ctx context.Context) error {
 // inspectPolicyState accepts empty state or exact AWG entries and rejects all unowned routes and priorities.
 func (p RoutePolicy) inspectPolicyState(ctx context.Context, allowTunnel bool) error {
 	for _, family := range []string{"-4", "-6"} {
-		routes, err := p.runner.Run(ctx, family, "route", "show", "table", policyTable)
+		routes, err := p.runner.Run(ctx, family, "route", "show", "table", p.table)
 		if err != nil {
 			return errors.New("cannot inspect the AWG route table")
 		}
-		if _, err := inspectOwnedRoutes(string(routes), allowTunnel && family == "-4"); err != nil {
+		if _, err := p.inspectOwnedRoutes(string(routes), family, allowTunnel); err != nil {
 			return err
 		}
 		rules, err := p.runner.Run(ctx, family, "rule", "show")
 		if err != nil {
 			return errors.New("cannot inspect AWG routing rules")
 		}
-		if _, err := inspectOwnedRule(string(rules)); err != nil {
+		if _, err := p.inspectOwnedRule(string(rules)); err != nil {
 			return err
 		}
 	}
@@ -137,11 +154,11 @@ func (p RoutePolicy) inspectPolicyState(ctx context.Context, allowTunnel bool) e
 
 // exactGuardExists confirms one family has only the expected unreachable guard in the reserved table.
 func (p RoutePolicy) exactGuardExists(ctx context.Context, family string) bool {
-	routes, err := p.runner.Run(ctx, family, "route", "show", "table", policyTable)
+	routes, err := p.runner.Run(ctx, family, "route", "show", "table", p.table)
 	if err != nil {
 		return false
 	}
-	owned, err := inspectOwnedRoutes(string(routes), family == "-4")
+	owned, err := p.inspectOwnedRoutes(string(routes), family, true)
 	return err == nil && owned["guard"]
 }
 
@@ -151,7 +168,7 @@ func (p RoutePolicy) exactMarkRuleExists(ctx context.Context, family string) boo
 	if err != nil {
 		return false
 	}
-	found, err := inspectOwnedRule(string(rules))
+	found, err := p.inspectOwnedRule(string(rules))
 	return err == nil && found
 }
 
@@ -161,10 +178,10 @@ func (p RoutePolicy) ActivateIPv4(ctx context.Context) error {
 		return err
 	}
 	links, err := p.runner.Run(ctx, "-o", "link", "show")
-	if err != nil || !hasInterface(string(links), awgInterface) {
+	if err != nil || !hasInterface(string(links), p.device) {
 		return errors.New("AWG interface is not present")
 	}
-	if _, err := p.runner.Run(ctx, "-4", "route", "add", "default", "dev", awgInterface, "table", policyTable, "metric", "100"); err != nil {
+	if _, err := p.runner.Run(ctx, "-4", "route", "add", "default", "dev", p.device, "table", p.table, "metric", "100"); err != nil {
 		return errors.New("cannot activate IPv4 AWG route")
 	}
 	return nil
@@ -173,8 +190,7 @@ func (p RoutePolicy) ActivateIPv4(ctx context.Context) error {
 // verifyGuards requires both unreachable routes before installing either family’s packet-mark rule.
 func (p RoutePolicy) verifyGuards(ctx context.Context) error {
 	for _, family := range []string{"-4", "-6"} {
-		routes, err := p.runner.Run(ctx, family, "route", "show", "table", policyTable)
-		if err != nil || !strings.Contains(string(routes), "unreachable default") || !strings.Contains(string(routes), "32767") {
+		if !p.exactGuardExists(ctx, family) {
 			return errors.New("IPv4 and IPv6 AWG fail-closed guards must be installed first")
 		}
 	}
@@ -187,8 +203,7 @@ func (p RoutePolicy) verifyReadyPolicy(ctx context.Context) error {
 		return err
 	}
 	for _, family := range []string{"-4", "-6"} {
-		rules, err := p.runner.Run(ctx, family, "rule", "show")
-		if err != nil || !hasExpectedRule(string(rules)) {
+		if !p.exactMarkRuleExists(ctx, family) {
 			return errors.New("AWG packet-mark rules are not fully installed")
 		}
 	}
@@ -206,11 +221,11 @@ func (p RoutePolicy) Teardown(ctx context.Context, disableOutbound func(context.
 	routePresent := make(map[string]map[string]bool, 2)
 	rulePresent := make(map[string]bool, 2)
 	for _, family := range []string{"-4", "-6"} {
-		routes, err := p.runner.Run(ctx, family, "route", "show", "table", policyTable)
+		routes, err := p.runner.Run(ctx, family, "route", "show", "table", p.table)
 		if err != nil {
 			return errors.New("cannot inspect AWG routes before teardown")
 		}
-		owned, err := inspectOwnedRoutes(string(routes), family == "-4")
+		owned, err := p.inspectOwnedRoutes(string(routes), family, true)
 		if err != nil {
 			return err
 		}
@@ -219,7 +234,7 @@ func (p RoutePolicy) Teardown(ctx context.Context, disableOutbound func(context.
 		if err != nil {
 			return errors.New("cannot inspect AWG mark rules before teardown")
 		}
-		present, err := inspectOwnedRule(string(rules))
+		present, err := p.inspectOwnedRule(string(rules))
 		if err != nil {
 			return err
 		}
@@ -230,11 +245,11 @@ func (p RoutePolicy) Teardown(ctx context.Context, disableOutbound func(context.
 		name   string
 		args   []string
 	}{
-		{"-4", "tunnel", []string{"-4", "route", "del", "default", "dev", awgInterface, "table", policyTable, "metric", "100"}},
-		{"-4", "rule", []string{"-4", "rule", "del", "priority", policyPriority, "fwmark", policyMark + "/0xffffffff", "lookup", policyTable}},
-		{"-6", "rule", []string{"-6", "rule", "del", "priority", policyPriority, "fwmark", policyMark + "/0xffffffff", "lookup", policyTable}},
-		{"-4", "guard", []string{"-4", "route", "del", "unreachable", "default", "table", policyTable, "metric", "32767"}},
-		{"-6", "guard", []string{"-6", "route", "del", "unreachable", "default", "table", policyTable, "metric", "32767"}},
+		{"-4", "tunnel", []string{"-4", "route", "del", "default", "dev", p.device, "table", p.table, "metric", "100"}},
+		{"-4", "rule", []string{"-4", "rule", "del", "priority", p.priority, "fwmark", p.mark + "/0xffffffff", "lookup", p.table}},
+		{"-6", "rule", []string{"-6", "rule", "del", "priority", p.priority, "fwmark", p.mark + "/0xffffffff", "lookup", p.table}},
+		{"-4", "guard", []string{"-4", "route", "del", "unreachable", "default", "table", p.table, "metric", "32767"}},
+		{"-6", "guard", []string{"-6", "route", "del", "unreachable", "default", "table", p.table, "metric", "32767"}},
 	}
 	for _, step := range steps {
 		present := false
@@ -254,18 +269,26 @@ func (p RoutePolicy) Teardown(ctx context.Context, disableOutbound func(context.
 }
 
 // inspectOwnedRoutes accepts only the exact AWG tunnel default and IPv4/IPv6 unreachable guard routes.
-func inspectOwnedRoutes(routes string, allowTunnel bool) (map[string]bool, error) {
+func (p RoutePolicy) inspectOwnedRoutes(routes, family string, allowTunnel bool) (map[string]bool, error) {
 	owned := map[string]bool{"tunnel": false, "guard": false}
 	for _, line := range strings.Split(routes, "\n") {
-		line = strings.TrimSpace(line)
+		line = strings.Join(strings.Fields(line), " ")
 		if line == "" {
 			continue
+		}
+		if family == "-6" {
+			line = strings.TrimSuffix(line, " pref medium")
 		}
 		switch line {
 		case "unreachable default metric 32767":
 			owned["guard"] = true
-		case "default dev " + awgInterface + " metric 100":
-			if !allowTunnel {
+		case "unreachable default dev lo metric 32767":
+			if family != "-6" {
+				return nil, errors.New("unexpected IPv4 AWG guard device")
+			}
+			owned["guard"] = true
+		case "default dev " + p.device + " metric 100", "default dev " + p.device + " scope link metric 100":
+			if !allowTunnel || family != "-4" {
 				return nil, errors.New("unexpected IPv6 AWG tunnel route; refusing teardown")
 			}
 			owned["tunnel"] = true
@@ -277,34 +300,52 @@ func inspectOwnedRoutes(routes string, allowTunnel bool) (map[string]bool, error
 }
 
 // inspectOwnedRule finds the exact reserved mark rule and refuses a different rule at its priority or mark.
-func inspectOwnedRule(rules string) (bool, error) {
+func (p RoutePolicy) inspectOwnedRule(rules string) (bool, error) {
 	found := false
 	for _, line := range strings.Split(rules, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
 		}
-		priority := rulePriorityPattern.FindStringSubmatch(line)
-		if len(priority) == 2 && priority[1] == policyPriority {
-			if !hasExpectedRule(line) {
+		matchPriority := rulePriorityPattern.FindStringSubmatch(line)
+		if len(matchPriority) != 2 {
+			return false, errors.New("cannot verify AWG routing rule priority")
+		}
+		priority, err := strconv.ParseUint(matchPriority[1], 10, 32)
+		if err != nil {
+			return false, errors.New("cannot verify AWG routing rule priority")
+		}
+		if int(priority) == p.priorityValue {
+			if found || !p.hasExpectedRule(line) {
 				return false, errors.New("AWG rule priority contains an unowned rule; refusing teardown")
 			}
 			found = true
 			continue
 		}
+		fields := strings.Fields(line)
+		for i, field := range fields {
+			if (field == "lookup" || field == "table") && i+1 < len(fields) && fields[i+1] == p.table {
+				return false, errors.New("AWG table is used by an unowned rule")
+			}
+		}
 		match := fwmarkPattern.FindStringSubmatch(line)
+		if priority < uint64(p.priorityValue) && !safeEarlierRule(fields, len(match) == 2) {
+			return false, errors.New("an earlier routing rule can bypass the AWG guard")
+		}
 		if len(match) == 2 {
 			parts := strings.Split(match[1], "/")
 			value, err := strconv.ParseUint(parts[0], 0, 32)
+			if err != nil || len(parts) > 2 {
+				return false, errors.New("cannot safely inspect packet marks before teardown")
+			}
 			mask := uint64(0xffffffff)
 			if len(parts) == 2 {
 				mask, err = strconv.ParseUint(parts[1], 0, 32)
 			}
-			mark, parseErr := strconv.ParseUint(policyMark, 0, 32)
-			if err != nil || parseErr != nil || len(parts) > 2 {
+			if err != nil {
 				return false, errors.New("cannot safely inspect packet marks before teardown")
 			}
-			if value&mask == mark&mask {
+			if value&mask == uint64(p.markValue)&mask {
 				return false, errors.New("AWG packet mark is used by an unowned rule; refusing teardown")
 			}
 		}
@@ -312,55 +353,36 @@ func inspectOwnedRule(rules string) (bool, error) {
 	return found, nil
 }
 
-// inspectRules rejects use of the reserved priority and any existing mark mask that overlaps 0x202.
-func inspectRules(rules, mark, priority string) error {
-	markValue, err := strconv.ParseUint(mark, 0, 32)
-	if err != nil {
-		return errors.New("invalid configured AWG mark")
+// safeEarlierRule accepts the kernel local lookup or selectors provably disjoint from local marked output.
+// Callers separately verify the numeric mark and mask for every rule with a fwmark selector.
+func safeEarlierRule(fields []string, hasMark bool) bool {
+	if slices.Equal(fields, []string{"0:", "from", "all", "lookup", "local"}) ||
+		slices.Equal(fields, []string{"0:", "from", "all", "lookup", "255"}) {
+		return true
 	}
-	for _, line := range strings.Split(rules, "\n") {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-		if match := rulePriorityPattern.FindStringSubmatch(line); len(match) == 2 && match[1] == priority {
-			return errors.New("AWG routing priority is occupied")
-		}
-		match := fwmarkPattern.FindStringSubmatch(line)
-		if len(match) != 2 {
-			continue
-		}
-		parts := strings.Split(match[1], "/")
-		value, parseErr := strconv.ParseUint(parts[0], 0, 32)
-		if parseErr != nil {
-			return errors.New("cannot safely inspect existing packet marks")
-		}
-		mask := uint64(0xffffffff)
-		if len(parts) == 2 {
-			mask, parseErr = strconv.ParseUint(parts[1], 0, 32)
-			if parseErr != nil {
-				return errors.New("cannot safely inspect existing packet marks")
-			}
-		}
-		if len(parts) > 2 || value&mask == markValue&mask {
-			return errors.New("AWG packet mark conflicts with an existing rule")
-		}
+	if slices.Contains(fields, "not") {
+		return false
 	}
-	return nil
-}
-
-// hasExpectedRule recognizes the exact reserved mark lookup without relying on unrelated rule formatting.
-func hasExpectedRule(rules string) bool {
-	for _, line := range strings.Split(rules, "\n") {
-		line = strings.TrimSpace(line)
-		if match := rulePriorityPattern.FindStringSubmatch(line); len(match) == 2 && match[1] == policyPriority && strings.Contains(line, "lookup "+policyTable) {
-			marks := fwmarkPattern.FindStringSubmatch(line)
-			if len(marks) == 2 && marks[1] == policyMark+"/0xffffffff" {
-				return true
-			}
+	if hasMark {
+		return true
+	}
+	for i, field := range fields {
+		if field == "iif" && i+1 < len(fields) && fields[i+1] != "lo" {
+			return true
 		}
 	}
 	return false
+}
+
+// hasExpectedRule recognizes the exact reserved mark lookup without relying on unrelated rule formatting.
+func (p RoutePolicy) hasExpectedRule(line string) bool {
+	prefix := p.priority + ": from all fwmark " + p.mark
+	lookup := " lookup " + p.table
+	if p.table == "" {
+		lookup = " unreachable"
+	}
+	normalized := strings.Join(strings.Fields(line), " ")
+	return normalized == prefix+lookup || normalized == prefix+"/0xffffffff"+lookup
 }
 
 // hasInterface checks the interface-name token in `ip -o link show` output.
@@ -375,10 +397,4 @@ func hasInterface(links, name string) bool {
 		}
 	}
 	return false
-}
-
-// runnerRemove performs best-effort rollback without exposing command output.
-func (p RoutePolicy) runnerRemove(ctx context.Context, args ...string) error {
-	_, err := p.runner.Run(ctx, args...)
-	return err
 }

@@ -1,9 +1,18 @@
+import { Notifications } from "./notifications";
+import { groupName, isRuleList } from "./snapshot";
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
+  inject,
   input,
+  output,
   signal,
 } from "@angular/core";
+import { HttpErrorResponse } from "@angular/common/http";
+import { PanelService } from "./api/generated/api/panel.service";
+import { SnapshotState } from "./snapshot-state";
+import { timeout } from "rxjs";
 import { FormControl, ReactiveFormsModule } from "@angular/forms";
 import { RouterLink } from "@angular/router";
 import type { Group } from "./api/generated/model/group";
@@ -15,29 +24,15 @@ import { Popover } from "primeng/popover";
 import { Select } from "primeng/select";
 import { Textarea } from "primeng/textarea";
 
-interface ListDraft {
-  readonly key: string;
-  readonly sourceId: string | null;
-  readonly name: string;
-  readonly group: string;
-  readonly masks: readonly string[];
-  readonly enabled: boolean;
-}
-
 interface EditorValues {
-  readonly sourceId: string | null;
+  readonly original: RuleList | null;
   readonly name: string;
   readonly group: string;
   readonly masks: string;
-  readonly enabled: boolean;
 }
 
-/** invalidMasks checks draft lines against the wildcard DNS suffix form accepted by the routing model. */
-function invalidMasks(value: string): readonly string[] {
-  const masks = value
-    .split(/\r?\n/u)
-    .map((line) => line.trim())
-    .filter(Boolean);
+/** invalidMasks returns distinct invalid wildcard suffixes while preserving their entered spelling. */
+function invalidMasks(masks: readonly string[]): readonly string[] {
   const invalid = masks.filter((mask) => {
     if (!mask.startsWith("*.")) return true;
     const suffix = mask.slice(2).replace(/\.$/u, "");
@@ -47,14 +42,14 @@ function invalidMasks(value: string): readonly string[] {
       !suffix
         .split(".")
         .every((label) =>
-          /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/iu.test(label),
+          /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$/u.test(label),
         )
     );
   });
   return [...new Set(invalid)];
 }
 
-/** DomainLists shows gateway lists and explicitly local drafts in one editable list view. */
+/** DomainLists edits gateway lists from the overview or a selected list card. */
 @Component({
   selector: "hestia-domain-lists",
   imports: [
@@ -72,139 +67,213 @@ function invalidMasks(value: string): readonly string[] {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DomainLists {
+  private readonly notifications = inject(Notifications);
+  protected readonly groupName = groupName;
   readonly lists = input.required<readonly RuleList[]>();
   readonly groups = input.required<readonly Group[]>();
-  protected readonly drafts = signal<readonly ListDraft[]>([]);
+  readonly removed = output<void>();
+  readonly selected = input<RuleList>();
+  private readonly api = inject(PanelService);
+  private readonly snapshot = inject(SnapshotState);
+  protected readonly pending = signal(false);
+  protected readonly failure = signal("");
+  protected readonly needsRefresh = signal(false);
+  protected readonly deleting = signal<RuleList | null>(null);
   protected readonly editor = signal<EditorValues | null>(null);
+  protected readonly masks = computed(() =>
+    (this.editor()?.masks ?? "")
+      .split(/\r?\n/u)
+      .map((line) => line.trim())
+      .filter(Boolean),
+  );
+  protected readonly invalid = computed(() => invalidMasks(this.masks()));
+  protected readonly nameInvalid = computed(() => {
+    const name = this.editor()?.name.trim() ?? "";
+    return [...name].length > 80 || /\p{Cc}/u.test(name);
+  });
+  protected readonly valid = computed(
+    () =>
+      !!this.editor()?.name.trim() &&
+      !this.nameInvalid() &&
+      this.masks().length <= 1024 &&
+      this.invalid().length === 0,
+  );
   protected readonly maskHelpOpen = signal(false);
   protected readonly groupControl = new FormControl("", { nonNullable: true });
-  private draftSequence = 0;
+  protected editorTrigger?: HTMLButtonElement;
   private maskHelpHideTimer?: ReturnType<typeof setTimeout>;
-
-  /** visibleLists overlays local edits on the gateway snapshot and appends new local-only drafts. */
-  protected visibleLists(): readonly ListDraft[] {
-    const draftBySource = new Map(
-      this.drafts()
-        .filter((draft) => draft.sourceId !== null)
-        .map((draft) => [draft.sourceId, draft]),
-    );
-    const gatewayLists = this.lists().map((list) =>
-      this.fromGateway(list, draftBySource.get(list.id)),
-    );
-    return [
-      ...gatewayLists,
-      ...this.drafts().filter((draft) => draft.sourceId === null),
-    ];
-  }
 
   /** groupOptions builds the PrimeNG select choices, including an explicit unassigned option. */
   protected groupOptions(): { label: string; value: string }[] {
     return [
       { label: "Группа не назначена", value: "" },
-      ...this.groups().map((group) => ({ label: group.id, value: group.id })),
+      ...this.groups().map((group) => ({
+        label: group.name ?? group.id,
+        value: group.id,
+      })),
     ];
   }
 
-  /** hasDraft reports whether a gateway list has a local replacement draft. */
-  protected hasDraft(sourceId: string | null): boolean {
-    return (
-      sourceId !== null &&
-      this.drafts().some((draft) => draft.sourceId === sourceId)
-    );
+  /** create opens an empty form for a new gateway list. */
+  protected create(trigger: HTMLButtonElement): void {
+    this.editorTrigger = trigger;
+    this.open({ original: null, name: "", group: "", masks: "" });
   }
 
-  /** fromGateway combines one gateway record with its current local draft, if it has one. */
-  private fromGateway(list: RuleList, draft?: ListDraft): ListDraft {
-    return (
-      draft ?? {
-        key: list.id,
-        sourceId: list.id,
-        name: list.id,
-        group: list.group,
-        masks: list.masks,
-        enabled: list.enabled,
-      }
-    );
-  }
-
-  /** create opens an empty modal and uses a generated temporary key for the local draft. */
-  protected create(): void {
+  /** edit keeps the exact record observed at open time for the gateway's conflict check. */
+  protected edit(list: RuleList, trigger: HTMLButtonElement): void {
+    this.editorTrigger = trigger;
     this.open({
-      sourceId: null,
-      name: "",
-      group: "",
-      masks: "",
-      enabled: true,
-    });
-  }
-
-  /** edit opens the modal with the latest local draft or gateway values for the selected list. */
-  protected edit(list: ListDraft): void {
-    this.open({
-      sourceId: list.sourceId,
-      name: list.name,
+      original: list,
+      name: list.name ?? list.id,
       group: list.group,
       masks: list.masks.join("\n"),
-      enabled: list.enabled,
     });
+  }
+
+  /** confirmDeletion retains the selected snapshot for the conditional DELETE after explicit confirmation. */
+  protected confirmDeletion(list: RuleList, trigger: HTMLButtonElement): void {
+    this.editorTrigger = trigger;
+    this.failure.set("");
+    this.needsRefresh.set(false);
+    this.deleting.set(list);
+  }
+
+  /** remove deletes the confirmed list once; uncertain results require reading the gateway before retrying. */
+  protected remove(): void {
+    const list = this.deleting();
+    if (!list || this.pending() || this.needsRefresh()) return;
+    this.pending.set(true);
+    this.api
+      .deleteDomainList(list.id, list, "response")
+      .pipe(timeout(310000))
+      .subscribe({
+        next: (response) => {
+          this.pending.set(false);
+          if (response.status !== 204) {
+            this.reportDeletionFailure(0);
+            return;
+          }
+          this.notifications.show(
+            "success",
+            `Список «${list.name ?? list.id}» удалён.`,
+          );
+          this.dismiss(true);
+          this.removed.emit();
+        },
+        error: (error: unknown) => {
+          this.pending.set(false);
+          this.reportDeletionFailure(
+            error instanceof HttpErrorResponse ? error.status : 0,
+          );
+        },
+      });
+  }
+
+  /** reportDeletionFailure keeps the confirmation open and prevents retrying with stale list fields. */
+  private reportDeletionFailure(status: number): void {
+    this.needsRefresh.set(true);
+    this.failure.set(
+      status === 409
+        ? "Список изменился или шлюз занят. Обновите списки перед повторной попыткой."
+        : status === 404
+          ? "Список больше не существует. Обновите списки."
+          : "Шлюз не подтвердил удаление. Обновите списки, чтобы проверить результат.",
+    );
   }
 
   /** open stores form values and resets transient help state before PrimeNG displays the dialog. */
   private open(values: EditorValues): void {
+    this.failure.set("");
+    this.needsRefresh.set(false);
     this.editor.set(values);
     this.groupControl.setValue(values.group);
     this.maskHelpOpen.set(false);
   }
 
   /** update changes one field in the current modal model without touching gateway data. */
-  protected update(field: keyof EditorValues, value: string): void {
+  protected update(field: "name" | "group" | "masks", value: string): void {
     const current = this.editor();
-    if (!current || field === "sourceId" || field === "enabled") return;
+    if (!current || this.pending()) return;
     this.editor.set({ ...current, [field]: value });
   }
 
-  /** save validates the form and stores a named draft without issuing a request to the gateway. */
+  /** save submits one typed write and accepts only a confirmation matching the complete requested list. */
   protected save(): void {
     const current = this.editor();
-    if (!current) return;
-    const invalid = invalidMasks(current.masks);
-    if (!current.name.trim() || invalid.length > 0) return;
-    const sourceId = current.sourceId;
-    const key = sourceId ?? `draft-${Date.now()}-${this.draftSequence++}`;
-    const draft: ListDraft = {
-      key,
-      sourceId,
+    if (!current || this.pending() || this.needsRefresh() || !this.valid())
+      return;
+    const list = {
       name: current.name.trim(),
       group: current.group,
-      masks: current.masks
-        .split(/\r?\n/u)
-        .map((line) => line.trim())
-        .filter(Boolean),
-      enabled: current.enabled,
+      masks: this.masks(),
     };
-    this.drafts.update((drafts) => [
-      ...drafts.filter((existing) => existing.key !== key),
-      draft,
-    ]);
-    this.dismiss();
+    const expected = current.original;
+    const operation = expected
+      ? this.api.updateDomainList(expected.id, { expected, list }, "response")
+      : this.api.createDomainList(list, "response");
+    this.pending.set(true);
+    this.failure.set("");
+    this.groupControl.disable();
+    operation.pipe(timeout(310000)).subscribe({
+      next: (response) => {
+        this.pending.set(false);
+        this.groupControl.enable();
+        const body: unknown = response.body;
+        if (
+          response.status !== (expected ? 200 : 201) ||
+          !isRuleList(body) ||
+          (expected && body.id !== expected.id) ||
+          body.name !== list.name ||
+          body.group !== list.group ||
+          body.enabled !== Boolean(list.group) ||
+          body.masks.length !== list.masks.length ||
+          body.masks.some((mask, i) => mask !== list.masks[i])
+        ) {
+          this.reportFailure(0);
+          return;
+        }
+        this.notifications.show("success", `Список «${list.name}» сохранён.`);
+        this.dismiss(true);
+      },
+      error: (error: unknown) => {
+        this.pending.set(false);
+        this.groupControl.enable();
+        this.reportFailure(
+          error instanceof HttpErrorResponse ? error.status : 0,
+        );
+      },
+    });
   }
 
-  /** dismiss hides the PrimeNG dialog and discards unsaved edits without clearing saved local drafts. */
-  protected dismiss(): void {
-    this.editor.set(null);
-    this.onDialogClose();
+  /** reportFailure preserves the attempted edit and requires a new snapshot when the write outcome is uncertain. */
+  private reportFailure(status: number): void {
+    if (status === 422 || status === 413) {
+      this.failure.set(
+        status === 413
+          ? "Список слишком большой для сохранения."
+          : "Шлюз отклонил значения. Проверьте название, маски и выбранную группу.",
+      );
+      return;
+    }
+    this.needsRefresh.set(true);
+    this.failure.set(
+      status === 409
+        ? "Конфликт сохранения. Название занято, список изменился или шлюз занят. Обновите списки перед повторной попыткой."
+        : status === 404
+          ? "Список или выбранная группа больше не существует. Обновите списки перед повторной попыткой."
+          : "Шлюз не подтвердил сохранение. Обновите списки, чтобы проверить результат.",
+    );
   }
 
-  /** onDialogVisibilityChange clears the editor state when PrimeNG hides the dialog, including Escape. */
-  protected onDialogVisibilityChange(visible: boolean): void {
-    if (!visible) this.onDialogClose();
-  }
-
-  /** onDialogClose clears transient editor and popover state after closing the dialog. */
-  protected onDialogClose(): void {
+  /** dismiss closes the idle dialog and refreshes the snapshot after a confirmed or uncertain write. */
+  protected dismiss(reload = this.needsRefresh()): void {
+    if (this.pending()) return;
     this.cancelMaskHelpHide();
     this.editor.set(null);
+    this.deleting.set(null);
     this.maskHelpOpen.set(false);
+    if (reload) this.snapshot.reload(true);
   }
 
   /** showMaskHelp opens the examples popover at its icon for hover or keyboard focus. */
@@ -254,17 +323,5 @@ export class DomainLists {
   ): void {
     this.cancelMaskHelpHide();
     if (!this.maskHelpOpen()) popover.show(event, target);
-  }
-
-  /** maskCount returns the nonempty lines currently entered in the modal. */
-  protected maskCount(): number {
-    return (this.editor()?.masks ?? "")
-      .split(/\r?\n/u)
-      .filter((line) => line.trim().length > 0).length;
-  }
-
-  /** draftMasks validates the currently edited text for the live form feedback. */
-  protected draftMasks(): readonly string[] {
-    return invalidMasks(this.editor()?.masks ?? "");
   }
 }

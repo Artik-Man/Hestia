@@ -1,0 +1,89 @@
+:host {
+  display: block;
+}
+.section-heading {
+  justify-content: space-between;
+}
+.check-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(19rem, 100%), 1fr));
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+.check-card,
+.quality-group {
+  background: white;
+  border: 1px solid #d1dcda;
+  border-radius: 12px;
+  padding: 1rem;
+  min-width: 0;
+}
+.check-card p,
+.quality-group details {
+  color: #53696c;
+  font-size: 0.875rem;
+}
+.check-card dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.45rem 0.8rem;
+  margin: 0.8rem 0 0;
+}
+.check-card dt {
+  color: #53696c;
+}
+.check-card dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+fieldset {
+  margin: 0;
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+legend {
+  font-weight: 650;
+}
+label {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.875rem;
+  margin: 0.45rem 0;
+}
+input,
+textarea {
+  width: 100%;
+  min-width: 0;
+}
+input[type="number"] {
+  max-width: 10rem;
+}
+.numeric,
+.actions {
+  display: flex;
+  gap: 0.8rem;
+}
+.actions,
+.quality-group {
+  margin-top: 1rem;
+}
+.quality-group h3 {
+  margin-bottom: 0.75rem;
+}
+.quality-group th:first-child {
+  width: auto;
+}
+summary {
+  cursor: pointer;
+}
+.quality-group details p {
+  margin-top: 0.35rem;
+}
+.card-title {
+  display: flex;
+  align-items: center;
+}
+.card-title h3 {
+  margin-right: auto;
+}

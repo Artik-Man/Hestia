@@ -1,0 +1,7 @@
+5 ноября 2026, lima-hestia-stage1. Штатная установка без --fresh.
+Резервная копия: /var/backups/hestia-stage1-awg-20261105T072812Z
+SHA-256 /usr/local/bin/hestia: 5255535ad1867e8b9110628ec5884f553003f44f9e3df18f583fc643c8c7575d (совпадает с load1)
+hestia, hestia-panel, hestia-sing-box, hestia-awg@awg-home: active
+hestia-smoke@current: Result=success
+GET /api/awg: awg-home ready, ручных транспортов 0.
+Chromium: окно редактирования awg-home, выбран автоматический режим. В списке один другой выход, сам awg-home исключён. Временный выбор отображён в поле, отмена успешна. Разрешены только GET в адрес панели stage1.

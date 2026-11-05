@@ -1,0 +1,19 @@
+2026-11-05, macOS ARM64, sing-box 1.14.4, Go 1.27.3
+Рабочее дерево поверх 44bb04d. SHA-256 фикстуры: 064152e13899e1e8cb9ae14478a907eb91529918d89af7a19887579617719673
+Команда из корня после указания пути к sing-box 1.14.4 для текущей ОС:
+HESTIA_QUALITY_TEST_SING_BOX=/path/to/sing-box go test -race -count=1 -run '^TestRealSingBoxLoopback$' -v ./internal/quality
+Только loopback. Ожидались успешный TCP, отказ закрытого TCP-порта, успешный DNS по UDP и локальная ошибка при неверном пароле SOCKS. Выдержка из вывода:
+
+=== RUN   TestRealSingBoxLoopback
+DEBUG[0000] [3784772643 4ms] router: match[0] inbound=_quality-fi1 => route(fi1)
+INFO[0000] [3784772643 5ms] outbound/direct[fi1]: outbound connection to 127.0.0.1:60914
+    singbox_test.go:94: authenticated TCP: real target accepted
+DEBUG[0000] [3832981829 0ms] router: match[0] inbound=_quality-fi1 => route(fi1)
+INFO[0000] [3832981829 0ms] outbound/direct[fi1]: outbound connection to 127.0.0.1:60914
+ERROR[0000] [3832981829 0ms] connection: open connection to 127.0.0.1:60914 using outbound/direct[fi1]: dial tcp 127.0.0.1:60914: connect: connection refused
+    singbox_test.go:99: closed target TCP port: completed failure
+DEBUG[0000] [3003986776 0ms] router: match[0] inbound=_quality-fi1 => route(fi1)
+    singbox_test.go:118: authenticated UDP ASSOCIATE: DNS target received query and matching answer reached probe
+    singbox_test.go:123: wrong password: local measurement error
+--- PASS: TestRealSingBoxLoopback (0.23s)
+ok  	github.com/Artik-Man/Hestia/internal/quality	1.511s

@@ -1,130 +1,173 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  computed,
+  DestroyRef,
+  inject,
   input,
+  output,
   signal,
 } from "@angular/core";
-import { RouterLink } from "@angular/router";
-import { FormControl, ReactiveFormsModule, Validators } from "@angular/forms";
-import { toSignal } from "@angular/core/rxjs-interop";
-import type { Group } from "./api/generated/model/group";
-import {
-  summarizeProbes,
-  type ProbeObservation,
-  type SwitchObservation,
-} from "./quality-observations";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { HttpErrorResponse } from "@angular/common/http";
+import { FormsModule } from "@angular/forms";
+import { ButtonDirective } from "primeng/button";
+import { InputText } from "primeng/inputtext";
+import { Textarea } from "primeng/textarea";
+import { timeout } from "rxjs";
+import { PanelService } from "./api/generated/api/panel.service";
+import type { QualitySettings } from "./api/generated/model/qualitySettings";
+import { Notifications } from "./notifications";
+import { isQualitySettings, sameQualitySettings } from "./quality-observations";
 
-/** A report's capture time fixes a reproducible comparison window for all channels. */
-interface QualityReport {
-  readonly capturedAt: number;
-  readonly probes: readonly ProbeObservation[];
-  readonly switches: readonly SwitchObservation[];
+type Check = QualitySettings["checks"][number];
+
+/** EditableSettings keeps the raw multiline target list intact while the operator is typing. */
+interface EditableSettings {
+  windowMinutes: number | null;
+  checks: (Omit<Check, "targets" | "intervalSeconds" | "timeoutSeconds"> & {
+    targets: string;
+    intervalSeconds: number | null;
+    timeoutSeconds: number | null;
+  })[];
 }
 
-/** QualityComparison combines known topology with separately supplied measurements and switch history. */
+/** QualityEditor edits one complete settings document and confirms the gateway's validated response. */
 @Component({
-  selector: "hestia-quality-comparison",
-  imports: [ReactiveFormsModule, RouterLink],
+  selector: "hestia-quality-settings",
+  imports: [FormsModule, ButtonDirective, InputText, Textarea],
   templateUrl: "./quality-report.html",
-  styleUrl: "./traffic-quality.css",
+  styleUrl: "./quality.css",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class QualityComparison {
-  readonly groups = input.required<readonly Group[]>();
-  readonly report = input.required<QualityReport | null>();
-  protected readonly selectedGroup = signal("");
-  protected readonly selectedTarget = signal("");
-  protected readonly protocol = new FormControl<ProbeObservation["protocol"]>(
-    "UDP",
-    { nonNullable: true },
-  );
-  protected readonly minutes = new FormControl<number | null>(60, [
-    Validators.required,
-    Validators.min(1),
-    Validators.pattern(/^\d+$/),
-  ]);
-  private readonly selectedProtocol = toSignal(this.protocol.valueChanges, {
-    initialValue: this.protocol.value,
-  });
-  private readonly interval = toSignal(this.minutes.valueChanges, {
-    initialValue: this.minutes.value,
-  });
-  protected readonly group = computed(
-    () =>
-      this.groups().find((group) => group.id === this.selectedGroup()) ??
-      this.groups().at(0),
-  );
-  protected readonly targets = computed(() => {
-    const report = this.report();
-    if (!report) return [];
-    const group = this.group()?.id;
-    return [
-      ...new Set([
-        ...report.probes
-          .filter(
-            (p) => p.group === group && p.protocol === this.selectedProtocol(),
-          )
-          .map((p) => p.target),
-        ...report.switches
-          .filter((s) => s.group === group)
-          .flatMap((s) =>
-            s.scope.kind === "target" &&
-            s.scope.protocol === this.selectedProtocol()
-              ? [s.scope.target]
-              : [],
-          ),
-      ]),
-    ].sort();
-  });
-  protected readonly target = computed(() =>
-    this.targets().includes(this.selectedTarget())
-      ? this.selectedTarget()
-      : (this.targets()[0] ?? ""),
-  );
-  private readonly range = computed(() => {
-    const minutes = this.interval();
-    const report = this.report();
-    if (
-      !report ||
-      minutes === null ||
-      !Number.isSafeInteger(minutes) ||
-      minutes < 1
-    )
-      return null;
-    return {
-      start: report.capturedAt - minutes * 60_000,
-      end: report.capturedAt,
-    };
-  });
-  protected readonly totals = computed(() => {
-    const range = this.range();
-    const report = this.report();
-    const group = this.group();
-    if (!range || !report || !group) return null;
-    return summarizeProbes(
-      report.probes,
-      group.id,
-      this.target(),
-      this.selectedProtocol(),
-      range.start,
-      range.end,
-    );
-  });
-  protected readonly switches = computed(() => {
-    const range = this.range();
-    const report = this.report();
-    if (!range || !report) return null;
-    return report.switches.filter((event) => {
-      const time = Date.parse(event.time);
-      return (
-        event.group === this.group()?.id &&
-        time >= range.start &&
-        time <= range.end &&
-        (event.scope.kind === "group" ||
-          (event.scope.target === this.target() &&
-            event.scope.protocol === this.selectedProtocol()))
-      );
+export class QualityEditor {
+  readonly settings = input.required<QualitySettings>();
+  readonly saved = output<void>();
+  protected readonly draft = signal<EditableSettings | null>(null);
+  protected readonly saving = signal(false);
+  private readonly api = inject(PanelService);
+  private readonly notices = inject(Notifications);
+  private readonly destroyRef = inject(DestroyRef);
+  protected readonly protocols = ["UDP", "TCP"] as const;
+  private original?: QualitySettings;
+
+  /** edit snapshots all settings so periodic reads cannot overwrite an unsaved change. */
+  protected edit(): void {
+    const current = this.settings();
+    this.original = current;
+    this.draft.set({
+      windowMinutes: current.windowMinutes,
+      checks: current.checks.map((check) => ({
+        ...check,
+        targets: check.targets.join("\n"),
+      })),
     });
-  });
+  }
+
+  /** hasCheck indicates which protocols can still be added to the current draft. */
+  protected hasCheck(
+    form: EditableSettings,
+    protocol: Check["protocol"],
+  ): boolean {
+    return form.checks.some((check) => check.protocol === protocol);
+  }
+
+  /** add stages a new protocol with editable targets; it starts probing only after save. */
+  protected add(protocol: Check["protocol"]): void {
+    const draft = this.draft();
+    if (!draft || this.hasCheck(draft, protocol)) return;
+    draft.checks.push({
+      protocol,
+      targets: "",
+      intervalSeconds: 30,
+      timeoutSeconds: 3,
+      ...(protocol === "UDP" ? { dnsName: "example.com" } : {}),
+    });
+  }
+
+  /** remove stages removal while retaining the option to cancel the complete edit. */
+  protected remove(protocol: Check["protocol"]): void {
+    if (!this.draft()) this.edit();
+    const draft = this.draft();
+    if (draft)
+      this.draft.set({
+        ...draft,
+        checks: draft.checks.filter((check) => check.protocol !== protocol),
+      });
+  }
+
+  /** save validates the draft and performs exactly one complete update, retaining edits on failure. */
+  protected save(): void {
+    const draft = this.draft();
+    if (!draft || this.saving()) return;
+    if (
+      !this.original ||
+      !sameQualitySettings(this.original, this.settings())
+    ) {
+      this.notices.show(
+        "warn",
+        "Настройки на шлюзе изменились. Отмените правки и откройте актуальные настройки.",
+      );
+      return;
+    }
+    const settings = {
+      windowMinutes: draft.windowMinutes,
+      checks: draft.checks.map((check) => ({
+        ...check,
+        targets: check.targets
+          .split(/\r?\n/u)
+          .map((target) => target.trim())
+          .filter(Boolean),
+      })),
+    };
+    if (!isQualitySettings(settings)) {
+      this.notices.show(
+        "error",
+        "Проверьте цели и интервалы. Для UDP нужны два разных IP на порту 53 и доменное имя. Тайм-аут не должен превышать интервал.",
+      );
+      return;
+    }
+    this.saving.set(true);
+    this.api
+      .updateQualitySettings(settings)
+      .pipe(timeout(15000), takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (body: unknown) => {
+          this.saving.set(false);
+          if (
+            !isQualitySettings(body) ||
+            !sameQualitySettings(settings, body)
+          ) {
+            this.notices.show(
+              "error",
+              "Шлюз вернул некорректное подтверждение настроек.",
+            );
+            this.saved.emit();
+            return;
+          }
+          this.draft.set(null);
+          this.notices.show("success", "Настройки проверок сохранены.");
+          this.saved.emit();
+        },
+        error: (error: unknown) => {
+          this.saving.set(false);
+          const body: unknown =
+            error instanceof HttpErrorResponse ? error.error : null;
+          const detail =
+            error instanceof HttpErrorResponse &&
+            error.status === 422 &&
+            typeof body === "object" &&
+            body !== null &&
+            "detail" in body &&
+            typeof body.detail === "string"
+              ? body.detail
+              : "";
+          this.notices.show(
+            "error",
+            detail ||
+              "Не удалось сохранить настройки проверок. Проверьте доступность шлюза и параметры целей.",
+          );
+          this.saved.emit();
+        },
+      });
+  }
 }

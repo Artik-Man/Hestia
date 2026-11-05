@@ -1,3 +1,5 @@
+import { Notifications } from "./notifications";
+import { groupName } from "./snapshot";
 import {
   ChangeDetectionStrategy,
   Component,
@@ -33,6 +35,8 @@ class MapDraftState {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GeoScreen {
+  private readonly notifications = inject(Notifications);
+  protected readonly groupName = groupName;
   protected readonly inventory = inject(SnapshotState);
   protected readonly map = inject(MapDraftState).map;
   protected readonly groups = computed(() => {
@@ -50,8 +54,8 @@ export class GeoScreen {
   });
   protected readonly blockGroup = new FormControl("", { nonNullable: true });
   protected readonly editingBlock = signal<string | null>(null);
-  protected readonly countryMessage = signal("");
-  protected readonly blockMessage = signal("");
+  protected readonly countryError = signal("");
+  protected readonly blockError = signal("");
   protected readonly previewCountry = signal("");
   protected readonly preview = computed(() => {
     const code = this.previewCountry();
@@ -88,7 +92,7 @@ export class GeoScreen {
     this.countryGroup.setValue(
       this.map().countries.find((rule) => rule.country === code)?.group ?? "",
     );
-    this.countryMessage.set("");
+    this.countryError.set("");
   }
 
   /** saveCountry inserts or replaces one local assignment for a valid current group. */
@@ -99,7 +103,7 @@ export class GeoScreen {
       !regionCodes.includes(country) ||
       !this.groups().some((entry) => entry.id === group)
     ) {
-      this.countryMessage.set("Выберите страну и группу из снимка.");
+      this.countryError.set("Выберите страну и группу из снимка.");
       return;
     }
     this.map.update((map) => ({
@@ -109,7 +113,11 @@ export class GeoScreen {
         { country, group },
       ],
     }));
-    this.countryMessage.set("Назначение добавлено в черновик.");
+    this.countryError.set("");
+    this.notifications.show(
+      "success",
+      `Назначение для страны ${this.countryLabel(country)} добавлено в черновик.`,
+    );
   }
 
   /** removeCountry removes just the explicit assignment and leaves block fallbacks intact. */
@@ -127,7 +135,7 @@ export class GeoScreen {
     this.blockName.setValue(block.name);
     this.blockCountries.setValue(block.countries.join(", "));
     this.blockGroup.setValue(block.group);
-    this.blockMessage.set("");
+    this.blockError.set("");
   }
 
   /** clearBlock discards only the current block form. */
@@ -136,7 +144,7 @@ export class GeoScreen {
     this.blockName.reset();
     this.blockCountries.reset();
     this.blockGroup.reset();
-    this.blockMessage.set("");
+    this.blockError.set("");
   }
 
   /** saveBlock validates membership and saves a block in place or appends a new lowest-priority block. */
@@ -159,7 +167,7 @@ export class GeoScreen {
       countries.some((code) => !regionCodes.includes(code)) ||
       !this.groups().some((entry) => entry.id === group)
     ) {
-      this.blockMessage.set(
+      this.blockError.set(
         "Введите название, коды стран ISO и выберите группу.",
       );
       return;
@@ -169,7 +177,7 @@ export class GeoScreen {
         (block) => block.name === name && block.name !== editing,
       )
     ) {
-      this.blockMessage.set("Блок с таким названием уже есть в черновике.");
+      this.blockError.set("Блок с таким названием уже есть в черновике.");
       return;
     }
     const block = { name, group, countries };
@@ -181,7 +189,7 @@ export class GeoScreen {
           : map.blocks.map((old) => (old.name === editing ? block : old)),
     }));
     this.clearBlock();
-    this.blockMessage.set("Блок сохранён в черновике.");
+    this.notifications.show("success", `Блок «${name}» сохранён в черновике.`);
   }
 
   /** moveBlock changes priority by one position within the local ordered block list. */
@@ -215,7 +223,7 @@ export class GeoScreen {
     this.map.set(emptyMap);
     this.country.reset();
     this.countryGroup.reset();
-    this.countryMessage.set("");
+    this.countryError.set("");
     this.clearBlock();
     this.previewCountry.set("");
   }

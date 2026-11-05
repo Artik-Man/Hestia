@@ -18,6 +18,11 @@ func groupLock(group string) (net.Listener, error) {
 
 // ownedReconcile prevents a snapshot writer from overwriting a Linux selector owned by a balance or guard command.
 func ownedReconcile(ctx context.Context, client *http.Client, base string, group routing.Group, target string) (bool, error) {
+	return ownedDecision(ctx, client, base, group, func(string) string { return target })
+}
+
+// ownedDecision evaluates a group against its live selector while holding the normal writer reservation.
+func ownedDecision(ctx context.Context, client *http.Client, base string, group routing.Group, choose func(string) string) (bool, error) {
 	if runtime.GOOS == "linux" {
 		lock, err := groupLock(group.ID)
 		if err != nil {
@@ -25,5 +30,5 @@ func ownedReconcile(ctx context.Context, client *http.Client, base string, group
 		}
 		defer lock.Close()
 	}
-	return reconcile(ctx, client, base, group, target)
+	return reconcileDecision(ctx, client, base, group, choose)
 }

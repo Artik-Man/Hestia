@@ -4,10 +4,24 @@ import hashlib
 import importlib.util
 import json
 import shutil
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
-from profile import compile_profile, managed_profile, semantically_equal_backend, stage_binding, stage_order
+from unittest.mock import patch
+from smoke import expected_target
+from profile import (
+    compile_profile,
+    managed_profile,
+    semantically_equal_backend,
+    stage_binding,
+    stage_create_group,
+    stage_delete_group,
+    stage_move_exit,
+    stage_order,
+    stage_rename_group,
+)
 
 EXAMPLES = Path(__file__).parent / "examples"
 
@@ -28,6 +42,12 @@ class ProfileTests(unittest.TestCase):
         """Compile the current test profile using only its temporary directory for secrets."""
         return compile_profile(self.profile, self.base)
 
+    def test_mask_rejects_non_ascii_before_lowercasing(self):
+        """Reject non-ASCII masks even when lowercase conversion produces a valid ASCII label."""
+        self.profile["lists"][0]["masks"] = ["*.K.example"]
+        with self.assertRaisesRegex(ValueError, "ASCII"):
+            self.compile()
+
     def test_domain_exceptions_and_unassigned_list(self):
         """Verify mask precedence, disabled lists, default group and isolated overlapping addresses."""
         snapshot, engine = self.compile()
@@ -35,7 +55,7 @@ class ProfileTests(unittest.TestCase):
         routes = engine["route"]
         self.assertEqual(routes["final"], "russia")
         self.assertEqual(
-            [(r["domain_suffix"], r["outbound"]) for r in routes["rules"]],
+            [(r["domain_suffix"], r["outbound"]) for r in routes["rules"] if "domain_suffix" in r],
             [("deepseek.com", "russia"), ("com", "finland")],
         )
         self.assertEqual(
@@ -78,7 +98,7 @@ class ProfileTests(unittest.TestCase):
         self.assertEqual(candidate["dns"], old["dns"])
         self.assertEqual(candidate["route"]["final"], "finland")
         self.assertEqual(
-            [(r["domain_suffix"], r["outbound"]) for r in candidate["route"]["rules"]],
+            [(r["domain_suffix"], r["outbound"]) for r in candidate["route"]["rules"] if "domain_suffix" in r],
             [("deepseek.com", "russia"), ("com", "finland"), ("com", "russia")],
         )
         self.assertEqual(
@@ -88,6 +108,14 @@ class ProfileTests(unittest.TestCase):
             json.loads((stage / "profile.json").read_bytes()),
             dict(self.profile, groups=groups),
         )
+
+        moved = self.base / "moved"
+        moved.mkdir()
+        stage_move_exit(stage, moved, "ru-wg", "russia", "finland", 2)
+        _, moved_snapshot, moved_backend = managed_profile(moved)
+        self.assertEqual(moved_snapshot["groups"][0]["exits"], ["fi-backup", "ru-wg", "fi-wg"])
+        self.assertEqual(moved_backend["outbounds"][1]["outbounds"], ["fi-backup", "ru-wg", "fi-wg", "deny"])
+        self.assertEqual(moved_backend["route"], candidate["route"])
 
     def test_reject_missing_traversal_symlink_inline_keys(self):
         """Reject invalid file references and attempts to place secret material directly in the profile."""
@@ -153,14 +181,99 @@ class ProfileTests(unittest.TestCase):
         self.assertEqual(snapshot["groups"][1]["exits"], ["fi-wg", connector])
         self.assertEqual(snapshot["connectorKinds"], {connector: "awg"})
         direct = next(item for item in engine["outbounds"] if item["tag"] == connector)
-        self.assertEqual(direct["type"], "direct")
-        self.assertEqual(direct["bind_interface"], "awg0")
-        self.assertEqual(direct["routing_mark"], 514)
+        self.assertEqual(direct, {"type": "block", "tag": connector})
         self.assertEqual(
             engine["dns"]["servers"][-1],
             {"type": "udp", "tag": "dns-awg-test", "server": "1.1.1.1", "detour": connector},
         )
         self.assertNotIn("secret-marker", json.dumps(engine))
+
+    def test_two_ready_connectors_use_distinct_interfaces_and_dns(self):
+        """Keep overlapping IPv4 profiles on distinct devices and reject slot aliasing."""
+        self.profile["version"] = 2
+        self.profile["connectors"] = []
+        for idx, (group, tag) in enumerate(zip(self.profile["groups"][:2], ("awg-a", "awg-b"))):
+            item = dict(id=tag, type="wireguard", group=group["id"], priority=len(group["exits"]) + 1,
+                        status="ready", ipv6Blocked=True)
+            if idx:
+                item["slot"] = 1
+            directory = self.base / "awg" / tag
+            directory.mkdir(parents=True)
+            meta = dict(item, ipv4Address="10.10.1.1/32", dnsIPv4="10.10.1.2")
+            path = directory / "metadata.json"
+            path.write_text(json.dumps(meta))
+            path.chmod(0o600)
+            self.profile["connectors"].append(item)
+            group["exits"].append(tag)
+            self.profile["healthy"][tag] = True
+        _, backend = self.compile()
+        for idx, tag in enumerate(("awg-a", "awg-b")):
+            outbound = next(item for item in backend["outbounds"] if item["tag"] == tag)
+            self.assertEqual((outbound["bind_interface"], outbound["routing_mark"]),
+                             (f"awg{idx}", 514 + idx))
+            self.assertEqual(outbound["domain_resolver"], "dns-" + tag)
+            self.assertIn(dict(type="udp", tag="dns-" + tag, server="10.10.1.2", detour=tag),
+                          backend["dns"]["servers"])
+        for slot in (0, 50, True):
+            with self.subTest(slot=slot):
+                self.profile["connectors"][1]["slot"] = slot
+                meta["slot"] = slot
+                path.write_text(json.dumps(meta))
+                with self.assertRaisesRegex(ValueError, "slot"):
+                    self.compile()
+
+    def test_upgrade_preserves_legacy_active_and_blocks_old_inactive_outbound(self):
+        """Stage only the legacy inactive outbound change and retain the live legacy profile's slot zero."""
+        self.profile = json.loads((Path(__file__).parent / "scheme3" / "guest-profile.json").read_text())
+        group = self.profile["groups"][0]
+        for tag, status in (("old-a", "ready"), ("old-b", "configured")):
+            connector = dict(id=tag, type="wireguard", group=group["id"], priority=len(group["exits"]) + 1,
+                             status=status, ipv6Blocked=True)
+            self.profile["connectors"].append(connector)
+            group["exits"].append(tag)
+            self.profile["healthy"][tag] = status == "ready"
+            directory = self.base / "awg" / tag
+            directory.mkdir(parents=True)
+            path = directory / "metadata.json"
+            path.write_text(json.dumps(dict(connector, ipv4Address="10.1.2.4/32", dnsIPv4="10.1.2.1")))
+            path.chmod(0o600)
+        snapshot, backend = self.compile()
+        active = next(item for item in backend["outbounds"] if item["tag"] == "old-a")
+        active.pop("domain_resolver")
+        direct = next(item for item in backend["outbounds"] if item["tag"] == "keenetic-direct")
+        direct.pop("domain_resolver")
+        local_server = backend["dns"]["servers"].pop()
+        self.assertEqual(local_server, {"type": "local", "tag": "hestia-underlay-resolver"})
+        inactive = next(item for item in backend["outbounds"] if item["tag"] == "old-b")
+        inactive.update(type="direct", bind_interface="awg0", routing_mark=514)
+        for name, content, digest in (("profile.json", self.profile, "profile-source.sha256"),
+                                      ("sing-box.json", backend, "profile-backend.sha256"),
+                                      ("snapshot.json", snapshot, None)):
+            raw = json.dumps(content).encode()
+            (self.base / name).write_bytes(raw)
+            if digest:
+                (self.base / digest).write_text(hashlib.sha256(raw).hexdigest())
+        stage = self.base / "migration"
+        stage.mkdir()
+        cmd = [sys.executable, "-I", str(Path(__file__).parent / "profile.py")]
+        subprocess.run([*cmd, "--stage-awg-backend", str(self.base), str(stage)], check=True)
+        self.assertEqual(subprocess.check_output([*cmd, "--ready-awg", str(self.base)], text=True), "old-a\n")
+        self.assertEqual(subprocess.check_output([*cmd, "--awg-start-plan", str(self.base)], text=True), "old-a 0 auto\n")
+        raw = (stage / "sing-box.json").read_bytes()
+        self.assertEqual((stage / "profile-backend.sha256").read_text().strip(), hashlib.sha256(raw).hexdigest())
+        active["domain_resolver"] = "dns-old-a"
+        direct["domain_resolver"] = "hestia-underlay-resolver"
+        backend["dns"]["servers"].append(local_server)
+        inactive.clear()
+        inactive.update(type="block", tag="old-b")
+        self.assertEqual(json.loads(raw), backend)
+
+    def test_smoke_uses_live_health_per_connector(self):
+        """A failed tunnel selects the next healthy exit, or deny when its group has no fallback."""
+        config = {"healthy": {"awg-a": True, "awg-b": True}, "connectorKinds": {"awg-a": "awg", "awg-b": "awg"}}
+        with patch("smoke.fresh_awg_heartbeat", side_effect=lambda tag: tag == "awg-b"):
+            self.assertEqual(expected_target(config, {"exits": ["awg-a", "awg-b"]}), "awg-b")
+            self.assertEqual(expected_target(config, {"exits": ["awg-a"]}), "deny")
 
     def test_ready_awg_connector_requires_healthy_snapshot(self):
         """Reject a ready connector unless its snapshot records the completed health check."""
@@ -227,6 +340,27 @@ class ProfileTests(unittest.TestCase):
         self.assertEqual(candidate["inbounds"], current["inbounds"])
         self.assertEqual(candidate["outbounds"][0]["default"], "keenetic-direct")
         self.assertEqual(candidate["route"]["final"], "default")
+
+    def test_batch_order_preserves_explicit_deny(self):
+        """Moving another group ahead must not open a nonempty group whose bootstrap selector blocks traffic."""
+        profile = json.loads((Path(__file__).parent / "scheme3" / "guest-profile.json").read_text())
+        group = profile["groups"][0]
+        group["defaultExit"] = "deny"
+        profile["groups"].append({"id": "reserve", "exits": [], "defaultExit": "deny"})
+        snapshot, backend = compile_profile(profile, self.base)
+        for name, content, digest in (("profile.json", profile, "profile-source.sha256"),
+                                      ("sing-box.json", backend, "profile-backend.sha256"),
+                                      ("snapshot.json", snapshot, None)):
+            data = json.dumps(content).encode()
+            (self.base / name).write_bytes(data)
+            if digest:
+                (self.base / digest).write_text(hashlib.sha256(data).hexdigest())
+        stage = self.base / "stage"
+        stage.mkdir()
+        stage_order(self.base, stage, list(reversed(snapshot["groups"])))
+        _, _, candidate = managed_profile(stage)
+        selector = next(out for out in candidate["outbounds"] if out["tag"] == group["id"])
+        self.assertEqual(selector["default"], "deny")
 
     def test_scheme3_managed_profile_rejects_changed_bootstrap_path(self):
         """Reject an adoption candidate whose initial exit or TUN address differs from the live path."""
@@ -323,13 +457,71 @@ class BindingTests(unittest.TestCase):
         self.stage = self.base / "stage"
         self.stage.mkdir(mode=0o700)
 
+    def test_move_wireguard_without_reopening_source_config(self):
+        """Move a legacy WG exit while preserving DNS, backend credentials and domain routing rules."""
+        stage_move_exit(self.base, self.stage, "ru-wg", "russia", "finland", 2)
+        profile, snapshot, backend = managed_profile(self.stage)
+        expected = [{"id": "russia", "exits": []}, {"id": "finland", "exits": ["fi-wg", "ru-wg"]}]
+        self.assertEqual(profile, dict(self.profile, groups=expected))
+        self.assertEqual(snapshot["groups"], expected)
+        self.assertEqual(snapshot["healthy"], {"fi-wg": True})
+        self.assertEqual(backend["outbounds"][1]["outbounds"], ["deny"])
+        self.assertEqual(backend["outbounds"][2]["outbounds"], ["fi-wg", "ru-wg", "deny"])
+        self.assertEqual(backend, dict(self.backend, outbounds=backend["outbounds"]))
+
+    def test_create_empty_group_without_reopening_wireguard_sources(self):
+        """Create a deny-only selector while preserving the original routes, group order and runtime availability."""
+        stage_create_group(self.base, self.stage, "new-group")
+        profile, snapshot, backend = managed_profile(self.stage)
+        group = {"id": "new-group", "exits": []}
+        self.assertEqual(profile, dict(self.profile, groups=[*self.profile["groups"], group]))
+        self.assertEqual(snapshot["healthy"], {"fi-wg": True})
+        expected = [*self.backend["outbounds"], {
+            "type": "selector", "tag": "new-group", "outbounds": ["deny"],
+            "default": "deny", "interrupt_exist_connections": True,
+        }]
+        self.assertEqual(backend, dict(self.backend, outbounds=expected))
+
+    def test_delete_group_preserves_bound_lists_as_unassigned(self):
+        """Drop a named selector and its DNS routes while retaining masks and all unrelated backend state."""
+        stage_create_group(self.base, self.stage, "remove-me", "Удаляемая")
+        bound, deleted = self.base / "bound", self.base / "deleted"
+        bound.mkdir()
+        deleted.mkdir()
+        stage_binding(self.stage, bound, "exception", "remove-me")
+        stage_delete_group(bound, deleted, "remove-me")
+        profile, snapshot, backend = managed_profile(deleted)
+        expected = [dict(item, group="" if item["id"] == "exception" else item["group"]) for item in self.profile["lists"]]
+        self.assertEqual(profile, dict(self.profile, lists=expected))
+        self.assertEqual(snapshot["lists"], expected)
+        self.assertEqual(snapshot["healthy"], {"fi-wg": True})
+        self.assertEqual(backend["outbounds"], self.backend["outbounds"])
+        self.assertFalse(any(item["outbound"] == "remove-me" for item in backend["route"].get("rules", [])))
+
+    def test_display_name_survives_reorder_without_reopening_vpn_sources(self):
+        """Rename a bound legacy group, reorder the groups, and verify selector tags, bindings and display name."""
+        before = managed_profile(self.base)
+        stage_rename_group(self.base, self.stage, "russia", "Домашняя сеть")
+        renamed, snapshot, backend = managed_profile(self.stage)
+        self.assertEqual(renamed["groups"][0], dict(self.profile["groups"][0], name="Домашняя сеть"))
+        self.assertEqual(renamed["lists"], self.profile["lists"])
+        self.assertEqual(backend, before[2])
+        self.assertEqual(snapshot["groups"][0]["name"], "Домашняя сеть")
+        ordered = self.base / "ordered"
+        ordered.mkdir()
+        stage_order(self.stage, ordered, list(reversed(self.profile["groups"])))
+        ordered_profile, ordered_snapshot, _ = managed_profile(ordered)
+        self.assertEqual(ordered_profile["groups"][-1]["name"], "Домашняя сеть")
+        self.assertEqual(ordered_snapshot["groups"][-1]["id"], "russia")
+        self.assertEqual(ordered_snapshot["groups"][-1]["name"], "Домашняя сеть")
+
     def test_binding_regenerates_derived_routes(self):
         """Rebinding an active list changes only routes, binding and metadata in staging."""
         stage_binding(self.base, self.stage, "exception", "finland")
         candidate = json.loads((self.stage / "sing-box.json").read_text())
         original = dict(self.backend)
-        self.assertEqual(original.pop("route")["rules"][0]["outbound"], "russia")
-        self.assertEqual(candidate.pop("route")["rules"][0]["outbound"], "finland")
+        self.assertEqual(next(r["outbound"] for r in original.pop("route")["rules"] if "domain_suffix" in r), "russia")
+        self.assertEqual(next(r["outbound"] for r in candidate.pop("route")["rules"] if "domain_suffix" in r), "finland")
         self.assertEqual(candidate, original)
         self.assertTrue(
             all(file.stat().st_mode & 0o077 == 0 for file in self.stage.iterdir())
@@ -347,15 +539,14 @@ class BindingTests(unittest.TestCase):
                 hashlib.sha256((self.stage / filename).read_bytes()).hexdigest(),
             )
 
-    def test_order_rejects_membership_transfer(self):
-        """Transferring an exit to another group never produces private staging files."""
+    def test_order_stages_membership_transfer(self):
+        """A complete saved order can move both exits into one group."""
         groups = [
             {"id": "russia", "exits": []},
             {"id": "finland", "exits": ["fi-wg", "ru-wg"]},
         ]
-        with self.assertRaises(ValueError):
-            stage_order(self.base, self.stage, groups)
-        self.assertEqual(list(self.stage.iterdir()), [])
+        stage_order(self.base, self.stage, groups)
+        self.assertEqual(json.loads((self.stage / "snapshot.json").read_text())["groups"], groups)
 
     def test_committed_binding_exports_without_source_assets(self):
         """Export a rebound profile from staged files, then reproduce routing with restored VPN assets."""
@@ -387,7 +578,7 @@ class BindingTests(unittest.TestCase):
             "rules"
         ]
         self.assertEqual(
-            [(r["domain_suffix"], r["outbound"]) for r in routes], [("com", "finland")]
+            [(r["domain_suffix"], r["outbound"]) for r in routes if "domain_suffix" in r], [("com", "finland")]
         )
         changed = json.loads((self.stage / "profile.json").read_text())["lists"][1]
         self.assertEqual(

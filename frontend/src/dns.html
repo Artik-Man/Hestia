@@ -80,22 +80,15 @@
     <button type="submit">Проверить черновик</button
     ><button type="button" (click)="reset()">Сбросить черновик</button>
   </div>
-  @if (checked()) {
-    @if (errors().length) {
-      <div role="alert" class="notice failure">
-        <p>Исправьте параметры черновика.</p>
-        <ul>
-          @for (message of errors(); track message) {
-            <li>{{ message }}</li>
-          }
-        </ul>
-      </div>
-    } @else {
-      <p role="status" class="notice">
-        Параметры черновика согласованы между собой. Изменения не отправлены на
-        шлюз.
-      </p>
-    }
+  @if (errors().length) {
+    <div role="alert" class="notice failure">
+      <p>Исправьте параметры черновика.</p>
+      <ul>
+        @for (message of errors(); track message) {
+          <li>{{ message }}</li>
+        }
+      </ul>
+    </div>
   }
 </form>
 <hestia-dns-names />

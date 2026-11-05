@@ -5,5 +5,5 @@ After=hestia-binding-recovery.service
 
 [Service]
 Type=oneshot
-TimeoutStartSec=320s
+TimeoutStartSec=47min
 ExecStart=/usr/local/bin/hestia -watch-pending-binding

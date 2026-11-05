@@ -56,7 +56,7 @@ func (InstalledRuntime) Check(parent context.Context, profile Profile) error {
 	if err := runAWG(ctx, ipToolPath, "link", "set", "dev", name, "up"); err != nil {
 		return errors.New("cannot activate temporary AmneziaWG interface")
 	}
-	if err := runAWG(ctx, awgToolPath, "set", name, "peer", publicKey(profile.RuntimeConfig), "persistent-keepalive", "1"); err != nil {
+	if err := runAWG(ctx, awgToolPath, "set", name, "peer", peerSetting(profile.RuntimeConfig, "PublicKey"), "persistent-keepalive", "1"); err != nil {
 		return errors.New("cannot start temporary AmneziaWG handshake")
 	}
 	if err := waitHandshake(ctx, name, runProcess); err != nil {
@@ -157,11 +157,32 @@ func hasHandshakeTimestamp(data []byte) bool {
 	return false
 }
 
-// publicKey extracts the non-secret public key from the validated peer UAPI settings.
-func publicKey(config []byte) string {
+// initiateHandshake provokes a handshake before traffic is admitted, then restores the profile's keepalive setting.
+func initiateHandshake(ctx context.Context, name string, config []byte, run func(string, ...string) ([]byte, error)) error {
+	probe, cancel := context.WithTimeout(ctx, 20*time.Second)
+	defer cancel()
+	peer := peerSetting(config, "PublicKey")
+	if err := runAWG(probe, awgToolPath, "set", name, "peer", peer, "persistent-keepalive", "1"); err != nil {
+		return errors.New("cannot initiate AWG runtime handshake")
+	}
+	if err := waitHandshake(probe, name, run); err != nil {
+		return err
+	}
+	keepalive := peerSetting(config, "PersistentKeepalive")
+	if keepalive == "" {
+		keepalive = "0"
+	}
+	if err := runAWG(probe, awgToolPath, "set", name, "peer", peer, "persistent-keepalive", keepalive); err != nil {
+		return errors.New("cannot restore AWG peer keepalive")
+	}
+	return nil
+}
+
+// peerSetting returns one named setting from the validated single-peer UAPI configuration, or empty if absent.
+func peerSetting(config []byte, setting string) string {
 	for _, line := range strings.Split(string(config), "\n") {
 		key, value, ok := strings.Cut(line, "=")
-		if ok && strings.TrimSpace(key) == "PublicKey" {
+		if ok && strings.TrimSpace(key) == setting {
 			return strings.TrimSpace(value)
 		}
 	}

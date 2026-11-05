@@ -1,0 +1,22 @@
+[Unit]
+Description=Hestia userspace WireGuard/AmneziaWG connector %i
+Wants=network-online.target
+After=network-online.target
+Before=hestia-sing-box.service hestia.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+ExecStart=/usr/local/bin/hestia -awg-runtime %i
+Restart=on-failure
+RestartSec=5s
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadOnlyPaths=/etc/hestia
+ReadWritePaths=/run/amneziawg /run/hestia-awg
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_CHOWN
+AmbientCapabilities=CAP_NET_ADMIN CAP_CHOWN
+UMask=0077

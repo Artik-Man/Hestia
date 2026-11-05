@@ -29,3 +29,25 @@ func (c *GroupOrderChange) UnmarshalJSON(data []byte) error {
 	decoder.DisallowUnknownFields()
 	return decoder.Decode((*wireOrder)(c))
 }
+
+// GroupIdentifier is the stable routing ID and optional display name confirmed by the gateway.
+type GroupIdentifier struct {
+	ID   string `json:"id" minLength:"1" maxLength:"63" pattern:"^[a-z][a-z0-9-]{0,62}$"`
+	Name string `json:"name,omitempty"`
+}
+
+// GroupCreateRequest accepts a new display name or an explicit ID from older clients, exclusively.
+type GroupCreateRequest struct {
+	ID   *string `json:"id,omitempty" minLength:"1" maxLength:"63" pattern:"^[a-z][a-z0-9-]{0,62}$"`
+	Name *string `json:"name,omitempty" minLength:"1" maxLength:"80"`
+}
+
+// GroupDeleteCommand identifies the single group to delete in the privileged helper request.
+type GroupDeleteCommand struct {
+	ID string `json:"id"`
+}
+
+// GroupName supplies the human-readable name for an existing routing group.
+type GroupName struct {
+	Name string `json:"name" minLength:"1" maxLength:"80"`
+}

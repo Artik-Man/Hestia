@@ -1,0 +1,155 @@
+dialog.profile-dialog {
+  width: min(44rem, calc(100% - 2rem));
+  max-height: min(90dvh, 56rem);
+  padding: 0;
+}
+.profile-dialog h2 {
+  font-size: 1.25rem;
+  margin: 0;
+  padding: 1.25rem 1.5rem 1rem;
+}
+.profile-dialog form {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-height: 0;
+}
+.profile-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+.scroll-body {
+  padding: 0 1.5rem 0.75rem;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0 0 1rem;
+  min-width: 0;
+}
+legend,
+summary {
+  font-size: 0.95rem;
+  font-weight: 650;
+  margin-bottom: 0.5rem;
+  color: #254842;
+}
+summary {
+  cursor: pointer;
+}
+.field-grid,
+.metadata-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem 0.9rem;
+}
+.metadata-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+label {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  min-width: 0;
+}
+.wide {
+  grid-column: 1 / -1;
+}
+input,
+select {
+  width: 100%;
+  min-width: 0;
+}
+select {
+  font: inherit;
+  color: inherit;
+  background: white;
+  border: 1px solid #aabfb7;
+  border-radius: 0.4rem;
+  padding: 0.5rem;
+}
+.import-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+  color: #53696c;
+  overflow-wrap: anywhere;
+}
+.profile-dialog .actions {
+  justify-content: flex-end;
+  border-top: 1px solid #dce6e1;
+  padding: 0.75rem 1.5rem;
+}
+.profile-error {
+  margin: 0;
+  padding: 0.65rem 1.5rem;
+  color: #893d24;
+}
+@media (max-width: 550px) {
+  .field-grid,
+  .metadata-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .scroll-body {
+    padding-inline: 1rem;
+  }
+}
+
+.transport {
+  display: grid;
+  gap: 0.3rem;
+  margin-top: 0.75rem;
+}
+.transport button {
+  font: inherit;
+  color: inherit;
+  background: white;
+  border: 1px solid #aabfb7;
+  border-radius: 0.4rem;
+  padding: 0.4rem 0.65rem;
+  cursor: pointer;
+}
+.transport button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+#underlay-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.transport-options {
+  border: 1px solid #aabfb7;
+  border-radius: 0.4rem;
+  padding: 0.4rem 0.6rem;
+}
+.transport-options label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.25rem;
+  overflow-wrap: anywhere;
+}
+.transport-options input {
+  flex: none;
+  width: 1rem;
+}
+.transport-row {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.transport-row[draggable="true"] {
+  cursor: grab;
+}
+.transport-row label {
+  flex: 1;
+}

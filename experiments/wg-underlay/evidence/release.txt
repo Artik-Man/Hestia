@@ -1,0 +1,54 @@
+MODE awg
+AmneziaWG peers configured with ContentPaddingAddition=7-23 and RandomTrailers=on
+kernel=6.1.0-53-cloud-arm64; unmarked route to peer: 198.19.10.10 via 198.18.2.2 dev forbidden src 198.18.2.1 uid 0 
+hestia sha256=5255535ad1867e8b9110628ec5884f553003f44f9e3df18f583fc643c8c7575d
+guarded startup: child service running with IPv4 and IPv6 guards; readiness withheld before backend
+quality preflight preferred: HTTP 200 {"delay":10}
+quality preflight backup: HTTP 200 {"delay":1}
+initial: echo matched; encrypted trial via chosen0 only
+failed-primary: echo matched; encrypted trial via chosen1 only
+recovered-primary: echo matched; encrypted trial via chosen0 only
+all selected paths down: no echo; 0 WireGuard packets on forbidden; 1 unmarked control packet captured
+restored-backup: echo matched; encrypted trial via chosen1 only
+main routing table unchanged
+EXIT awg 0
+MODE udp
+kernel=6.1.0-53-cloud-arm64; unmarked route to peer: 198.19.10.10 via 198.18.2.2 dev forbidden src 198.18.2.1 uid 0 
+hestia sha256=5255535ad1867e8b9110628ec5884f553003f44f9e3df18f583fc643c8c7575d
+guarded startup: child service running with IPv4 and IPv6 guards; readiness withheld before backend
+quality preflight preferred: HTTP 200 {"delay":10}
+quality preflight backup: HTTP 200 {"delay":1}
+initial: echo matched; encrypted trial via chosen0 only
+preferred HTTPS healthy, only WireGuard UDP dropped
+udp-only-failover: echo matched; encrypted trial via chosen1 only
+backup stable through 65s of persistent selective UDP loss (148 fresh echoes), all trials captured on verified backup
+restoring preferred with an additional 120ms of outbound latency; backup stays faster
+recovered-peer: echo matched; encrypted trial via chosen0 only
+EXIT udp 0
+MODE direct
+kernel=6.1.0-53-cloud-arm64; unmarked route to peer: 198.19.10.10 via 198.18.2.2 dev forbidden src 198.18.2.1 uid 0 
+hestia sha256=5255535ad1867e8b9110628ec5884f553003f44f9e3df18f583fc643c8c7575d
+guarded startup: child service running with IPv4 and IPv6 guards; readiness withheld before backend
+quality preflight preferred: HTTP 200 {"delay":9}
+quality preflight backup: HTTP 200 {"delay":1}
+initial: echo matched; encrypted trial via chosen0 only
+failed-primary: echo matched; encrypted trial via chosen1 only
+recovered-primary: echo matched; encrypted trial via chosen0 only
+all selected paths down: no echo; 0 WireGuard packets on forbidden; 1 unmarked control packet captured
+restored-backup: echo matched; encrypted trial via chosen1 only
+main routing table unchanged
+EXIT direct 0
+MODE native
+kernel=6.1.0-53-cloud-arm64; unmarked route to peer: 198.19.10.10 via 198.18.2.2 dev forbidden src 198.18.2.1 uid 0 
+hestia sha256=5255535ad1867e8b9110628ec5884f553003f44f9e3df18f583fc643c8c7575d
+guarded startup: child service running with IPv4 and IPv6 guards; readiness withheld before backend
+quality preflight preferred: HTTP 200 {"delay":1}
+quality preflight backup: HTTP 200 {"delay":1}
+initial: echo matched; encrypted trial via chosen0 only
+preferred: independent native WireGuard handshake and child outer UDP observed after decryption
+failed-primary: echo matched; encrypted trial via chosen1 only
+recovered-primary: echo matched; encrypted trial via chosen0 only
+all selected paths down: no echo; 0 WireGuard packets on forbidden; 1 unmarked control packet captured
+restored-backup: echo matched; encrypted trial via chosen1 only
+main routing table unchanged
+EXIT native 0

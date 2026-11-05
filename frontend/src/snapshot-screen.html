@@ -9,7 +9,7 @@
     <p class="kicker"><span class="bar"></span> Маршрутизация</p>
   }
   <div class="title-line">
-    <h1>{{ heading() }}</h1>
+    <h1 #pageHeading tabindex="-1">{{ heading() }}</h1>
     <button
       pButton
       type="button"
@@ -41,16 +41,6 @@
     <p class="lede">{{ page().description }}</p>
   }
 </header>
-@if (binding.result(); as outcome) {
-  @if (
-    selection && selection.kind === "list" && selection.id === outcome.listId
-  ) {
-    <p class="notice" role="status">{{ outcome.text }}</p>
-  }
-}
-@if (page().path === "groups" && !selection && order.notice()) {
-  <p class="notice" role="status">{{ order.notice() }}</p>
-}
 @switch (current.kind) {
   @case ("loading") {
     <p class="notice" role="status">Загружаем конфигурацию…</p>
@@ -69,6 +59,7 @@
     } @else if (page().path === "domain-lists") {
       <hestia-domain-lists
         [lists]="current.snapshot.lists"
+        (removed)="pageHeading.focus()"
         [groups]="current.snapshot.groups"
       />
     } @else {

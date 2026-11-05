@@ -4,5 +4,6 @@ Before=hestia-sing-box.service hestia.service
 
 [Service]
 Type=oneshot
+TimeoutStartSec=16min
 ExecStart=/usr/local/bin/hestia -recover-bindings
 RemainAfterExit=yes

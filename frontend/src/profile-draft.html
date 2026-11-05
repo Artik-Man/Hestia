@@ -1,113 +1,227 @@
-<section class="editor">
-  <h2>
+<dialog
+  id="wireguard-editor"
+  #editor
+  class="gateway-dialog profile-dialog"
+  aria-labelledby="profile-heading"
+  (cancel)="close($event)"
+>
+  <p-toast
+    key="wireguard-editor"
+    class="gateway-toast"
+    position="top-right"
+    [life]="5500"
+  />
+  <h2 id="profile-heading">
     {{
-      connection() || exit()
-        ? "Изменение профиля WireGuard / AmneziaWG"
-        : "Новый профиль WireGuard / AmneziaWG"
+      target()
+        ? "Редактирование подключения WireGuard"
+        : "Новое подключение WireGuard"
     }}
   </h2>
-  <p class="note">
-    Загрузите WireGuard или AmneziaWG 3.1 в формате .conf. Проверка запускает
-    временный туннель. Сохранение применяет профиль, запускает подключение и
-    добавляет его в выбранную группу на указанной позиции. Порядок выходов
-    группы задаёт приоритет выбора.
-  </p>
-  @if (exit() !== null) {
-    <p class="notice" role="status">
-      Загрузка профиля для уже настроенного выхода пока не поддерживается.
-      Добавить новый профиль можно на странице «Подключения».
-    </p>
-  }
-  <form
-    [formGroup]="form"
-    (ngSubmit)="submit()"
-    (input)="report.set('')"
-    (change)="report.set('')"
-    autocomplete="off"
-    novalidate
-  >
-    <div class="fields">
-      <label>
-        Тип подключения
-        <input pInputText class="p-inputtext" value="WireGuard" readonly />
-      </label>
-      <label>
-        ID выхода
-        <input
-          pInputText
-          class="p-inputtext"
-          id="profile-id"
-          formControlName="id"
-          [readOnly]="exit() !== null || connection() !== null"
-        />
-      </label>
-      <label for="profile-group">
-        Группа
-        <p-select
-          formControlName="group"
-          inputId="profile-group"
-          [options]="groupOptions()"
-          optionLabel="id"
-          optionValue="id"
-          placeholder="Выберите группу"
-          appendTo="body"
-        />
-      </label>
-      <label for="profile-priority">
-        Приоритет в группе
-        <p-inputnumber
-          formControlName="priority"
-          inputId="profile-priority"
-          [min]="1"
-          [max]="priorityLimit()"
-          [useGrouping]="false"
-          [showButtons]="true"
-          decrementButtonClass="p-button"
-          incrementButtonClass="p-button"
-        />
-      </label>
-    </div>
-    <div class="config-file">
-      <p class="field-label">Файл WireGuard / AmneziaWG (.conf)</p>
-      <p-fileupload
-        #configUpload
-        mode="basic"
-        name="config"
-        accept=".conf"
-        chooseLabel="Выбрать файл .conf"
-        [auto]="false"
-        [customUpload]="true"
-        [multiple]="false"
-        [fileLimit]="1"
-        [showUploadButton]="false"
-        [showCancelButton]="false"
-        [disabled]="submitting()"
-        ariaLabel="Выбрать файл конфигурации WireGuard или AmneziaWG с расширением .conf"
-        (onSelect)="selectConfig($event)"
-        (onClear)="clearSelectedConfig()"
-        (onRemove)="clearSelectedConfig()"
-      />
-      @if (selectedCandidate(); as file) {
-        <div class="selected-file">
-          <span>
-            {{ file.name }} · {{ fileSize(file.size) }}
-            @if (selectedConfig()) {
-              <span class="muted">Файл выбран локально</span>
-            }
-          </span>
-          <button
-            pButton
-            type="button"
-            class="p-button secondary"
-            [disabled]="submitting()"
-            (click)="clearConfig(configUpload)"
-          >
-            Удалить файл
-          </button>
-        </div>
+  <form [formGroup]="form" (ngSubmit)="submit()" autocomplete="off" novalidate>
+    <div class="scroll-body">
+      @if (reading()) {
+        <p role="status" class="notice">Загрузка параметров…</p>
       }
-      @if (configError()) {
-        <p class="error" role="alert">{{ configError() }}</p>
+      @if (!unavailable()) {
+        <fieldset [disabled]="reading() || submitting()">
+          <legend>Подключение</legend>
+          <div class="metadata-grid">
+            <label for="profile-id"
+              >Название подключения
+              <input
+                pInputText
+                id="profile-id"
+                formControlName="id"
+                maxlength="63"
+                required
+                [readOnly]="target() !== null"
+              />
+            </label>
+            @if (!target()) {
+              <label for="profile-group"
+                >Группа
+                <select id="profile-group" formControlName="group" required>
+                  <option value="" disabled>Выберите группу</option>
+                  @for (group of groups(); track group.id) {
+                    <option [value]="group.id">
+                      {{ group.name ?? group.id }}
+                    </option>
+                  }
+                </select>
+              </label>
+            }
+          </div>
+          <div class="transport">
+            <label id="underlay-label" for="underlay-trigger"
+              >Подключаться через</label
+            >
+            <button
+              type="button"
+              id="underlay-trigger"
+              aria-labelledby="underlay-label underlay-trigger"
+              [attr.aria-expanded]="choicesOpen()"
+              (click)="toggleChoices()"
+            >
+              {{ underlaySummary() || "Любое интернет-подключение" }}
+              <span aria-hidden="true">▾</span>
+            </button>
+            @if (choicesOpen()) {
+              <div
+                class="transport-options"
+                role="group"
+                aria-labelledby="underlay-label"
+              >
+                <label
+                  ><input
+                    type="checkbox"
+                    [checked]="!underlays().length"
+                    [disabled]="!underlays().length"
+                    (change)="underlays.set([])"
+                  />Любое интернет-подключение</label
+                >
+                @if (loadingCandidates()) {
+                  <p role="status">Загрузка подключений…</p>
+                }
+                @for (id of underlayChoices(); track id) {
+                  @let rank = underlays().indexOf(id);
+                  <div
+                    class="transport-row"
+                    [draggable]="rank >= 0"
+                    (dragstart)="startUnderlayDrag($event, id)"
+                    (dragend)="endUnderlayDrag()"
+                    (dragover)="$event.preventDefault()"
+                    (drop)="dropUnderlay($event, id)"
+                  >
+                    <label
+                      ><input
+                        type="checkbox"
+                        [checked]="rank >= 0"
+                        [disabled]="rank < 0 && underlays().length >= 64"
+                        (change)="toggleUnderlay(id)"
+                      />{{ catalog.name(id) }}</label
+                    >
+                    @if (rank >= 0) {
+                      <button
+                        type="button"
+                        [attr.aria-label]="'Выше: ' + catalog.name(id)"
+                        [disabled]="rank === 0"
+                        (click)="moveUnderlay(id, rank - 1)"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        [attr.aria-label]="'Ниже: ' + catalog.name(id)"
+                        [disabled]="rank === underlays().length - 1"
+                        (click)="moveUnderlay(id, rank + 1)"
+                      >
+                        ↓
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+          <div class="import-row">
+            <input
+              hidden
+              #picker
+              type="file"
+              accept=".conf"
+              aria-label="Импорт файла .conf"
+              (change)="importFile(picker)"
+            />
+            <button
+              pButton
+              class="p-button secondary"
+              type="button"
+              (click)="picker.click()"
+            >
+              Импортировать .conf
+            </button>
+            @if (imported()) {
+              <span role="status">{{ imported() }}</span>
+            }
+          </div>
+        </fieldset>
+        <fieldset [disabled]="reading() || submitting()">
+          <legend>Интерфейс</legend>
+          <div class="field-grid">
+            @for (field of localFields; track field) {
+              <label
+                [for]="'wg-' + field"
+                [class.wide]="
+                  field === 'PrivateKey' || field === 'HeaderProtectionKey'
+                "
+                >{{ fieldLabel(field) }}
+                <input
+                  pInputText
+                  #value
+                  [id]="'wg-' + field"
+                  [placeholder]="placeholders[field] ?? ''"
+                  type="text"
+                  spellcheck="false"
+                  autocapitalize="off"
+                  [required]="field !== 'HeaderProtectionKey'"
+                  [value]="values()[field] ?? ''"
+                  (input)="setField(field, value.value)"
+                />
+              </label>
+            }
+          </div>
+        </fieldset>
+        <fieldset [disabled]="reading() || submitting()">
+          <legend>Пир</legend>
+          <div class="field-grid">
+            @for (field of remoteFields; track field) {
+              <label
+                [for]="'wg-' + field"
+                [class.wide]="field === 'PublicKey' || field === 'PresharedKey'"
+                >{{ fieldLabel(field) }}
+                <input
+                  pInputText
+                  #value
+                  [id]="'wg-' + field"
+                  [placeholder]="placeholders[field] ?? ''"
+                  type="text"
+                  spellcheck="false"
+                  autocapitalize="off"
+                  [required]="field !== 'PresharedKey'"
+                  [value]="values()[field] ?? ''"
+                  (input)="setField(field, value.value)"
+                />
+              </label>
+            }
+          </div>
+        </fieldset>
+        <details>
+          <summary>Дополнительные параметры</summary>
+          <fieldset [disabled]="reading() || submitting()">
+            <legend class="sr-only">
+              Дополнительные параметры WireGuard и AmneziaWG
+            </legend>
+            <div class="field-grid">
+              @for (field of optionalFields; track field) {
+                <label [for]="'wg-' + field"
+                  >{{ fieldLabel(field) }}
+                  <input
+                    pInputText
+                    #value
+                    [id]="'wg-' + field"
+                    [placeholder]="placeholders[field] ?? ''"
+                    type="text"
+                    spellcheck="false"
+                    autocapitalize="off"
+                    [value]="values()[field] ?? ''"
+                    (input)="setField(field, value.value)"
+                  />
+                </label>
+              }
+            </div>
+          </fieldset>
+        </details>
       }
     </div>
     <div class="actions">
@@ -115,34 +229,32 @@
         pButton
         type="button"
         class="p-button secondary"
-        [disabled]="submitting() || !selectedConfig()"
-        (click)="check()"
+        [disabled]="submitting()"
+        (click)="close()"
       >
-        {{ submitting() ? "Проверка…" : "Проверить профиль" }}
+        Отмена
       </button>
-      <button
-        pButton
-        type="submit"
-        class="p-button primary"
-        [disabled]="submitting() || !checked() || exit() !== null"
-      >
-        {{
-          submitting()
-            ? "Сохранение…"
-            : connection()
-              ? "Сохранить изменения и включить"
-              : "Сохранить и включить выход"
-        }}
-      </button>
-      <button
-        pButton
-        type="button"
-        class="p-button secondary"
-        (click)="closed.emit()"
-      >
-        Закрыть черновик
-      </button>
+      @if (unavailable()) {
+        @if (target(); as id) {
+          <button
+            pButton
+            type="button"
+            class="p-button primary"
+            (click)="loadProfile(id)"
+          >
+            Повторить загрузку
+          </button>
+        }
+      } @else {
+        <button
+          pButton
+          type="submit"
+          class="p-button primary"
+          [disabled]="submitting() || reading()"
+        >
+          {{ submitting() ? "Сохранение…" : "Сохранить" }}
+        </button>
+      }
     </div>
-    <p role="status" class="status">{{ report() }}</p>
   </form>
-</section>
+</dialog>

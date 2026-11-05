@@ -1,0 +1,11 @@
+2026-11-04; hestia-load-01; Linux 6.1.0-53-cloud-arm64.
+Baseline runtime-only check (before group selectors and keepalive changes):
+two runtimes ready; main IPv4 table unchanged
+slot 1 peer=tunnel-b replies=1 single TLS connection
+secondary unreachable for IPv4 and IPv6 with unmarked underlay alive
+slot 1 peer=tunnel-b replies=1 single TLS connection
+slot 0 peer=tunnel-a replies=4 single TLS connection
+Group check (WG without PersistentKeepalive and AWG Jc=1/Jmin=20/Jmax=30):
+WG without keepalive and AWG with 25s keepalive are ready; settings restored; main IPv4 table unchanged
+sing-box 1.14.4 refused startup before any group traffic:
+missing route.default_domain_resolver or domain_resolver in dial fields is deprecated in sing-box 1.12.0 and will be removed in sing-box 1.14.0

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 
 	"github.com/Artik-Man/Hestia/internal/awg"
 	"github.com/Artik-Man/Hestia/internal/controller"
@@ -18,15 +19,18 @@ import (
 var ErrInvalidConnector = errors.New("invalid WireGuard connector change")
 
 type connectorProfile struct {
-	ID          string `json:"id"`
-	Type        string `json:"type"`
-	Group       string `json:"group"`
-	Priority    int    `json:"priority"`
-	IPv6Blocked bool   `json:"ipv6Blocked"`
-	Status      string `json:"status"`
+	Underlays   []string `json:"underlays,omitempty"`
+	Slot        int      `json:"slot,omitempty"`
+	ID          string   `json:"id"`
+	Type        string   `json:"type"`
+	Group       string   `json:"group"`
+	Priority    int      `json:"priority"`
+	IPv6Blocked bool     `json:"ipv6Blocked"`
+	Status      string   `json:"status"`
 }
 
 type connectorGroup struct {
+	Name        string   `json:"name,omitempty"`
 	ID          string   `json:"id"`
 	Exits       []string `json:"exits"`
 	DefaultExit string   `json:"defaultExit,omitempty"`
@@ -37,14 +41,15 @@ type storedProfile struct {
 	Interfaces []struct {
 		ID             string `json:"id"`
 		Type           string `json:"type"`
-		ConfigFile     string `json:"config_file"`
+		ConfigFile     string `json:"config_file,omitempty"`
 		PrivateKeyFile string `json:"private_key_file,omitempty"`
 		BindInterface  string `json:"bind_interface,omitempty"`
 	} `json:"interfaces"`
-	Inbounds   []json.RawMessage  `json:"inbounds,omitempty"`
-	Connectors []connectorProfile `json:"connectors,omitempty"`
+	Inbounds   []json.RawMessage  `json:"inbounds,omitzero"`
+	Connectors []connectorProfile `json:"connectors"`
 	Groups     []connectorGroup   `json:"groups"`
 	Lists      []struct {
+		Name  string   `json:"name,omitempty"`
 		ID    string   `json:"id"`
 		Group string   `json:"group"`
 		Masks []string `json:"masks"`
@@ -55,7 +60,7 @@ type storedProfile struct {
 
 // ApplyAWG stages profile metadata and secret files in the binding journal, then activates only after the runtime probe.
 func (e Engine) ApplyAWG(ctx context.Context, request panelmodel.AWGSaveRequest, update bool) error {
-	if !awgID(request.ID) || !awgID(request.Group) || request.Priority < 1 {
+	if !awgID(request.ID) || !awg.ValidUnderlays(request.ID, request.Underlays) || ((!update || request.Group != "") && !awgID(request.Group)) || request.Priority < 0 {
 		return ErrInvalidConnector
 	}
 	parsed, err := awg.Parse([]byte(request.Profile))
@@ -66,6 +71,9 @@ func (e Engine) ApplyAWG(ctx context.Context, request panelmodel.AWGSaveRequest,
 		return checkConnectorSnapshot(data, request.ID, request.Group, update, staged)
 	}
 	prepare := func(stage string) error {
+		if installed, err := e.awgUnitInstalled(); err != nil || !installed {
+			return ErrUnavailable
+		}
 		if err := e.run(ctx, python, "-I", profile, "--validate-managed", e.dir); err != nil {
 			return fmt.Errorf("managed profile validation failed: %w", ErrUnavailable)
 		}
@@ -111,7 +119,17 @@ func (e Engine) DeleteAWG(ctx context.Context, id string) error {
 		if index < 0 {
 			return ErrNotFound
 		}
+		for _, c := range current.Connectors {
+			if slices.Contains(c.Underlays, id) {
+				return ErrConflict
+			}
+		}
 		connector := current.Connectors[index]
+		if connector.Status == "ready" {
+			if installed, err := e.awgUnitInstalled(); err != nil || !installed {
+				return ErrUnavailable
+			}
+		}
 		if err := removeGroupExit(current.Groups, connector.Group, id); err != nil {
 			return err
 		}
@@ -136,7 +154,7 @@ func (e Engine) DeleteAWG(ctx context.Context, id string) error {
 	return e.apply(ctx, prepare, check, false)
 }
 
-// stageAWGChange replaces one staged connector, demotes prior ready connectors, and builds the candidate profile generation.
+// stageAWGChange replaces one staged connector, preserves neighboring runtime assignments, and builds the candidate profile generation.
 func stageAWGChange(ctx context.Context, engine Engine, stage string, request panelmodel.AWGSaveRequest, parsed awg.Profile, update bool) error {
 	current, err := readStoredProfile(engine.dir)
 	if err != nil {
@@ -149,12 +167,13 @@ func stageAWGChange(ctx context.Context, engine Engine, stage string, request pa
 	if current.Version != 2 || current.Healthy == nil {
 		return ErrUnavailable
 	}
-	if connectorGroupIndex(current.Groups, request.Group) < 0 {
-		return ErrNotFound
-	}
 	index := connectorIndex(current.Connectors, request.ID)
 	if update && index < 0 {
 		return ErrNotFound
+	}
+	// Older clients omit the preference on PUT. An explicit empty array restores automatic routing.
+	if update && request.Underlays == nil {
+		request.Underlays = current.Connectors[index].Underlays
 	}
 	if !update && index >= 0 {
 		return ErrConflict
@@ -162,35 +181,57 @@ func stageAWGChange(ctx context.Context, engine Engine, stage string, request pa
 	if idInProfile(current, request.ID) && index < 0 {
 		return ErrConflict
 	}
-	if err := removeGroupExitIfPresent(current.Groups, request.ID); err != nil {
-		return err
+	oldGroup, oldPriority := groupExitLocation(current.Groups, request.ID)
+	if update && request.Group == "" {
+		request.Group = oldGroup
 	}
 	groupIndex := connectorGroupIndex(current.Groups, request.Group)
-	group := &current.Groups[groupIndex]
-	if request.Priority > len(group.Exits)+1 {
-		return ErrInvalidConnector
+	if groupIndex < 0 {
+		return ErrNotFound
 	}
-	group.Exits = insertExit(group.Exits, request.Priority-1, request.ID)
-	if current.Inbounds != nil {
-		group.DefaultExit = request.ID
+	group := &current.Groups[groupIndex]
+	priority := int(request.Priority)
+	if priority == 0 {
+		if update && oldGroup == request.Group {
+			priority = oldPriority
+		} else {
+			priority = len(group.Exits) + 1
+		}
+	}
+	slot, err := allocateConnectorSlot(current.Connectors, request.ID)
+	if err != nil {
+		return err
+	}
+	if !update || oldGroup != request.Group || oldPriority != priority {
+		if err := removeGroupExitIfPresent(current.Groups, request.ID); err != nil {
+			return err
+		}
+		if priority < 1 || priority > len(group.Exits)+1 {
+			return ErrInvalidConnector
+		}
+		group.Exits = insertExit(group.Exits, priority-1, request.ID)
+		if current.Inbounds != nil && (request.Priority != 0 || len(group.Exits) == 1) {
+			group.DefaultExit = request.ID
+		}
 	}
 	for i := range current.Connectors {
 		old := &current.Connectors[i]
 		old.Group, old.Priority = groupExitLocation(current.Groups, old.ID)
-		old.Status = "configured"
-		current.Healthy[old.ID] = false
 		if err := updateStagedMetadata(stage, *old); err != nil {
 			return err
 		}
 	}
-	connector := connectorProfile{ID: request.ID, Type: parsed.Protocol, Group: request.Group, Priority: request.Priority, IPv6Blocked: parsed.IPv6Blocked, Status: "ready"}
+	connector := connectorProfile{Underlays: request.Underlays, Slot: slot, ID: request.ID, Type: parsed.Protocol, Group: request.Group, Priority: priority, IPv6Blocked: parsed.IPv6Blocked, Status: "ready"}
 	current.Healthy[request.ID] = true
 	if index >= 0 {
 		current.Connectors[index] = connector
 	} else {
 		current.Connectors = append(current.Connectors, connector)
 	}
-	metadata := awg.Metadata{ID: request.ID, Group: request.Group, Priority: request.Priority, Status: "ready", IPv6Blocked: parsed.IPv6Blocked, Protocol: parsed.Protocol, IPv4Address: parsed.IPv4Address, DNSIPv4: parsed.DNSIPv4}
+	if !validUnderlayGraph(current) {
+		return ErrInvalidConnector
+	}
+	metadata := awg.Metadata{Underlays: request.Underlays, Slot: slot, ID: request.ID, Group: request.Group, Priority: priority, Status: "ready", IPv6Blocked: parsed.IPv6Blocked, Protocol: parsed.Protocol, IPv4Address: parsed.IPv4Address, DNSIPv4: parsed.DNSIPv4}
 	if err := os.MkdirAll(filepath.Join(stage, awgTreeName), 0700); err != nil {
 		return ErrUnavailable
 	}
@@ -221,6 +262,37 @@ func stageAWGChange(ctx context.Context, engine Engine, stage string, request pa
 		return fmt.Errorf("AWG candidate compilation failed: %w", err)
 	}
 	return nil
+}
+
+// allocateConnectorSlot preserves the ID's assignment and returns an unused slot under the installer lock.
+// Legacy configured profiles may all carry zero, which was reserved only by the ready connector.
+func allocateConnectorSlot(connectors []connectorProfile, id string) (int, error) {
+	var used [awg.SlotCount]bool
+	assigned := -1
+	for _, connector := range connectors {
+		if connector.Slot < 0 || connector.Slot >= len(used) {
+			return 0, ErrUnavailable
+		}
+		if connector.Status != "ready" && connector.Slot == 0 {
+			continue
+		}
+		if used[connector.Slot] {
+			return 0, ErrUnavailable
+		}
+		used[connector.Slot] = true
+		if connector.ID == id {
+			assigned = connector.Slot
+		}
+	}
+	if assigned >= 0 {
+		return assigned, nil
+	}
+	for slot, taken := range used {
+		if !taken {
+			return slot, nil
+		}
+	}
+	return 0, fmt.Errorf("нет свободного интерфейса WireGuard: %w", ErrConflict)
 }
 
 // groupExitLocation returns the one group and one-based priority containing an exit, or empty values if absent.
@@ -455,4 +527,40 @@ func updateStagedMetadata(stage string, connector connectorProfile) error {
 		return ErrUnavailable
 	}
 	return nil
+}
+
+// ReadAWGProfile returns the normalized settings and keys of one committed profile under the installer's shared lock.
+func (e Engine) ReadAWGProfile(id string) (panelmodel.AWGConnectionProfile, error) {
+	var result panelmodel.AWGConnectionProfile
+	if !awgID(id) {
+		return result, ErrNotFound
+	}
+	lock, err := e.acquire(false)
+	if err != nil {
+		return result, err
+	}
+	defer lock.Close()
+	if err := e.validateInstallation(); err != nil {
+		return result, err
+	}
+	if _, err := os.Lstat(filepath.Join(e.dir, pending)); !errors.Is(err, os.ErrNotExist) {
+		return result, ErrUnavailable
+	}
+	root := filepath.Join(e.dir, awgTreeName)
+	if _, err := os.Lstat(root); errors.Is(err, os.ErrNotExist) {
+		return result, ErrNotFound
+	}
+	if err := privateDirectory(root); err != nil {
+		return result, err
+	}
+	path := filepath.Join(root, id)
+	if _, err := os.Lstat(path); errors.Is(err, os.ErrNotExist) {
+		return result, ErrNotFound
+	}
+	var total int64
+	metadata, profile, err := readAWGDirectory(path, id, &total)
+	if err != nil {
+		return result, err
+	}
+	return panelmodel.AWGConnectionProfile{Underlays: metadata.Underlays, ID: metadata.ID, Group: metadata.Group, Priority: metadata.Priority, Profile: string(profile.SecretConfig)}, nil
 }

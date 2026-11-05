@@ -80,6 +80,11 @@ func apply(ctx context.Context, client *http.Client, base string, cfg Config, do
 
 // reconcile checks the effective selector, writes only on divergence and confirms the write.
 func reconcile(ctx context.Context, client *http.Client, base string, group routing.Group, target string) (bool, error) {
+	return reconcileDecision(ctx, client, base, group, func(string) string { return target })
+}
+
+// reconcileDecision derives the desired target from verified live membership and confirms any selector change.
+func reconcileDecision(ctx context.Context, client *http.Client, base string, group routing.Group, choose func(string) string) (bool, error) {
 	endpoint := base + "/proxies/" + url.PathEscape(group.ID)
 	members := append([]string{deny}, group.Exits...)
 	current, err := readSelector(ctx, client, endpoint)
@@ -89,6 +94,7 @@ func reconcile(ctx context.Context, client *http.Client, base string, group rout
 	if !current.matches(members) {
 		return false, fmt.Errorf("selector %q membership or type differs from configuration", group.ID)
 	}
+	target := choose(current.Now)
 	if current.Now != target {
 		if err := setTarget(ctx, client, endpoint, target); err != nil {
 			return false, fmt.Errorf("selector update not confirmed: %w", err)

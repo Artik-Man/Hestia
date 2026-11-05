@@ -1,120 +1,128 @@
+<hestia-physical-connections
+  [revision]="revision()"
+  (rename)="openDirect(nameDialog, $event)"
+/>
 <section aria-labelledby="connections-heading">
-  <div class="section-heading">
-    <h2 id="connections-heading">Выходы шлюза</h2>
-    <span class="count">{{ rows().length }}</span>
+  <div class="section-heading profile-toolbar">
+    <h2 id="connections-heading">Виртуальные подключения</h2>
+    <div class="profile-actions">
+      <button
+        pButton
+        type="button"
+        class="p-button secondary"
+        [disabled]="loadingProfiles()"
+        (click)="refresh()"
+      >
+        Обновить состояния
+      </button>
+      <button
+        #addTrigger
+        pButton
+        type="button"
+        class="save"
+        aria-haspopup="menu"
+        aria-controls="connection-types"
+        [attr.aria-expanded]="!!typeMenu.visible"
+        (click)="openTypes(typeMenu, $event, addTrigger)"
+      >
+        Добавить <span aria-hidden="true">▾</span>
+      </button>
+      <p-menu
+        #typeMenu
+        id="connection-types"
+        ariaLabel="Тип подключения"
+        [model]="connectionTypes"
+        [popup]="true"
+      />
+    </div>
   </div>
-  <p class="hint">Приоритет 1 соответствует первому выходу группы.</p>
-  @if (rows().length) {
-    <div class="list-wrap">
-      <table class="connections">
-        <caption class="sr-only">
-          Настроенные выходы и доступность по снимку конфигурации
-        </caption>
-        <thead>
+  <div class="list-wrap">
+    <table aria-label="Виртуальные подключения">
+      <thead>
+        <tr>
+          <th scope="col">Название подключения</th>
+          <th scope="col">Тип подключения</th>
+          <th scope="col">Доступность</th>
+          <th scope="col">Подключается через</th>
+          <th scope="col">Редактировать</th>
+          <th scope="col">Удалить</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows(); track row.id) {
           <tr>
-            <th scope="col">Выход</th>
-            <th scope="col">Группа</th>
-            <th scope="col">Приоритет</th>
-            <th scope="col">Доступность</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (row of rows(); track row.exit.id) {
-            <tr>
-              <th scope="row">
-                <strong
-                  ><a
-                    routerLink="/connections"
-                    [queryParams]="{ exit: row.exit.id }"
-                    >{{ row.exit.id }}</a
-                  ></strong
+            <th scope="row">{{ row.name }}</th>
+            <td>{{ row.entry ? types[row.entry.type] : "—" }}</td>
+            <td>
+              <span class="health" [class.up]="row.available"
+                ><span class="dot"></span
+                >{{
+                  row.profile?.status === "checking"
+                    ? "Проверяется"
+                    : row.available === undefined
+                      ? "Нет данных"
+                      : row.available
+                        ? "Доступно"
+                        : "Недоступно"
+                }}</span
+              >
+            </td>
+            <td>
+              {{
+                row.profile
+                  ? row.profile.underlays?.length
+                    ? row.profile.activeUnderlay
+                      ? catalog.name(row.profile.activeUnderlay)
+                      : "Нет доступного подключения"
+                    : "Любое интернет-подключение"
+                  : "—"
+              }}
+            </td>
+            @if (row.profile; as profile) {
+              <td>
+                <button
+                  pButton
+                  type="button"
+                  class="icon-action"
+                  #editTrigger
+                  [attr.aria-label]="'Редактировать профиль ' + row.id"
+                  title="Редактировать подключение"
+                  [disabled]="deleting() === row.id"
+                  (click)="editConnection(profile, editTrigger)"
                 >
-              </th>
-              <td>
-                <a routerLink="/groups" [queryParams]="{ group: row.group }">{{
-                  row.group
-                }}</a>
-              </td>
-              <td>{{ row.priority }}</td>
-              <td>
-                <span class="health" [class.up]="row.exit.available"
-                  ><span class="dot"></span
-                  >{{ row.exit.available ? "Доступен" : "Недоступен" }}</span
-                >
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  } @else {
-    <p class="notice">Нет настроенных выходов</p>
-  }
-</section>
-
-<section aria-labelledby="awg-profiles-heading">
-  <h2 id="awg-profiles-heading">Профили WireGuard / AmneziaWG</h2>
-  @if (awgLoadError()) {
-    <p class="notice" role="status">{{ awgLoadError() }}</p>
-  }
-  @if (awgConnections().length) {
-    <div class="list-wrap">
-      <table>
-        <caption class="sr-only">
-          Сохранённые профили WireGuard и AmneziaWG
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col">ID</th>
-            <th scope="col">Группа</th>
-            <th scope="col">Приоритет</th>
-            <th scope="col">Состояние</th>
-            <th scope="col">Действия</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (connection of awgConnections(); track connection.id) {
-            <tr>
-              <th scope="row">{{ connection.id }}</th>
-              <td>{{ connection.group }}</td>
-              <td>{{ connection.priority }}</td>
-              <td>
-                {{
-                  connection.status === "ready"
-                    ? "Подключён"
-                    : connection.status === "configured"
-                      ? "Сохранён · не подключён"
-                      : connection.status === "checking"
-                        ? "Проверяется"
-                        : "Ошибка"
-                }}
+                  <span class="edit-icon" aria-hidden="true"></span>
+                </button>
               </td>
               <td>
                 <button
                   pButton
                   type="button"
-                  class="p-button secondary"
-                  [disabled]="deleting() === connection.id"
-                  (click)="editConnection(connection)"
+                  class="icon-action delete-action connection-remove"
+                  [attr.aria-label]="'Удалить подключение ' + row.id"
+                  title="Удалить подключение"
+                  [disabled]="deleting() === row.id"
+                  (click)="deleteConnection(profile)"
                 >
-                  Изменить
-                </button>
-                <button
-                  pButton
-                  type="button"
-                  class="p-button secondary"
-                  [disabled]="deleting() === connection.id"
-                  (click)="deleteConnection(connection)"
-                >
-                  {{ deleting() === connection.id ? "Удаление…" : "Удалить" }}
+                  <span class="delete-icon" aria-hidden="true"></span>
                 </button>
               </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  }
+            } @else {
+              <td>—</td>
+              <td>—</td>
+            }
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6">
+              {{
+                loadingProfiles() ? "Загрузка подключений…" : "Нет подключений"
+              }}
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
 </section>
 
 @if (creating()) {
@@ -125,13 +133,57 @@
     (closed)="closeEditor()"
     (saved)="addSavedConnection($event)"
   />
-} @else {
-  <button
-    pButton
-    type="button"
-    class="p-button refresh"
-    (click)="creating.set(true)"
-  >
-    Добавить WireGuard / AmneziaWG
-  </button>
 }
+
+<dialog
+  id="direct-editor"
+  #nameDialog
+  class="gateway-dialog"
+  aria-labelledby="direct-title"
+  (cancel)="renamePending() && $event.preventDefault()"
+>
+  <p-toast
+    key="direct-editor"
+    class="gateway-toast"
+    position="top-right"
+    [life]="5500"
+  />
+  <form (submit)="saveDirect($event, nameDialog)">
+    <h2 id="direct-title">Редактировать прямое подключение</h2>
+    <label for="direct-name">Название подключения</label>
+    <input
+      pInputText
+      id="direct-name"
+      autofocus
+      required
+      maxlength="80"
+      autocomplete="off"
+      #field
+      [value]="directName()"
+      (input)="directName.set(field.value)"
+      [disabled]="renamePending()"
+    />
+    <div class="actions">
+      <button
+        pButton
+        type="button"
+        class="reset"
+        (click)="nameDialog.close()"
+        [disabled]="renamePending()"
+      >
+        Отмена</button
+      ><button
+        pButton
+        type="submit"
+        class="save"
+        [disabled]="
+          renamePending() ||
+          !directName().trim() ||
+          directName().trim() === (direct()?.name ?? direct()?.id)
+        "
+      >
+        {{ renamePending() ? "Сохранение…" : "Сохранить" }}
+      </button>
+    </div>
+  </form>
+</dialog>

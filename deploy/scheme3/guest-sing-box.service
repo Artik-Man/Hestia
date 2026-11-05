@@ -8,7 +8,8 @@ After=hestia-binding-watch.path
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/sing-box run -c /etc/hestia/sing-box.json
+LoadCredential=sing-box.json:/etc/hestia/sing-box.json
+ExecStart=/usr/local/bin/sing-box run -c %d/sing-box.json
 ExecStartPost=/bin/sh -c 'for n in $(seq 1 30); do ip link show hestia0 >/dev/null 2>&1 && break; sleep 0.1; done; ip link show hestia0 >/dev/null'
 ExecStartPost=/etc/hestia-scheme3/network tun-up
 Restart=on-failure

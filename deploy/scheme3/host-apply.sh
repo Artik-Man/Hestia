@@ -12,12 +12,17 @@ binding_tmpfiles=/etc/tmpfiles.d/hestia-binding.conf
 binding_recovery=/etc/systemd/system/hestia-binding-recovery.service
 binding_watch_path=/etc/systemd/system/hestia-binding-watch.path
 binding_watch_service=/etc/systemd/system/hestia-binding-watch.service
-awg_service=/etc/systemd/system/hestia-awg.service
+awg_service=/etc/systemd/system/hestia-awg@.service
 awg_tools=/usr/local/bin/awg
 awg_go=/usr/local/lib/hestia/amneziawg-go
 awg_store=/etc/hestia/awg
 awg_version_marker=/etc/hestia/.awg-runtime-version
 profile_link=/usr/local/lib/hestia/profile.py
+smoke_file=/usr/local/lib/hestia/smoke.py
+smoke_unit=/etc/systemd/system/hestia-smoke@.service
+backend_unit=/etc/systemd/system/hestia-sing-box.service
+controller_unit=/etc/systemd/system/hestia.service
+backend_check=/usr/local/lib/hestia/sing-box
 marker=$app/.managed
 awg_go_version=3.1.20260828
 awg_tools_version=3.1.20260812
@@ -45,6 +50,16 @@ awg_go_created=0
 awg_tools_created=0
 awg_version_marker_created=0
 profile_link_created=0
+smoke_file_created=0
+smoke_unit_created=0
+backend_check_created=0
+backend_migrated=0
+# shellcheck source=../awg-upgrade.sh
+source "$bundle/scheme3/awg-upgrade.sh"
+legacy_awg_active=0
+legacy_retired=0
+awg_drained=0
+new_awg_started=0
 gateway_ip=$(ip -4 -o addr show dev lima0 scope global | awk '{print $4}')
 gateway_ip=${gateway_ip%/*}
 [[ $gateway_ip =~ ^192\.168\.1\.[0-9]+$ && $gateway_ip != 192.168.1.133 && $(hostname -s) != lima-hestia-stage1 ]] ||
@@ -54,7 +69,7 @@ gateway_ip=${gateway_ip%/*}
     }
 
 if [[ $mode == install && ! -f $marker ]]; then
-    for path in "$app" "$panel" "$panel_sudoers" "$awg_tmpfiles" "$binding_tmpfiles" "$binding_recovery" "$binding_watch_path" "$binding_watch_service" "$awg_service" "$awg_store" "$awg_tools" "$awg_go" "$awg_version_marker" "$profile_link" \
+    for path in "$app" "$panel" "$panel_sudoers" "$awg_tmpfiles" "$binding_tmpfiles" "$binding_recovery" "$binding_watch_path" "$binding_watch_service" "$awg_service" "$awg_store" "$awg_tools" "$awg_go" "$awg_version_marker" "$profile_link" "$smoke_file" "$smoke_unit" "$backend_check" \
         /usr/local/bin/{hestia,sing-box} /etc/{hestia,wireguard/wg-keenetic.conf} /etc/systemd/system/{hestia,hestia-sing-box}.service; do
         [[ ! -e $path && ! -L $path ]] || {
             echo "Unmanaged path: $path" >&2
@@ -92,6 +107,18 @@ if [[ $mode == update ]]; then
         echo "Python 3 is required to verify the managed profile" >&2
         exit 1
     }
+    if [[ -f /run/hestia-install.lock ]]; then
+        exec 8<>/run/hestia-install.lock
+        flock -n 8 || {
+            echo "Another gateway change is in progress" >&2
+            exit 1
+        }
+    fi
+    [[ ! -e /etc/hestia/.binding-pending ]] || {
+        echo "Recover the binding transaction before upgrading" >&2
+        exit 1
+    }
+    inspect_legacy_awg
     python3 -I "$bundle/scheme3/adopt-profile.py" check /etc/hestia "$bundle/scheme3/guest-profile.json" "$bundle/scheme3/profile.py"
 fi
 
@@ -170,6 +197,18 @@ rollback() {
         if ((binding_path_enabled_before == 0)); then systemctl disable hestia-binding-watch.path >/dev/null 2>&1 || :; fi
         if ((awg_tmpfiles_created)); then systemd-tmpfiles --remove "$awg_tmpfiles" >/dev/null 2>&1 || :; fi
         if ((binding_tmpfiles_created)); then systemd-tmpfiles --remove "$binding_tmpfiles" >/dev/null 2>&1 || :; fi
+        if ((new_awg_started)); then
+            systemctl stop hestia.service hestia-sing-box.service
+            while IFS= read -r id; do
+                [[ -n $id ]] || continue
+                systemctl stop "hestia-awg@${id}.service" || exit 1
+                if ((legacy_awg_active)); then retire_migrated_awg "$release/hestia" "$id" || exit 1; fi
+            done <"$release/ready-awg"
+        fi
+        if [[ -f $release/previous-sing-box.json ]]; then
+            cp -p "$release/previous-sing-box.json" /etc/hestia/sing-box.json
+            cp -p "$release/previous-profile-backend.sha256" /etc/hestia/profile-backend.sha256
+        fi
         if [[ -n $old ]]; then
             switch_release "$old"
             if [[ -f $release/previous-panel.service ]]; then cp -p -- "$release/previous-panel.service" "$panel"; fi
@@ -195,11 +234,20 @@ rollback() {
         ((binding_watch_path_created == 0)) || rm -f -- "$binding_watch_path"
         ((binding_watch_service_created == 0)) || rm -f -- "$binding_watch_service"
         ((awg_service_created == 0)) || rm -f -- "$awg_service"
+        for target in "$panel_sudoers" "$awg_service" "$awg_tmpfiles" "$smoke_file" "$binding_recovery" "$binding_watch_service" "$controller_unit"; do
+            if [[ -f $release/previous-${target##*/} ]]; then
+                cp -p -- "$release/previous-${target##*/}" "$target"
+            fi
+        done
         ((binding_tmpfiles_created == 0)) || rm -f -- "$binding_tmpfiles"
         ((awg_go_created == 0)) || rm -f -- "$awg_go"
         ((awg_tools_created == 0)) || rm -f -- "$awg_tools"
         ((awg_version_marker_created == 0)) || rm -f -- "$awg_version_marker"
         ((profile_link_created == 0)) || rm -f -- "$profile_link"
+        ((smoke_unit_created == 0)) || rm -f -- "$smoke_unit"
+        ((smoke_file_created == 0)) || rm -f -- "$smoke_file"
+        ((backend_check_created == 0)) || rm -f -- "$backend_check"
+        if ((backend_migrated)); then cp -p -- "$release/previous-backend.service" "$backend_unit"; fi
         if ((awg_store_created)); then rmdir "$awg_store" >/dev/null 2>&1 || :; fi
         ((sing_box_created == 0)) || rm -f -- /usr/local/bin/sing-box
         if ((panel_user_created)); then userdel hestia-panel >/dev/null 2>&1 || :; fi
@@ -221,6 +269,13 @@ rollback() {
             rm -f -- /usr/local/bin/hestia
             rm -rf -- "$app"
         fi
+        if ((legacy_retired && legacy_awg_active)); then systemctl start hestia-awg.service; fi
+        if ((new_awg_started && !legacy_awg_active)) && [[ -n $old && -f $awg_service ]]; then
+            while IFS= read -r id; do
+                [[ -z $id ]] || systemctl start "hestia-awg@${id}.service"
+            done <"$release/ready-awg"
+        fi
+        if ((backend_migrated || awg_drained)) || [[ -f $release/previous-sing-box.json ]]; then systemctl restart hestia-sing-box.service >/dev/null 2>&1 || :; fi
         if [[ -n $old ]]; then
             systemctl restart hestia hestia-panel >/dev/null 2>&1 || :
         fi
@@ -261,7 +316,7 @@ snapshot_group() {
     fi
 }
 
-# managed_file accepts a source, destination and mode; it installs a root-owned file or accepts an identical managed file, rejecting conflicts.
+# managed_file installs trusted files and backs up recognized inactive AWG versions before migration; unknown changes fail closed.
 managed_file() {
     local source=$1 target=$2 mode=$3
     if [[ -e $target || -L $target ]]; then
@@ -269,10 +324,30 @@ managed_file() {
             echo "Unsafe managed file: $target" >&2
             return 1
         }
-        cmp -s "$source" "$target" || {
-            echo "Managed file differs from the package: $target" >&2
-            return 1
-        }
+        if cmp -s "$source" "$target"; then return 0; fi
+        local previous
+        previous=$(sha256sum "$target" | cut -d' ' -f1)
+        case "$target:$previous" in
+            "$controller_unit":12aaec1dbd0c1e54d674c448a0467aa1954a2f87f23b65775d952668f17baf68 | "$binding_watch_service":f6f721ec694af19997180094cabd2bf96fa530d0ff6559b6db3126315fa92078 | "$binding_recovery":449163cbc40901e498ba8a5de74ae893f1b6fa3f721ca5c0d577e5bab4492502 | "$smoke_file":a4b2763f867c546ff02637dccfc1b316f1f342bcc028f75bf1027d5fb5f212b7 | "$smoke_file":1f95838a4b3f45a79d08aa6f4df7893edc410166bcd9eebcfb8692cd90b78142 | "$smoke_file":74f626d6de67a743d0082f66e55cbed178d8ea36a30218b84e30e171cb3bf561 | "$smoke_file":c93a0c8f42f24f96aaef76638e2044544778c144691917aa3955cf49a88d2fc6 | "$panel_sudoers":150a675a628123f1fea590563bb2eb129803ab7ff8ad7987ffb92501c928bd44 | "$panel_sudoers":cc1c813d8bba3e29c406dcf04bc4772ef22fa2f4cd8168491811ff3769c017ef | "$panel_sudoers":96a12debbbb6afc3de2f98a3c8aa4628a55bd6b05e8047173e4c428361333456 | "$panel_sudoers":cc665297f3f43113126a5fdf303c5088015f747fb0fbd1bbb05fa76ad9c110d3 | "$panel_sudoers":a3fd9237e06b658932095935ba60c8ab750c17a9c655bdae53c3c4ae1f4d676a | "$panel_sudoers":20655643a3ce21829a4e30cc4b08afb655382ee08a42e691341bb4ac301f388a | "$panel_sudoers":0e95cecc23ae35532080fc09e41895c96d7f78c389ae83771bb04c96c48afa87 | "$panel_sudoers":915430a136027d5caf4672e3c5cf862e289fb58b8ef0df546ccef40f2cd3e878)
+                cp -p -- "$target" "$release/previous-${target##*/}"
+                install -o root -g root -m "$mode" "$source" "$target"
+                ;;
+            "$awg_service":87c037de33a3e88565549f33dbc69410a38d3e2ed548d116d409e6397819a590 | "$awg_tmpfiles":29ef199c3a64383d0d883aa25c18f04200787c5715a9356e05902ef83ffbef27 | "$awg_tmpfiles":bc4b7d36083c710df3a089e25c0d7c0a42a9130c807ccd829809f9b4e5ef50f2)
+                case $(systemctl is-active hestia-awg.service 2>/dev/null || :) in
+                    inactive | failed) ;;
+                    *)
+                        echo "Cannot replace active or uninspectable AWG unit or runtime layout" >&2
+                        return 1
+                        ;;
+                esac
+                cp -p -- "$target" "$release/previous-${target##*/}"
+                install -o root -g root -m "$mode" "$source" "$target"
+                ;;
+            *)
+                echo "Managed file differs from the package: $target" >&2
+                return 1
+                ;;
+        esac
         return 0
     fi
     install -o root -g root -m "$mode" "$source" "$target"
@@ -284,6 +359,9 @@ managed_file() {
         "$binding_watch_path") binding_watch_path_created=1 ;;
         "$binding_watch_service") binding_watch_service_created=1 ;;
         "$awg_service") awg_service_created=1 ;;
+        "$smoke_unit") smoke_unit_created=1 ;;
+        "$smoke_file") smoke_file_created=1 ;;
+        "$backend_check") backend_check_created=1 ;;
     esac
 }
 
@@ -349,6 +427,22 @@ else
     install -d -o root -g root -m 0700 "$awg_store"
     awg_store_created=1
 fi
+if [[ $mode == update && -f /etc/hestia/.installer-managed ]]; then
+    python3 -I "$release/profile.py" --ready-awg /etc/hestia >"$release/ready-awg"
+    install -d -m 0700 "$release/migration"
+    python3 -I "$release/profile.py" --stage-awg-backend /etc/hestia "$release/migration"
+    if [[ -f $release/migration/sing-box.json ]]; then
+        /usr/local/bin/sing-box check -c "$release/migration/sing-box.json"
+        cp -p /etc/hestia/profile-backend.sha256 "$release/previous-profile-backend.sha256"
+        cp -p /etc/hestia/sing-box.json "$release/previous-sing-box.json"
+    fi
+    if ((legacy_awg_active)) || [[ -s $release/ready-awg ]]; then
+        awg_drained=1
+        systemctl stop hestia.service hestia-sing-box.service
+    fi
+    legacy_retired=1
+    stop_legacy_awg "$release/hestia" "$(<"$release/ready-awg")"
+fi
 prepare_awg_tools "$release/awg-tools-build"
 install -d -m 0700 "$release/awg-check-config"
 visudo -cf "$bundle/scheme3/hestia-panel.sudoers" >/dev/null
@@ -358,7 +452,17 @@ managed_file "$bundle/scheme3/hestia-binding.conf" "$binding_tmpfiles" 0644
 managed_file "$bundle/scheme3/hestia-binding-recovery.service" "$binding_recovery" 0644
 managed_file "$bundle/scheme3/hestia-binding-watch.path" "$binding_watch_path" 0644
 managed_file "$bundle/scheme3/hestia-binding-watch.service" "$binding_watch_service" 0644
-managed_file "$bundle/scheme3/hestia-awg.service" "$awg_service" 0644
+if [[ $mode == update ]]; then
+    [[ -f $controller_unit ]] || {
+        echo "Missing managed controller unit: $controller_unit" >&2
+        exit 1
+    }
+    managed_file "$bundle/scheme3/guest-hestia.service" "$controller_unit" 0644
+fi
+managed_file "$bundle/scheme3/smoke.py" "$smoke_file" 0644
+managed_file "$bundle/scheme3/hestia-smoke@.service" "$smoke_unit" 0644
+managed_file /usr/local/bin/sing-box "$backend_check" 0755
+managed_file "$bundle/scheme3/hestia-awg@.service" "$awg_service" 0644
 systemd-tmpfiles --create "$binding_tmpfiles" "$awg_tmpfiles"
 snapshot_gid=$(getent group hestia-snapshot | cut -d: -f3)
 [[ -n $snapshot_gid && $(stat -c '%u:%g:%a' /run/hestia-install.lock) == "0:${snapshot_gid}:640" ]] || {
@@ -381,17 +485,44 @@ if [[ $mode == install ]]; then
     if ((managed_marker_before == 0)); then profile_adoption_created=1; fi
     bash "$bundle/scheme3/guest-bootstrap.sh"
 fi
+if [[ $mode == update ]] && ! cmp -s "$bundle/scheme3/guest-sing-box.service" "$backend_unit"; then
+    [[ -f $backend_unit && ! -L $backend_unit && $(stat -c '%u:%g:%a' "$backend_unit") == 0:0:644 &&
+    $(sha256sum "$backend_unit" | cut -d' ' -f1) == 0e997b7c0163ca32c36291d9cef3e7c49f00ad0732b6396f0c2a95a47ff7b871 ]] || {
+        echo "Unknown managed backend unit; refusing to overwrite it" >&2
+        exit 1
+    }
+    cp -p -- "$backend_unit" "$release/previous-backend.service"
+    backend_migrated=1
+    install -m 0644 "$bundle/scheme3/guest-sing-box.service" "$backend_unit"
+fi
+if [[ -f $release/migration/sing-box.json ]]; then
+    for name in sing-box.json profile-backend.sha256; do
+        install -o root -g root -m 0600 "$release/migration/$name" "/etc/hestia/$name"
+    done
+fi
 python3 -I "$bundle/scheme3/adopt-profile.py" adopt /etc/hestia "$bundle/scheme3/guest-profile.json" "$profile_link"
 if ((managed_marker_before == 0)); then profile_adoption_created=1; fi
 chown root:root /etc/hestia/sing-box.json
 chmod 0600 /etc/hestia/sing-box.json
 chown root:hestia-snapshot /etc/hestia/snapshot.json
 chmod 0640 /etc/hestia/snapshot.json
+systemctl daemon-reload
+if [[ -s $release/ready-awg ]]; then
+    new_awg_started=1
+    restart_ready_awg "$profile_link"
+fi
+if [[ $mode == update && -e /proc/$$/fd/8 ]]; then flock -u 8; fi
 systemctl enable --now hestia-binding-watch.path
 sed "s/@LAN_IP@/$gateway_ip/" "$bundle/scheme3/host-panel.service.in" >"$panel"
 systemctl daemon-reload
 systemctl enable hestia-panel
+if ((backend_migrated || awg_drained)) || [[ -f $release/migration/sing-box.json ]]; then systemctl restart hestia-sing-box.service; fi
 systemctl restart hestia hestia-panel
+confirm_manual_awg "$profile_link"
+systemctl start hestia-smoke@current.service
 curl --noproxy '*' -fsS --retry 5 --retry-delay 1 --retry-connrefused "http://$gateway_ip:8080/api/groups-and-rules" >/dev/null
 for service in hestia hestia-panel hestia-sing-box; do systemctl is-active "$service"; done
+if [[ $(systemctl is-enabled hestia-awg.service 2>/dev/null || :) == enabled ]]; then
+    systemctl disable hestia-awg.service
+fi
 printf 'Panel: http://%s:8080\n' "$gateway_ip"

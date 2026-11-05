@@ -19,16 +19,7 @@ import (
 
 const awgTreeName = "awg"
 
-type awgStoredMetadata struct {
-	ID          string `json:"id"`
-	Group       string `json:"group"`
-	Priority    int    `json:"priority"`
-	Status      string `json:"status"`
-	IPv6Blocked bool   `json:"ipv6Blocked"`
-	Protocol    string `json:"type"`
-	IPv4Address string `json:"ipv4Address"`
-	DNSIPv4     string `json:"dnsIPv4"`
-}
+type awgStoredMetadata = awg.Metadata
 
 // stageAWGTree copies the committed private connector tree into a transaction stage before any candidate edits.
 func (e Engine) stageAWGTree(stage string) error {
@@ -69,7 +60,7 @@ func validateAWGTree(path string) error {
 			return ErrUnavailable
 		}
 		connectorPath := filepath.Join(path, id)
-		if err := validateAWGDirectory(connectorPath, id, &total); err != nil {
+		if _, _, err := readAWGDirectory(connectorPath, id, &total); err != nil {
 			return err
 		}
 	}
@@ -79,57 +70,57 @@ func validateAWGTree(path string) error {
 	return nil
 }
 
-// validateAWGDirectory checks one connector's exact root-only file set, metadata identity, and normalized profile.
-func validateAWGDirectory(path, id string, total *int64) error {
+// readAWGDirectory returns validated metadata and the normalized secret after checking one connector's exact root-only file set, metadata identity, and normalized profile.
+func readAWGDirectory(path, id string, total *int64) (awg.Metadata, awg.Profile, error) {
 	info, err := os.Lstat(path)
 	stat, ok := infoStat(info)
 	if err != nil || info == nil || !info.IsDir() || info.Mode().Perm() != 0700 || !ok || int(stat.Uid) != os.Geteuid() || int(stat.Gid) != os.Getegid() {
-		return ErrUnavailable
+		return awg.Metadata{}, awg.Profile{}, ErrUnavailable
 	}
 	entries, err := os.ReadDir(path)
 	if err != nil || len(entries) != 2 {
-		return ErrUnavailable
+		return awg.Metadata{}, awg.Profile{}, ErrUnavailable
 	}
 	allowed := map[string]bool{"profile.conf": false, "metadata.json": false}
 	for _, entry := range entries {
 		if _, exists := allowed[entry.Name()]; !exists || entry.IsDir() {
-			return ErrUnavailable
+			return awg.Metadata{}, awg.Profile{}, ErrUnavailable
 		}
 		allowed[entry.Name()] = true
 		fileInfo, err := os.Lstat(filepath.Join(path, entry.Name()))
 		fileStat, ok := infoStat(fileInfo)
 		if err != nil || fileInfo == nil || !fileInfo.Mode().IsRegular() || fileInfo.Mode().Perm() != 0600 || !ok || int(fileStat.Uid) != os.Geteuid() || int(fileStat.Gid) != os.Getegid() || fileStat.Nlink != 1 {
-			return ErrUnavailable
+			return awg.Metadata{}, awg.Profile{}, ErrUnavailable
 		}
 		*total += fileInfo.Size()
 		if *total > 2<<20 {
-			return ErrUnavailable
+			return awg.Metadata{}, awg.Profile{}, ErrUnavailable
 		}
 	}
 	for _, present := range allowed {
 		if !present {
-			return ErrUnavailable
+			return awg.Metadata{}, awg.Profile{}, ErrUnavailable
 		}
 	}
 	metadataBytes, err := os.ReadFile(filepath.Join(path, "metadata.json"))
-	if err != nil || len(metadataBytes) > 4096 {
-		return ErrUnavailable
+	if err != nil || len(metadataBytes) > 8192 {
+		return awg.Metadata{}, awg.Profile{}, ErrUnavailable
 	}
 	var metadata awgStoredMetadata
 	decoder := json.NewDecoder(bytes.NewReader(metadataBytes))
 	decoder.DisallowUnknownFields()
-	if decoder.Decode(&metadata) != nil || decoder.Decode(new(any)) != io.EOF || metadata.ID != id || !awgID(metadata.Group) || metadata.Priority < 1 || (metadata.Status != "configured" && metadata.Status != "ready") || (metadata.Protocol != "wireguard" && metadata.Protocol != "amneziawg") {
-		return ErrUnavailable
+	if decoder.Decode(&metadata) != nil || decoder.Decode(new(any)) != io.EOF || metadata.ID != id || !awg.ValidUnderlays(id, metadata.Underlays) || !awgID(metadata.Group) || metadata.Priority < 1 || metadata.Slot < 0 || metadata.Slot >= awg.SlotCount || (metadata.Status != "configured" && metadata.Status != "ready") || (metadata.Protocol != "wireguard" && metadata.Protocol != "amneziawg") {
+		return awg.Metadata{}, awg.Profile{}, ErrUnavailable
 	}
 	profileBytes, err := os.ReadFile(filepath.Join(path, "profile.conf"))
 	if err != nil || len(profileBytes) > 32<<10 {
-		return ErrUnavailable
+		return awg.Metadata{}, awg.Profile{}, ErrUnavailable
 	}
 	profile, err := awg.Parse(profileBytes)
 	if err != nil || profile.IPv6Blocked != metadata.IPv6Blocked || profile.Protocol != metadata.Protocol || profile.IPv4Address != metadata.IPv4Address || profile.DNSIPv4 != metadata.DNSIPv4 {
-		return ErrUnavailable
+		return awg.Metadata{}, awg.Profile{}, ErrUnavailable
 	}
-	return nil
+	return metadata, profile, nil
 }
 
 // awgID accepts a bounded lowercase identifier without exposing profile data in filesystem errors.

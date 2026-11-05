@@ -1,3 +1,136 @@
+<section class="group-create" aria-label="Управление группами">
+  <button
+    pButton
+    class="save"
+    type="button"
+    [disabled]="order.pending() || order.dirty() || order.draft().changedSource"
+    (click)="openEditor(editor, null)"
+  >
+    Создать группу
+  </button>
+  @if (order.dirty()) {
+    <p class="hint">
+      Перед изменением групп сохраните или отмените сортировку.
+    </p>
+  }
+</section>
+<dialog
+  #editor
+  id="group-name-dialog"
+  class="gateway-dialog"
+  aria-labelledby="group-editor-title"
+  (cancel)="cancelEditor($event)"
+>
+  <p-toast
+    key="group-name-dialog"
+    position="top-right"
+    class="gateway-toast"
+    [life]="5500"
+  />
+  <form (ngSubmit)="submitName(editor)">
+    <h2 id="group-editor-title">
+      {{ editing ? "Редактировать группу" : "Создать группу" }}
+    </h2>
+    <label for="group-name">Название группы</label>
+    <input
+      pInputText
+      autofocus
+      id="group-name"
+      name="groupName"
+      #nameInput
+      [value]="order.newName()"
+      (input)="order.newName.set(nameInput.value)"
+      [disabled]="order.pending()"
+      autocomplete="off"
+      spellcheck="false"
+      aria-describedby="group-name-help"
+    />
+    <p class="hint" id="group-name-help">
+      Введите от 1 до 80 символов. При сохранении шлюз перезапустит службы
+      маршрутизации.
+    </p>
+    <p role="status">{{ order.nameMessage() }}</p>
+    <div class="actions">
+      <button
+        pButton
+        type="button"
+        class="reset"
+        (click)="editor.close()"
+        [disabled]="order.pending()"
+      >
+        Отмена
+      </button>
+      <button
+        pButton
+        type="submit"
+        class="save"
+        [disabled]="
+          order.pending() ||
+          !order.newName().trim() ||
+          (editing !== null && order.newName().trim() === groupName(editing))
+        "
+      >
+        {{
+          order.pending() ? "Сохранение…" : editing ? "Сохранить" : "Создать"
+        }}
+      </button>
+    </div>
+  </form>
+</dialog>
+
+<dialog
+  #deletion
+  id="group-deletion-dialog"
+  class="gateway-dialog"
+  aria-labelledby="group-deletion-title"
+  (cancel)="cancelEditor($event)"
+>
+  <p-toast
+    key="group-deletion-dialog"
+    position="top-right"
+    class="gateway-toast"
+    [life]="5500"
+  />
+  @if (deleting !== null) {
+    <form (ngSubmit)="submitDeletion(deletion)">
+      <h2 id="group-deletion-title">
+        Удалить группу «{{ groupName(deleting) }}»?
+      </h2>
+      @let reason = order.deletionBlock(deleting);
+      <p class="hint">
+        {{
+          reason || "Группа исчезнет из списка. Это действие нельзя отменить."
+        }}
+      </p>
+      @let lists = boundLists(deleting);
+      @if (!reason && lists.length) {
+        <p class="hint">
+          Списки сохранятся без привязки: {{ lists.join(", ") }}.
+        </p>
+      }
+      <div class="actions">
+        <button
+          pButton
+          class="reset"
+          type="button"
+          autofocus
+          [disabled]="order.pending()"
+          (click)="deletion.close()"
+        >
+          Отмена
+        </button>
+        <button
+          pButton
+          class="remove"
+          type="submit"
+          [disabled]="order.pending() || !!reason"
+        >
+          Удалить
+        </button>
+      </div>
+    </form>
+  }
+</dialog>
 <section aria-labelledby="groups-heading">
   <header class="order-head">
     <div>
@@ -9,9 +142,10 @@
         }}</span>
       </div>
       <p class="hint">
-        Первая группа используется по умолчанию. Перетаскивайте группы и выходы
-        за ручки. Для перемещения с клавиатуры используйте стрелки ↑ и ↓ на
-        ручке.
+        Первая группа используется по умолчанию. Перетащите выход за ручку в
+        нужную группу на выбранную позицию. Перенос и сортировка сохраняются
+        только после нажатия «Сохранить». На клавиатуре используйте ↑ и ↓ для
+        сортировки, Alt+↑ и Alt+↓ для переноса в конец соседней группы.
       </p>
     </div>
   </header>
@@ -32,17 +166,44 @@
             class="handle"
             [disabled]="order.pending() || order.draft().changedSource"
             aria-describedby="sort-help"
-            [attr.aria-label]="'Переместить группу ' + group.id"
+            [attr.aria-label]="'Переместить группу ' + groupName(group.id)"
             (keydown)="keyboardMove($event, i)"
           >
             <span aria-hidden="true">⠿</span>
           </button>
-          <span class="ordinal">{{ i + 1 }}</span>
           <h3>
             <a routerLink="/groups" [queryParams]="{ group: group.id }">{{
-              group.id
+              groupName(group.id)
             }}</a>
           </h3>
+          <button
+            pButton
+            type="button"
+            class="icon-action"
+            [attr.title]="'Редактировать группу ' + groupName(group.id)"
+            [attr.aria-label]="'Редактировать группу ' + groupName(group.id)"
+            [disabled]="
+              order.pending() || order.dirty() || order.draft().changedSource
+            "
+            (click)="openEditor(editor, group.id)"
+          >
+            <span class="edit-icon" aria-hidden="true"></span>
+          </button>
+          @if (group.id !== snapshot().groups[0]?.id) {
+            <button
+              pButton
+              type="button"
+              class="icon-action delete-action"
+              [attr.title]="'Удалить группу ' + groupName(group.id)"
+              [attr.aria-label]="'Удалить группу ' + groupName(group.id)"
+              [disabled]="
+                order.pending() || order.dirty() || order.draft().changedSource
+              "
+              (click)="openDeletion(deletion, group.id)"
+            >
+              <span class="delete-icon" aria-hidden="true"></span>
+            </button>
+          }
           @if ($first) {
             <span class="default">{{
               order.dirty() ? "По умолчанию после сохранения" : "По умолчанию"
@@ -53,27 +214,33 @@
           cdkDropList
           cdkDropListLockAxis="y"
           [cdkDropListDisabled]="order.pending() || order.draft().changedSource"
-          (cdkDropListDropped)="
-            order.move($event.previousIndex, $event.currentIndex, group.id)
-          "
+          [id]="'exits-' + group.id"
+          [cdkDropListConnectedTo]="exitListIds()"
+          [cdkDropListData]="group.id"
+          (cdkDropListDropped)="dropExit($event)"
           class="order-exits"
-          [attr.aria-label]="'Выходы группы ' + group.id"
+          [attr.aria-label]="'Выходы группы ' + groupName(group.id)"
         >
           @for (exit of group.exits; track exit; let j = $index) {
-            <li cdkDrag cdkDragLockAxis="y" class="exit-line">
+            <li
+              cdkDrag
+              [cdkDragData]="exit"
+              cdkDragLockAxis="y"
+              class="exit-line"
+            >
               <button
                 type="button"
                 cdkDragHandle
                 class="handle"
                 [disabled]="order.pending() || order.draft().changedSource"
                 aria-describedby="sort-help"
-                [attr.aria-label]="'Переместить выход ' + exit"
+                [attr.data-exit-handle]="exit"
+                [attr.aria-label]="'Переместить выход ' + catalog.name(exit)"
                 (keydown)="keyboardMove($event, j, group.id)"
               >
                 <span aria-hidden="true">⠿</span>
               </button>
-              <span class="ordinal">{{ j + 1 }}</span
-              ><strong>{{ exit }}</strong
+              <strong>{{ catalog.name(exit) }}</strong
               ><span class="health" [class.up]="health().get(exit)"
                 ><span class="dot"></span
                 >{{
@@ -97,7 +264,7 @@
   @if (order.dirty() && snapshot().groups.length) {
     <p class="hint">
       Сейчас на шлюзе по умолчанию:
-      <strong>{{ snapshot().groups[0].id }}</strong
+      <strong>{{ groupName(snapshot().groups[0].id) }}</strong
       >.
     </p>
   }
@@ -108,11 +275,11 @@
     </p>
   }
   <p id="sort-help" class="sr-only">
-    Стрелки вверх и вниз меняют позицию. Выход перемещается только внутри своей
-    группы.
+    Стрелки вверх и вниз меняют позицию. Alt со стрелкой переносит выход в
+    соседнюю группу.
   </p>
   <p class="note">
-    «Сохранить» применит порядок групп и выходов на шлюзе. Текущие соединения
+    «Сохранить» применит переносы и сортировку на шлюзе. Текущие соединения
     могут прерваться, а новые — пойти по выбранному маршруту до подтверждения.
     Откат не отменяет уже переданные пакеты.
   </p>

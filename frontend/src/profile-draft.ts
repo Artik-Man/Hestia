@@ -1,312 +1,342 @@
+import { Toast } from "primeng/toast";
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
+  computed,
+  DestroyRef,
+  ElementRef,
+  inject,
   input,
+  OnChanges,
   output,
   signal,
-  OnChanges,
-  inject,
   ViewChild,
 } from "@angular/core";
 import { HttpErrorResponse } from "@angular/common/http";
-import { FormBuilder, ReactiveFormsModule, Validators } from "@angular/forms";
+import { FormBuilder, ReactiveFormsModule } from "@angular/forms";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { firstValueFrom } from "rxjs";
 import type { Group } from "./api/generated/model/group";
+import { isAWGConnection, isUnderlayOrder } from "./awg-connection";
 import type { AWGConnection } from "./api/generated/model/aWGConnection";
-import type { AWGSaveRequest } from "./api/generated/model/aWGSaveRequest";
-import type { AWGUpdateRequest } from "./api/generated/model/aWGUpdateRequest";
 import { PanelService } from "./api/generated/api/panel.service";
+import { ConnectionCatalog } from "./connection-catalog";
+import { Notifications } from "./notifications";
 import { ButtonDirective } from "primeng/button";
-import { FileUpload, type FileSelectEvent } from "primeng/fileupload";
-import { InputNumber } from "primeng/inputnumber";
 import { InputText } from "primeng/inputtext";
-import { Select } from "primeng/select";
+import {
+  buildWireGuardConfig,
+  fieldLabel,
+  localFields,
+  maxProfileBytes,
+  optionalFields,
+  parseWireGuardConfig,
+  placeholders,
+  remoteFields,
+  WireGuardFormError,
+  type WireGuardField,
+  type WireGuardValues,
+} from "./wireguard-fields";
 
-/** ProfileDraft uploads a selected WireGuard or AmneziaWG .conf through the typed API service. */
+/** ProfileDraft edits the fields of a single manually entered, imported or stored WireGuard/AWG profile in a modal dialog. */
 @Component({
   selector: "hestia-profile-draft",
-  imports: [
-    ButtonDirective,
-    FileUpload,
-    InputNumber,
-    InputText,
-    ReactiveFormsModule,
-    Select,
-  ],
+  imports: [Toast, ButtonDirective, InputText, ReactiveFormsModule],
   templateUrl: "./profile-draft.html",
-  styleUrl: "./editor.css",
+  styleUrl: "./profile-draft.css",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ProfileDraft implements OnChanges {
+export class ProfileDraft implements OnChanges, AfterViewInit {
   readonly groups = input.required<readonly Group[]>();
   readonly existingIDs = input<readonly string[]>([]);
   readonly connection = input<AWGConnection | null>(null);
-  readonly exit = input<string | null>(null);
   readonly closed = output<void>();
   readonly saved = output<AWGConnection>();
-  protected readonly selectedConfig = signal<File | null>(null);
-  protected readonly selectedCandidate = signal<File | null>(null);
-  protected readonly configError = signal("");
-  protected readonly report = signal("");
-  protected readonly submitting = signal(false);
-  protected readonly checked = signal(false);
-  @ViewChild("configUpload") private configUpload?: FileUpload;
-  private readonly builder = inject(FormBuilder).nonNullable;
-  private readonly panel = inject(PanelService);
-  protected readonly form = this.builder.group({
-    id: ["", Validators.required],
-    group: ["", Validators.required],
-    priority: [1, [Validators.required, Validators.min(1)]],
-  });
+  protected readonly target = computed(() => this.connection()?.id ?? null);
+  protected readonly fieldLabel = fieldLabel;
+  protected readonly placeholders = placeholders;
+  protected readonly localFields = localFields;
+  protected readonly remoteFields = remoteFields;
+  protected readonly optionalFields = optionalFields;
+  protected readonly values = signal<WireGuardValues>({});
+  protected readonly imported = signal("");
+  protected readonly underlays = signal<string[]>([]);
+  protected readonly choicesOpen = signal(false);
+  protected readonly catalog = inject(ConnectionCatalog);
+  protected readonly loadingCandidates = this.catalog.loading;
+  protected readonly underlayChoices = computed(() =>
+    [
+      ...new Set([...this.underlays(), ...this.catalog.entries().keys()]),
+    ].filter((id) => id !== this.target()),
+  );
+  protected readonly underlaySummary = computed(() =>
+    this.underlays()
+      .map((id) => this.catalog.name(id))
+      .join(" → "),
+  );
 
-  /** groupOptions returns the immutable group snapshot in the mutable array shape expected by PrimeNG Select. */
-  protected groupOptions(): Group[] {
-    return [...this.groups()];
+  /** toggleChoices refreshes the available transports whenever the chooser opens. */
+  protected toggleChoices(): void {
+    this.choicesOpen.update((open) => !open);
+    if (this.choicesOpen()) this.catalog.reload();
   }
 
-  /** ngOnChanges clears selected file data and loads identity and order from the displayed snapshot. */
+  private dragging: string | null = null;
+
+  /** toggleUnderlay appends a newly enabled transport or removes it while retaining the other priorities. */
+  protected toggleUnderlay(id: string): void {
+    if (this.underlays().length >= 64 && !this.underlays().includes(id)) return;
+    this.underlays.update((ids) =>
+      ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id],
+    );
+  }
+
+  /** moveUnderlay moves one enabled transport to its requested rank without changing the selected set. */
+  protected moveUnderlay(id: string, to: number): void {
+    const ids = [...this.underlays()];
+    const from = ids.indexOf(id);
+    if (from < 0 || to < 0 || to >= ids.length || from === to) return;
+    ids.splice(from, 1);
+    ids.splice(to, 0, id);
+    this.underlays.set(ids);
+  }
+
+  /** startUnderlayDrag identifies a selected transport for a local reorder. */
+  protected startUnderlayDrag(event: DragEvent, id: string): void {
+    this.dragging = id;
+    event.dataTransfer?.setData("text/plain", id);
+  }
+
+  /** dropUnderlay applies only an internal drag onto another selected transport. */
+  protected dropUnderlay(event: DragEvent, id: string): void {
+    event.preventDefault();
+    if (this.dragging)
+      this.moveUnderlay(this.dragging, this.underlays().indexOf(id));
+    this.dragging = null;
+  }
+
+  /** endUnderlayDrag clears the drag identity after cancellation or a completed drop. */
+  protected endUnderlayDrag(): void {
+    this.dragging = null;
+  }
+
+  protected readonly reading = signal(false);
+  protected readonly unavailable = signal(false);
+  protected readonly submitting = signal(false);
+  @ViewChild("editor", { static: true })
+  private dialog!: ElementRef<HTMLDialogElement>;
+  private readonly builder = inject(FormBuilder).nonNullable;
+  private readonly panel = inject(PanelService);
+  private readonly messages = inject(Notifications);
+  private readonly destroy = inject(DestroyRef);
+  private initialized: string | null | undefined;
+  private revision = 0;
+  protected readonly form = this.builder.group({
+    id: "",
+    group: "",
+  });
+
+  /** ngAfterViewInit opens the native modal after its focusable controls are attached. */
+  ngAfterViewInit(): void {
+    this.dialog.nativeElement.showModal();
+    if (!this.catalog.loading()) this.catalog.reload();
+  }
+
+  /** ngOnChanges initializes a new target once, preserving the current draft as metadata and availability refresh. */
   ngOnChanges(): void {
-    const saved = this.connection();
-    const id = saved?.id ?? this.exit();
+    const id = this.target();
+    if (this.initialized === id) return;
+    this.initialized = id;
+    this.revision++;
+    this.values.set({});
+    this.underlays.set([]);
+    this.choicesOpen.set(false);
+    this.imported.set("");
+    this.unavailable.set(false);
+    this.reading.set(false);
     const group = this.groups().find((item) =>
       item.exits.some((candidate) => candidate.id === id),
     );
-    this.configUpload?.clear();
-    this.clearSelectedConfig();
+    const initialGroup =
+      group ??
+      this.groups().find((item) => item.isDefault) ??
+      (this.groups().length === 1 ? this.groups()[0] : undefined);
     this.form.reset({
       id: id ?? "",
-      group: group?.id ?? "",
-      priority:
-        saved?.priority ??
-        (group
-          ? group.exits.findIndex((candidate) => candidate.id === id) + 1
-          : 1),
+      group: this.connection()?.group ?? initialGroup?.id ?? "",
     });
+    if (id) void this.loadProfile(id);
   }
 
-  /** priorityLimit returns the largest valid position without counting exits already present in the group snapshot twice. */
-  protected priorityLimit(): number {
-    const selectedGroup = this.groups().find(
-      (group) => group.id === this.form.controls.group.value,
-    );
-    if (!selectedGroup) return 1;
-    return this.priorityCapacity(selectedGroup);
+  /** loadProfile validates a selected record and populates the form only while this dialog still edits the same target. */
+  protected async loadProfile(id: string): Promise<void> {
+    const revision = ++this.revision;
+    this.reading.set(true);
+    this.unavailable.set(false);
+    try {
+      const data: unknown = await firstValueFrom(
+        this.panel
+          .getAWGConnectionProfile(id, "body", false, { transferCache: false })
+          .pipe(takeUntilDestroyed(this.destroy)),
+      );
+      if (this.destroy.destroyed || revision !== this.revision) return;
+      if (
+        typeof data !== "object" ||
+        data === null ||
+        !("id" in data) ||
+        data.id !== id ||
+        !("profile" in data) ||
+        typeof data.profile !== "string" ||
+        !("group" in data) ||
+        typeof data.group !== "string" ||
+        !/^[a-z][a-z0-9-]{0,62}$/.test(data.group) ||
+        !("priority" in data) ||
+        typeof data.priority !== "number" ||
+        !Number.isInteger(data.priority) ||
+        data.priority < 1
+      ) {
+        throw new Error("Invalid editor response");
+      }
+      const underlays = "underlays" in data ? data.underlays : [];
+      if (!isUnderlayOrder(underlays, id))
+        throw new Error("Invalid underlay priority list");
+      this.underlays.set(underlays);
+      const fields = parseWireGuardConfig(data.profile);
+      this.form.reset({ id, group: data.group });
+      this.values.set(fields);
+    } catch (error: unknown) {
+      if (this.destroy.destroyed || revision !== this.revision) return;
+      this.unavailable.set(true);
+      this.messages.show(
+        "error",
+        error instanceof HttpErrorResponse && error.status === 404
+          ? "Профиль WireGuard для этого выхода не найден."
+          : "Не удалось загрузить сохранённые параметры подключения.",
+      );
+    } finally {
+      if (!this.destroy.destroyed && revision === this.revision)
+        this.reading.set(false);
+    }
   }
 
-  /** priorityCapacity accounts for an edited exit only when it already belongs to the selected group's exit list. */
-  private priorityCapacity(group: Group): number {
-    const currentID = this.connection()?.id;
-    const includesCurrent =
-      currentID !== undefined &&
-      group.exits.some((exit) => exit.id === currentID);
-    return group.exits.length + (includesCurrent ? 0 : 1);
+  /** setField updates only the edited directive and clears the previous submission error. */
+  protected setField(field: WireGuardField, value: string): void {
+    this.values.update((previous) => ({ ...previous, [field]: value }));
   }
 
-  /** selectConfig accepts one nonempty .conf file locally and reports unsupported filenames without reading its contents. */
-  protected selectConfig(event: FileSelectEvent): void {
-    const file = event.files[0];
-    if (!file) return;
-    this.report.set("");
-    this.checked.set(false);
-    if (!file.name.toLowerCase().endsWith(".conf")) {
-      this.selectedConfig.set(null);
-      this.selectedCandidate.set(file);
-      this.configError.set("Выберите файл с расширением .conf.");
+  /** importFile replaces protocol values atomically after a bounded, local .conf read and leaves metadata and invalid imports untouched. */
+  protected async importFile(input: HTMLInputElement): Promise<void> {
+    const file = input.files?.[0];
+    input.value = "";
+    if (!file || this.submitting() || this.unavailable()) return;
+    const revision = ++this.revision;
+    this.reading.set(true);
+    try {
+      if (!file.name.toLowerCase().endsWith(".conf"))
+        throw new WireGuardFormError("Выберите файл с расширением .conf.");
+      if (!file.size || file.size > maxProfileBytes)
+        throw new WireGuardFormError(
+          "Выберите непустой файл размером до 32 КиБ.",
+        );
+      const fields = parseWireGuardConfig(await file.text());
+      if (this.destroy.destroyed || revision !== this.revision) return;
+      this.values.set(fields);
+      this.imported.set(file.name);
+    } catch (error: unknown) {
+      if (!this.destroy.destroyed && revision === this.revision)
+        this.messages.show(
+          "error",
+          error instanceof WireGuardFormError
+            ? error.message
+            : "Не удалось прочитать файл конфигурации.",
+        );
+    } finally {
+      if (!this.destroy.destroyed && revision === this.revision)
+        this.reading.set(false);
+    }
+  }
+
+  /** close discards local secrets and emits cancellation unless a save is still in progress. */
+  protected close(event?: Event): void {
+    event?.preventDefault();
+    if (this.submitting()) return;
+    this.revision++;
+    this.values.set({});
+    this.dialog.nativeElement.close();
+    this.closed.emit();
+  }
+
+  /** submit creates or updates the edited record once, retaining its draft when validation or gateway activation fails. */
+  protected async submit(): Promise<void> {
+    if (this.reading() || this.unavailable() || this.submitting()) return;
+    const { id, group } = this.form.getRawValue();
+    const target = this.target();
+    if (
+      !/^[a-z][a-z0-9-]{0,62}$/u.test(id) ||
+      (target !== null && id !== target) ||
+      (target === null &&
+        (this.existingIDs().includes(id) ||
+          this.groups().some(
+            (g) => g.id === id || g.exits.some((e) => e.id === id),
+          )))
+    ) {
+      this.messages.show(
+        "error",
+        "Введите свободное название длиной до 63 символов. Начните со строчной латинской буквы, далее можно использовать строчные буквы, цифры и дефис.",
+      );
       return;
     }
-    if (file.size === 0) {
-      this.selectedConfig.set(null);
-      this.selectedCandidate.set(file);
-      this.configError.set("Файл конфигурации пуст.");
-      return;
-    }
-    if (file.size > 32 * 1024) {
-      this.selectedConfig.set(null);
-      this.selectedCandidate.set(file);
-      this.configError.set("Размер файла не должен превышать 32 КиБ.");
-      return;
-    }
-    this.selectedConfig.set(file);
-    this.selectedCandidate.set(file);
-    this.configError.set("");
-    this.checked.set(false);
-    this.report.set("");
-  }
-
-  /** clearSelectedConfig forgets the chosen browser file and its validation message. */
-  protected clearSelectedConfig(): void {
-    this.selectedConfig.set(null);
-    this.selectedCandidate.set(null);
-    this.configError.set("");
-    this.checked.set(false);
-    this.report.set("");
-  }
-
-  /** clearConfig clears PrimeNG's queue and the local reference to the selected file. */
-  protected clearConfig(upload: FileUpload): void {
-    upload.clear();
-    this.clearSelectedConfig();
-  }
-
-  /** fileSize formats the selected file size for the local form summary. */
-  protected fileSize(size: number): string {
-    return size < 1024 * 1024
-      ? `${Math.max(1, Math.round(size / 1024))} КБ`
-      : `${(size / (1024 * 1024)).toFixed(1)} МБ`;
-  }
-
-  /** check submits a temporary profile probe and never persists or activates the candidate. */
-  protected async check(): Promise<void> {
-    const file = this.selectedConfig();
-    if (!file) {
-      this.report.set("Выберите файл конфигурации .conf.");
+    if (!target && !this.groups().some((item) => item.id === group)) {
+      this.messages.show("error", "Выберите существующую группу.");
       return;
     }
     this.submitting.set(true);
-    this.checked.set(false);
-    this.report.set("");
     try {
-      const result = await firstValueFrom(
-        this.panel.checkAWGProfile({ profile: await file.text() }),
+      const profile = buildWireGuardConfig(this.values());
+      const request = { profile, underlays: this.underlays() };
+      const connection: unknown = await firstValueFrom(
+        target
+          ? this.panel.updateAWGConnection(target, request)
+          : this.panel.createAWGConnection({ id, group, ...request }),
       );
-      if (this.selectedConfig() !== file) {
-        this.report.set(
-          "Файл изменился во время проверки. Проверьте его повторно.",
+      if (this.destroy.destroyed) return;
+      if (
+        !isAWGConnection(connection) ||
+        connection.id !== id ||
+        (!target && connection.group !== group)
+      ) {
+        this.messages.show(
+          "error",
+          "Шлюз вернул неожиданные данные. Обновите список подключений.",
         );
         return;
       }
-      this.checked.set(true);
-      this.report.set(
-        result.routeReady
-          ? "Временная проверка и маршрут выхода подтверждены."
-          : "Handshake AmneziaWG подтверждён. Профиль можно сохранить; маршрут через него пока не включён.",
-      );
-    } catch (error: unknown) {
-      this.report.set(this.checkError(error));
-    } finally {
-      this.submitting.set(false);
-    }
-  }
-
-  /** submit persists only a profile whose temporary runtime check succeeded. */
-  protected async submit(): Promise<void> {
-    const value = this.form.getRawValue();
-    const group = this.groups().find((item) => item.id === value.group);
-    const currentID = this.connection()?.id ?? this.exit();
-    this.form.markAllAsTouched();
-    if (!this.selectedConfig()) {
-      this.report.set(
-        "Выберите файл конфигурации WireGuard с расширением .conf.",
-      );
-      return;
-    }
-    if (!this.checked()) {
-      this.report.set("Сначала проверьте профиль AmneziaWG.");
-      return;
-    }
-    if (!group) {
-      this.report.set("Выберите существующую группу.");
-      return;
-    }
-    if (
-      !/^[a-z][a-z0-9-]{0,62}$/u.test(value.id) ||
-      (value.id !== currentID &&
-        this.groups().some(
-          (item) =>
-            item.id === value.id ||
-            item.exits.some((candidate) => candidate.id === value.id),
-        )) ||
-      (currentID === null && this.existingIDs().includes(value.id))
-    ) {
-      this.report.set(
-        "Укажите свободный ID: латинская строчная буква в начале, затем буквы, цифры или дефис (до 63 символов).",
-      );
-      return;
-    }
-    const capacity = this.priorityCapacity(group);
-    if (
-      !Number.isInteger(value.priority) ||
-      value.priority < 1 ||
-      value.priority > capacity
-    ) {
-      this.report.set(
-        `Приоритет должен быть целым числом от 1 до ${capacity}.`,
-      );
-      return;
-    }
-    const file = this.selectedConfig();
-    if (!file) {
-      this.report.set("Выберите корректный файл .conf.");
-      return;
-    }
-    this.submitting.set(true);
-    this.report.set("");
-    try {
-      const config = await file.text();
-      let connection: AWGConnection;
-      const saved = this.connection();
-      if (saved) {
-        const request: AWGUpdateRequest = {
-          group: value.group,
-          priority: value.priority,
-          profile: config,
-        };
-        connection = await firstValueFrom(
-          this.panel.updateAWGConnection(saved.id, request),
-        );
-      } else {
-        const request: AWGSaveRequest = {
-          id: value.id,
-          group: value.group,
-          priority: value.priority,
-          profile: config,
-        };
-        connection = await firstValueFrom(
-          this.panel.createAWGConnection(request),
-        );
-      }
-      this.report.set(
-        "Профиль сохранён, подключение запущено и добавлено в выбранную группу на указанной позиции.",
-      );
+      this.values.set({});
+      this.dialog.nativeElement.close();
+      this.messages.show("success", `Подключение «${id}» сохранено.`);
       this.saved.emit(connection);
-      this.configUpload?.clear();
-      this.clearSelectedConfig();
     } catch (error: unknown) {
-      this.report.set(this.saveError(error));
+      if (!this.destroy.destroyed)
+        this.messages.show("error", this.saveError(error));
     } finally {
-      this.submitting.set(false);
+      if (!this.destroy.destroyed) this.submitting.set(false);
     }
   }
 
-  /** checkError maps probe failures to safe messages without exposing config values. */
-  private checkError(error: unknown): string {
-    if (!(error instanceof HttpErrorResponse)) {
-      return "Не удалось проверить профиль. Проверьте соединение и повторите попытку.";
-    }
-    switch (error.status) {
-      case 422:
-        return "Шлюз отклонил файл. Проверьте формат профиля AmneziaWG 3.1.";
-      case 503:
-        return "Проверка userspace-коннектора недоступна или handshake не подтверждён.";
-      default:
-        return "Не удалось проверить профиль AmneziaWG.";
-    }
-  }
-
-  /** saveError maps API failures to safe messages without exposing profile data. */
+  /** saveError translates validation and API failures without echoing configuration, keys or server bodies. */
   private saveError(error: unknown): string {
-    if (!(error instanceof HttpErrorResponse)) {
-      return "Не удалось отправить профиль на шлюз. Проверьте соединение и повторите попытку.";
+    if (error instanceof WireGuardFormError) return error.message;
+    if (error instanceof HttpErrorResponse) {
+      switch (error.status) {
+        case 409:
+          return "Не удалось сохранить изменения. Обновите список и проверьте название и выбранные подключения.";
+        case 422:
+          return "Шлюз отклонил настройки. Проверьте параметры WireGuard и убедитесь, что выбранные подключения не зависят от этого туннеля.";
+        case 503:
+          return "Шлюз не подтвердил подключение. Проверьте доступность пира и повторите сохранение.";
+      }
     }
-    switch (error.status) {
-      case 409:
-        return "Такой ID подключения уже существует.";
-      case 422:
-        return "Шлюз отклонил файл или параметры подключения. Проверьте формат .conf, ID, группу и приоритет.";
-      case 503:
-        return "Управление WireGuard/AmneziaWG не включено или шлюз не подтвердил сохранение.";
-      default:
-        return "Не удалось сохранить профиль на шлюзе. Повторите попытку.";
-    }
+    return "Не удалось сохранить подключение. Проверьте соединение со шлюзом.";
   }
 }

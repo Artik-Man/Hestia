@@ -40,11 +40,7 @@
           @switch (event.result.kind) {
             @case ("observed") {
               Подтверждён выход
-              <a
-                routerLink="/connections"
-                [queryParams]="{ exit: event.result.connection }"
-                >{{ event.result.connection }}</a
-              >
+              {{ catalog.name(event.result.connection) }}
               · {{ event.result.namespace }} /
               {{ event.result.networkInterface }}
             }

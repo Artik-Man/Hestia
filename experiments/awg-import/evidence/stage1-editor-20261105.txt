@@ -1,0 +1,9 @@
+2026-11-05, hestia-stage1
+Резервная копия: /var/backups/hestia-stage1-awg-20261105T063330Z
+hestia, hestia-panel, hestia-sing-box, hestia-awg@awg-home: active
+hestia-smoke@current: Result=success
+GET /api/awg: awg-home ready
+Chromium, разрешены только GET: одна опция WireGuard; форма создания открылась;
+при редактировании awg-home поле PrivateKey типа text заполнено;
+ответ профиля 200, Cache-Control: no-store; отмена прошла.
+Локальные проверки: 5 браузерных и 11 модульных тестов прошли.

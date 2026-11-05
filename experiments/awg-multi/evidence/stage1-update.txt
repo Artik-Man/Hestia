@@ -1,0 +1,11 @@
+2026-11-04, hestia-stage1 (192.168.1.133)
+Команда обновления: bash deploy/stage1-awg-update.sh (без --fresh).
+До обновления: hestia, hestia-panel, hestia-sing-box и старая hestia-awg.service active, awg-home ready.
+Первая попытка: старая служба оставила routes.json, установка откатилась. После отката awg-home снова ready.
+Повтор с проверкой владения и снятием оставшихся маршрутов после остановки старого runtime: установщик завершился успешно.
+После установки: hestia, hestia-panel, hestia-sing-box, hestia-awg@awg-home active. Старая hestia-awg inactive.
+GET /api/awg: awg-home, группа g-1755d6fd-f629-410d-9a5c-66fc6cc21c5b, приоритет 1, ready. Активная таблица 202: default dev awg0 и unreachable default.
+GET /: main-GCPNXJFT.js. hestia-smoke@current Result=success.
+Основные IPv4/IPv6 default routes совпали до и после. Резервная копия на stage1: /var/backups/hestia-stage1-awg-20261104T202222Z
+SHA-256 установленного hestia: a75c62677686dbb4d5a33c399c24c925c1c4983cd255efb8be6873d5bdfa939c
+SHA-256 установленного hestia-panel: 1b270ec6a4bb7f5be6e24c2948ade18f31f515d257dcec7814c3c1eecd7f9b57

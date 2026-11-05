@@ -3,6 +3,10 @@
 
 import http.client
 import json
+import os
+import re
+import stat
+from datetime import datetime
 import subprocess
 import sys
 import time
@@ -15,6 +19,67 @@ def run(*args):
     return subprocess.check_output(
         args, text=True, stderr=subprocess.DEVNULL, timeout=1
     )
+
+
+def fresh_awg_heartbeat(exit_id: str) -> bool:
+    """Match the watcher's identity, age and file ownership checks on one runtime marker."""
+    if not re.fullmatch(r"[a-z][a-z0-9-]{0,62}", exit_id):
+        return False
+    path = Path("/run/hestia-awg") / ("health.json." + exit_id)
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+        with os.fdopen(fd, "rb") as stream:
+            info = os.fstat(fd)
+            if (not stat.S_ISREG(info.st_mode) or stat.S_IMODE(info.st_mode) != 0o640
+                    or info.st_uid != 0 or info.st_nlink != 1):
+                return False
+            raw = stream.read(4097)
+        if len(raw) > 4096:
+            return False
+        record = json.loads(raw)
+        if (not isinstance(record, dict) or set(record) - {"id", "status", "updatedAt", "activeUnderlay"}
+                or not {"id","status","updatedAt"}.issubset(record)
+                or ("activeUnderlay" in record and (not isinstance(record["activeUnderlay"], str) or not re.fullmatch(r"[a-z][a-z0-9-]{0,62}",record["activeUnderlay"]) or record["activeUnderlay"] == exit_id))
+                or record["id"] != exit_id or record["status"] != "ready"):
+            return False
+        timestamp = datetime.fromisoformat(record["updatedAt"].replace("Z", "+00:00"))
+        return timestamp.tzinfo is not None and -1 <= time.time() - timestamp.timestamp() <= 5
+    except (OSError, ValueError, AttributeError, TypeError, OverflowError):
+        return False
+
+
+def expected_target(config: dict, group: dict) -> str:
+    """Return the highest-priority configured exit with a fresh heartbeat where required."""
+    for exit_id in group["exits"]:
+        if config["healthy"].get(exit_id) and (
+            config.get("connectorKinds", {}).get(exit_id) != "awg" or fresh_awg_heartbeat(exit_id)
+        ):
+            return exit_id
+    return "deny"
+
+
+def quality_targets(config: dict) -> dict[str, str]:
+    """Read only fresh controller confirmations for the current topology, retaining availability as a hard gate."""
+    path = Path("/run/hestia-quality/report.json")
+    try:
+        report = json.loads(path.read_text())
+    except FileNotFoundError:
+        return {}
+    captured = datetime.fromisoformat(report["capturedAt"].replace("Z", "+00:00"))
+    if not 0 <= time.time() - captured.timestamp() <= 60:
+        raise ValueError("quality controller report expired")
+    observed = {group["id"]: group["connections"] for group in report["groups"]}
+    selected = {}
+    for group in config["groups"]:
+        rows = observed.get(group["id"], [])
+        if sorted(row["id"] for row in rows) != sorted(group["exits"]):
+            raise ValueError("quality report and selector membership differ")
+        active = [row["id"] for row in rows if row["active"]]
+        if active:
+            if len(active) != 1 or expected_target(config, {"exits": active}) != active[0]:
+                raise ValueError("quality controller selected an unavailable exit")
+            selected[group["id"]] = active[0]
+    return selected
 
 
 def verify(*, fresh: bool = True):
@@ -60,16 +125,10 @@ def verify(*, fresh: bool = True):
                 confirmed[event["group"]] = event["selector_target"]
 
     config = json.loads(Path("/etc/hestia/snapshot.json").read_text())
+    quality = quality_targets(config)
     for group in config["groups"]:
         tag = group["id"]
-        wanted = next(
-            (
-                exit_tag
-                for exit_tag in group["exits"]
-                if config["healthy"].get(exit_tag)
-            ),
-            "deny",
-        )
+        wanted = quality.get(tag, expected_target(config, group))
         if fresh and confirmed.get(tag) != wanted:
             raise ValueError(f"controller has not confirmed {tag} -> {wanted}")
         api = http.client.HTTPConnection("127.0.0.1", 9090, timeout=0.5)
@@ -91,6 +150,8 @@ def verify(*, fresh: bool = True):
 
 def main():
     """Retry read-only checks until success or the installation smoke deadline."""
+    if sys.argv[1:] not in ([], ["--fresh"], ["--current"]):
+        return 2
     deadline = time.monotonic() + 5
     while True:
         try:

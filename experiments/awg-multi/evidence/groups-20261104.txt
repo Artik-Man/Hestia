@@ -1,0 +1,45 @@
+VM hestia-load-01 (hostname lima-hestia-load-01). Linux 6.1.0-53-cloud-arm64.
+2026-11-04. Base 44bb04d with working-tree changes.
+Hestia Linux/arm64 binary sha256: a3b392c9d5ca106b5211fba34d99cc8a9279cb6a7db2a36311dfb8f29ceb1bd8
+amneziawg-go v3.1.20260828 sha256: 25f78959d12b24fa9cc687ba43f3789a835bc8eb45aa264e8a0dbdeb1d63f0ae
+awg tools 3.1.20260812; sing-box 1.14.4
+deploy/profile.py sha256: 97861412611650c6ffafe7516382e90ab62395b0e4d4bf5ac3f73461aa36f145
+Groups request hostnames using SOCKS5 remote resolution. Each peer answers only its assigned group name and the runtime health hostname. Same tunnel address and resolver on both peers.
+
+=== RUN   TestIncompleteSecondFamilyRetainsFirstRule
+--- PASS: TestIncompleteSecondFamilyRetainsFirstRule (0.00s)
+=== RUN   TestEarlyPolicyRulesCannotBypassGuard
+--- PASS: TestEarlyPolicyRulesCannotBypassGuard (0.00s)
+PASS
+AWG runtime stopped: an earlier routing rule can bypass the AWG guard
+foreign catch-all rejected before mutation; distinct scheme-3-style ingress rules present
+WG without keepalive and AWG with 25s keepalive are ready; settings restored; main IPv4 table unchanged
+default dev awg0 scope link metric 100
+unreachable default metric 32767
+unreachable default dev lo metric 32767 pref medium
+10.77.0.1 dev awg0 table 202 src 10.77.0.2 mark 0x202 uid 0
+    cache
+198.18.0.2 dev lan0 src 198.18.0.1 uid 0
+    cache
+default dev awg1 scope link metric 100
+unreachable default metric 32767
+unreachable default dev lo metric 32767 pref medium
+10.77.0.1 dev awg1 table 203 src 10.77.0.2 mark 0x203 uid 0
+    cache
+198.18.1.2 dev lan1 src 198.18.1.1 uid 0
+    cache
+sing-box groups verified: client-0 -> tunnel-a, client-1 -> tunnel-b
+slot 1 through_group=False peer=tunnel-b replies=1 single TLS connection
+RTNETLINK answers: No route to host
+RTNETLINK answers: No route to host
+10.77.0.1 via 198.18.0.2 dev lan0 src 198.18.0.1 uid 0
+    cache
+fd77::2 from :: dev lan0 proto kernel src fd77::1 metric 256 pref medium
+underlay capture: two unmarked controls, zero marked packets; group 0 healthy, group 1 blocked
+secondary unreachable for IPv4 and IPv6 with unmarked underlay alive
+AWG runtime stopped: AmneziaWG handshake was not confirmed
+candidate with unreachable peer rejected within deadline, original group stream alive
+slot 1 through_group=False peer=tunnel-b replies=1 single TLS connection
+slot 0 through_group=True peer=tunnel-a replies=108 single TLS connection
+peer identity and same TLS session verified across neighbor stop/restart
+Exit status 0.

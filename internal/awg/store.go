@@ -11,6 +11,9 @@ import (
 	"syscall"
 )
 
+// SlotCount bounds the tunnel range below Linux reserved route tables.
+const SlotCount = 50
+
 const (
 	profileFile  = "profile.conf"
 	metadataFile = "metadata.json"
@@ -18,14 +21,16 @@ const (
 
 // Metadata is the non-secret public description persisted for one configured connector.
 type Metadata struct {
-	ID          string `json:"id"`
-	Group       string `json:"group"`
-	Priority    int    `json:"priority"`
-	Status      string `json:"status"`
-	IPv6Blocked bool   `json:"ipv6Blocked"`
-	Protocol    string `json:"type"`
-	IPv4Address string `json:"ipv4Address"`
-	DNSIPv4     string `json:"dnsIPv4"`
+	Underlays   []string `json:"underlays,omitempty"`
+	Slot        int      `json:"slot,omitempty"`
+	ID          string   `json:"id"`
+	Group       string   `json:"group"`
+	Priority    int      `json:"priority"`
+	Status      string   `json:"status"`
+	IPv6Blocked bool     `json:"ipv6Blocked"`
+	Protocol    string   `json:"type"`
+	IPv4Address string   `json:"ipv4Address"`
+	DNSIPv4     string   `json:"dnsIPv4"`
 }
 
 // Store persists normalized profiles and public metadata in private per-connector directories.
@@ -77,7 +82,7 @@ func OpenStoreWithLock(directory, lockPath string) (*Store, error) {
 
 // Save validates and atomically replaces one connector directory with root-only config and metadata.
 func (s *Store) Save(metadata Metadata, raw []byte) error {
-	if !identifierPattern.MatchString(metadata.ID) || !identifierPattern.MatchString(metadata.Group) || metadata.Priority < 1 {
+	if !identifierPattern.MatchString(metadata.ID) || !ValidUnderlays(metadata.ID, metadata.Underlays) || !identifierPattern.MatchString(metadata.Group) || metadata.Priority < 1 || metadata.Slot < 0 || metadata.Slot >= SlotCount {
 		return errors.New("invalid AWG connection metadata")
 	}
 	profile, err := Parse(raw)
@@ -150,10 +155,13 @@ func (s *Store) Load(id string) (Metadata, []byte, error) {
 	return metadata, config, err
 }
 
-// LoadReadyForRuntime reads the single committed-ready connector for the root AWG service while the installer lock is held by its launcher.
-func (s *Store) LoadReadyForRuntime() (Metadata, []byte, error) {
+// LoadReadyForRuntime reads the requested committed-ready connector (or the sole ready connector for legacy callers) for the root AWG service while the installer lock is held by its launcher.
+func (s *Store) LoadReadyForRuntime(ids ...string) (Metadata, []byte, error) {
 	var selected Metadata
 	var profile []byte
+	if len(ids) > 1 || (len(ids) == 1 && !identifierPattern.MatchString(ids[0])) {
+		return selected, nil, errors.New("invalid AWG runtime identity")
+	}
 	info, err := os.Lstat(s.directory)
 	if err != nil || info == nil {
 		return selected, nil, errors.New("AWG runtime storage is unavailable")
@@ -167,7 +175,7 @@ func (s *Store) LoadReadyForRuntime() (Metadata, []byte, error) {
 		return selected, nil, errors.New("AWG runtime storage is unavailable")
 	}
 	for _, entry := range entries {
-		if !entry.IsDir() || !identifierPattern.MatchString(entry.Name()) {
+		if !entry.IsDir() || !identifierPattern.MatchString(entry.Name()) || (len(ids) == 1 && entry.Name() != ids[0]) {
 			continue
 		}
 		metadata, err := s.readMetadata(entry.Name())
@@ -276,13 +284,13 @@ func (s *Store) replace(metadata Metadata, config []byte) error {
 func (s *Store) readMetadata(id string) (Metadata, error) {
 	var metadata Metadata
 	path := filepath.Join(s.directory, id, metadataFile)
-	data, err := readPrivateFile(path, 4096)
+	data, err := readPrivateFile(path, 8192)
 	if err != nil {
 		return metadata, errors.New("AWG connection not found or unreadable")
 	}
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.DisallowUnknownFields()
-	if decoder.Decode(&metadata) != nil || decoder.Decode(new(any)) != io.EOF || metadata.ID != id || !identifierPattern.MatchString(metadata.Group) || metadata.Priority < 1 || (metadata.Status != "configured" && metadata.Status != "ready") || (metadata.Protocol != "wireguard" && metadata.Protocol != "amneziawg") || metadata.IPv4Address == "" || metadata.DNSIPv4 == "" {
+	if decoder.Decode(&metadata) != nil || decoder.Decode(new(any)) != io.EOF || metadata.ID != id || !ValidUnderlays(id, metadata.Underlays) || !identifierPattern.MatchString(metadata.Group) || metadata.Priority < 1 || metadata.Slot < 0 || metadata.Slot >= SlotCount || (metadata.Status != "configured" && metadata.Status != "ready") || (metadata.Protocol != "wireguard" && metadata.Protocol != "amneziawg") || metadata.IPv4Address == "" || metadata.DNSIPv4 == "" {
 		return Metadata{}, errors.New("stored AWG metadata is invalid")
 	}
 	return metadata, nil
@@ -390,4 +398,19 @@ func syncDirectory(path string) error {
 	}
 	defer directory.Close()
 	return directory.Sync()
+}
+
+// ValidUnderlays validates a bounded ordered list of distinct exit IDs and rejects a self reference.
+func ValidUnderlays(id string, choices []string) bool {
+	if len(choices) > 64 {
+		return false
+	}
+	seen := make(map[string]bool, len(choices))
+	for _, candidate := range choices {
+		if !identifierPattern.MatchString(candidate) || candidate == id || seen[candidate] {
+			return false
+		}
+		seen[candidate] = true
+	}
+	return true
 }

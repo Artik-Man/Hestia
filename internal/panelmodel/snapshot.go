@@ -10,12 +10,14 @@ type Exit struct {
 // Group lists exits in descending priority and identifies the routing default.
 type Group struct {
 	ID        string `json:"id"`
+	Name      string `json:"name,omitempty"`
 	IsDefault bool   `json:"isDefault"`
 	Exits     []Exit `json:"exits" nullable:"false"`
 }
 
 // RuleList contains the saved masks and binding, including lists without a group.
 type RuleList struct {
+	Name    string   `json:"name,omitempty"`
 	ID      string   `json:"id"`
 	Group   string   `json:"group" doc:"Пустая строка означает отсутствие привязки"`
 	Enabled bool     `json:"enabled"`

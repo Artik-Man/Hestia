@@ -24,8 +24,8 @@ var (
 	customI1Pattern   = regexp.MustCompile(`^(?:<t>|<(?:b 0x[0-9a-fA-F]+|r [0-9]+|rd [0-9]+|rc [0-9]+)>)+$`)
 )
 
-// Profile contains validated, normalized client settings. SecretConfig must only be written
-// to root-owned storage and must never be serialized into a public API response or a log.
+// Profile contains validated, normalized client settings. Only the single-profile editor
+// response may export SecretConfig. Lists, snapshots and diagnostics must omit it.
 type Profile struct {
 	Address       []netip.Prefix `json:"-"`
 	Endpoint      string         `json:"-"`

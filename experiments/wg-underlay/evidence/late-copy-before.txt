@@ -1,0 +1,9 @@
+kernel=6.1.0-53-cloud-arm64; unmarked route to peer: 198.19.10.10 via 198.18.2.2 dev forbidden src 198.18.2.1 uid 0 
+hestia sha256=3c63975fd904bf998a13786431db6f6bd131375b5761b8f5342fd59fc5fbfbb4
+guarded startup: child service running with IPv4 and IPv6 guards; readiness withheld before backend
+quality preflight preferred: HTTP 200 {"delay":9}
+quality preflight backup: HTTP 200 {"delay":2}
+initial: echo matched; encrypted trial via chosen0 only
+preferred HTTPS healthy, only WireGuard UDP dropped
+udp-only-failover: echo matched; encrypted trial via chosen1 only
+backup lost application traffic during UDP-only primary failure after 95 stable trials

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -50,7 +51,12 @@ func applyInstalledBinding(ctx context.Context, change panelmodel.BindingChange)
 }
 
 // runInstalledChange passes a typed payload through stdin to one caller-selected, fixed helper mode.
-func runInstalledChange[T panelmodel.BindingChange | panelmodel.GroupOrderChange](ctx context.Context, mode string, change T) error {
+func runInstalledChange[T panelmodel.RuleList | panelmodel.BindingChange | panelmodel.GroupOrderChange | panelmodel.GroupIdentifier | panelmodel.ExitMoveCommand | panelmodel.GroupDeleteCommand](ctx context.Context, mode string, change T) error {
+	return runInstalledHelper(ctx, mode, change, io.Discard)
+}
+
+// runInstalledHelper sends one typed request on stdin and captures only the fixed helper's public confirmation.
+func runInstalledHelper[T panelmodel.RuleList | panelmodel.DomainListUpdate | panelmodel.DomainListValues | panelmodel.BindingChange | panelmodel.GroupOrderChange | panelmodel.GroupIdentifier | panelmodel.GroupCreateRequest | panelmodel.ExitMoveCommand | panelmodel.GroupDeleteCommand](ctx context.Context, mode string, change T, output io.Writer) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -62,15 +68,46 @@ func runInstalledChange[T panelmodel.BindingChange | panelmodel.GroupOrderChange
 	cmd := exec.Command("/usr/bin/sudo", "-n", "--", "/usr/local/bin/hestia", mode)
 	cmd.Stdin = bytes.NewReader(data)
 	cmd.Stderr = os.Stderr
+	cmd.Stdout = output
 	if err := cmd.Run(); err != nil {
 		var failure *exec.ExitError
 		if errors.As(err, &failure) {
 			switch failure.ExitCode() {
 			case 44:
+				if mode == "-rename-direct" {
+					return huma.Error404NotFound("Подключение не найдено")
+				}
+				if mode == "-delete-group" {
+					return huma.Error404NotFound("Группа не найдена")
+				}
+				if mode == "-move-exit" {
+					return huma.Error404NotFound("Подключение или группа не найдены")
+				}
 				return huma.Error404NotFound("Список или группа не найдены")
 			case 42:
+				if mode == "-rename-direct" {
+					return huma.Error422UnprocessableEntity("Недопустимое название или ID подключения")
+				}
+				if mode == "-create-domain-list" || mode == "-update-domain-list" || mode == "-delete-domain-list" {
+					return huma.Error422UnprocessableEntity("Недопустимые данные доменного списка")
+				}
+				if mode == "-delete-group" {
+					return huma.Error422UnprocessableEntity("Недопустимый ID группы")
+				}
+				if mode == "-move-exit" {
+					return huma.Error422UnprocessableEntity("Недопустимые параметры переноса подключения")
+				}
+				if mode == "-create-group" || mode == "-rename-group" {
+					return huma.Error422UnprocessableEntity("Недопустимое название или ID группы")
+				}
 				return huma.Error422UnprocessableEntity("Требуется перестановка тех же групп и подключений")
 			case 49:
+				if mode == "-rename-direct" {
+					return huma.Error409Conflict("Переименование доступно для прямого подключения при свободной конфигурации")
+				}
+				if mode == "-delete-group" {
+					return huma.Error409Conflict("Группа содержит подключения, назначена по умолчанию или конфигурация сейчас меняется")
+				}
 				return huma.Error409Conflict("Конфигурация изменилась или выполняется другая операция")
 			}
 		}

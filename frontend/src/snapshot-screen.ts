@@ -15,6 +15,7 @@ import { DomainLists } from "./domain-lists";
 import { GroupsState } from "./groups-state";
 import { Groups } from "./groups";
 import { type Page } from "./pages";
+import { groupName } from "./snapshot";
 import { SnapshotState } from "./snapshot-state";
 
 /** SnapshotScreen presents shared loading and retry controls for routes backed by the shared snapshot. */
@@ -47,7 +48,15 @@ export class SnapshotScreen {
     const selected = this.selected();
     if (!selected) return this.page().label;
     if (selected.kind === "invalid") return "Карточка недоступна";
-    const labels = { group: "Группа", list: "Доменный список", exit: "Выход" };
-    return labels[selected.kind] + " " + selected.id;
+    const labels = { group: "Группа", list: "Доменный список" };
+    const view = this.state.view();
+    const name =
+      selected.kind === "group" && view.kind === "ready"
+        ? groupName(view.snapshot.groups, selected.id)
+        : selected.kind === "list" && view.kind === "ready"
+          ? (view.snapshot.lists.find((list) => list.id === selected.id)
+              ?.name ?? selected.id)
+          : selected.id;
+    return labels[selected.kind] + " " + name;
   });
 }

@@ -28,6 +28,8 @@ components:
     AWGConnection:
       additionalProperties: false
       properties:
+        activeUnderlay:
+          type: string
         group:
           minLength: 1
           type: string
@@ -47,12 +49,45 @@ components:
             - ready
             - error
           type: string
+        underlays:
+          items:
+            type: string
+          maxItems: 64
+          type: array
       required:
         - id
         - group
         - priority
         - status
         - ipv6Blocked
+      type: object
+    AWGConnectionProfile:
+      additionalProperties: false
+      properties:
+        group:
+          minLength: 1
+          type: string
+        id:
+          minLength: 1
+          type: string
+        priority:
+          format: int64
+          minimum: 1
+          type: integer
+        profile:
+          minLength: 1
+          type: string
+        underlays:
+          description: Идентификаторы выходов в порядке предпочтения; пустой список — обычный маршрут
+          items:
+            type: string
+          maxItems: 64
+          type: array
+      required:
+        - id
+        - group
+        - priority
+        - profile
       type: object
     AWGSaveRequest:
       additionalProperties: false
@@ -70,11 +105,35 @@ components:
         profile:
           minLength: 1
           type: string
+        underlays:
+          description: Идентификаторы выходов в порядке предпочтения; пустой список — обычный маршрут
+          items:
+            type: string
+          maxItems: 64
+          type: array
       required:
         - id
         - group
-        - priority
         - profile
+      type: object
+    AWGUnderlayCandidate:
+      additionalProperties: false
+      properties:
+        id:
+          minLength: 1
+          type: string
+        name:
+          maxLength: 80
+          type: string
+        type:
+          enum:
+            - direct
+            - wireguard
+            - amneziawg
+          type: string
+      required:
+        - id
+        - type
       type: object
     AWGUpdateRequest:
       additionalProperties: false
@@ -89,9 +148,13 @@ components:
         profile:
           minLength: 1
           type: string
+        underlays:
+          description: Идентификаторы выходов в порядке предпочтения; пустой список — обычный маршрут
+          items:
+            type: string
+          maxItems: 64
+          type: array
       required:
-        - group
-        - priority
         - profile
       type: object
     AppliedBinding:
@@ -129,6 +192,71 @@ components:
         - listId
         - expectedGroup
         - group
+      type: object
+    CheckResult:
+      additionalProperties: false
+      properties:
+        localErrors:
+          format: int64
+          type: integer
+        protocol:
+          enum:
+            - UDP
+            - TCP
+          type: string
+        samples:
+          format: int64
+          type: integer
+        score:
+          format: double
+          nullable: true
+          type: number
+        successes:
+          format: int64
+          type: integer
+        targets:
+          items:
+            $ref: "#/components/schemas/TargetResult"
+          type: array
+      required:
+        - protocol
+        - samples
+        - successes
+        - localErrors
+        - score
+        - targets
+      type: object
+    DomainListUpdate:
+      additionalProperties: false
+      properties:
+        expected:
+          $ref: "#/components/schemas/RuleList"
+        list:
+          $ref: "#/components/schemas/DomainListValues"
+      required:
+        - expected
+        - list
+      type: object
+    DomainListValues:
+      additionalProperties: false
+      properties:
+        group:
+          description: Пустая строка означает отсутствие привязки
+          maxLength: 63
+          type: string
+        masks:
+          items:
+            type: string
+          maxItems: 1024
+          type: array
+        name:
+          maxLength: 80
+          minLength: 1
+          type: string
+      required:
+        - name
+        - group
+        - masks
       type: object
     ErrorDetail:
       additionalProperties: false
@@ -187,6 +315,44 @@ components:
         - id
         - available
       type: object
+    ExitGroupAssignment:
+      additionalProperties: false
+      properties:
+        group:
+          type: string
+        id:
+          type: string
+        priority:
+          format: int64
+          minimum: 1
+          type: integer
+      required:
+        - id
+        - group
+        - priority
+      type: object
+    ExitGroupChange:
+      additionalProperties: false
+      properties:
+        expectedGroup:
+          maxLength: 63
+          minLength: 1
+          pattern: ^[a-z][a-z0-9-]{0,62}$
+          type: string
+        group:
+          maxLength: 63
+          minLength: 1
+          pattern: ^[a-z][a-z0-9-]{0,62}$
+          type: string
+        priority:
+          format: int64
+          minimum: 1
+          type: integer
+      required:
+        - expectedGroup
+        - group
+        - priority
+      type: object
     Group:
       additionalProperties: false
       properties:
@@ -198,10 +364,48 @@ components:
           type: string
         isDefault:
           type: boolean
+        name:
+          type: string
       required:
         - id
         - isDefault
         - exits
+      type: object
+    GroupCreateRequest:
+      additionalProperties: false
+      properties:
+        id:
+          maxLength: 63
+          minLength: 1
+          pattern: ^[a-z][a-z0-9-]{0,62}$
+          type: string
+        name:
+          maxLength: 80
+          minLength: 1
+          type: string
+      type: object
+    GroupIdentifier:
+      additionalProperties: false
+      properties:
+        id:
+          maxLength: 63
+          minLength: 1
+          pattern: ^[a-z][a-z0-9-]{0,62}$
+          type: string
+        name:
+          type: string
+      required:
+        - id
+      type: object
+    GroupName:
+      additionalProperties: false
+      properties:
+        name:
+          maxLength: 80
+          minLength: 1
+          type: string
+      required:
+        - name
       type: object
     GroupOrderChange:
       additionalProperties: false
@@ -243,6 +447,168 @@ components:
         - id
         - exits
       type: object
+    PhysicalInterface:
+      additionalProperties: false
+      properties:
+        exitIds:
+          items:
+            type: string
+          type: array
+        interfaceName:
+          maxLength: 15
+          minLength: 1
+          type: string
+        kind:
+          enum:
+            - ethernet
+            - wifi
+          type: string
+        online:
+          type: boolean
+        present:
+          type: boolean
+      required:
+        - interfaceName
+        - kind
+        - present
+        - online
+        - exitIds
+      type: object
+    PhysicalInventory:
+      additionalProperties: false
+      properties:
+        interfaces:
+          items:
+            $ref: "#/components/schemas/PhysicalInterface"
+          type: array
+        wifiAvailable:
+          type: boolean
+        wifiProfiles:
+          items:
+            $ref: "#/components/schemas/WifiConnection"
+          type: array
+      required:
+        - interfaces
+        - wifiProfiles
+        - wifiAvailable
+      type: object
+    QualityCheck:
+      additionalProperties: false
+      properties:
+        dnsName:
+          maxLength: 253
+          type: string
+        intervalSeconds:
+          format: int64
+          maximum: 3600
+          minimum: 1
+          type: integer
+        protocol:
+          enum:
+            - UDP
+            - TCP
+          type: string
+        targets:
+          items:
+            type: string
+          maxItems: 8
+          minItems: 1
+          type: array
+        timeoutSeconds:
+          format: int64
+          maximum: 30
+          minimum: 1
+          type: integer
+      required:
+        - protocol
+        - targets
+        - intervalSeconds
+        - timeoutSeconds
+      type: object
+    QualityConnection:
+      additionalProperties: false
+      properties:
+        active:
+          description: Выход подтверждён действующим селектором группы
+          type: boolean
+        available:
+          type: boolean
+        id:
+          type: string
+        result:
+          $ref: "#/components/schemas/Result"
+      required:
+        - id
+        - available
+        - active
+        - result
+      type: object
+    QualityGroup:
+      additionalProperties: false
+      properties:
+        connections:
+          items:
+            $ref: "#/components/schemas/QualityConnection"
+          type: array
+        id:
+          type: string
+        name:
+          type: string
+      required:
+        - id
+        - name
+        - connections
+      type: object
+    QualityReport:
+      additionalProperties: false
+      properties:
+        capturedAt:
+          description: Время снимка RFC 3339. Пусто до получения актуального отчёта от контроллера.
+          type: string
+        groups:
+          items:
+            $ref: "#/components/schemas/QualityGroup"
+          type: array
+        settings:
+          $ref: "#/components/schemas/QualitySettings"
+      required:
+        - capturedAt
+        - settings
+        - groups
+      type: object
+    QualitySettings:
+      additionalProperties: false
+      properties:
+        checks:
+          items:
+            $ref: "#/components/schemas/QualityCheck"
+          maxItems: 2
+          minItems: 0
+          type: array
+        windowMinutes:
+          format: int64
+          maximum: 1440
+          minimum: 1
+          type: integer
+      required:
+        - windowMinutes
+        - checks
+      type: object
+    Result:
+      additionalProperties: false
+      properties:
+        checks:
+          items:
+            $ref: "#/components/schemas/CheckResult"
+          type: array
+        overall:
+          format: double
+          nullable: true
+          type: number
+      required:
+        - checks
+        - overall
+      type: object
     RuleList:
       additionalProperties: false
       properties:
@@ -257,6 +623,8 @@ components:
           items:
             type: string
           type: array
+        name:
+          type: string
       required:
         - id
         - group
@@ -277,6 +645,101 @@ components:
       required:
         - groups
         - lists
+      type: object
+    TargetResult:
+      additionalProperties: false
+      properties:
+        dnsErrors:
+          format: int64
+          type: integer
+        dnsResponseCodes:
+          additionalProperties:
+            format: int64
+            type: integer
+          description: Число полученных ответов с ненулевым кодом DNS, ключ — десятичный RCODE.
+          type: object
+        localErrors:
+          format: int64
+          type: integer
+        samples:
+          format: int64
+          type: integer
+        score:
+          format: double
+          nullable: true
+          type: number
+        successes:
+          format: int64
+          type: integer
+        target:
+          type: string
+      required:
+        - target
+        - samples
+        - successes
+        - localErrors
+        - dnsErrors
+        - score
+      type: object
+    WifiConnection:
+      additionalProperties: false
+      properties:
+        active:
+          type: boolean
+        band:
+          enum:
+            - "2.4"
+            - "5"
+          type: string
+        id:
+          type: string
+        interfaceName:
+          type: string
+        security:
+          enum:
+            - open
+            - wpa-psk
+          type: string
+        ssid:
+          type: string
+      required:
+        - id
+        - interfaceName
+        - ssid
+        - security
+        - band
+        - active
+      type: object
+    WifiConnectionSettings:
+      additionalProperties: false
+      properties:
+        band:
+          enum:
+            - "2.4"
+            - "5"
+          type: string
+        interfaceName:
+          maxLength: 15
+          minLength: 1
+          type: string
+        password:
+          maxLength: 64
+          type: string
+          writeOnly: true
+        security:
+          enum:
+            - open
+            - wpa-psk
+          type: string
+        ssid:
+          maxLength: 32
+          minLength: 1
+          type: string
+      required:
+        - interfaceName
+        - ssid
+        - security
+        - band
       type: object
 info:
   title: Локальная панель Гестии
@@ -358,6 +821,39 @@ paths:
       summary: Сохранить профиль AmneziaWG и назначение группе
       tags:
         - Panel
+  /api/awg-underlays:
+    get:
+      operationId: listAWGUnderlays
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/AWGUnderlayCandidate"
+                type: array
+          description: OK
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Conflict
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Получить подключения для транспорта WireGuard
+      tags:
+        - Panel
   /api/awg/check:
     post:
       operationId: checkAWGProfile
@@ -420,6 +916,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorModel"
           description: Not Found
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Conflict
         "422":
           content:
             application/problem+json:
@@ -439,6 +941,59 @@ paths:
                 $ref: "#/components/schemas/ErrorModel"
           description: Service Unavailable
       summary: Удалить подключение AmneziaWG
+      tags:
+        - Panel
+    get:
+      operationId: getAWGConnectionProfile
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            minLength: 1
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AWGConnectionProfile"
+          description: OK
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Not Found
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Conflict
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Открыть один сохранённый профиль WireGuard для редактирования, включая ключи
       tags:
         - Panel
     put:
@@ -490,6 +1045,306 @@ paths:
       summary: Обновить сохранённое подключение AmneziaWG
       tags:
         - Panel
+  /api/connections/{id}/group:
+    put:
+      operationId: moveExit
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            maxLength: 63
+            minLength: 1
+            pattern: ^[a-z][a-z0-9-]{0,62}$
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExitGroupChange"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExitGroupAssignment"
+          description: OK
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Not Found
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Conflict
+        "413":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Request Entity Too Large
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Перенести подключение в другую группу
+      tags:
+        - Panel
+  /api/connections/{id}/name:
+    put:
+      operationId: renameDirectConnection
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            maxLength: 63
+            minLength: 1
+            pattern: ^[a-z][a-z0-9-]{0,62}$
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GroupName"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AWGUnderlayCandidate"
+          description: OK
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Not Found
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Conflict
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Переименовать прямое подключение
+      tags:
+        - Panel
+  /api/domain-lists:
+    post:
+      operationId: createDomainList
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DomainListValues"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuleList"
+          description: Created
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Not Found
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Conflict
+        "413":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Request Entity Too Large
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Создать и применить доменный список
+      tags:
+        - Panel
+  /api/domain-lists/{id}:
+    delete:
+      operationId: deleteDomainList
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            maxLength: 63
+            minLength: 1
+            pattern: ^[a-z][a-z0-9-]{0,62}$
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RuleList"
+        required: true
+      responses:
+        "204":
+          description: No Content
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Not Found
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Conflict
+        "413":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Request Entity Too Large
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Удалить доменный список при совпадении исходных значений
+      tags:
+        - Panel
+    put:
+      operationId: updateDomainList
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            maxLength: 63
+            minLength: 1
+            pattern: ^[a-z][a-z0-9-]{0,62}$
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DomainListUpdate"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuleList"
+          description: OK
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Not Found
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Conflict
+        "413":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Request Entity Too Large
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Применить изменения доменного списка при совпадении исходных значений
+      tags:
+        - Panel
   /api/group-order:
     put:
       operationId: applyGroupOrder
@@ -539,6 +1394,55 @@ paths:
       summary: Применить порядок групп и подключений
       tags:
         - Panel
+  /api/groups:
+    post:
+      operationId: createGroup
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GroupCreateRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupIdentifier"
+          description: Created
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Conflict
+        "413":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Request Entity Too Large
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Создать пустую группу подключений
+      tags:
+        - Panel
   /api/groups-and-rules:
     get:
       operationId: getGroupsAndRules
@@ -562,6 +1466,117 @@ paths:
                 $ref: "#/components/schemas/ErrorModel"
           description: Service Unavailable
       summary: Прочитать проверенный снимок групп и доменных списков
+      tags:
+        - Panel
+  /api/groups/{id}:
+    delete:
+      operationId: deleteGroup
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            maxLength: 63
+            minLength: 1
+            pattern: ^[a-z][a-z0-9-]{0,62}$
+            type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Not Found
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Conflict
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Удалить пустую группу подключений и снять привязки её списков
+      tags:
+        - Panel
+    put:
+      operationId: renameGroup
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            maxLength: 63
+            minLength: 1
+            pattern: ^[a-z][a-z0-9-]{0,62}$
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GroupName"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupIdentifier"
+          description: OK
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Not Found
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Conflict
+        "413":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Request Entity Too Large
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Изменить название группы подключений
       tags:
         - Panel
   /api/list-binding:
@@ -630,6 +1645,241 @@ paths:
                 $ref: "#/components/schemas/ErrorModel"
           description: Error
       summary: Прочитать настройки внешних ссылок панели
+      tags:
+        - Panel
+  /api/physical-connections:
+    get:
+      operationId: listPhysicalConnections
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PhysicalInventory"
+          description: OK
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Conflict
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Получить физические интерфейсы и сохранённые Wi-Fi сети
+      tags:
+        - Panel
+  /api/quality:
+    get:
+      operationId: getQuality
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QualityReport"
+          description: OK
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Прочитать настройки проверок и текущий порядок выходов всех групп
+      tags:
+        - Panel
+  /api/quality/settings:
+    put:
+      operationId: updateQualitySettings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QualitySettings"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QualitySettings"
+          description: OK
+        "413":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Request Entity Too Large
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Сохранить общие для всех выходов параметры проверок связи
+      tags:
+        - Panel
+  /api/wifi-connections:
+    post:
+      operationId: createWifiConnection
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WifiConnectionSettings"
+        required: true
+      responses:
+        "204":
+          description: No Content
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Conflict
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Подключиться к Wi-Fi сети
+      tags:
+        - Panel
+  /api/wifi-connections/{id}:
+    delete:
+      operationId: deleteWifiConnection
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+            type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Not Found
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Conflict
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Удалить сохранённый профиль Wi-Fi
+      tags:
+        - Panel
+    put:
+      operationId: saveWifiConnection
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WifiConnectionSettings"
+        required: true
+      responses:
+        "204":
+          description: No Content
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Not Found
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Conflict
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Изменить сохранённый профиль Wi-Fi
       tags:
         - Panel
 servers:

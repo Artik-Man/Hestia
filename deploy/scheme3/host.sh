@@ -137,11 +137,11 @@ tar -C frontend --exclude node_modules --exclude dist --exclude .angular -cf - .
 (cd "$work/frontend" && npm ci && npm run build -- --output-path "$work/ui")
 mv "$work/ui/browser" "$work/browser"
 cp -R "$dir" "$work/scheme3"
-cp "$repo/deploy/profile.py" "$work/scheme3/profile.py"
-for unit in hestia-binding-recovery.service hestia-binding-watch.path hestia-binding-watch.service hestia-binding.conf; do
+cp "$repo/deploy/awg-upgrade.sh" "$repo/deploy/profile.py" "$repo/deploy/smoke.py" "$work/scheme3/"
+for unit in hestia-smoke@.service hestia-binding-recovery.service hestia-binding-watch.path hestia-binding-watch.service hestia-binding.conf; do
     cp "$repo/deploy/systemd/$unit" "$work/scheme3/$unit"
 done
-cp "$repo/deploy/systemd/hestia-awg.service" "$work/scheme3/hestia-awg.service"
+cp "$repo/deploy/systemd/hestia-awg@.service" "$work/scheme3/"
 cp "$repo/deploy/systemd/hestia-awg.conf" "$work/scheme3/hestia-awg.tmpfiles"
 files=(scheme3 hestia hestia-panel browser amneziawg-go amneziawg-tools-source.tar awg-SHA256SUMS)
 if [[ $action == install ]]; then

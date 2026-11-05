@@ -17,7 +17,7 @@
       </option>
       @for (group of groups(); track group.id) {
         <option [value]="group.id" [selected]="selected() === group.id">
-          {{ group.id }}
+          {{ group.name ?? group.id }}
         </option>
       }
     </select></label
@@ -28,6 +28,6 @@
     (click)="submit()"
     [disabled]="write.pending() || unchanged()"
   >
-    Применить привязку
+    {{ write.pending() ? "Применение…" : "Применить привязку" }}
   </button>
 </section>

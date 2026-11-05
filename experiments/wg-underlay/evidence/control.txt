@@ -1,0 +1,6 @@
+2026-11-05, hestia-load-01, GNU/Linux 6.1.0-53-cloud-arm64.
+Earlier Hestia Linux arm64 binary sha256 a3b392c9d5ca106b5211fba34d99cc8a9279cb6a7db2a36311dfb8f29ceb1bd8.
+Legacy baseline with manual metadata: runtime exited 1, "stored AWG metadata is invalid".
+Automatic control with no underlays property:
+unmarked route to peer: 198.19.10.10 via 198.18.2.2 dev forbidden src 198.18.2.1
+automatic-control: echo matched; encrypted trial via forbidden only.

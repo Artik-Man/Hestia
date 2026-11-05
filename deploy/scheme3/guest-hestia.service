@@ -7,14 +7,19 @@ After=hestia-sing-box.service
 Type=simple
 DynamicUser=yes
 SupplementaryGroups=hestia-snapshot
-ExecStart=/usr/local/bin/hestia -watch -config /etc/hestia/snapshot.json -interval 1s
+RuntimeDirectory=hestia-quality
+RuntimeDirectoryMode=0755
+ExecStartPre=/usr/bin/rm -f /run/hestia-quality/paths.json
+ExecStartPre=-+/usr/bin/python3 -I /usr/local/lib/hestia/profile.py --quality-paths /etc/hestia/sing-box.json /run/hestia-quality
+ExecStart=/usr/local/bin/hestia -watch -quality -config /etc/hestia/snapshot.json -interval 1s
 Restart=on-failure
 RestartSec=2s
 NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=yes
 PrivateTmp=yes
-CapabilityBoundingSet=
+CapabilityBoundingSet=CAP_NET_RAW
+AmbientCapabilities=CAP_NET_RAW
 
 [Install]
 WantedBy=multi-user.target

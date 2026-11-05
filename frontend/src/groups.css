@@ -1,3 +1,14 @@
+.group-create {
+  margin-bottom: 24px;
+}
+dialog input {
+  min-width: 0;
+  max-width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #aebfb8;
+  border-radius: 6px;
+  font: inherit;
+}
 .order-head {
   margin-bottom: 16px;
 }
@@ -134,4 +145,23 @@ button:focus-visible {
   .health {
     font-size: 12px;
   }
+}
+
+.order-exits {
+  min-height: 44px;
+}
+.order-exits.cdk-drop-list-receiving {
+  outline: 2px dashed #39816b;
+  outline-offset: -2px;
+  background: #f0f8f4;
+}
+.gateway-dialog .remove {
+  min-height: 40px;
+  padding: 7px 14px;
+  border: 1px solid #8b342b;
+  border-radius: 6px;
+  background: #8b342b;
+  color: white;
+  font: inherit;
+  cursor: pointer;
 }

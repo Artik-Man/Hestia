@@ -14,5 +14,6 @@ export interface Group {
     exits: Array<Exit>;
     id: string;
     isDefault: boolean;
+    name?: string;
 }
 

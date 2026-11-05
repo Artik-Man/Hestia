@@ -23,12 +23,12 @@ type View =
 @Injectable({ providedIn: "root" })
 export class SnapshotState {
   private readonly api = inject(PanelService);
-  private readonly requests = new Subject<void>();
+  private readonly requests = new Subject<boolean>();
   readonly view = toSignal(
     this.requests.pipe(
-      startWith(undefined),
-      switchMap(() =>
-        this.api.getGroupsAndRules().pipe(
+      startWith(false),
+      switchMap((keepCurrent) => {
+        const read = this.api.getGroupsAndRules().pipe(
           timeout(10000),
           map((value): View =>
             isSnapshot(value)
@@ -36,15 +36,18 @@ export class SnapshotState {
               : { kind: "failed" },
           ),
           catchError(() => of<View>({ kind: "failed" })),
-          startWith({ kind: "loading" } as const),
-        ),
-      ),
+        );
+        return keepCurrent
+          ? read
+          : read.pipe(startWith({ kind: "loading" } as const));
+      }),
     ),
     { requireSync: true },
   );
 
   /** reload asks for the latest snapshot and supersedes an earlier read only when reconciling a write. */
-  reload(afterWrite = false): void {
-    if (afterWrite || this.view().kind !== "loading") this.requests.next();
+  reload(afterWrite = false, keepCurrent = false): void {
+    if (afterWrite || this.view().kind !== "loading")
+      this.requests.next(keepCurrent && this.view().kind === "ready");
   }
 }

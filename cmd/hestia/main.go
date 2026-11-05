@@ -19,13 +19,29 @@ import (
 // main selects snapshot validation, one-shot application, or continuous reconciliation.
 // In watch mode SIGTERM and SIGINT cancel the polling loop.
 func main() {
-	if len(os.Args) == 2 && (os.Args[1] == "-apply-group-order" || os.Args[1] == "-apply-binding" || os.Args[1] == "-recover-bindings" || os.Args[1] == "-watch-pending-binding") {
-		os.Exit(runBindingCommand(os.Args[1], os.Stdin))
+	if len(os.Args) == 2 {
+		switch os.Args[1] {
+		case "-physical-list", "-wifi-create", "-wifi-save", "-wifi-delete":
+			os.Exit(runPhysicalCommand(os.Args[1], os.Stdin, os.Stdout))
+		}
 	}
-	if len(os.Args) == 2 && os.Args[1] == "-awg-runtime" {
-		os.Exit(runAWGRuntimeCommand())
+	if len(os.Args) == 2 && (os.Args[1] == "-delete-domain-list" || os.Args[1] == "-create-domain-list" || os.Args[1] == "-update-domain-list" || os.Args[1] == "-delete-group" || os.Args[1] == "-move-exit" || os.Args[1] == "-create-group" || os.Args[1] == "-rename-group" || os.Args[1] == "-rename-direct" || os.Args[1] == "-apply-group-order" || os.Args[1] == "-apply-binding" || os.Args[1] == "-recover-bindings" || os.Args[1] == "-watch-pending-binding") {
+		os.Exit(runBindingCommand(os.Args[1], os.Stdin, os.Stdout))
 	}
-	if len(os.Args) == 2 && (os.Args[1] == "-awg-check" || os.Args[1] == "-awg-create" || os.Args[1] == "-awg-update" || os.Args[1] == "-awg-list" || os.Args[1] == "-awg-delete") {
+	if len(os.Args) == 4 && os.Args[1] == "-awg-guard" {
+		os.Exit(runAWGGuardCommand(os.Args[2], os.Args[3]))
+	}
+	if len(os.Args) == 4 && (os.Args[1] == "-awg-retire" || os.Args[1] == "-awg-retire-legacy") {
+		os.Exit(runAWGRetireCommand(os.Args[2], os.Args[3], os.Args[1] == "-awg-retire-legacy"))
+	}
+	if (len(os.Args) == 2 || len(os.Args) == 3) && os.Args[1] == "-awg-runtime" {
+		id := ""
+		if len(os.Args) == 3 {
+			id = os.Args[2]
+		}
+		os.Exit(runAWGRuntimeCommand(id))
+	}
+	if len(os.Args) == 2 && (os.Args[1] == "-awg-check" || os.Args[1] == "-awg-create" || os.Args[1] == "-awg-update" || os.Args[1] == "-awg-list" || os.Args[1] == "-awg-underlays" || os.Args[1] == "-awg-read" || os.Args[1] == "-awg-delete") {
 		os.Exit(runAWGCommand(os.Args[1], os.Stdin, os.Stdout))
 	}
 	if len(os.Args) > 1 && (os.Args[1] == "observe" || os.Args[1] == "steer" || os.Args[1] == "guard" || os.Args[1] == "balance") {
@@ -51,9 +67,10 @@ func main() {
 	domain := flag.String("domain", "", "domain selecting the group (empty for direct IP)")
 	check := flag.Bool("check", false, "validate snapshot without applying it")
 	watch := flag.Bool("watch", false, "continuously reconcile group availability")
+	quality := flag.Bool("quality", false, "measure connection quality and rank available exits in watch mode")
 	interval := flag.Duration("interval", time.Second, "poll interval in watch mode")
 	flag.Parse()
-	if *config == "" || flag.NArg() != 0 {
+	if *config == "" || flag.NArg() != 0 || (*quality && !*watch) {
 		flag.Usage()
 		os.Exit(2)
 	}
@@ -76,7 +93,7 @@ func main() {
 		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 		defer stop()
 		output := json.NewEncoder(os.Stdout)
-		err = controller.Watch(ctx, *config, *interval, func(result controller.Result) error { return output.Encode(result) }, func(err error) { fmt.Fprintln(os.Stderr, err) })
+		err = controller.Watch(ctx, *config, *interval, *quality, func(result controller.Result) error { return output.Encode(result) }, func(err error) { fmt.Fprintln(os.Stderr, err) })
 	} else {
 		err = run(*config, *domain)
 	}

@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from "@angular/core";
+import { Toast } from "primeng/toast";
 import { toSignal } from "@angular/core/rxjs-interop";
 import { RouterLink, RouterLinkActive, RouterOutlet } from "@angular/router";
 import { catchError, map, of, timeout } from "rxjs";
@@ -32,7 +33,7 @@ function grafanaLink(value: unknown): string | null {
 /** Panel keeps internal navigation available even when the optional Grafana configuration fails. */
 @Component({
   selector: "hestia-panel",
-  imports: [RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, Toast],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: "./panel.html",
 })

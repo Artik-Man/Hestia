@@ -1,0 +1,227 @@
+<section>
+  <h2>Ethernet</h2>
+  <div class="list-wrap">
+    <table aria-label="Ethernet">
+      <thead>
+        <tr>
+          <th>Название подключения</th>
+          <th>Интерфейс</th>
+          <th>Состояние кабеля</th>
+          <th>Редактировать</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (
+          row of ethernet();
+          track row.adapter.interfaceName + "/" + row.id
+        ) {
+          <tr>
+            <th scope="row">
+              {{ row.id ? catalog.name(row.id) : row.adapter.interfaceName }}
+            </th>
+            <td>{{ row.adapter.interfaceName }}</td>
+            <td>
+              {{
+                !row.adapter.present
+                  ? "Адаптер отсутствует"
+                  : row.adapter.online
+                    ? "Кабель подключён"
+                    : "Кабель отключён"
+              }}
+            </td>
+            <td>
+              @if (catalog.entries().get(row.id); as entry) {
+                <button
+                  type="button"
+                  pButton
+                  class="icon-action"
+                  [attr.aria-label]="
+                    'Редактировать подключение ' + catalog.name(row.id)
+                  "
+                  (click)="rename.emit(entry)"
+                >
+                  <span aria-hidden="true" class="edit-icon"></span>
+                </button>
+              } @else {
+                —
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="4">
+              {{
+                inventory()
+                  ? "Ethernet-адаптеры не обнаружены"
+                  : failed()
+                    ? "Нет данных"
+                    : "Загрузка…"
+              }}
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
+<section>
+  <div class="section-heading">
+    <h2>Wi-Fi</h2>
+    <button
+      type="button"
+      pButton
+      class="save"
+      (click)="openWifi(wifiDialog, null)"
+      [disabled]="!inventory()?.wifiAvailable || !radios().length || busy()"
+    >
+      Добавить Wi-Fi
+    </button>
+  </div>
+  <div class="list-wrap">
+    <table aria-label="Wi-Fi">
+      <thead>
+        <tr>
+          <th>SSID</th>
+          <th>Адаптер</th>
+          <th>Диапазон</th>
+          <th>Состояние</th>
+          <th>Редактировать</th>
+          <th>Удалить</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (profile of inventory()?.wifiProfiles; track profile.id) {
+          <tr>
+            <th scope="row">{{ profile.ssid }}</th>
+            <td>{{ profile.interfaceName }}</td>
+            <td>{{ profile.band === "5" ? "5" : "2,4" }} ГГц</td>
+            <td>{{ profile.active ? "Подключено" : "Отключено" }}</td>
+            <td>
+              <button
+                type="button"
+                pButton
+                class="icon-action"
+                [disabled]="busy() || !inventory()?.wifiAvailable"
+                [attr.aria-label]="'Редактировать подключение ' + profile.ssid"
+                (click)="openWifi(wifiDialog, profile)"
+              >
+                <span aria-hidden="true" class="edit-icon"></span>
+              </button>
+            </td>
+            <td>
+              <button
+                type="button"
+                pButton
+                class="icon-action delete-action connection-remove"
+                [disabled]="busy() || !inventory()?.wifiAvailable"
+                [attr.aria-label]="'Удалить подключение ' + profile.ssid"
+                (click)="removeWifi(profile)"
+              >
+                <span class="delete-icon" aria-hidden="true"></span>
+              </button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6">
+              {{
+                !inventory()
+                  ? failed()
+                    ? "Нет данных"
+                    : "Загрузка…"
+                  : !radios().length
+                    ? "Wi-Fi-адаптеры не обнаружены"
+                    : !inventory()?.wifiAvailable
+                      ? "Управление Wi-Fi недоступно"
+                      : "Нет настроенных подключений Wi-Fi"
+              }}
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
+<dialog
+  id="wifi-editor"
+  #wifiDialog
+  class="gateway-dialog"
+  aria-labelledby="wifi-heading"
+  (cancel)="busy() && $event.preventDefault()"
+  (close)="closeWifi()"
+>
+  <p-toast
+    key="wifi-editor"
+    class="gateway-toast"
+    position="top-right"
+    [life]="5500"
+  />
+  <form (ngSubmit)="saveWifi(wifiDialog)">
+    <h2 id="wifi-heading">
+      {{
+        editing()
+          ? "Редактировать подключение Wi-Fi"
+          : "Новое подключение Wi-Fi"
+      }}
+    </h2>
+    <label for="wifi-adapter">Адаптер</label
+    ><select required id="wifi-adapter" name="adapter" [(ngModel)]="adapter">
+      @for (radio of radios(); track radio.interfaceName) {
+        <option [value]="radio.interfaceName">{{ radio.interfaceName }}</option>
+      }
+    </select>
+    <label for="wifi-band">Диапазон</label
+    ><select id="wifi-band" name="band" [(ngModel)]="band">
+      <option value="2.4">2,4 ГГц</option>
+      <option value="5">5 ГГц</option>
+    </select>
+    <label for="wifi-ssid">SSID</label
+    ><input
+      pInputText
+      id="wifi-ssid"
+      name="ssid"
+      required
+      [(ngModel)]="ssid"
+      autocomplete="off"
+    />
+    <label for="wifi-security">Защита</label
+    ><select id="wifi-security" name="security" [(ngModel)]="security">
+      <option value="wpa-psk">WPA/WPA2 Personal</option>
+      <option value="open">Открытая сеть</option>
+    </select>
+    @if (security === "wpa-psk") {
+      <label for="wifi-password">Пароль</label
+      ><input
+        pInputText
+        id="wifi-password"
+        type="password"
+        name="password"
+        [(ngModel)]="password"
+        autocomplete="new-password"
+        [placeholder]="
+          editing()?.security === 'wpa-psk'
+            ? 'Оставьте пустым, чтобы сохранить пароль'
+            : ''
+        "
+      />
+    }
+    <div class="actions">
+      <button
+        pButton
+        type="button"
+        class="reset"
+        [disabled]="busy()"
+        (click)="wifiDialog.close()"
+      >
+        Отмена</button
+      ><button
+        pButton
+        type="submit"
+        class="save"
+        [disabled]="busy() || !radios().length || !ssid"
+      >
+        {{ busy() ? "Подключение…" : "Сохранить" }}
+      </button>
+    </div>
+  </form>
+</dialog>

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Artik-Man/Hestia/internal/awg"
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
 )
 
@@ -28,7 +29,7 @@ func (f *fakeAWGWriter) Create(_ context.Context, request panelmodel.AWGSaveRequ
 	if f.connections == nil {
 		f.connections = map[string]panelmodel.AWGConnection{}
 	}
-	connection := panelmodel.AWGConnection{ID: request.ID, Group: request.Group, Priority: request.Priority, Status: "configured"}
+	connection := panelmodel.AWGConnection{ID: request.ID, Group: request.Group, Priority: int(request.Priority), Status: "configured"}
 	f.connections[request.ID] = connection
 	return connection, nil
 }
@@ -127,5 +128,94 @@ func TestAWGAPIRejectsPathAndOversizeInputs(t *testing.T) {
 	handler.ServeHTTP(oversized, httptest.NewRequest(http.MethodPost, "/api/awg/check", strings.NewReader(body)))
 	if oversized.Code != http.StatusRequestEntityTooLarge && oversized.Code != http.StatusUnprocessableEntity {
 		t.Fatalf("oversized profile returned %d", oversized.Code)
+	}
+}
+
+// ReadProfile returns synthetic editor data for one fixture connection or the helper's missing-ID status.
+func (f *fakeAWGWriter) ReadProfile(_ context.Context, id string) (panelmodel.AWGConnectionProfile, error) {
+	connection, ok := f.connections[id]
+	if !ok {
+		return panelmodel.AWGConnectionProfile{}, awgHTTPFailure{status: http.StatusNotFound}
+	}
+	return panelmodel.AWGConnectionProfile{ID: connection.ID, Group: connection.Group, Priority: connection.Priority, Profile: f.profile}, nil
+}
+
+// TestAWGEditorRead checks that only a valid per-ID response contains the full normalized secret and forbids caching.
+func TestAWGEditorRead(t *testing.T) {
+	const profile = "[Interface]\nAddress = 10.0.0.2/32\nDNS = 1.1.1.1\nPrivateKey = AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\n\n[Peer]\nAllowedIPs = 0.0.0.0/0\nEndpoint = 192.0.2.1:51820\nPublicKey = AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI=\n"
+	parsed, err := awg.Parse([]byte(profile))
+	if err != nil {
+		t.Fatal(err)
+	}
+	writer := &fakeAWGWriter{connections: map[string]panelmodel.AWGConnection{"vpn": {ID: "vpn", Group: "home", Priority: 2}}, profile: string(parsed.SecretConfig)}
+	handler := panelHandler("", "", nil, panelWrites{awg: writer})
+	for _, scenario := range []struct {
+		path   string
+		status int
+	}{{"vpn", 200}, {"missing", 404}, {"BAD", 404}} {
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/api/awg/"+scenario.path, nil))
+		if w.Code != scenario.status || w.Header().Get("Cache-Control") != "no-store" {
+			t.Fatalf("wrong response to %s: %d", scenario.path, w.Code)
+		}
+		if w.Code == http.StatusOK {
+			var got panelmodel.AWGConnectionProfile
+			if json.Unmarshal(w.Body.Bytes(), &got) != nil || got.Profile != writer.profile || got.ID != "vpn" || got.Priority != 2 {
+				t.Fatal("incomplete editor profile")
+			}
+		} else if strings.Contains(w.Body.String(), "PrivateKey") {
+			t.Fatal("key in failed read")
+		}
+	}
+	writer.profile = "PrivateKey = secret-should-not-leak"
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/api/awg/vpn", nil))
+	if w.Code != 503 || strings.Contains(w.Body.String(), "secret-should-not-leak") {
+		t.Fatal("malformed helper response escaped validation")
+	}
+}
+
+// Underlays returns a synthetic public transport exit for HTTP contract tests.
+func (*fakeAWGWriter) Underlays(context.Context) ([]panelmodel.AWGUnderlayCandidate, error) {
+	return []panelmodel.AWGUnderlayCandidate{{ID: "uplink", Type: "direct"}}, nil
+}
+
+// TestAWGUnderlayWireContract ensures the helper wire format distinguishes explicit automatic mode from omission by older clients.
+func TestAWGUnderlayWireContract(t *testing.T) {
+	for _, test := range []struct {
+		choices []string
+		wire    string
+	}{{nil, ""}, {[]string{}, "[]"}, {[]string{"b", "a"}, `["b","a"]`}} {
+		var fields map[string]json.RawMessage
+		if err := json.Unmarshal(mustJSON(t, panelmodel.AWGSaveRequest{Underlays: test.choices}), &fields); err != nil || string(fields["underlays"]) != test.wire {
+			t.Fatal("underlay preferences lost on helper boundary")
+		}
+	}
+	handler := panelHandler("", "", nil, panelWrites{awg: &fakeAWGWriter{}})
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/api/awg-underlays", nil))
+	if w.Code != 200 || !strings.Contains(w.Body.String(), `"type":"direct"`) {
+		t.Fatal("missing public underlay choices")
+	}
+}
+
+// TestAWGOptionalPlacement accepts omitted placement and rejects explicitly invalid fields without returning profile material.
+func TestAWGOptionalPlacement(t *testing.T) {
+	handler := panelHandler("", "", nil, panelWrites{awg: &fakeAWGWriter{}})
+	for _, tc := range []struct {
+		method, path, body string
+		ok                 bool
+	}{
+		{"POST", "/api/awg", `{"id":"wg","group":"fi","profile":"sensitive-profile"}`, true},
+		{"PUT", "/api/awg/wg", `{"profile":"sensitive-profile"}`, true},
+		{"PUT", "/api/awg/wg", `{"priority":0,"profile":"sensitive-profile"}`, false},
+		{"PUT", "/api/awg/wg", `{"group":null,"profile":"sensitive-profile"}`, false},
+		{"POST", "/api/awg", `{"id":"wg","profile":"sensitive-profile"}`, false},
+	} {
+		result := httptest.NewRecorder()
+		handler.ServeHTTP(result, httptest.NewRequest(tc.method, tc.path, strings.NewReader(tc.body)))
+		if (result.Code == http.StatusOK) != tc.ok || strings.Contains(result.Body.String(), "sensitive-profile") {
+			t.Fatalf("unexpected %s response: %d %s", tc.method, result.Code, result.Body.String())
+		}
 	}
 }

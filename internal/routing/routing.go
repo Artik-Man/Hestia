@@ -6,9 +6,13 @@ import "strings"
 // Groups and their exits are ordered by descending priority. The first group is the default.
 type Group struct {
 	ID    string
+	Name  string `json:"name,omitempty"`
 	Exits []string
 }
+
+// List identifies a set of domain masks with an optional display name and group binding.
 type List struct {
+	Name      string `json:"name,omitempty"`
 	ID, Group string
 	Masks     []string
 }
@@ -60,6 +64,12 @@ func validName(s string) bool {
 	return true
 }
 
+// ValidMask accepts an ASCII wildcard DNS suffix with an optional terminal root dot.
+func ValidMask(mask string) bool {
+	suffix, ok := strings.CutPrefix(mask, "*.")
+	return ok && validName(strings.TrimSuffix(suffix, "."))
+}
+
 // groupRanks indexes groups by priority and returns nil for an empty topology,
 // a missing ID, or a repeated group or exit ID.
 func groupRanks(groups []Group) map[string]int {
@@ -107,12 +117,10 @@ func Decide(groups []Group, lists []List, healthy map[string]bool, domain string
 			return invalid
 		}
 		for _, mask := range list.Masks {
-			suffix, ok := strings.CutPrefix(mask, "*.")
-			suffix = strings.TrimSuffix(suffix, ".")
-			if !ok || !validName(suffix) {
+			if !ValidMask(mask) {
 				return invalid
 			}
-			suffix = strings.ToLower(suffix)
+			suffix := canonical(mask[2:])
 			if domain != suffix && !strings.HasSuffix(domain, "."+suffix) {
 				continue
 			}

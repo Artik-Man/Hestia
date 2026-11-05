@@ -3,12 +3,15 @@
 import base64
 import configparser
 import hashlib
+import hmac
+import tempfile
 import ipaddress
 import json
 import os
 import re
 import stat
 import sys
+import unicodedata
 from pathlib import Path
 
 
@@ -33,6 +36,30 @@ def identifier(value: str) -> str:
         "invalid identifier",
     )
     return value
+
+
+def group_name(value: str) -> str:
+    """Return a valid group display name, preserving its Unicode text and internal spaces."""
+    require(
+        isinstance(value, str) and 1 <= len(value) <= 80 and value.strip() == value
+        and all(unicodedata.category(char) not in {"Cc", "Cs"} for char in value),
+        "invalid group display name",
+    )
+    return value
+
+
+def snapshot_group(group: dict) -> dict:
+    """Project the public group fields and preserve an explicitly supplied display name."""
+    result = {"id": group["id"], "exits": group["exits"]}
+    if "name" in group:
+        result["name"] = group_name(group["name"])
+    return result
+
+
+def unique_group_names(groups: list[dict]) -> None:
+    """Require distinct visible names, including routing IDs displayed by older profiles."""
+    names = [group.get("name", group["id"]) for group in groups]
+    require(len(set(names)) == len(names), "duplicate group display name")
 
 
 def key(value: str) -> str:
@@ -137,7 +164,9 @@ def domain_routes(lists: list, rank: dict[str, int]) -> list[dict]:
     """Compile domain bindings in routing priority order, preserving unassigned lists in the profile."""
     rules, seen = [], set()
     for item in lists:
-        fields(item, "id group masks")
+        fields(item, "id group masks name" if "name" in item else "id group masks")
+        if "name" in item:
+            group_name(item["name"])
         name, tag = identifier(item["id"]), item["group"]
         require(
             name not in seen and (tag == "" or tag in rank),
@@ -147,7 +176,8 @@ def domain_routes(lists: list, rank: dict[str, int]) -> list[dict]:
         require(isinstance(item["masks"], list), "expected masks array")
         for mask in item["masks"]:
             require(
-                isinstance(mask, str) and mask.startswith("*."), "expected *.suffix"
+                isinstance(mask, str) and mask.isascii() and mask.startswith("*."),
+                "expected ASCII *.suffix",
             )
             suffix = mask[2:].removesuffix(".").lower()
             labels = suffix.split(".")
@@ -248,12 +278,13 @@ def awg_metadata(directory: Path, connector_id: str) -> dict:
         with os.fdopen(fd, "rb") as stream:
             info = os.fstat(fd)
             require(stat.S_ISREG(info.st_mode) and stat.S_IMODE(info.st_mode) == 0o600, "invalid connector metadata file")
-            raw = stream.read(4097)
-            require(len(raw) <= 4096, "connector metadata is too large")
+            raw = stream.read(8193)
+            require(len(raw) <= 8192, "connector metadata is too large")
             result = json.loads(raw, object_pairs_hook=unique)
     except (OSError, ValueError, json.JSONDecodeError):
         raise ValueError("missing or invalid connector metadata") from None
-    fields(result, "id group priority status ipv6Blocked type ipv4Address dnsIPv4")
+    fields(result, "id group priority status ipv6Blocked type ipv4Address dnsIPv4" + (" slot" if "slot" in result else "") + (" underlays" if "underlays" in result else ""))
+    connector_slot(result)
     require(
         result["id"] == connector_id
         and identifier(result["group"])
@@ -274,9 +305,44 @@ def awg_metadata(directory: Path, connector_id: str) -> dict:
     return result
 
 
+def validate_underlays(profile: dict) -> None:
+    """Reject invalid transport choices, including cycles through any lower-priority candidate."""
+    nodes = {item["id"]: [] for item in profile["interfaces"]}
+    for connector in profile.get("connectors", []):
+        choices = connector.get("underlays", [])
+        require(isinstance(choices, list) and len(choices) <= 64, "invalid underlay list")
+        for exit_id in choices:
+            identifier(exit_id)
+        require(len(set(choices)) == len(choices), "repeated underlay")
+        nodes[connector["id"]] = choices
+    verified, visiting = set(), set()
+
+    def visit(exit_id: str) -> None:
+        """Check all outbound edges once, rejecting unknown and currently visited exits."""
+        require(exit_id in nodes and exit_id not in visiting, "unknown or cyclic underlay")
+        if exit_id in verified:
+            return
+        visiting.add(exit_id)
+        for target in nodes[exit_id]:
+            visit(target)
+        visiting.remove(exit_id)
+        verified.add(exit_id)
+
+    for exit_id in nodes:
+        visit(exit_id)
+
+
+def connector_slot(connector: dict) -> int:
+    """Validate the assigned slot; absent slot on an older profile defaults to zero."""
+    slot = connector.get("slot", 0)
+    require(type(slot) is int and 0 <= slot < 50, "invalid connector slot")
+    return slot
+
+
 def connector_outbounds(connectors: list[dict], directory: Path) -> tuple[list[dict], list[dict]]:
     """Build deterministic marked direct outbounds and DNS detours for validated AWG connectors."""
     outbounds, servers = [], []
+    occupied: set[int] = set()
     for connector in connectors:
         metadata = awg_metadata(directory, connector["id"])
         require(
@@ -286,14 +352,21 @@ def connector_outbounds(connectors: list[dict], directory: Path) -> tuple[list[d
             and metadata["ipv6Blocked"] == connector["ipv6Blocked"],
             "connector metadata differs from the profile",
         )
-        outbounds.append(
-            {
-                "type": "direct",
-                "tag": connector["id"],
-                "bind_interface": "awg0",
-                "routing_mark": 514,
-            }
-        )
+        require(connector.get("underlays", []) == metadata.get("underlays", []), "connector underlays differ from metadata")
+        slot = connector_slot(connector)
+        require(slot == connector_slot(metadata), "connector slot differs from metadata")
+        require(connector["status"] == metadata["status"], "connector status differs from metadata")
+        if connector["status"] == "ready" or slot != 0:
+            require(slot not in occupied, "duplicate connector slot")
+            occupied.add(slot)
+        if connector["status"] == "ready":
+            outbounds.append({
+                "type": "direct", "tag": connector["id"],
+                "bind_interface": f"awg{slot}", "routing_mark": 514 + slot,
+                "domain_resolver": "dns-" + connector["id"],
+            })
+        else:
+            outbounds.append({"type": "block", "tag": connector["id"]})
         servers.append(
             {
                 "type": "udp",
@@ -303,6 +376,85 @@ def connector_outbounds(connectors: list[dict], directory: Path) -> tuple[list[d
             }
         )
     return outbounds, servers
+
+
+UNDERLAY_DNS = {"type": "local", "tag": "hestia-underlay-resolver"}
+
+
+def transport_fragments(profile: dict, directory: Path) -> tuple[list[dict], list[dict]]:
+    """Pin each manual candidate to a loopback UDP port restricted to this tunnel's stored peer destination."""
+    listeners, rules = [], []
+    for connector in profile.get("connectors", []):
+        candidates = connector.get("underlays", [])
+        if connector["status"] != "ready" or not candidates:
+            continue
+        config = configparser.ConfigParser(interpolation=None, delimiters=("=",))
+        try:
+            config.read_string(asset(directory / "awg" / identifier(connector["id"]), "profile.conf"))
+            host, sep, number = config["Peer"]["Endpoint"].rpartition(":")
+            require(sep and number.isdecimal() and host and ":" not in host, "invalid transport endpoint")
+            peer_port = port(int(number))
+        except (configparser.Error, KeyError, ValueError):
+            raise ValueError("invalid stored transport endpoint") from None
+        slot = connector_slot(connector)
+        for index, candidate in enumerate(candidates):
+            tag = f"_wg-transport-{slot}-{index}"
+            listeners.append({"type": "direct", "tag": tag, "listen": "127.0.0.1",
+                              "listen_port": 20000 + slot * 128 + index, "network": "udp"})
+            rules.append({"inbound": [tag], "action": "route", "outbound": identifier(candidate),
+                          "override_address": host, "override_port": peer_port, "udp_connect": True})
+    return listeners, rules
+
+
+def quality_fragments(endpoints: list[dict], occupied: set) -> tuple[list[dict], list[dict]]:
+    """Build authenticated loopback SOCKS paths to individual userspace WireGuard endpoints."""
+    listeners, rules = [], []
+    for index, endpoint in enumerate(endpoints):
+        number = 27000 + index
+        require(number <= 29999 and number not in occupied, "occupied quality probe port")
+        exit_id = identifier(endpoint["tag"])
+        tag = "_quality-" + exit_id
+        password = hmac.new(base64.b64decode(endpoint["private_key"]),
+                            ("hestia-quality/" + exit_id).encode(), hashlib.sha256).hexdigest()
+        listeners.append({"type": "socks", "tag": tag, "listen": "127.0.0.1", "listen_port": number,
+                          "users": [{"username": "hestia-quality", "password": password}]})
+        rules.append({"inbound": [tag], "action": "route", "outbound": exit_id})
+    return listeners, rules
+
+
+def export_quality_paths(backend: dict, directory: Path) -> None:
+    """Publish only pinned egress descriptors to the watcher after dropping installation privileges."""
+    paths = [{"id": item["tag"], "device": item["bind_interface"], "mark": item.get("routing_mark", 0)}
+             for item in backend.get("outbounds", []) if item["type"] == "direct"
+             and item.get("bind_interface") and item["tag"] != "deny"]
+    for item in backend.get("inbounds", []):
+        if item.get("tag", "").startswith("_quality-") and item["type"] == "socks":
+            paths.append({"id": item["tag"][9:], "socksAddress": "127.0.0.1:" + str(item["listen_port"]),
+                          "socksPassword": item["users"][0]["password"]})
+    owner = directory.stat()
+    os.setgroups([])
+    os.setgid(owner.st_gid)
+    os.setuid(owner.st_uid)
+    with tempfile.NamedTemporaryFile(dir=directory, delete=False, mode="w") as stream:
+        json.dump(paths, stream)
+    os.replace(stream.name, directory / "paths.json")
+
+
+def replace_domain_routes(backend: dict, final: str, rules: list[dict]) -> None:
+    """Retain already verified tunnel transport bindings ahead of rewritten domain/group rules."""
+    transports = [rule for rule in backend["route"].get("rules", [])
+                  if any(tag.startswith(("_wg-transport-", "_quality-")) for tag in rule.get("inbound", []))]
+    backend["route"] = {"final": final}
+    if transports or rules:
+        backend["route"]["rules"] = transports + rules
+
+
+def bind_underlay_dns(outbounds: list[dict], servers: list[dict], manual: bool = False) -> None:
+    """Keep direct underlay name lookups local when multiple tunnel DNS servers require explicit resolution."""
+    if outbounds and (manual or len(servers) > 1):
+        for outbound in outbounds:
+            outbound["domain_resolver"] = UNDERLAY_DNS["tag"]
+        servers.append(dict(UNDERLAY_DNS))
 
 
 def compile_profile(profile: dict, directory: Path) -> tuple[dict, dict]:
@@ -348,7 +500,6 @@ def compile_profile(profile: dict, directory: Path) -> tuple[dict, dict]:
             fields(profile, "version interfaces connectors groups lists healthy socks_port")
         connectors = profile["connectors"]
         require(isinstance(connectors, list) and len(connectors) <= 64, "invalid connector list")
-        require(sum(connector.get("status") == "ready" for connector in connectors) <= 1, "only one AWG connector can be active")
     listen = None
     if not managed_v2:
         listen = port(profile["socks_port"])
@@ -391,7 +542,7 @@ def compile_profile(profile: dict, directory: Path) -> tuple[dict, dict]:
             servers.append(server)
     connector_ids = set()
     for connector in connectors:
-        fields(connector, "id type group priority ipv6Blocked status")
+        fields(connector, "id type group priority ipv6Blocked status" + (" slot" if "slot" in connector else "") + (" underlays" if "underlays" in connector else ""))
         tag = identifier(connector["id"])
         require(
             connector["type"] in {"wireguard", "amneziawg"}
@@ -405,13 +556,12 @@ def compile_profile(profile: dict, directory: Path) -> tuple[dict, dict]:
         )
         connector_ids.add(tag)
         exits.add(tag)
+    validate_underlays(profile)
     rank, assigned = {}, set()
     outbounds = [{"type": "block", "tag": "deny"}]
     for index, group in enumerate(groups):
-        if managed_v2:
-            fields(group, "id exits defaultExit")
-        else:
-            fields(group, "id exits")
+        group_fields = "id exits defaultExit" if managed_v2 else "id exits"
+        fields(group, group_fields + (" name" if "name" in group else ""))
         tag = identifier(group["id"])
         require(
             tag not in exits | {"deny"} and tag not in rank,
@@ -463,6 +613,13 @@ def compile_profile(profile: dict, directory: Path) -> tuple[dict, dict]:
         if managed_v2
         else [{"type": "socks", "listen": "127.0.0.1", "listen_port": listen}]
     )
+    transport_inbounds, transport_rules = transport_fragments(profile, directory)
+    existing_ports = {item.get("listen_port") for item in inbounds}
+    require(all(item["listen_port"] not in existing_ports for item in transport_inbounds), "occupied WireGuard transport port")
+    quality_inbounds, quality_rules = quality_fragments(endpoints, existing_ports | {item["listen_port"] for item in transport_inbounds})
+    inbounds += transport_inbounds + quality_inbounds
+    routes = quality_rules + routes
+    routes = transport_rules + routes
     inbound_tags = {item.get("tag") for item in inbounds if "tag" in item}
     require(
         len(inbound_tags) == sum("tag" in item for item in inbounds)
@@ -488,9 +645,12 @@ def compile_profile(profile: dict, directory: Path) -> tuple[dict, dict]:
     if endpoints:
         backend["endpoints"] = endpoints
     servers.extend(awg_servers)
+    if awg_servers:
+        bind_underlay_dns(direct_outbounds, servers, bool(transport_rules))
     if servers:
         backend["dns"] = {"servers": servers, "strategy": "ipv4_only"}
-    snapshot_groups = [{"id": group["id"], "exits": group["exits"]} for group in groups]
+    snapshot_groups = [snapshot_group(group) for group in groups]
+    unique_group_names(snapshot_groups)
     snapshot = {"groups": snapshot_groups, "lists": lists, "healthy": health}
     if profile["version"] == 2 and connectors:
         snapshot["connectorKinds"] = {connector["id"]: "awg" for connector in connectors}
@@ -545,9 +705,8 @@ def managed_profile(base: Path) -> tuple[dict, dict, dict]:
         fields(snapshot, "groups lists healthy connectorKinds")
     else:
         fields(snapshot, "groups lists healthy")
-    profile_groups = [
-        {"id": group["id"], "exits": group["exits"]} for group in profile["groups"]
-    ]
+    profile_groups = [snapshot_group(group) for group in profile["groups"]]
+    unique_group_names(profile_groups)
     require(
         snapshot["groups"] == profile_groups and snapshot["lists"] == profile["lists"],
         "snapshot topology differs from the installed profile",
@@ -571,27 +730,74 @@ def managed_profile(base: Path) -> tuple[dict, dict, dict]:
     lists = profile["lists"]
     route_default = groups[0]["id"]
     expected_route = {"final": route_default}
-    if domain_routes(lists, rank):
-        expected_route["rules"] = domain_routes(lists, rank)
+    transport_inbounds, transport_rules = transport_fragments(profile, base)
+    require([item for item in backend.get("inbounds", []) if item.get("tag", "").startswith("_wg-transport-")]
+            == transport_inbounds, "backend transport listeners differ from the selected underlays")
+    quality_inbounds, quality_rules = quality_fragments(backend.get("endpoints", []),
+        {item.get("listen_port") for item in backend.get("inbounds", []) if not item.get("tag", "").startswith("_quality-")})
+    installed_quality = [item for item in backend.get("inbounds", []) if item.get("tag", "").startswith("_quality-")]
+    if quality_inbounds and not installed_quality:
+        # Upgrade only a known pre-quality generation, preserving endpoint keys and route order.
+        legacy = transport_rules + domain_routes(lists, rank)
+        require(backend["route"] == ({"final": route_default, "rules": legacy} if legacy else {"final": route_default}),
+                "unexpected legacy routes")
+        backend["inbounds"] += quality_inbounds
+        backend["route"]["rules"] = transport_rules + quality_rules + domain_routes(lists, rank)
+    else:
+        require(installed_quality == quality_inbounds, "backend quality listeners differ from endpoints")
+    expected_rules = transport_rules + quality_rules + domain_routes(lists, rank)
+    if expected_rules:
+        expected_route["rules"] = expected_rules
     require(
         backend["route"]
         == expected_route,
         "backend routes differ from the installed profile",
     )
+    validate_underlays(profile)
     connector_routes, connector_servers = connector_outbounds(connectors, base)
     if connector_routes:
+        # Normalize only the exact outbound emitted by v1 for an inactive legacy
+        # profile. Staged generations then publish a blocked exit for that profile.
+        legacy_inactive = {
+            item["id"] for item in connectors if item["status"] == "configured" and "slot" not in item
+        }
+        legacy_ready = {item["id"] for item in connectors if item["status"] == "ready" and "slot" not in item}
+        for i, item in enumerate(backend["outbounds"]):
+            tag = item.get("tag")
+            if tag in legacy_ready and item == {
+                "type": "direct", "tag": tag, "bind_interface": "awg0", "routing_mark": 514,
+            }:
+                backend["outbounds"][i] = {**item, "domain_resolver": "dns-" + tag}
+            if tag in legacy_inactive and item == {
+                "type": "direct", "tag": tag, "bind_interface": "awg0", "routing_mark": 514,
+            }:
+                backend["outbounds"][i] = {"type": "block", "tag": tag}
         require(
             [item for item in backend["outbounds"] if item.get("tag") in {route["tag"] for route in connector_routes}]
             == connector_routes,
             "backend AWG outbounds differ from connector metadata",
         )
         servers = backend.get("dns", {}).get("servers", [])
+        tunnel_servers = servers[:-1] if servers and servers[-1] == UNDERLAY_DNS else servers
         require(
-            servers[-len(connector_servers) :] == connector_servers,
+            tunnel_servers[-len(connector_servers) :] == connector_servers,
             "backend AWG DNS differs from connector metadata",
         )
     if managed_v2:
         _, expected = compile_profile(profile, base)
+        # Only upgrade the exact legacy direct bindings and DNS list. The full
+        # semantic comparison below rejects unrelated additions or modifications.
+        desired_servers = expected.get("dns", {}).get("servers", [])
+        if desired_servers and desired_servers[-1] == UNDERLAY_DNS and all("slot" not in c for c in connectors):
+            installed_servers = backend.get("dns", {}).get("servers", [])
+            if installed_servers == desired_servers[:-1]:
+                installed_servers.append(dict(UNDERLAY_DNS))
+                for outbound in backend["outbounds"]:
+                    for interface in profile["interfaces"]:
+                        if interface["type"] == "direct" and outbound == {
+                            "type": "direct", "tag": interface["id"], "bind_interface": interface["bind_interface"],
+                        }:
+                            outbound["domain_resolver"] = UNDERLAY_DNS["tag"]
         require(
             semantically_equal_backend(expected, backend),
             "backend semantics differ from the managed profile",
@@ -614,6 +820,43 @@ def stage_generation(stage: Path, profile: dict, snapshot: dict, backend: dict) 
             )
 
 
+def stage_list_routes(stage: Path, profile: dict, snapshot: dict, backend: dict) -> None:
+    """Compile current list bindings and write a complete generation, omitting empty sing-box rule tables."""
+    groups = profile["groups"]
+    rules = domain_routes(profile["lists"], {g["id"]: i for i, g in enumerate(groups)})
+    replace_domain_routes(backend, groups[0]["id"], rules)
+    snapshot["lists"] = profile["lists"]
+    stage_generation(stage, profile, snapshot, backend)
+
+
+def stage_domain_list(base: Path, stage: Path, list_id: str, values: dict) -> None:
+    """Stage all editable list fields under the caller's installation lock while preserving the stable routing ID."""
+    identifier(list_id)
+    fields(values, "name group masks")
+    group_name(values["name"])
+    profile, snapshot, backend = managed_profile(base)
+    lists = profile["lists"]
+    item = {"id": list_id, **values}
+    require(all(entry["id"] == list_id or entry.get("name", entry["id"]) != values["name"] for entry in lists), "duplicate list name")
+    index = next((i for i, entry in enumerate(lists) if entry["id"] == list_id), None)
+    if index is None:
+        lists.append(item)
+    else:
+        lists[index] = item
+    stage_list_routes(stage, profile, snapshot, backend)
+
+
+def stage_delete_list(base: Path, stage: Path, list_id: str) -> None:
+    """Remove the named list under the caller's write lock and recompile routes from the remaining lists."""
+    identifier(list_id)
+    profile, snapshot, backend = managed_profile(base)
+    lists = profile["lists"]
+    remaining = [entry for entry in lists if entry["id"] != list_id]
+    require(len(remaining) == len(lists) - 1, "unknown or duplicate list")
+    profile["lists"] = remaining
+    stage_list_routes(stage, profile, snapshot, backend)
+
+
 def stage_binding(base: Path, stage: Path, list_id: str, group_id: str) -> None:
     """Stage a list binding under the installer lock without reimporting secret VPN assets."""
     profile, snapshot, backend = managed_profile(base)
@@ -623,16 +866,126 @@ def stage_binding(base: Path, stage: Path, list_id: str, group_id: str) -> None:
     item = next((entry for entry in lists if entry["id"] == list_id), None)
     require(item is not None, "unknown list")
     item["group"] = group_id
-    backend["route"]["rules"] = domain_routes(lists, rank)
-    snapshot["lists"] = lists
+    stage_list_routes(stage, profile, snapshot, backend)
+
+
+def stage_create_group(base: Path, stage: Path, group_id: str, name: str = "") -> None:
+    """Append an empty deny-only group without changing active routes or reopening original VPN assets."""
+    identifier(group_id)
+    profile, snapshot, backend = managed_profile(base)
+    groups = profile["groups"]
+    require(
+        group_id != "deny"
+        and all(group_id != group["id"] and group_id not in group["exits"] for group in groups),
+        "group tag is in use",
+    )
+    outbounds = backend["outbounds"]
+    last_group = groups[-1]["id"]
+    positions = [
+        i for i, item in enumerate(outbounds)
+        if item.get("type") == "selector" and item.get("tag") == last_group
+    ]
+    require(len(positions) == 1, "last group selector missing or duplicated")
+    group = {"id": group_id, "exits": []}
+    if name:
+        group["name"] = group_name(name)
+    snapshot["groups"].append(group.copy())
+    unique_group_names(snapshot["groups"])
+    if "inbounds" in profile:
+        group["defaultExit"] = "deny"
+    groups.append(group)
+    outbounds.insert(positions[0] + 1, selector(group, "deny"))
+    stage_generation(stage, profile, snapshot, backend)
+
+
+def stage_rename_group(base: Path, stage: Path, group_id: str, name: str) -> None:
+    """Replace only the visible name in the source profile and snapshot, retaining all routing and connector data."""
+    identifier(group_id)
+    group_name(name)
+    profile, snapshot, backend = managed_profile(base)
+    group = next((item for item in profile["groups"] if item["id"] == group_id), None)
+    require(group is not None, "unknown group")
+    group["name"] = name
+    snapshot["groups"] = [snapshot_group(item) for item in profile["groups"]]
+    unique_group_names(snapshot["groups"])
+    stage_generation(stage, profile, snapshot, backend)
+
+
+def stage_delete_group(base: Path, stage: Path, group_id: str) -> None:
+    """Remove an empty non-default group and its selector, preserving its domain lists and masks as unbound."""
+    identifier(group_id)
+    profile, snapshot, backend = managed_profile(base)
+    groups = profile["groups"]
+    group = next((item for item in groups if item["id"] == group_id), None)
+    require(group is not None, "unknown group")
+    require(groups[0]["id"] != group_id, "cannot delete default group")
+    require(not group["exits"], "group still has exits")
+    outbound = selector(group, "deny")
+    require(backend["outbounds"].count(outbound) == 1, "group selector differs from profile")
+    backend["outbounds"].remove(outbound)
+    groups.remove(group)
+    for item in profile["lists"]:
+        if item["group"] == group_id:
+            item["group"] = ""
+    snapshot["lists"] = profile["lists"]
+    rules = domain_routes(profile["lists"], {item["id"]: i for i, item in enumerate(groups)})
+    replace_domain_routes(backend, groups[0]["id"], rules)
+    snapshot["groups"] = [snapshot_group(item) for item in groups]
+    stage_generation(stage, profile, snapshot, backend)
+
+
+def synchronize_connector_assignments(profile: dict, groups: list[dict], stage: Path) -> None:
+    """Mirror each connector's actual group and one-based priority in the staged source and private metadata."""
+    positions = {
+        exit_id: (group["id"], priority)
+        for group in groups for priority, exit_id in enumerate(group["exits"], 1)
+    }
+    for connector in profile.get("connectors", []):
+        require(connector["id"] in positions, "connector order is incomplete")
+        group, priority = positions[connector["id"]]
+        connector.update(group=group, priority=priority)
+        path = stage / "awg" / connector["id"] / "metadata.json"
+        metadata = awg_metadata(stage, connector["id"])
+        metadata.update(group=group, priority=priority)
+        replace_private(path, json.dumps(metadata, separators=(",", ":")).encode())
+    connector_outbounds(profile.get("connectors", []), stage)
+
+
+def stage_move_exit(base: Path, stage: Path, exit_id: str, expected_group: str, target_group: str, priority: int) -> None:
+    """Move an exit to the requested one-based group priority without reopening original VPN assets."""
+    for value in (exit_id, expected_group, target_group):
+        identifier(value)
+    profile, snapshot, backend = managed_profile(base)
+    groups = profile["groups"]
+    by_id = {group["id"]: group for group in groups}
+    require(expected_group in by_id and target_group in by_id, "unknown group")
+    source, target = by_id[expected_group], by_id[target_group]
+    require(exit_id in source["exits"], "exit group changed")
+    affected = [source] if source is target else [source, target]
+    old_selectors = [selector(group, group.get("defaultExit", "deny")) for group in affected]
+    outbounds = backend["outbounds"]
+    require(all(outbounds.count(item) == 1 for item in old_selectors), "group selector differs from profile")
+    source["exits"].remove(exit_id)
+    require(1 <= priority <= len(target["exits"]) + 1, "invalid target priority")
+    target["exits"].insert(priority - 1, exit_id)
+    if source is not target:
+        if "defaultExit" in source and source["defaultExit"] == exit_id:
+            source["defaultExit"] = next(iter(source["exits"]), "deny")
+        if "defaultExit" in target and len(target["exits"]) == 1:
+            target["defaultExit"] = exit_id
+    for old_selector, group in zip(old_selectors, affected):
+        outbounds[outbounds.index(old_selector)] = selector(group, group.get("defaultExit", "deny"))
+    synchronize_connector_assignments(profile, groups, stage)
+    snapshot["groups"] = [snapshot_group(group) for group in groups]
     stage_generation(stage, profile, snapshot, backend)
 
 
 def stage_order(base: Path, stage: Path, groups: list[dict]) -> None:
-    """Apply a complete within-group permutation to selector order, tie-breaking rules and the default route."""
+    """Apply complete group and exit placement to selector order, tie-breaking rules and the default route."""
     profile, snapshot, backend = managed_profile(base)
     old = profile["groups"]
-    members = {group["id"]: sorted(group["exits"]) for group in old}
+    members = {group["id"] for group in old}
+    exits = {exit_id for group in old for exit_id in group["exits"]}
     require(
         isinstance(groups, list) and len(groups) == len(old), "incomplete group order"
     )
@@ -643,16 +996,21 @@ def stage_order(base: Path, stage: Path, groups: list[dict]) -> None:
             isinstance(group["exits"], list) and group_id in members,
             "unknown or repeated group",
         )
-        require(
-            sorted(group["exits"]) == members.pop(group_id), "changed group membership"
-        )
+        members.remove(group_id)
+        for exit_id in group["exits"]:
+            require(identifier(exit_id) in exits, "unknown or repeated exit")
+            exits.remove(exit_id)
+    require(not exits, "missing exit")
     desired_groups = []
     for group in groups:
         previous = next(item for item in old if item["id"] == group["id"])
         default = previous.get("defaultExit", "deny")
-        if default not in group["exits"]:
+        if (default != "deny" and default not in group["exits"]) or not previous["exits"]:
             default = group["exits"][0] if "inbounds" in profile and group["exits"] else "deny"
-        desired_groups.append({"id": group["id"], "exits": group["exits"], **({"defaultExit": default} if "inbounds" in profile else {})})
+        desired = dict(previous, exits=group["exits"])
+        if "inbounds" in profile:
+            desired["defaultExit"] = default
+        desired_groups.append(desired)
     deny = {"type": "block", "tag": "deny"}
     direct_routes = [
         {
@@ -663,6 +1021,9 @@ def stage_order(base: Path, stage: Path, groups: list[dict]) -> None:
         for item in profile["interfaces"]
         if item["type"] == "direct"
     ]
+    if UNDERLAY_DNS in backend.get("dns", {}).get("servers", []):
+        for outbound in direct_routes:
+            outbound["domain_resolver"] = UNDERLAY_DNS["tag"]
     connector_routes, _ = connector_outbounds(profile.get("connectors", []), base)
     require(
         backend["outbounds"]
@@ -678,37 +1039,73 @@ def stage_order(base: Path, stage: Path, groups: list[dict]) -> None:
         if "inbounds" in profile and direct_routes
         else [deny, *(selector(g, g.get("defaultExit", "deny")) for g in desired_groups), *direct_routes, *connector_routes]
     )
-    connectors = profile.get("connectors", [])
-    for connector in connectors:
-        group = next((item for item in groups if item["id"] == connector["group"]), None)
-        require(group is not None and connector["id"] in group["exits"], "connector order is incomplete")
-        connector["priority"] = group["exits"].index(connector["id"]) + 1
-        metadata_path = stage / "awg" / connector["id"] / "metadata.json"
-        metadata = awg_metadata(stage, connector["id"])
-        metadata["priority"] = connector["priority"]
-        replace_private(metadata_path, json.dumps(metadata, separators=(",", ":")).encode())
-    connector_routes, _ = connector_outbounds(connectors, stage)
+    synchronize_connector_assignments(profile, desired_groups, stage)
     ordered_routes = domain_routes(
         profile["lists"], {group["id"]: i for i, group in enumerate(groups)}
     )
-    backend["route"] = {"final": desired_groups[0]["id"]}
-    if ordered_routes:
-        backend["route"]["rules"] = ordered_routes
+    replace_domain_routes(backend, desired_groups[0]["id"], ordered_routes)
     profile["groups"] = desired_groups
-    snapshot["groups"] = [{"id": group["id"], "exits": group["exits"]} for group in desired_groups]
+    snapshot["groups"] = [snapshot_group(group) for group in desired_groups]
     stage_generation(stage, profile, snapshot, backend)
 
 
 def main() -> None:
     """Write both validated configurations to new files inside the private staging directory."""
+    if len(sys.argv) == 4 and sys.argv[1] == "--quality-paths":
+        export_quality_paths(json.loads(Path(sys.argv[2]).read_bytes()), Path(sys.argv[3]))
+        return
     if len(sys.argv) == 4 and sys.argv[1] == "--compare-backend":
         compare_backend_files(Path(sys.argv[2]), Path(sys.argv[3]))
+        return
+    if len(sys.argv) == 4 and sys.argv[1] == "--stage-awg-backend":
+        base, stage = Path(sys.argv[2]), Path(sys.argv[3])
+        _, _, backend = managed_profile(base)
+        if backend != read_verified(base, "sing-box.json", "profile-backend.sha256"):
+            raw = json.dumps(backend, indent=2).encode()
+            write_private(stage / "sing-box.json", raw)
+            write_private(stage / "profile-backend.sha256", (hashlib.sha256(raw).hexdigest() + "\n").encode())
+        return
+    if len(sys.argv) == 3 and sys.argv[1] == "--awg-start-plan":
+        profile, _, _ = managed_profile(Path(sys.argv[2]))
+        for connector in profile.get("connectors", []):
+            if connector["status"] == "ready":
+                mode = "manual" if connector.get("underlays") else "auto"
+                plan = [identifier(connector["id"]), connector_slot(connector), mode]
+                if mode == "manual":
+                    plan.append(len(connector["underlays"]))
+                print(*plan)
+        return
+    if len(sys.argv) == 3 and sys.argv[1] == "--ready-awg":
+        profile, _, _ = managed_profile(Path(sys.argv[2]))
+        for connector in profile.get("connectors", []):
+            if connector["status"] == "ready":
+                print(identifier(connector["id"]))
         return
     if len(sys.argv) == 3 and sys.argv[1] == "--validate-managed":
         managed_profile(Path(sys.argv[2]))
         return
+    if len(sys.argv) == 5 and sys.argv[1] == "--save-list":
+        stage = Path(sys.argv[3])
+        values = json.loads((stage / "list-values.json").read_bytes(), object_pairs_hook=unique)
+        stage_domain_list(Path(sys.argv[2]), stage, sys.argv[4], values)
+        return
+    if len(sys.argv) == 5 and sys.argv[1] == "--delete-list":
+        stage_delete_list(Path(sys.argv[2]), Path(sys.argv[3]), sys.argv[4])
+        return
     if len(sys.argv) == 6 and sys.argv[1] == "--rebind":
         stage_binding(Path(sys.argv[2]), Path(sys.argv[3]), sys.argv[4], sys.argv[5])
+        return
+    if len(sys.argv) in (5, 6) and sys.argv[1] == "--create-group":
+        stage_create_group(Path(sys.argv[2]), Path(sys.argv[3]), *sys.argv[4:])
+        return
+    if len(sys.argv) == 6 and sys.argv[1] == "--rename-group":
+        stage_rename_group(Path(sys.argv[2]), Path(sys.argv[3]), sys.argv[4], sys.argv[5])
+        return
+    if len(sys.argv) == 5 and sys.argv[1] == "--delete-group":
+        stage_delete_group(Path(sys.argv[2]), Path(sys.argv[3]), sys.argv[4])
+        return
+    if len(sys.argv) == 8 and sys.argv[1] == "--move-exit":
+        stage_move_exit(Path(sys.argv[2]), Path(sys.argv[3]), *sys.argv[4:7], int(sys.argv[7]))
         return
     if len(sys.argv) == 4 and sys.argv[1] == "--reorder":
         stage = Path(sys.argv[3])

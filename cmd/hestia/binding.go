@@ -18,21 +18,94 @@ import (
 
 // runBindingCommand applies one bounded JSON request or restores an interrupted installation.
 // Exit codes 44 and 49 identify missing objects and compare-and-set conflicts to the HTTP caller.
-func runBindingCommand(mode string, input io.Reader) int {
+func runBindingCommand(mode string, input io.Reader, output io.Writer) int {
 	if os.Geteuid() != 0 {
 		fmt.Fprintln(os.Stderr, "binding helper requires root")
 		return 1
 	}
 	limit := 2 * time.Minute
-	if mode == "-watch-pending-binding" {
+	if mode == "-recover-bindings" {
+		limit = binding.AWGActivationLimit
+	} else if mode == "-watch-pending-binding" {
 		// Allow the active writer to finish its deadline and rollback before taking the lock.
-		limit = 5 * time.Minute
+		limit = 3*binding.AWGActivationLimit + time.Minute
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), limit)
 	defer cancel()
 	engine := binding.Installed()
 	var err error
 	switch mode {
+	case "-create-domain-list":
+		var values panelmodel.DomainListValues
+		if decodeChange(input, 1<<20, &values) != nil {
+			err = binding.ErrInvalidDomainList
+		} else {
+			var saved panelmodel.RuleList
+			saved, err = engine.CreateDomainList(ctx, values)
+			if err == nil {
+				err = json.NewEncoder(output).Encode(saved)
+			}
+		}
+	case "-update-domain-list":
+		var change panelmodel.DomainListUpdate
+		if decodeChange(input, 1<<20, &change) != nil {
+			err = binding.ErrInvalidDomainList
+		} else {
+			var saved panelmodel.RuleList
+			saved, err = engine.UpdateDomainList(ctx, change.Expected.ID, change)
+			if err == nil {
+				err = json.NewEncoder(output).Encode(saved)
+			}
+		}
+	case "-delete-domain-list":
+		var expected panelmodel.RuleList
+		if decodeChange(input, 1<<20, &expected) != nil {
+			err = binding.ErrInvalidDomainList
+		} else {
+			err = engine.DeleteDomainList(ctx, expected)
+		}
+	case "-delete-group":
+		var group panelmodel.GroupDeleteCommand
+		if decodeChange(input, 1024, &group) != nil {
+			err = binding.ErrInvalidOrder
+		} else {
+			err = engine.DeleteGroup(ctx, group.ID)
+		}
+	case "-move-exit":
+		var change panelmodel.ExitMoveCommand
+		if decodeChange(input, 1024, &change) != nil {
+			err = binding.ErrInvalidOrder
+		} else {
+			err = engine.MoveExit(ctx, change.ID, change.ExpectedGroup, change.Group, change.Priority)
+		}
+	case "-create-group":
+		var group panelmodel.GroupCreateRequest
+		if decodeChange(input, 1024, &group) != nil || (group.ID == nil) == (group.Name == nil) {
+			err = binding.ErrInvalidOrder
+		} else {
+			var confirmed panelmodel.GroupIdentifier
+			if group.ID != nil {
+				confirmed.ID = *group.ID
+				err = engine.CreateGroup(ctx, confirmed.ID)
+			} else {
+				confirmed.Name = *group.Name
+				confirmed.ID, err = engine.CreateNamedGroup(ctx, confirmed.Name)
+			}
+			if err == nil {
+				err = json.NewEncoder(output).Encode(confirmed)
+			}
+		}
+	case "-rename-group", "-rename-direct":
+		var group panelmodel.GroupIdentifier
+		if decodeChange(input, 1024, &group) != nil {
+			err = binding.ErrInvalidOrder
+		} else {
+			if mode == "-rename-direct" {
+				err = engine.RenameDirectConnection(group.ID, group.Name)
+			} else {
+				err = engine.RenameGroup(ctx, group.ID, group.Name)
+			}
+		}
 	case "-apply-group-order":
 		var change panelmodel.GroupOrderChange
 		if decodeChange(input, 1<<20, &change) != nil {
@@ -53,7 +126,7 @@ func runBindingCommand(mode string, input io.Reader) int {
 	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		if errors.Is(err, binding.ErrInvalidOrder) {
+		if errors.Is(err, binding.ErrInvalidOrder) || errors.Is(err, binding.ErrInvalidDomainList) {
 			return 42
 		}
 		if errors.Is(err, binding.ErrNotFound) {

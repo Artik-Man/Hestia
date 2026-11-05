@@ -1,0 +1,5 @@
+2026-11-04, hestia-stage1, Angular main-OMW2YZZF.js
+Chromium, жест мышью от ручки awg-home до пустой группы «Внешний мир».
+Запрос перехвачен в браузере до передачи на сервер:
+PUT /api/connections/awg-home/group {"expectedGroup":"default","group":"g-1755d6fd-f629-410d-9a5c-66fc6cc21c5b","priority":1}
+После перезагрузки: awg-home в default.

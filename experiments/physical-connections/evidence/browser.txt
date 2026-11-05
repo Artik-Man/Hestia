@@ -1,0 +1,20 @@
+npm notice run hestia-panel@0.1.0 test:browser
+npm notice run node --test tests/browser/profile-import.mjs tests/browser/group-create.mjs tests/browser/connection-move.mjs tests/browser/domain-list-save.mjs
+✔ dragging an exit into an empty group stages a cancellable change until Save (2667.813ms)
+✔ domain lists persist after reload and compare edits against their original snapshot (6069.545833ms)
+✔ groups preserve names, show modal and page Toasts, and require confirmation before deletion (3495.061041ms)
+✔ the keyboard menu imports editable WireGuard fields and an ambiguous save cleans up only its own ID (3067.50375ms)
+✔ one dialog creates manually, reopens all stored keys, retains drafts on failure, and confirms deletion (1398.565208ms)
+✔ ordered transports persist and the automatic mode clears all explicit choices (1398.414792ms)
+✔ connections retain profiles absent from the snapshot and native exits absent from storage (734.914125ms)
+✔ a direct connection keeps its routing ID after renaming and legacy links reopen the table (1039.76625ms)
+✔ manual Wi-Fi setup uses the selected radio, band, SSID and password, and lists only public fields (1110.15775ms)
+✔ Wi-Fi setup cannot be submitted when a gateway has no radio (667.85425ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9675.761791

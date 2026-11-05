@@ -492,68 +492,8 @@ main :where(button:not(:disabled), select:not(:disabled)) {
 main :where(fieldset) {
   min-width: 0;
 }
-.p-popover.mask-examples-popover {
+.mask-examples-popover {
   max-width: min(320px, calc(100vw - 48px));
-  padding: 14px;
-  border: 1px solid #c5d4cf;
-  border-radius: 10px;
-  background: #fff;
-  color: #182f37;
-  box-shadow: 0 12px 32px #10272b26;
-}
-.p-dialog.list-editor {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-  margin: 0;
-  width: min(660px, calc(100vw - 32px));
-  max-height: min(850px, calc(100dvh - 32px));
-  overflow: visible;
-  border: 1px solid #cbd8d4;
-  border-radius: 14px;
-  background: #fff;
-  color: #182f37;
-  box-shadow: 0 24px 80px #122a3040;
-}
-.p-dialog.list-editor .p-dialog-content {
-  flex: 1 1 auto;
-  box-sizing: border-box;
-  max-height: min(850px, calc(100dvh - 32px));
-  padding: 24px;
-  overflow: auto;
-  border-radius: inherit;
-  background: #fff;
-  color: inherit;
-}
-.p-dialog-mask:has(.p-dialog.list-editor) {
-  position: fixed !important;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  padding: 16px;
-  background: #10272bb3;
-  backdrop-filter: blur(2px);
-}
-.p-dialog.list-editor form {
-  max-height: min(850px, calc(100dvh - 80px));
-}
-.p-select-overlay {
-  z-index: 1300;
-  border: 1px solid #c5d4cf;
-  border-radius: 8px;
-  background: #fff;
-  color: #182f37;
-  box-shadow: 0 12px 32px #10272b26;
-}
-.p-select-overlay .p-select-option {
-  padding: 9px 12px;
-}
-.p-select-overlay .p-select-option:hover,
-.p-select-overlay .p-select-option.p-select-option-selected {
-  background: #e8f3ee;
 }
 .config-file p-fileupload {
   display: inline-block;
@@ -581,5 +521,127 @@ main :where(fieldset) {
   height: 100%;
   overflow: hidden;
   opacity: 0;
+  cursor: pointer;
+}
+
+main button.icon-action {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #315f50;
+}
+main button.icon-action:not(:disabled):hover {
+  background: #e2ece7;
+}
+.edit-icon {
+  width: 18px;
+  height: 18px;
+  background: currentColor;
+  mask: url("/pencil.svg") center / contain no-repeat;
+}
+
+.delete-icon {
+  width: 18px;
+  height: 18px;
+  background: currentColor;
+  mask: url("/trash.svg") center / contain no-repeat;
+}
+main button.icon-action.connection-remove {
+  color: #b42318;
+}
+main button.icon-action.delete-action:not(:disabled):hover {
+  background: #fbebe8;
+  color: #8b342b;
+}
+
+.gateway-dialog {
+  width: min(28rem, calc(100% - 2rem));
+  color: inherit;
+  border: 1px solid var(--border, #bbb);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+}
+.gateway-dialog::backdrop {
+  background: rgb(0 0 0 / 45%);
+}
+.gateway-dialog form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.gateway-dialog .actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+p-toast.gateway-toast {
+  display: block;
+  inset: auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: visible;
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1000;
+  width: min(24rem, calc(100vw - 2rem));
+  pointer-events: none;
+}
+.gateway-toast-success,
+.gateway-toast-warn,
+.gateway-toast-info,
+.gateway-toast-error {
+  margin-bottom: 0.5rem;
+  border: 1px solid #b6d2c3;
+  border-radius: 0.75rem;
+  background: #f3fbf6;
+  color: #205c43;
+  box-shadow: 0 4px 18px #183a2a29;
+  pointer-events: auto;
+}
+.gateway-toast-error {
+  border-color: #e0c2be;
+  background: #fff7f6;
+  color: #8b342b;
+}
+.gateway-toast-warn {
+  background: #fff8ec;
+  border-color: #e5d0a9;
+  color: #6a4a18;
+}
+.gateway-toast-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.8rem 1rem;
+  overflow-wrap: anywhere;
+}
+.gateway-toast-content > svg,
+.gateway-toast-content button svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex: none;
+}
+.gateway-toast-content > div:last-child {
+  margin-left: auto;
+}
+.gateway-toast-content button {
+  display: grid;
+  place-items: center;
+  padding: 0.4rem;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
   cursor: pointer;
 }

@@ -17,5 +17,6 @@ export interface RuleList {
     group: string;
     id: string;
     masks: Array<string>;
+    name?: string;
 }
 

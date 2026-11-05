@@ -12,7 +12,7 @@ import (
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
 )
 
-// ErrInvalidOrder rejects incomplete orders, duplicate IDs and moves of exits between groups.
+// ErrInvalidOrder rejects incomplete orders, duplicate IDs and unknown groups or exits.
 var ErrInvalidOrder = errors.New("requested order must permute every existing group and its exits")
 
 // sameOrder compares only the group and per-group exit sequences.
@@ -45,7 +45,7 @@ func members(groups []panelmodel.OrderedGroup) (map[string]map[string]bool, erro
 	return topology, nil
 }
 
-// ValidateOrder requires exactly the same groups and exit memberships on both sides of an edit.
+// ValidateOrder requires exactly the same sets of group and exit IDs on both sides of an edit.
 func ValidateOrder(change panelmodel.GroupOrderChange) error {
 	expected, err := members(change.Expected)
 	if err != nil {
@@ -55,16 +55,25 @@ func ValidateOrder(change panelmodel.GroupOrderChange) error {
 	if err != nil || len(desired) != len(expected) {
 		return ErrInvalidOrder
 	}
+	allExits := make(map[string]bool)
+	for _, exits := range expected {
+		for id := range exits {
+			allExits[id] = true
+		}
+	}
 	for group, exits := range desired {
-		before, ok := expected[group]
-		if !ok || len(exits) != len(before) {
+		if _, ok := expected[group]; !ok {
 			return ErrInvalidOrder
 		}
 		for id := range exits {
-			if !before[id] {
+			if !allExits[id] {
 				return ErrInvalidOrder
 			}
+			delete(allExits, id)
 		}
+	}
+	if len(allExits) != 0 {
+		return ErrInvalidOrder
 	}
 	return nil
 }

@@ -1,0 +1,135 @@
+package panel
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"log"
+	"net/http"
+	"os"
+	"reflect"
+	"time"
+
+	"github.com/Artik-Man/Hestia/internal/panelmodel"
+	"github.com/Artik-Man/Hestia/internal/quality"
+	"github.com/danielgtaylor/huma/v2"
+)
+
+// qualityFiles identifies panel-owned settings and the gateway worker's atomically published report.
+type qualityFiles struct {
+	settings, report string
+}
+
+type qualityReportOutput struct{ Body panelmodel.QualityReport }
+type qualitySettingsInput struct{ Body quality.Settings }
+type qualitySettingsOutput struct{ Body quality.Settings }
+
+// registerQuality exposes the worker's ranking and validates complete setting replacements before persistence.
+func registerQuality(api huma.API, snapshot string, files qualityFiles) {
+	huma.Register(api, huma.Operation{
+		OperationID: "getQuality", Tags: []string{"Panel"}, Method: http.MethodGet, Path: "/api/quality",
+		Summary: "Прочитать настройки проверок и текущий порядок выходов всех групп", Errors: []int{http.StatusServiceUnavailable},
+	}, func(_ context.Context, _ *struct{}) (*qualityReportOutput, error) {
+		report, err := files.readReport(snapshot)
+		if err != nil {
+			log.Printf("quality report: %v", err)
+			return nil, huma.Error503ServiceUnavailable("Не удалось прочитать сведения о качестве связи")
+		}
+		return &qualityReportOutput{Body: report}, nil
+	})
+	huma.Register(api, huma.Operation{
+		OperationID: "updateQualitySettings", Tags: []string{"Panel"}, Method: http.MethodPut, Path: "/api/quality/settings",
+		Summary: "Сохранить общие для всех выходов параметры проверок связи", MaxBodyBytes: 8192,
+		Errors: []int{http.StatusRequestEntityTooLarge, http.StatusUnprocessableEntity, http.StatusServiceUnavailable},
+	}, func(_ context.Context, in *qualitySettingsInput) (*qualitySettingsOutput, error) {
+		if err := quality.ValidateSettings(in.Body); err != nil {
+			return nil, huma.Error422UnprocessableEntity("Некорректные параметры проверок: " + err.Error())
+		}
+		if files.settings == "" {
+			return nil, huma.Error503ServiceUnavailable("Файл настроек проверок не настроен")
+		}
+		if err := quality.SaveSettings(files.settings, in.Body); err != nil {
+			log.Printf("save quality settings: %v", err)
+			return nil, huma.Error503ServiceUnavailable("Не удалось сохранить настройки проверок")
+		}
+		return &qualitySettingsOutput{Body: in.Body}, nil
+	})
+}
+
+// readReport returns a matching recent worker report, or topology with unknown scores until one arrives.
+func (files qualityFiles) readReport(snapshot string) (panelmodel.QualityReport, error) {
+	settings := quality.DefaultSettings()
+	if files.settings != "" {
+		stored, err := quality.LoadSettings(files.settings)
+		if err != nil {
+			return panelmodel.QualityReport{}, err
+		}
+		settings = stored
+	}
+	topology, err := readSnapshot(snapshot, false)
+	if err != nil {
+		return panelmodel.QualityReport{}, err
+	}
+	if files.report != "" {
+		data, err := os.ReadFile(files.report)
+		if err == nil {
+			var report panelmodel.QualityReport
+			if err := json.Unmarshal(data, &report); err != nil {
+				return panelmodel.QualityReport{}, err
+			}
+			captured, err := time.Parse(time.RFC3339Nano, report.CapturedAt)
+			age := time.Since(captured)
+			if err == nil && age >= 0 && age <= time.Minute && reflect.DeepEqual(settings, report.Settings) && matchesQualityGroups(report.Groups, topology.Groups) {
+				return report, nil
+			}
+		} else if !errors.Is(err, os.ErrNotExist) {
+			return panelmodel.QualityReport{}, err
+		}
+	}
+	view := panelmodel.QualityReport{Settings: settings, Groups: make([]panelmodel.QualityGroup, 0, len(topology.Groups))}
+	for _, group := range topology.Groups {
+		row := panelmodel.QualityGroup{ID: group.ID, Name: group.Name, Connections: make([]panelmodel.QualityConnection, 0, len(group.Exits))}
+		for _, exit := range group.Exits {
+			row.Connections = append(row.Connections, panelmodel.QualityConnection{ID: exit.ID, Available: exit.Available, Result: emptyQualityResult(settings)})
+		}
+		view.Groups = append(view.Groups, row)
+	}
+	return view, nil
+}
+
+// matchesQualityGroups rejects worker data from a previous topology while permitting ranked exit order.
+func matchesQualityGroups(report []panelmodel.QualityGroup, groups []panelmodel.Group) bool {
+	if len(report) != len(groups) {
+		return false
+	}
+	for i, group := range groups {
+		ranked := report[i]
+		if ranked.ID != group.ID || ranked.Name != group.Name || len(ranked.Connections) != len(group.Exits) {
+			return false
+		}
+		ids := make(map[string]bool, len(group.Exits))
+		for _, exit := range group.Exits {
+			ids[exit.ID] = true
+		}
+		for _, row := range ranked.Connections {
+			if !ids[row.ID] {
+				return false
+			}
+			delete(ids, row.ID)
+		}
+	}
+	return true
+}
+
+// emptyQualityResult provides zero sample counts and unavailable scores for all configured checks and targets.
+func emptyQualityResult(settings quality.Settings) quality.Result {
+	result := quality.Result{Checks: make([]quality.CheckResult, 0, len(settings.Checks))}
+	for _, check := range settings.Checks {
+		row := quality.CheckResult{Protocol: check.Protocol, Targets: make([]quality.TargetResult, 0, len(check.Targets))}
+		for _, target := range check.Targets {
+			row.Targets = append(row.Targets, quality.TargetResult{Target: target})
+		}
+		result.Checks = append(result.Checks, row)
+	}
+	return result
+}

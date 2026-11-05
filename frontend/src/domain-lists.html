@@ -1,127 +1,141 @@
-<section aria-labelledby="lists-heading">
-  <div class="section-heading">
-    <h2 id="lists-heading">Доменные списки</h2>
-    <span class="count">{{ visibleLists().length }}</span>
-    <button
-      pButton
-      type="button"
-      class="p-button create-list"
-      (click)="create()"
-    >
-      Создать список
-    </button>
-  </div>
-  @if (drafts().length) {
-    <p class="notice draft-notice" role="status">
-      Локальные черновики не применены к шлюзу. Они исчезнут после обновления
-      страницы.
-    </p>
-  }
-  @if (visibleLists().length) {
-    <div class="list-wrap">
-      <table>
-        <caption class="sr-only">
-          Доменные списки, их маски, группы и состояние
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col">Список и маски</th>
-            <th scope="col">Группа</th>
-            <th scope="col">Состояние</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (list of visibleLists(); track list.key) {
-            <tr
-              [class.local-draft-row]="
-                list.sourceId === null || hasDraft(list.sourceId)
-              "
-            >
-              <th scope="row">
-                <button
-                  pButton
-                  type="button"
-                  class="p-button list-name"
-                  (click)="edit(list)"
-                >
-                  {{ list.name }}
-                </button>
-                @if (list.sourceId === null || hasDraft(list.sourceId)) {
-                  <span class="draft-tag">Черновик</span>
-                }
-                <span class="masks">
-                  @for (mask of list.masks; track $index) {
-                    <code>{{ mask }}</code>
-                  } @empty {
-                    <span class="muted">Нет масок</span>
-                  }
-                </span>
-              </th>
-              <td>
-                @if (list.group) {
-                  <a
-                    routerLink="/groups"
-                    [queryParams]="{ group: list.group }"
-                    >{{ list.group }}</a
-                  >
-                } @else {
-                  Группа не назначена
-                }
-              </td>
-              <td>
-                <span class="state" [class.on]="list.enabled">{{
-                  list.enabled ? "Включён" : "Выключен"
-                }}</span>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
+@if (selected(); as list) {
+  <button
+    #editButton
+    pButton
+    type="button"
+    class="icon-action"
+    aria-label="Редактировать список"
+    title="Редактировать список"
+    (click)="edit(list, editButton)"
+  >
+    <span class="edit-icon" aria-hidden="true"></span>
+  </button>
+} @else {
+  <section aria-labelledby="lists-heading">
+    <div class="section-heading">
+      <h2 id="lists-heading">Доменные списки</h2>
+      <span class="count">{{ lists().length }}</span>
+      <button
+        pButton
+        type="button"
+        class="p-button create-list"
+        #createButton
+        (click)="create(createButton)"
+      >
+        Создать список
+      </button>
     </div>
-  } @else {
-    <p class="notice">Нет доменных списков</p>
-  }
-</section>
-
+    @if (lists().length) {
+      <div class="list-wrap">
+        <table>
+          <caption class="sr-only">
+            Доменные списки, их маски, группы и состояние
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Список и маски</th>
+              <th scope="col">Группа</th>
+              <th scope="col">Состояние</th>
+              <th scope="col">Действия</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (list of lists(); track list.id) {
+              <tr>
+                <th scope="row">
+                  <button
+                    pButton
+                    type="button"
+                    class="list-name"
+                    variant="text"
+                    #editButton
+                    (click)="edit(list, editButton)"
+                  >
+                    {{ list.name ?? list.id }}
+                  </button>
+                  <span class="masks">
+                    @for (mask of list.masks; track $index) {
+                      <code>{{ mask }}</code>
+                    } @empty {
+                      <span class="muted">Нет масок</span>
+                    }
+                  </span>
+                </th>
+                <td>
+                  @if (list.group) {
+                    <a
+                      routerLink="/groups"
+                      [queryParams]="{ group: list.group }"
+                      >{{ groupName(groups(), list.group) }}</a
+                    >
+                  } @else {
+                    Группа не назначена
+                  }
+                </td>
+                <td>
+                  <span class="state" [class.on]="list.enabled">{{
+                    list.enabled ? "Включён" : "Выключен"
+                  }}</span>
+                </td>
+                <td>
+                  <div class="list-actions">
+                    <button
+                      #rowEdit
+                      pButton
+                      type="button"
+                      class="icon-action"
+                      [attr.title]="
+                        'Редактировать список ' + (list.name ?? list.id)
+                      "
+                      [attr.aria-label]="
+                        'Редактировать список ' + (list.name ?? list.id)
+                      "
+                      (click)="edit(list, rowEdit)"
+                    >
+                      <span class="edit-icon" aria-hidden="true"></span>
+                    </button>
+                    <button
+                      #rowDelete
+                      pButton
+                      type="button"
+                      class="icon-action delete-action"
+                      [attr.title]="'Удалить список ' + (list.name ?? list.id)"
+                      [attr.aria-label]="
+                        'Удалить список ' + (list.name ?? list.id)
+                      "
+                      (click)="confirmDeletion(list, rowDelete)"
+                    >
+                      <span class="delete-icon" aria-hidden="true"></span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <p class="notice">Нет доменных списков</p>
+    }
+  </section>
+}
 <p-dialog
-  styleClass="list-editor"
   [visible]="editor() !== null"
   [modal]="true"
-  [showHeader]="false"
-  [closable]="false"
-  [closeOnEscape]="true"
+  [header]="editor()?.original ? 'Изменить список' : 'Новый список'"
+  [closeOnEscape]="!pending()"
+  [closable]="!pending()"
   [dismissableMask]="false"
   [draggable]="false"
   [resizable]="false"
   [focusTrap]="true"
-  ariaLabelledBy="list-editor-title"
   [baseZIndex]="1100"
   [style]="{ width: 'min(660px, calc(100vw - 32px))' }"
-  (visibleChange)="onDialogVisibilityChange($event)"
+  (visibleChange)="!$event && dismiss()"
+  (onHide)="editorTrigger?.focus()"
 >
   @if (editor(); as values) {
-    <form (submit)="$event.preventDefault(); save()">
-      <div class="dialog-heading">
-        <div>
-          <p class="kicker"><span class="bar"></span> Локальный черновик</p>
-          <h2 id="list-editor-title">
-            {{ values.sourceId ? "Изменить список" : "Новый список" }}
-          </h2>
-        </div>
-        <button
-          pButton
-          type="button"
-          class="p-button icon-button"
-          aria-label="Закрыть редактор"
-          (click)="dismiss()"
-        >
-          <span aria-hidden="true">×</span>
-        </button>
-      </div>
-      <p class="note">
-        API шлюза пока не сохраняет название и маски. Черновик останется только
-        в этой открытой странице и не изменит маршрутизацию.
-      </p>
+    <form class="list-editor-form" (submit)="$event.preventDefault(); save()">
       <label class="field" for="list-name">
         Название списка
         <input
@@ -130,11 +144,18 @@
           id="list-name"
           type="text"
           autocomplete="off"
+          #nameField
+          [disabled]="pending()"
           [value]="values.name"
-          (input)="update('name', $any($event.target).value)"
+          (input)="update('name', nameField.value)"
           required
         />
       </label>
+      @if (nameInvalid()) {
+        <p class="error" role="alert">
+          Название должно содержать до 80 символов без управляющих знаков.
+        </p>
+      }
       <label class="field" for="list-group">
         Группа подключений
         <p-select
@@ -164,7 +185,9 @@
             #maskInfoButton
             pButton
             type="button"
-            class="p-button mask-info-button"
+            severity="secondary"
+            [rounded]="true"
+            [text]="true"
             aria-label="Примеры масок"
             aria-haspopup="dialog"
             [attr.aria-expanded]="maskHelpOpen()"
@@ -216,23 +239,42 @@
         id="list-masks"
         rows="7"
         spellcheck="false"
+        #masksField
+        [disabled]="pending()"
         [value]="values.masks"
-        (input)="update('masks', $any($event.target).value)"
+        (input)="update('masks', masksField.value)"
         placeholder="*.example.org"
       ></textarea>
-      @if (draftMasks().length) {
+      @if (masks().length > 1024) {
+        <p class="error" role="alert">В списке может быть до 1024 масок.</p>
+      }
+      @if (invalid().length) {
         <p class="error" role="alert">
-          Некорректные маски: {{ draftMasks().join(", ") }}. Используйте формат
+          Некорректные маски: {{ invalid().join(", ") }}. Используйте формат
           *.example.org.
         </p>
       } @else {
-        <p class="hint" role="status">Масок: {{ maskCount() }}</p>
+        <p class="hint" role="status">Масок: {{ masks().length }}</p>
+      }
+      @if (failure()) {
+        <p class="error" role="alert">{{ failure() }}</p>
       }
       <div class="dialog-actions">
+        @if (needsRefresh()) {
+          <button
+            pButton
+            type="button"
+            severity="secondary"
+            (click)="dismiss(true)"
+          >
+            Обновить списки
+          </button>
+        }
         <button
           pButton
           type="button"
-          class="p-button secondary"
+          severity="secondary"
+          [disabled]="pending()"
           (click)="dismiss()"
         >
           Отмена
@@ -240,12 +282,61 @@
         <button
           type="submit"
           pButton
-          class="p-button primary"
-          [disabled]="!values.name.trim() || draftMasks().length > 0"
+          [disabled]="pending() || needsRefresh() || !valid()"
         >
-          Сохранить черновик
+          {{ pending() ? "Сохраняем…" : "Сохранить" }}
         </button>
       </div>
     </form>
+  }
+</p-dialog>
+<p-dialog
+  [visible]="deleting() !== null"
+  [modal]="true"
+  header="Удалить список"
+  [closeOnEscape]="!pending()"
+  [closable]="!pending()"
+  [dismissableMask]="false"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: 'min(440px, calc(100vw - 32px))' }"
+  (visibleChange)="!$event && dismiss()"
+  (onHide)="editorTrigger?.focus()"
+>
+  @if (deleting(); as list) {
+    <p>Удалить доменный список «{{ list.name ?? list.id }}» и все его маски?</p>
+    @if (failure()) {
+      <p class="error" role="alert">{{ failure() }}</p>
+    }
+    <div class="dialog-actions">
+      @if (needsRefresh()) {
+        <button
+          pButton
+          type="button"
+          severity="secondary"
+          (click)="dismiss(true)"
+        >
+          Обновить списки
+        </button>
+      }
+      <button
+        pButton
+        type="button"
+        severity="secondary"
+        [disabled]="pending()"
+        (click)="dismiss()"
+      >
+        Отмена
+      </button>
+      <button
+        pButton
+        type="button"
+        severity="danger"
+        [disabled]="pending() || needsRefresh()"
+        (click)="remove()"
+      >
+        {{ pending() ? "Удаляем…" : "Удалить" }}
+      </button>
+    </div>
   }
 </p-dialog>

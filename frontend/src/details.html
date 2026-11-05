@@ -5,15 +5,11 @@
       @if (item.group.isDefault) {
         <span class="default">По умолчанию</span>
       }
-      <h2>Выходы по приоритету</h2>
-      <p class="hint">Первым указан выход с наивысшим приоритетом.</p>
+      <h2>Подключения группы</h2>
       <ol class="detail-rows">
-        @for (exit of item.group.exits; track exit.id; let i = $index) {
+        @for (exit of item.group.exits; track exit.id) {
           <li>
-            <span class="ordinal">{{ i + 1 }}</span
-            ><a routerLink="/connections" [queryParams]="{ exit: exit.id }">{{
-              exit.id
-            }}</a>
+            <span>{{ catalog.name(exit.id) }}</span>
             <span class="health" [class.up]="exit.available"
               ><span class="dot"></span
               >{{ exit.available ? "Доступен" : "Недоступен" }}</span
@@ -30,7 +26,7 @@
         @for (list of item.lists; track list.id) {
           <li>
             <a routerLink="/domain-lists" [queryParams]="{ list: list.id }">{{
-              list.id
+              list.name ?? list.id
             }}</a
             ><span class="state" [class.on]="list.enabled">{{
               list.enabled ? "Включён" : "Выключен"
@@ -41,7 +37,7 @@
         }
       </ul>
     </section>
-    <hestia-groups-removal [group]="item.group" [lists]="item.lists" />
+    <a routerLink="/groups">Перейти к управлению группами</a>
   }
   @case ("list") {
     <section>
@@ -53,7 +49,7 @@
             <a
               routerLink="/groups"
               [queryParams]="{ group: item.list.group }"
-              >{{ item.list.group }}</a
+              >{{ groupName(snapshot().groups, item.list.group) }}</a
             >
           } @else {
             Группа не назначена
@@ -80,44 +76,11 @@
       </ul>
     </section>
     <hestia-binding [list]="item.list" [groups]="snapshot().groups" />
-    <hestia-masks-draft [list]="item.list" />
-  }
-  @case ("exit") {
-    <section>
-      <h2>Параметры выхода</h2>
-      <dl class="facts">
-        <dt>Группа</dt>
-        <dd>
-          <a routerLink="/groups" [queryParams]="{ group: item.group.id }">{{
-            item.group.id
-          }}</a>
-        </dd>
-        <dt>Приоритет в группе</dt>
-        <dd>{{ item.priority }}</dd>
-        <dt>Доступность по снимку</dt>
-        <dd>
-          <span class="health" [class.up]="item.exit.available"
-            ><span class="dot"></span
-            >{{ item.exit.available ? "Доступен" : "Недоступен" }}</span
-          >
-        </dd>
-      </dl>
-    </section>
-    @if (editingExit() === item.exit.id) {
-      <hestia-profile-draft
-        [groups]="snapshot().groups"
-        [exit]="item.exit.id"
-        (closed)="editingExit.set(null)"
-      />
-    } @else {
-      <button
-        class="refresh"
-        type="button"
-        (click)="editingExit.set(item.exit.id)"
-      >
-        Подготовить изменение профиля · черновик
-      </button>
-    }
+    <hestia-domain-lists
+      [selected]="item.list"
+      [lists]="snapshot().lists"
+      [groups]="snapshot().groups"
+    />
   }
   @case ("missing") {
     <p class="notice" role="status">

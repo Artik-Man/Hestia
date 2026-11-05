@@ -1,0 +1,10 @@
+Linux 6.1.0-53-cloud-arm64 aarch64 GNU/Linux
+eth0
+lo
+/sys/devices/pci0000:00/0000:00:01.0/virtio0
+1
+modinfo: ERROR: Module mac80211_hwsim not found.
+unavailable /usr/sbin/iw
+unavailable /usr/sbin/hostapd
+unavailable /usr/sbin/wpa_supplicant
+unavailable /usr/bin/nmcli

@@ -1,6 +1,7 @@
 package binding
 
 import (
+	"bytes"
 	"errors"
 
 	"os"
@@ -161,9 +162,31 @@ func (e Engine) publishJournal(stage string) error {
 	return syncDir(e.dir)
 }
 
+const routingOnlyMarker = "routing-only"
+
+// routingOnly reads the private journal marker for operations that preserve the connector runtime.
+// Its absence selects full recovery, including journals published before this marker existed.
+func (e Engine) routingOnly(journal string) (bool, error) {
+	if err := privateDirectory(journal); err != nil {
+		return false, err
+	}
+	path := filepath.Join(journal, routingOnlyMarker)
+	if _, err := os.Lstat(path); errors.Is(err, os.ErrNotExist) {
+		return false, nil
+	}
+	if _, err := e.managedInfo(journal, routingOnlyMarker, false); err != nil {
+		return false, err
+	}
+	data, err := os.ReadFile(path)
+	if err != nil || string(data) != "1\n" {
+		return false, ErrUnavailable
+	}
+	return true, nil
+}
+
 // installFiles replaces managed files using the metadata preserved in the transaction backup.
 // A failure leaves the journal intact so the full previous generation can be restored idempotently.
-func (e Engine) installFiles(from string) error {
+func (e Engine) installFiles(from string, routingOnly bool) error {
 	journal := filepath.Join(e.dir, pending)
 	previous := filepath.Join(journal, "previous")
 	for _, dir := range []string{journal, previous} {
@@ -188,6 +211,16 @@ func (e Engine) installFiles(from string) error {
 	if err := verifyAWGTreeDigest(from); err != nil {
 		return err
 	}
+	if routingOnly {
+		current, err := awgTreeDigest(filepath.Join(e.dir, awgTreeName))
+		if err != nil {
+			return err
+		}
+		expected, err := os.ReadFile(filepath.Join(from, "awg.sha256"))
+		if err != nil || !bytes.Equal(current, expected) {
+			return ErrUnavailable
+		}
+	}
 	for _, name := range managedFiles {
 		info, err := e.managedInfo(previous, name, true)
 		if err != nil {
@@ -197,8 +230,10 @@ func (e Engine) installFiles(from string) error {
 			return err
 		}
 	}
-	if err := e.installAWGTree(filepath.Join(from, awgTreeName)); err != nil {
-		return err
+	if !routingOnly {
+		if err := e.installAWGTree(filepath.Join(from, awgTreeName)); err != nil {
+			return err
+		}
 	}
 	return syncDir(e.dir)
 }

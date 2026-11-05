@@ -9,10 +9,9 @@ umask 077
 repo=$(cd "$(dirname "$0")/.." && pwd)
 instance=hestia-stage1
 apply=stage1-awg-apply.sh
-extra=()
+extra=(hestia-binding.conf hestia-binding-recovery.service hestia-binding-watch.path hestia-binding-watch.service)
 if [[ ${1:-} == --fresh ]]; then
     apply=stage1-fresh-apply.sh
-    extra=(hestia-binding.conf hestia-binding-recovery.service hestia-binding-watch.path hestia-binding-watch.service)
     runtime=/private/tmp/hestia-vm-run
     if [[ -d $runtime/lima-state/hestia-stage1 ]]; then
         export LIMA_HOME=${LIMA_HOME:-$runtime/lima-state}
@@ -91,18 +90,20 @@ git -C "$work/amneziawg-tools-source" archive --format=tar HEAD >"$work/amneziaw
 
 cp "$repo/deploy/$apply" "$work/"
 for unit in ${extra[@]+"${extra[@]}"}; do cp "$repo/deploy/systemd/$unit" "$work/"; done
-cp "$repo/deploy/profile.py" "$work/"
+cp "$repo/deploy/awg-upgrade.sh" "$repo/deploy/profile.py" "$repo/deploy/smoke.py" "$work/"
+cp "$repo/deploy/systemd/hestia-smoke@.service" "$work/"
+cp "$repo/deploy/stage1-backend-credential.sh" "$repo/deploy/stage1-backend-credential.dropin" "$work/"
 cp "$repo/deploy/scheme3/adopt-profile.py" "$work/"
 cp "$repo/deploy/scheme3/guest-profile.json" "$work/"
 cp "$repo/deploy/systemd/hestia.service" "$work/"
-cp "$repo/deploy/systemd/hestia-awg.service" "$work/"
+cp "$repo/deploy/systemd/hestia-awg@.service" "$work/"
 cp "$repo/deploy/systemd/hestia-awg.conf" "$work/"
 cp "$repo/deploy/systemd/hestia-awg.sudoers" "$work/"
 cp "$repo/deploy/systemd/hestia-panel.service.in" "$work/"
 (cd "$work" && shasum -a 256 hestia hestia-panel amneziawg-go amneziawg-tools-source.tar >SHA256SUMS)
 COPYFILE_DISABLE=1 tar -C "$work" -czf "$work/stage1-awg-update.tgz" \
     hestia hestia-panel browser amneziawg-go amneziawg-tools-source.tar SHA256SUMS \
-    "$apply" ${extra[@]+"${extra[@]}"} profile.py adopt-profile.py guest-profile.json hestia.service hestia-awg.service \
+    "$apply" ${extra[@]+"${extra[@]}"} awg-upgrade.sh profile.py smoke.py adopt-profile.py guest-profile.json hestia.service stage1-backend-credential.sh stage1-backend-credential.dropin hestia-smoke@.service hestia-awg@.service \
     hestia-awg.conf hestia-awg.sudoers hestia-panel.service.in
 
 remote=$(guest mktemp -d /tmp/hestia-stage1-awg.XXXXXXXX)

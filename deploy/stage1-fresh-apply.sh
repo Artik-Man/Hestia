@@ -13,6 +13,12 @@ flock -n 8 || {
     exit 1
 }
 sha256sum -c SHA256SUMS
+# shellcheck source=stage1-backend-credential.sh
+source ./stage1-backend-credential.sh
+check_backend_credential ./stage1-backend-credential.dropin || {
+    echo "Unsafe or unsupported sing-box unit" >&2
+    exit 1
+}
 mkdir tools config
 tar xf amneziawg-tools-source.tar -C tools
 make -C tools/src
@@ -22,13 +28,30 @@ python3 -I profile.py guest-profile.json config .
 getent group hestia-snapshot >/dev/null || groupadd --system hestia-snapshot
 id hestia-panel >/dev/null 2>&1 || useradd --system --user-group --no-create-home --shell /usr/sbin/nologin hestia-panel
 visudo -cf hestia-awg.sudoers
-for unit in hestia-panel.service hestia-binding-watch.path hestia-binding-watch.service hestia-awg.service hestia.service hestia-sing-box.service; do
+for unit in hestia-panel.service hestia-binding-watch.path hestia-binding-watch.service hestia.service hestia-sing-box.service hestia-awg.service; do
     if [[ $(systemctl show "$unit" -p LoadState --value) != not-found ]]; then
         systemctl stop "$unit"
     fi
 done
+if [[ $(systemctl is-enabled hestia-awg.service 2>/dev/null || :) == enabled ]]; then
+    systemctl disable hestia-awg.service
+fi
 exec 9<>/run/hestia-install.lock
 flock -w 30 9
+systemctl stop 'hestia-awg@*.service'
+# Retire explicitly owned guards before removing the files that identify them.
+[[ ! -e /run/hestia-awg/routes.json && ! -L /run/hestia-awg/routes.json ]] || {
+    echo "Legacy route ownership remains; fresh install stopped" >&2
+    exit 1
+}
+shopt -s nullglob
+for record in /run/hestia-awg/routes.json.*; do
+    id=${record##*/routes.json.}
+    [[ $id =~ ^[a-z][a-z0-9-]{0,62}$ && ! -L $record && -f $record && $(stat -c '%u:%a:%h' "$record") == 0:600:1 ]] || exit 1
+    slot=$(python3 -I -c 'import json, sys; print(int(json.load(open(sys.argv[1]))["table"]) - 202)' "$record")
+    ./hestia -awg-retire "$id" "$slot"
+done
+shopt -u nullglob
 rm -rf -- /etc/hestia /run/hestia-awg /usr/local/share/hestia-panel/current
 install -d -m0751 /etc/hestia
 install -d -m0755 /usr/local/lib/hestia /usr/local/share/hestia-panel/current
@@ -37,7 +60,7 @@ chmod -R a+rX /usr/local/share/hestia-panel
 install hestia hestia-panel /usr/local/bin/
 install tools/src/wg /usr/local/bin/awg
 install amneziawg-go /usr/local/lib/hestia/
-install -m644 profile.py /usr/local/lib/hestia/
+install -m644 profile.py smoke.py /usr/local/lib/hestia/
 install /usr/local/bin/sing-box /usr/local/lib/hestia/sing-box
 install -m600 guest-profile.json /etc/hestia/profile.json
 install -m600 config/sing-box.json /etc/hestia/
@@ -54,11 +77,13 @@ install -m440 hestia-awg.sudoers /etc/sudoers.d/hestia-awg
 install -m644 ./*.service ./*.path /etc/systemd/system/
 install -m644 ./*.conf /etc/tmpfiles.d/
 systemd-tmpfiles --create /etc/tmpfiles.d/hestia-binding.conf /etc/tmpfiles.d/hestia-awg.conf
+install_backend_credential ./stage1-backend-credential.dropin
 systemctl daemon-reload
 flock -u 9
 systemctl enable --now hestia-binding-watch.path
 systemctl restart hestia-sing-box hestia hestia-panel
 for unit in hestia-sing-box hestia hestia-panel; do systemctl is-active --quiet "$unit"; done
+systemctl start hestia-smoke@current.service
 for endpoint in api/awg api/groups-and-rules; do
     curl --noproxy '*' --retry 4 --retry-connrefused -fsS "http://192.168.1.133:8080/$endpoint" >/dev/null
 done

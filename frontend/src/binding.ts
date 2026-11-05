@@ -14,39 +14,22 @@ import { PanelService } from "./api/generated/api/panel.service";
 import type { BindingChange } from "./api/generated/model/bindingChange";
 import type { RuleList } from "./api/generated/model/ruleList";
 import type { Group } from "./api/generated/model/group";
+import { Notifications } from "./notifications";
 import { SnapshotState } from "./snapshot-state";
 
-/** BindingWrite retains the outcome across route changes and re-reads the gateway after every attempt. */
+/** BindingWrite reports the outcome across route changes and re-reads the gateway after every attempt. */
 @Injectable({ providedIn: "root" })
 export class BindingWrite {
   private readonly api = inject(PanelService);
   private readonly state = inject(SnapshotState);
   readonly pending = signal(false);
-  private readonly lastResult = signal<{
-    listId: string;
-    text: string;
-    confirmedGroup?: string;
-  } | null>(null);
-  readonly result = computed(() => {
-    const outcome = this.lastResult();
-    const view = this.state.view();
-    if (outcome?.confirmedGroup !== undefined && view.kind === "ready") {
-      const current = view.snapshot.lists.find(
-        (list) => list.id === outcome.listId,
-      );
-      if (current?.group !== outcome.confirmedGroup) return null;
-    }
-    return outcome;
-  });
+  private readonly notifications = inject(Notifications);
 
   /** apply serializes writes, confirms the complete response and always reconciles the snapshot. */
   apply(change: BindingChange): void {
     if (this.pending() || change.expectedGroup === change.group) return;
     this.pending.set(true);
-    this.lastResult.set({
-      listId: change.listId,
-      text: "Ожидаем подтверждения шлюза…",
-    });
+
     this.api
       .applyListBinding(change, "response")
       .pipe(timeout(310000))
@@ -62,6 +45,7 @@ export class BindingWrite {
             "listId" in body &&
             body.listId === change.listId;
           this.finish(
+            confirmed ? "success" : "error",
             change.listId,
             confirmed
               ? "Применено. " +
@@ -69,7 +53,6 @@ export class BindingWrite {
                     ? "Группа: " + change.group + "."
                     : "Привязка снята.")
               : "Шлюз не подтвердил запрошенную привязку. Проверьте обновлённый снимок.",
-            confirmed ? change.group : undefined,
           );
         },
         error: (error: unknown) => {
@@ -82,20 +65,17 @@ export class BindingWrite {
                 : status === 503
                   ? "Шлюз не подтвердил применение. Запись может быть отключена или служба недоступна."
                   : "Подтверждение не получено. Проверьте текущий снимок перед новой попыткой.";
-          this.finish(change.listId, text);
+          this.finish("error", change.listId, text);
         },
       });
   }
   /** finish publishes feedback separately from snapshot loading and releases the form for the next edit. */
-  private finish(listId: string, text: string, confirmedGroup?: string): void {
-    this.lastResult.set({
-      listId,
-      text:
-        confirmedGroup === undefined
-          ? text
-          : text + " Подтверждено " + new Date().toLocaleString("ru-RU") + ".",
-      confirmedGroup,
-    });
+  private finish(
+    severity: "success" | "error",
+    listId: string,
+    text: string,
+  ): void {
+    this.notifications.show(severity, `Список «${listId}». ${text}`);
     this.pending.set(false);
     this.state.reload(true);
   }

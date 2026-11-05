@@ -1,3 +1,4 @@
+import { Notifications } from "./notifications";
 import {
   ChangeDetectionStrategy,
   Component,
@@ -75,19 +76,23 @@ class DnsDraftState {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DnsScreen {
+  private readonly notifications = inject(Notifications);
   protected readonly form = inject(DnsDraftState).form;
   protected readonly errors = signal<readonly string[]>([]);
-  protected readonly checked = signal(false);
 
   /** validate checks enabled sections and reports their validity without submitting anything. */
   protected validate(): void {
     this.errors.set(draftErrors(this.form.getRawValue()));
-    this.checked.set(true);
+    if (!this.errors().length) {
+      this.notifications.show(
+        "success",
+        "Черновик DNS проверен. Параметры согласованы между собой. Изменения не отправлены на шлюз.",
+      );
+    }
   }
 
   /** clearCheck removes the prior result when the proposed settings change. */
   protected clearCheck(): void {
-    this.checked.set(false);
     this.errors.set([]);
   }
 

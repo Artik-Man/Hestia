@@ -1,6 +1,8 @@
 import { inject } from "@angular/core";
 import { bootstrapApplication } from "@angular/platform-browser";
 import { provideHttpClient } from "@angular/common/http";
+import { MessageService } from "primeng/api";
+import Aura from "@primeuix/themes/aura";
 import { providePrimeNG } from "primeng/config";
 import { provideApi } from "./api/generated/provide-api";
 import {
@@ -61,6 +63,10 @@ void bootstrapApplication(Panel, {
     ),
     provideApi(""),
     provideHttpClient(),
-    providePrimeNG({ unstyled: true }),
+    MessageService,
+    providePrimeNG({
+      theme: { preset: Aura, options: { darkModeSelector: false } },
+      translation: { aria: { close: "Закрыть" } },
+    }),
   ],
 });

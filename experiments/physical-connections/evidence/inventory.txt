@@ -1,0 +1,2 @@
+kernel 6.1.0-53-cloud-arm64; helper sha256 3ff481379cba7246cc5d4269a68a7d74e01e7b1c1986be9bf68d3692c779c447
+{"interfaces": [{"exitIds": ["bench-ethernet"], "interfaceName": "eth0", "kind": "ethernet", "online": true, "present": true}, {"exitIds": ["bench-absent"], "interfaceName": "eth-missing", "kind": "ethernet", "online": false, "present": false}], "wifiAvailable": false, "wifiProfiles": []}

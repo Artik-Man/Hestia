@@ -1,0 +1,11 @@
+✔ dragging an exit into an empty group stages a cancellable change until Save (1190.261708ms)
+✔ groups preserve names, show modal and page Toasts, and require confirmation before deletion (1433.709375ms)
+✔ production panel imports and deletes a file against a local API fixture (1185.744959ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1654.281791

@@ -1,0 +1,11 @@
+kernel=6.1.0-53-cloud-arm64; unmarked route to peer: 198.19.10.10 via 198.18.2.2 dev forbidden src 198.18.2.1 uid 0 
+hestia sha256=f6694ab57483f156e091d6b78b6ca2a7ae2949d1bb34dfbdd30fea8c3072e99a
+guarded startup: child service running with IPv4 and IPv6 guards; readiness withheld before backend
+quality preflight preferred: HTTP 200 {"delay":9}
+quality preflight backup: HTTP 200 {"delay":1}
+initial: echo matched; encrypted trial via chosen0 only
+failed-primary: echo matched; encrypted trial via chosen1 only
+recovered-primary: echo matched; encrypted trial via chosen0 only
+all selected paths down: no echo; 0 WireGuard packets on forbidden; 1 unmarked control packet captured
+restored-backup: echo matched; encrypted trial via chosen1 only
+main routing table unchanged

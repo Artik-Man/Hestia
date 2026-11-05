@@ -74,10 +74,10 @@ func readSnapshot(path string, managed bool) (panelmodel.Snapshot, error) {
 		for j, id := range g.Exits {
 			exits[j] = panelmodel.Exit{ID: id, Available: cfg.Healthy[id]}
 		}
-		view.Groups[i] = panelmodel.Group{ID: g.ID, IsDefault: i == 0, Exits: exits}
+		view.Groups[i] = panelmodel.Group{ID: g.ID, Name: g.Name, IsDefault: i == 0, Exits: exits}
 	}
 	for i, l := range cfg.Lists {
-		view.Lists[i] = panelmodel.RuleList{ID: l.ID, Group: l.Group, Enabled: l.Group != "", Masks: append([]string{}, l.Masks...)}
+		view.Lists[i] = panelmodel.RuleList{ID: l.ID, Name: l.Name, Group: l.Group, Enabled: l.Group != "", Masks: append([]string{}, l.Masks...)}
 	}
 	return view, nil
 }
@@ -136,6 +136,13 @@ func registerPanelAPI(mux *http.ServeMux, snapshot, grafanaURL string, writes pa
 	// Only registered panel operations are public. Their bodies are the unmodified DTOs.
 	config.OpenAPIPath, config.SchemasPath, config.DocsPath = "", "", ""
 	config.CreateHooks = nil
+	config.Transformers = append(config.Transformers, func(ctx huma.Context, _ string, body any) (any, error) {
+		// Huma includes the entire request in decode error details, including WireGuard private keys.
+		if problem, ok := body.(*huma.ErrorModel); ok && (strings.HasPrefix(ctx.Operation().Path, "/api/awg") || strings.HasPrefix(ctx.Operation().Path, "/api/wifi-connections")) {
+			problem.Errors = nil
+		}
+		return body, nil
+	})
 	api := humago.New(mux, config)
 	api.UseMiddleware(func(ctx huma.Context, next func(huma.Context)) {
 		ctx.SetHeader("Cache-Control", "no-store")
@@ -145,7 +152,7 @@ func registerPanelAPI(mux *http.ServeMux, snapshot, grafanaURL string, writes pa
 		OperationID: "getGroupsAndRules", Tags: []string{"Panel"}, Method: http.MethodGet, Path: "/api/groups-and-rules",
 		Summary: "Прочитать проверенный снимок групп и доменных списков", Errors: []int{http.StatusServiceUnavailable},
 	}, func(_ context.Context, _ *struct{}) (*snapshotOutput, error) {
-		view, err := readSnapshot(snapshot, writes.binding != nil || writes.order != nil)
+		view, err := readSnapshot(snapshot, writes.createDomainList != nil || writes.binding != nil || writes.order != nil || writes.createGroup != nil)
 		if err != nil {
 			log.Printf("cannot load snapshot: %v", err)
 			return nil, huma.Error503ServiceUnavailable("Снимок конфигурации недоступен")
@@ -158,9 +165,17 @@ func registerPanelAPI(mux *http.ServeMux, snapshot, grafanaURL string, writes pa
 	}, func(_ context.Context, _ *struct{}) (*navigationOutput, error) {
 		return &navigationOutput{Body: panelmodel.Navigation{GrafanaURL: grafanaURL}}, nil
 	})
+	registerDomainLists(api, writes.createDomainList, writes.updateDomainList, writes.deleteDomainList)
 	registerBinding(api, writes.binding)
 	registerOrder(api, writes.order)
+	registerGroupCreate(api, writes.createGroup)
+	registerGroupRename(api, writes.renameGroup)
+	registerDirectRename(api, writes.renameDirect)
+	registerPhysical(api, writes.physical)
+	registerGroupDelete(api, writes.deleteGroup)
+	registerMoveExit(api, writes.moveExit)
 	registerAWG(api, writes.awg)
+	registerQuality(api, snapshot, writes.quality)
 	return api
 }
 
@@ -220,6 +235,10 @@ func localHandler(listen string, next http.Handler) (http.Handler, error) {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("Referrer-Policy", "no-referrer")
 		w.Header().Set("Content-Security-Policy", "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; object-src 'none'")
+		if (r.Method == http.MethodPost && r.URL.Path == "/api/awg") || (r.Method == http.MethodPut && strings.HasPrefix(r.URL.Path, "/api/awg/")) {
+			// Slow manual candidates can consume multiple full peer probes before a save commits or rolls back.
+			_ = http.NewResponseController(w).SetWriteDeadline(time.Now().Add(2*binding.AWGActivationLimit + time.Minute))
+		}
 		next.ServeHTTP(w, r)
 	}), nil
 }
@@ -249,9 +268,15 @@ func Run() {
 	snapshot := flag.String("snapshot", "", "controller snapshot file (required)")
 	assets := flag.String("assets", "", "browser build directory containing index.html (required)")
 	grafanaURL := flag.String("grafana-url", "", "optional trusted HTTPS URL for the Grafana menu link")
+	enableDomainLists := flag.Bool("enable-domain-lists", false, "enable confirmed domain list creation, editing and deletion on the installed gateway")
+	enableGroupDelete := flag.Bool("enable-group-delete", false, "enable confirmed deletion of empty non-default groups on the installed gateway")
+	enableExitMove := flag.Bool("enable-exit-move", false, "enable confirmed moves between connection groups on the installed gateway")
+	enableGroupCreate := flag.Bool("enable-group-create", false, "enable confirmed creation and naming of connection groups on the installed gateway")
 	enableOrder := flag.Bool("enable-group-order", false, "enable confirmed group and exit ordering on the installed gateway")
 	enableBindings := flag.Bool("enable-bindings", false, "enable confirmed list binding changes on the installed gateway")
 	enableAWG := flag.Bool("enable-awg", false, "enable privileged AmneziaWG profile management on the installed gateway")
+	qualitySettings := flag.String("quality-settings", "", "quality settings file (defaults to the installed settings for the managed gateway)")
+	qualityReport := flag.String("quality-report", "", "quality worker report file (defaults to the installed report for the managed gateway)")
 	openapi := flag.String("openapi", "", "write the generated OpenAPI contract at this path and exit")
 	flag.Parse()
 	if *openapi != "" {
@@ -272,17 +297,43 @@ func Run() {
 		log.Fatal(err)
 	}
 	var writes panelWrites
-	if (*enableBindings || *enableOrder || *enableAWG) && *snapshot != installedSnapshot {
+	writes.quality = qualityFiles{settings: *qualitySettings, report: *qualityReport}
+	if sameSnapshotPath(*snapshot, installedSnapshot) {
+		if writes.quality.settings == "" {
+			writes.quality.settings = "/var/lib/hestia-quality-settings/settings.json"
+		}
+		if writes.quality.report == "" {
+			writes.quality.report = "/run/hestia-quality/report.json"
+		}
+	}
+	if (*enableDomainLists || *enableGroupDelete || *enableExitMove || *enableBindings || *enableOrder || *enableGroupCreate || *enableAWG) && *snapshot != installedSnapshot {
 		log.Fatal("routing changes require /etc/hestia/snapshot.json")
+	}
+	if *enableDomainLists {
+		writes.createDomainList = createInstalledDomainList
+		writes.updateDomainList = updateInstalledDomainList
+		writes.deleteDomainList = deleteInstalledDomainList
+	}
+	if *enableGroupDelete {
+		writes.deleteGroup = deleteInstalledGroup
+	}
+	if *enableExitMove {
+		writes.moveExit = moveInstalledExit
 	}
 	if *enableBindings {
 		writes.binding = applyInstalledBinding
+	}
+	if *enableGroupCreate {
+		writes.createGroup = createInstalledGroup
+		writes.renameGroup = renameInstalledGroup
 	}
 	if *enableOrder {
 		writes.order = applyInstalledOrder
 	}
 	if *enableAWG {
 		writes.awg = installedAWGWriter{}
+		writes.renameDirect = renameInstalledDirect
+		writes.physical = runAWGHelper
 	}
 	h, err := localHandler(*listen, panelHandler(*snapshot, *grafanaURL, bundle, writes))
 	if err != nil {

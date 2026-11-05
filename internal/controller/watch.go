@@ -9,10 +9,13 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/Artik-Man/Hestia/internal/panelmodel"
+	"github.com/Artik-Man/Hestia/internal/quality"
 	"github.com/Artik-Man/Hestia/internal/routing"
 )
 
 type watcher struct {
+	quality    *quality.Engine
 	client     *http.Client
 	base       string
 	desired    *Config
@@ -81,18 +84,55 @@ func (w *watcher) sync(ctx context.Context) ([]Result, error) {
 			health[id] = false
 		}
 	}
+	var observation panelmodel.QualityReport
+	var scores map[string]quality.Result
+	if w.quality != nil {
+		if err := w.refreshQuality(); err != nil {
+			failures = append(failures, err)
+		}
+		var ids []string
+		for _, group := range w.desired.Groups {
+			ids = append(ids, group.Exits...)
+		}
+		observation.Settings, scores = w.quality.Snapshot(ids)
+		observation.CapturedAt = time.Now().UTC().Format(time.RFC3339Nano)
+		observation.Groups = []panelmodel.QualityGroup{}
+	}
 	for _, g := range w.desired.Groups {
 		if ctx.Err() != nil {
 			break
 		}
 		exit, outcome := routing.SelectExit(g, health)
+		var group panelmodel.QualityGroup
+		reason := routing.MatchReason("availability_snapshot")
 		target := exit
 		if outcome == routing.Block {
 			target = deny
 		}
+		if w.quality != nil {
+			group = qualityOrder(g, health, "", scores)
+		}
 		requestCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
-		changed, err := ownedReconcile(requestCtx, w.client, w.base, g, target)
+		changed, err := ownedDecision(requestCtx, w.client, w.base, g, func(current string) string {
+			if w.quality != nil {
+				group = qualityOrder(g, health, current, scores)
+				exit = qualityTarget(group, current)
+				if exit != "" {
+					target = exit
+					if group.Connections[0].Result.Overall != nil {
+						reason = "quality_scores"
+					}
+				}
+			}
+			return target
+		})
 		cancel()
+		if w.quality != nil {
+			for i := range group.Connections {
+				group.Connections[i].Active = err == nil && group.Connections[i].ID == target
+			}
+			observation.Groups = append(observation.Groups, group)
+		}
 		if err != nil {
 			delete(w.confirmed, g.ID)
 			failures = append(failures, fmt.Errorf("group %s: %w", g.ID, err))
@@ -100,15 +140,18 @@ func (w *watcher) sync(ctx context.Context) ([]Result, error) {
 		}
 		w.pinned = true
 		if changed || w.confirmed[g.ID] != target {
-			results = append(results, Result{Time: time.Now().UTC(), Group: g.ID, Exit: exit, Reason: "availability_snapshot", Outcome: outcome, SelectorTarget: target})
+			results = append(results, Result{Time: time.Now().UTC(), Group: g.ID, Exit: exit, Reason: reason, Outcome: outcome, SelectorTarget: target})
 			w.confirmed[g.ID] = target
 		}
+	}
+	if w.quality != nil && ctx.Err() == nil {
+		failures = append(failures, publishQuality(observation))
 	}
 	return results, errors.Join(failures...)
 }
 
 // Watch serially reloads an atomically replaced availability file and repairs selector drift.
-func Watch(ctx context.Context, path string, interval time.Duration, report func(Result) error, warn func(error)) error {
+func Watch(ctx context.Context, path string, interval time.Duration, enableQuality bool, report func(Result) error, warn func(error)) error {
 	if interval <= 0 {
 		return fmt.Errorf("interval must be positive")
 	}
@@ -118,7 +161,17 @@ func Watch(ctx context.Context, path string, interval time.Duration, report func
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	lastError := ""
+	var lastProbeInit time.Time
 	for ctx.Err() == nil {
+		if enableQuality && w.quality == nil && time.Since(lastProbeInit) >= 5*time.Second {
+			lastProbeInit = time.Now()
+			engine, initErr := startQuality(ctx)
+			if initErr != nil {
+				warn(fmt.Errorf("quality measurements unavailable: %w", initErr))
+			} else {
+				w.quality = engine
+			}
+		}
 		data, readErr := os.ReadFile(path)
 		var results []Result
 		var err error

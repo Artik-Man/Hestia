@@ -1,93 +1,211 @@
-/** A completed probe records either an observed result or a local measurement failure. */
-export interface ProbeObservation {
-  readonly time: string;
-  readonly group: string;
-  readonly exit: string;
-  readonly target: string;
-  readonly protocol: "TCP" | "UDP" | "ICMP";
-  readonly outcome: "reply" | "timeout" | "local-error";
-  readonly latencyMs: number | null;
+import type { QualityReport } from "./api/generated/model/qualityReport";
+import type { QualitySettings } from "./api/generated/model/qualitySettings";
+
+type Check = QualitySettings["checks"][number];
+type Connection = QualityReport["groups"][number]["connections"][number];
+type Result = Connection["result"]["checks"][number];
+
+/** record exposes only properties of a JSON object. */
+function record(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-/** Switching records identify the affected scope, old/new exits and measured rationale. */
-export interface SwitchObservation {
-  readonly time: string;
-  readonly group: string;
-  readonly from: string;
-  readonly to: string;
-  readonly reason: string;
-  readonly scope:
-    | { kind: "group" }
-    | {
-        kind: "target";
-        target: string;
-        protocol: ProbeObservation["protocol"];
-      };
+/** whole checks bounded integer settings and nonnegative counters. */
+function whole(
+  value: unknown,
+  min = 0,
+  max = Number.MAX_SAFE_INTEGER,
+): value is number {
+  return (
+    typeof value === "number" &&
+    Number.isSafeInteger(value) &&
+    value >= min &&
+    value <= max
+  );
 }
 
-/** ProbeTotals distinguishes local failures from packet loss and unknown latency from zero. */
-export interface ProbeTotals {
-  readonly samples: number;
-  readonly timeouts: number;
-  readonly localErrors: number;
-  readonly meanLatencyMs: number | null;
+/** validTarget requires a literal IP and explicit service port, including brackets for IPv6. */
+function validTarget(target: unknown, dns: boolean): boolean {
+  if (typeof target !== "string") return false;
+  const match = /^(\[[0-9a-fA-F:.]+\]|[0-9.]+):(\d+)$/.exec(target);
+  return (
+    !!match &&
+    validLiteral(match[1]) &&
+    whole(Number(match[2]), 1, 65535) &&
+    (!dns || Number(match[2]) === 53)
+  );
 }
 
-/** summarizeProbes compares probes per exit within one group, target, protocol and time window. */
-export function summarizeProbes(
-  reports: readonly ProbeObservation[],
-  group: string,
-  target: string,
-  protocol: ProbeObservation["protocol"],
-  cutoff: number,
-  end: number,
-): ReadonlyMap<string, ProbeTotals> {
-  const totals = new Map<
-    string,
-    {
-      samples: number;
-      timeouts: number;
-      localErrors: number;
-      latencySum: number;
-      latencyCount: number;
-    }
-  >();
-  for (const report of reports) {
-    const time = Date.parse(report.time);
-    if (
-      report.group !== group ||
-      report.target !== target ||
-      report.protocol !== protocol ||
-      !(time >= cutoff && time <= end)
-    )
-      continue;
-    const total = totals.get(report.exit) ?? {
-      samples: 0,
-      timeouts: 0,
-      localErrors: 0,
-      latencySum: 0,
-      latencyCount: 0,
-    };
-    if (report.outcome === "local-error") total.localErrors++;
-    else {
-      total.samples++;
-      if (report.outcome === "timeout") total.timeouts++;
-      else if (report.latencyMs !== null) {
-        total.latencySum += report.latencyMs;
-        total.latencyCount++;
-      }
-    }
-    totals.set(report.exit, total);
+/** validLiteral rejects ambiguous IPv4 spellings and malformed bracketed IPv6 addresses. */
+function validLiteral(text: string): boolean {
+  if (!text.startsWith("["))
+    return (
+      /^(?:0|[1-9]\d{0,2})(?:\.(?:0|[1-9]\d{0,2})){3}$/u.test(text) &&
+      text.split(".").every((part) => Number(part) <= 255)
+    );
+  try {
+    return new URL("http://" + text).hostname.startsWith("[");
+  } catch {
+    return false;
   }
-  return new Map(
-    Array.from(totals, ([exit, t]) => [
-      exit,
-      {
-        samples: t.samples,
-        timeouts: t.timeouts,
-        localErrors: t.localErrors,
-        meanLatencyMs: t.latencyCount ? t.latencySum / t.latencyCount : null,
-      },
-    ]),
+}
+
+/** validDomain allows an absolute or relative ASCII DNS query name, including numeric labels. */
+function validDomain(text: string): boolean {
+  return (
+    text.length <= 253 &&
+    text
+      .replace(/\.$/u, "")
+      .split(".")
+      .every((label) => /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/iu.test(label))
+  );
+}
+
+/** validCheck checks protocol-specific settings before display or submission. */
+function validCheck(value: unknown): value is Check {
+  if (!record(value) || (value.protocol !== "UDP" && value.protocol !== "TCP"))
+    return false;
+  const dns = value.protocol === "UDP";
+  return (
+    whole(value.intervalSeconds, 1, 3600) &&
+    whole(value.timeoutSeconds, 1, Math.min(value.intervalSeconds, 30)) &&
+    Array.isArray(value.targets) &&
+    value.targets.length >= 1 &&
+    value.targets.length <= 8 &&
+    (!dns || value.targets.length === 2) &&
+    new Set(value.targets).size === value.targets.length &&
+    value.targets.every((target) => validTarget(target, dns)) &&
+    (dns
+      ? typeof value.dnsName === "string" && validDomain(value.dnsName)
+      : !value.dnsName)
+  );
+}
+
+/** isQualitySettings verifies the full editable settings contract with at most one check per supported protocol. */
+export function isQualitySettings(value: unknown): value is QualitySettings {
+  return (
+    record(value) &&
+    whole(value.windowMinutes, 1, 1440) &&
+    Array.isArray(value.checks) &&
+    value.checks.length <= 2 &&
+    value.checks.every(validCheck) &&
+    new Set(value.checks.map((c) => c.protocol)).size === value.checks.length
+  );
+}
+
+/** sameQualitySettings compares applied settings by value in their configured order. */
+export function sameQualitySettings(
+  left: QualitySettings,
+  right: QualitySettings,
+): boolean {
+  return (
+    left.windowMinutes === right.windowMinutes &&
+    left.checks.length === right.checks.length &&
+    left.checks.every((check, index) => {
+      const other = right.checks[index];
+      return (
+        check.protocol === other.protocol &&
+        check.intervalSeconds === other.intervalSeconds &&
+        check.timeoutSeconds === other.timeoutSeconds &&
+        (check.dnsName ?? "") === (other.dnsName ?? "") &&
+        check.targets.length === other.targets.length &&
+        check.targets.every((target, i) => target === other.targets[i])
+      );
+    })
+  );
+}
+
+/** score accepts bounded finite scores or an explicit missing sample indicator. */
+function score(value: unknown): boolean {
+  return (
+    value === null ||
+    (typeof value === "number" &&
+      Number.isFinite(value) &&
+      value >= 0 &&
+      value <= 100)
+  );
+}
+
+/** counts checks sample/success relationships and local errors on a result or target. */
+function counts(value: Record<string, unknown>): boolean {
+  return (
+    whole(value.samples) &&
+    whole(value.successes, 0, value.samples) &&
+    whole(value.localErrors)
+  );
+}
+
+/** validResponseCodes accepts an optional breakdown of DNS errors by their nonzero decimal RCODE. */
+function validResponseCodes(value: unknown, errors: number): boolean {
+  if (value === undefined) return true;
+  if (!record(value)) return false;
+  let total = 0;
+  for (const [key, count] of Object.entries(value)) {
+    if (
+      !/^[1-9]\d{0,3}$/u.test(key) ||
+      Number(key) > 4095 ||
+      !whole(count, 1, errors)
+    )
+      return false;
+    total += count;
+  }
+  return total === errors;
+}
+
+/** validResult checks each target and preserves the distinction between missing data and zero. */
+function validResult(value: unknown): value is Result {
+  return (
+    record(value) &&
+    (value.protocol === "UDP" || value.protocol === "TCP") &&
+    counts(value) &&
+    score(value.score) &&
+    (value.score === null) === (value.samples === 0) &&
+    Array.isArray(value.targets) &&
+    value.targets.every(
+      (t) =>
+        record(t) &&
+        typeof t.target === "string" &&
+        counts(t) &&
+        whole(t.dnsErrors) &&
+        validResponseCodes(t.dnsResponseCodes, t.dnsErrors) &&
+        score(t.score) &&
+        (t.score === null) === (t.samples === 0),
+    )
+  );
+}
+
+/** validConnection checks completeness of per-protocol results before group rows can be rendered. */
+function validConnection(value: unknown): value is Connection {
+  return (
+    record(value) &&
+    typeof value.id === "string" &&
+    !!value.id &&
+    typeof value.available === "boolean" &&
+    typeof value.active === "boolean" &&
+    record(value.result) &&
+    score(value.result.overall) &&
+    Array.isArray(value.result.checks) &&
+    value.result.checks.every(validResult) &&
+    new Set(value.result.checks.map((c) => c.protocol)).size ===
+      value.result.checks.length
+  );
+}
+
+/** isQualityReport validates the network payload without reordering the controller's group rows. */
+export function isQualityReport(value: unknown): value is QualityReport {
+  return (
+    record(value) &&
+    isQualitySettings(value.settings) &&
+    typeof value.capturedAt === "string" &&
+    (!value.capturedAt || Number.isFinite(Date.parse(value.capturedAt))) &&
+    Array.isArray(value.groups) &&
+    value.groups.every(
+      (group) =>
+        record(group) &&
+        typeof group.id === "string" &&
+        typeof group.name === "string" &&
+        Array.isArray(group.connections) &&
+        group.connections.every(validConnection),
+    )
   );
 }

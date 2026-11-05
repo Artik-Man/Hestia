@@ -1,16 +1,16 @@
+import { groupName } from "./snapshot";
 import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  inject,
   input,
-  signal,
+  OnInit,
 } from "@angular/core";
-import { ProfileDraft } from "./profile-draft";
-import { GroupsRemoval } from "./groups-removal";
+import { ConnectionCatalog } from "./connection-catalog";
 import { BindingEditor } from "./binding";
-import { MasksDraft } from "./masks-draft";
+import { DomainLists } from "./domain-lists";
 import { type ParamMap, RouterLink } from "@angular/router";
-import type { Exit } from "./api/generated/model/exit";
 import type { Group } from "./api/generated/model/group";
 import type { RuleList } from "./api/generated/model/ruleList";
 import type { Snapshot } from "./api/generated/model/snapshot";
@@ -18,16 +18,14 @@ import type { Page } from "./pages";
 
 /** A selection identifies exactly one supported object on its parent page. */
 export type Selection =
-  { kind: "group" | "list" | "exit"; id: string } | { kind: "invalid" };
+  { kind: "group" | "list"; id: string } | { kind: "invalid" };
 
 /** readSelection returns null for the overview and rejects duplicate or misplaced detail selectors. */
 export function readSelection(
   path: Page["path"],
   params: ParamMap,
 ): Selection | null {
-  const keys = (["group", "list", "exit"] as const).filter((key) =>
-    params.has(key),
-  );
+  const keys = (["group", "list"] as const).filter((key) => params.has(key));
   if (!keys.length) return null;
   const key = keys[0];
   const values = params.getAll(key);
@@ -35,10 +33,7 @@ export function readSelection(
     keys.length !== 1 ||
     values.length !== 1 ||
     values[0] === "" ||
-    path !==
-      ({ group: "groups", list: "domain-lists", exit: "connections" } as const)[
-        key
-      ]
+    path !== ({ group: "groups", list: "domain-lists" } as const)[key]
   )
     return { kind: "invalid" };
   return { kind: key, id: values[0] };
@@ -48,7 +43,6 @@ export function readSelection(
 type Detail =
   | { kind: "group"; group: Group; lists: RuleList[] }
   | { kind: "list"; list: RuleList }
-  | { kind: "exit"; exit: Exit; group: Group; priority: number }
   | { kind: "missing" }
   | { kind: "invalid" };
 
@@ -72,33 +66,27 @@ function resolveDetail(selection: Selection, snapshot: Snapshot): Detail {
       if (list) return { kind: "list", list };
       break;
     }
-    case "exit":
-      for (const group of snapshot.groups) {
-        const index = group.exits.findIndex((exit) => exit.id === selection.id);
-        if (index >= 0)
-          return {
-            kind: "exit",
-            exit: group.exits[index],
-            group,
-            priority: index + 1,
-          };
-      }
   }
   return { kind: "missing" };
 }
 
-/** Details presents the selected group, list or exit, including links to its configured relationships. */
+/** Details presents the selected group or list, including links to its configured relationships. */
 @Component({
   selector: "hestia-details",
-  imports: [GroupsRemoval, RouterLink, BindingEditor, MasksDraft, ProfileDraft],
+  imports: [RouterLink, BindingEditor, DomainLists],
   templateUrl: "./details.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Details {
-  protected readonly editingExit = signal<string | null>(null);
+export class Details implements OnInit {
+  protected readonly groupName = groupName;
+  protected readonly catalog = inject(ConnectionCatalog);
   readonly selection = input.required<Selection>();
   readonly snapshot = input.required<Snapshot>();
   protected readonly detail = computed(() =>
     resolveDetail(this.selection(), this.snapshot()),
   );
+  /** ngOnInit refreshes connection labels for group membership rows. */
+  ngOnInit(): void {
+    if (this.selection().kind === "group") this.catalog.reload();
+  }
 }

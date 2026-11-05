@@ -3,7 +3,6 @@ package binding
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -23,17 +22,17 @@ var (
 )
 
 const (
-	python    = "/usr/bin/python3"
-	profile   = "/usr/local/lib/hestia/profile.py"
-	smoke     = "/usr/local/lib/hestia/smoke.py"
-	backend   = "/usr/local/lib/hestia/sing-box"
-	systemctl = "/usr/bin/systemctl"
-	watcher   = "hestia.service"
-	router    = "hestia-sing-box.service"
-	awgUnit   = "hestia-awg.service"
-	awgReady  = "/run/hestia-awg/ready"
-	awgRoutes = "/run/hestia-awg/routes.json"
-	pending   = ".binding-pending"
+	python       = "/usr/bin/python3"
+	profile      = "/usr/local/lib/hestia/profile.py"
+	smokeFresh   = "hestia-smoke@fresh.service"
+	smokeCurrent = "hestia-smoke@current.service"
+	backend      = "/usr/local/lib/hestia/sing-box"
+	systemctl    = "/usr/bin/systemctl"
+	watcher      = "hestia.service"
+	router       = "hestia-sing-box.service"
+	awgUnit      = "hestia-awg@.service"
+	awgReady     = "/run/hestia-awg/ready"
+	pending      = ".binding-pending"
 )
 
 var managedFiles = []string{"profile.json", "profile-source.sha256", "sing-box.json", "profile-backend.sha256", "snapshot.json"}
@@ -44,7 +43,8 @@ type Engine struct {
 	snapshotGID int
 	run         func(context.Context, string, ...string) error
 	unitCheck   func() (bool, error)
-	readyWait   func(context.Context) error
+	readyWait   func(context.Context, string) error
+	guardCheck  func(context.Context, string, int) error
 }
 
 // Installed returns the engine for the installer-managed Debian gateway.
@@ -98,166 +98,7 @@ func checkChange(data []byte, id, expected, target string) error {
 
 // verify requires the running backend's credential and the current watcher's selector confirmations to match the installed files.
 func (e Engine) verify(ctx context.Context) error {
-	return e.run(ctx, python, "-I", smoke)
-}
-
-// stop waits until both routing services are stopped so the watcher cannot observe a partially published generation.
-func (e Engine) stop(ctx context.Context) error {
-	if err := e.run(ctx, systemctl, "stop", watcher, router); err != nil {
-		return err
-	}
-	installed, err := e.awgUnitInstalled()
-	if err != nil {
-		return err
-	}
-	if installed {
-		if err := e.run(ctx, systemctl, "stop", awgUnit); err != nil {
-			return err
-		}
-	}
-	ready, err := e.hasReadyAWG(e.dir)
-	if err != nil {
-		return err
-	}
-	if ready && !installed {
-		return ErrUnavailable
-	}
-	return ensureNoAWGRouteManifest()
-}
-
-// startVerified starts the managed backend and a fresh watcher and waits for confirmation from both.
-func (e Engine) startVerified(ctx context.Context) error {
-	ready, err := e.hasReadyAWG(e.dir)
-	if err != nil {
-		return err
-	}
-	if ready {
-		installed, err := e.awgUnitInstalled()
-		if err != nil || !installed {
-			return ErrUnavailable
-		}
-		if err := clearAWGReadyMarker(); err != nil {
-			return err
-		}
-		if err := e.run(ctx, systemctl, "start", awgUnit); err != nil {
-			return err
-		}
-		if err := e.waitForAWGReady(ctx); err != nil {
-			return err
-		}
-	}
-	if err := e.run(ctx, systemctl, "start", router, watcher); err != nil {
-		return err
-	}
-	return e.verify(ctx)
-}
-
-// hasReadyAWG reports whether a profile generation contains exactly one connector eligible for group traffic.
-func (e Engine) hasReadyAWG(directory string) (bool, error) {
-	data, err := os.ReadFile(filepath.Join(directory, "profile.json"))
-	if err != nil {
-		return false, ErrUnavailable
-	}
-	var profile struct {
-		Connectors []struct {
-			Status string `json:"status"`
-		} `json:"connectors"`
-	}
-	if err := json.Unmarshal(data, &profile); err != nil {
-		return false, ErrUnavailable
-	}
-	ready := false
-	for _, connector := range profile.Connectors {
-		if connector.Status != "ready" {
-			continue
-		}
-		if ready {
-			return false, ErrUnavailable
-		}
-		ready = true
-	}
-	return ready, nil
-}
-
-// awgUnitInstalled checks only fixed systemd unit locations before a transaction asks systemd to run the root service.
-func (e Engine) awgUnitInstalled() (bool, error) {
-	if e.unitCheck != nil {
-		return e.unitCheck()
-	}
-	for _, path := range []string{"/etc/systemd/system/" + awgUnit, "/lib/systemd/system/" + awgUnit, "/usr/lib/systemd/system/" + awgUnit} {
-		info, err := os.Lstat(path)
-		if err == nil {
-			if !info.Mode().IsRegular() || info.Mode()&os.ModeSymlink != 0 {
-				return false, ErrUnavailable
-			}
-			return true, nil
-		}
-		if !errors.Is(err, os.ErrNotExist) {
-			return false, ErrUnavailable
-		}
-	}
-	return false, nil
-}
-
-// waitAWGReady waits for the root service's private marker written only after handshake and bound egress verification.
-func waitAWGReady(ctx context.Context) error {
-	deadline := time.NewTicker(100 * time.Millisecond)
-	defer deadline.Stop()
-	timer := time.NewTimer(25 * time.Second)
-	defer timer.Stop()
-	for {
-		info, err := os.Lstat(awgReady)
-		stat, ok := infoStat(info)
-		if err == nil && info.Mode().IsRegular() && info.Mode().Perm() == 0600 && info.Size() == 6 && ok && int(stat.Uid) == 0 && stat.Nlink == 1 {
-			data, readErr := os.ReadFile(awgReady)
-			if readErr == nil && string(data) == "ready\n" {
-				return nil
-			}
-		}
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-timer.C:
-			return errors.New("AWG service did not confirm its bound egress probe")
-		case <-deadline.C:
-		}
-	}
-}
-
-// waitForAWGReady delegates readiness checks to a fakeable boundary while production requires the private service marker.
-func (e Engine) waitForAWGReady(ctx context.Context) error {
-	if e.readyWait != nil {
-		return e.readyWait(ctx)
-	}
-	return waitAWGReady(ctx)
-}
-
-// ensureNoAWGRouteManifest refuses to continue a mutation when the runtime did not retire its owned route state.
-func ensureNoAWGRouteManifest() error {
-	info, err := os.Lstat(awgRoutes)
-	if errors.Is(err, os.ErrNotExist) {
-		return nil
-	}
-	if err != nil || info == nil || !info.Mode().IsRegular() || info.Mode().Perm() != 0600 || info.Mode()&os.ModeSymlink != 0 {
-		return ErrUnavailable
-	}
-	return ErrUnavailable
-}
-
-// clearAWGReadyMarker removes only a prior root-owned readiness file before starting a fresh connector generation.
-func clearAWGReadyMarker() error {
-	info, err := os.Lstat(awgReady)
-	if errors.Is(err, os.ErrNotExist) {
-		return nil
-	}
-	stat, ok := infoStat(info)
-	if err != nil || info == nil || !info.Mode().IsRegular() || info.Mode().Perm() != 0600 || !ok || int(stat.Uid) != 0 || stat.Nlink != 1 {
-		return ErrUnavailable
-	}
-	if err := os.Remove(awgReady); err != nil {
-		return ErrUnavailable
-	}
-	return nil
+	return e.run(ctx, systemctl, "start", smokeFresh)
 }
 
 // Apply serializes updates with the installer, rejects stale bindings, and returns success only after live verification.
@@ -321,7 +162,7 @@ func (e Engine) apply(ctx context.Context, prepare func(string) error, check fun
 		return err
 	}
 	// The current watcher may have been running longer than its retained journal.
-	if err := e.run(ctx, python, "-I", smoke, "--current"); err != nil {
+	if err := e.run(ctx, systemctl, "start", smokeCurrent); err != nil {
 		return err
 	}
 	if noChange {
@@ -335,23 +176,28 @@ func (e Engine) apply(ctx context.Context, prepare func(string) error, check fun
 	}
 	if err := e.activate(ctx); err != nil {
 		// A disconnected client cannot cancel rollback of a transaction already visible on disk.
-		rollback, cancel := context.WithTimeout(context.Background(), 75*time.Second)
+		rollback, cancel := context.WithTimeout(context.Background(), AWGActivationLimit)
 		defer cancel()
 		return errors.Join(err, e.recoverIfPending(rollback, true))
 	}
 	return nil
 }
 
-// activate replaces the installed files only while routing is stopped, then confirms and commits the candidate.
+// activate publishes verified files with the necessary services drained, then confirms and commits the candidate.
 func (e Engine) activate(ctx context.Context) error {
 	journal := filepath.Join(e.dir, pending)
-	if err := e.stop(ctx); err != nil {
+	routingOnly, err := e.routingOnly(journal)
+	if err != nil {
 		return err
 	}
-	if err := e.installFiles(journal); err != nil {
+	plan, err := e.stop(ctx, journal, routingOnly)
+	if err != nil {
 		return err
 	}
-	if err := e.startVerified(ctx); err != nil {
+	if err := e.installFiles(journal, routingOnly); err != nil {
+		return err
+	}
+	if err := e.startVerified(ctx, plan); err != nil {
 		return err
 	}
 	return e.retireJournal()
@@ -409,31 +255,6 @@ func (e Engine) Recover(ctx context.Context) error {
 	return e.startAWGForBoot(ctx)
 }
 
-// startAWGForBoot restores the committed connector's guarded route before systemd starts sing-box on a clean boot.
-func (e Engine) startAWGForBoot(ctx context.Context) error {
-	ready, err := e.hasReadyAWG(e.dir)
-	if err != nil {
-		return err
-	}
-	if !ready {
-		return ensureNoAWGRouteManifest()
-	}
-	if err := e.run(ctx, python, "-I", profile, "--validate-managed", e.dir); err != nil {
-		return ErrUnavailable
-	}
-	installed, err := e.awgUnitInstalled()
-	if err != nil || !installed {
-		return ErrUnavailable
-	}
-	if err := clearAWGReadyMarker(); err != nil {
-		return err
-	}
-	if err := e.run(ctx, systemctl, "start", awgUnit); err != nil {
-		return err
-	}
-	return e.waitForAWGReady(ctx)
-}
-
 // recoverIfPending restores every saved file under the exclusive lock and retains the journal on failure.
 // Online recovery also restarts and verifies the prior generation, stopping services if it cannot be verified.
 func (e Engine) recoverIfPending(ctx context.Context, online bool) error {
@@ -445,19 +266,27 @@ func (e Engine) recoverIfPending(ctx context.Context, online bool) error {
 	if err != nil {
 		return err
 	}
+	routingOnly, modeErr := e.routingOnly(journal)
+	var plan runtimePlan
 	if online {
-		if err := e.stop(ctx); err != nil {
-			return err
+		// A damaged journal cannot prove that its previous generation is safe to serve.
+		plan, err = e.stop(ctx, journal, routingOnly)
+		if err != nil {
+			return errors.Join(modeErr, err)
 		}
 	}
-	if err := e.installFiles(filepath.Join(journal, "previous")); err != nil {
+	if modeErr != nil {
+		return modeErr
+	}
+	if err := e.installFiles(filepath.Join(journal, "previous"), routingOnly); err != nil {
 		return err
 	}
 	if online {
-		if err := e.startVerified(ctx); err != nil {
+		if err := e.startVerified(ctx, plan); err != nil {
 			stop, cancel := context.WithTimeout(context.Background(), 25*time.Second)
 			defer cancel()
-			return errors.Join(err, e.stop(stop))
+			_, stopErr := e.stop(stop, journal, routingOnly)
+			return errors.Join(err, stopErr)
 		}
 	}
 	return e.retireJournal()

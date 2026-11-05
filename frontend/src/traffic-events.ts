@@ -1,6 +1,9 @@
+import { ConnectionCatalog } from "./connection-catalog";
 import {
   ChangeDetectionStrategy,
   Component,
+  OnInit,
+  inject,
   computed,
   input,
 } from "@angular/core";
@@ -20,7 +23,14 @@ import {
   styleUrl: "./traffic-quality.css",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TrafficEvents {
+export class TrafficEvents implements OnInit {
+  protected readonly catalog = inject(ConnectionCatalog);
+
+  /** ngOnInit refreshes gateway names when this view opens. */
+  ngOnInit(): void {
+    this.catalog.reload();
+  }
+
   readonly events = input.required<readonly FlowEvent[] | null>();
   readonly query = input.required<string>();
   readonly protocol = input.required<FlowProtocol | "">();

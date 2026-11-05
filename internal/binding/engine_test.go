@@ -30,7 +30,7 @@ func TestBindingTransaction(t *testing.T) {
 	verify := e.run
 	failed := false
 	e.run = func(ctx context.Context, name string, args ...string) error {
-		if name == python && args[1] == smoke && !failed {
+		if name == systemctl && len(args) == 2 && args[0] == "start" && args[1] == "hestia-smoke@fresh.service" && !failed {
 			b, _ := os.ReadFile(filepath.Join(e.dir, "snapshot.json"))
 			if string(b) != string(old) {
 				failed = true
@@ -71,13 +71,13 @@ func TestBindingRollbackRestoresAWGSecretTree(t *testing.T) {
 				return err
 			}
 			candidate := filepath.Join(args[4], awgTreeName, "conn", "profile.conf")
-			data := []byte(strings.Replace(treeTestProfile, "10.66.66.2/32", "10.66.66.3/32", 1))
+			data := []byte(strings.Replace(treeTestProfile, ":51820", ":51821", 1))
 			if err := os.WriteFile(candidate, data, 0600); err != nil {
 				return err
 			}
 			return nil
 		}
-		if name == python && args[1] == smoke && !failed {
+		if name == systemctl && len(args) == 2 && args[0] == "start" && args[1] == "hestia-smoke@fresh.service" && !failed {
 			failed = true
 			return errors.New("candidate rejected")
 		}
@@ -203,7 +203,7 @@ func interruptBinding(t *testing.T, e Engine) {
 	if err := e.publishJournal(stage); err != nil {
 		t.Fatal(err)
 	}
-	if err := e.installFiles(filepath.Join(e.dir, pending)); err != nil {
+	if err := e.installFiles(filepath.Join(e.dir, pending), false); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -218,11 +218,10 @@ func TestWatchPending(t *testing.T) {
 	interruptBinding(t, e)
 	called := []string{}
 	e.run = func(_ context.Context, name string, args ...string) error {
-		if name == systemctl {
-			called = append(called, args[0])
-		} else {
-			called = append(called, "verify")
+		if name != systemctl {
+			t.Errorf("unexpected recovery command: %s", name)
 		}
+		called = append(called, strings.Join(args, " "))
 		return nil
 	}
 	result := make(chan error, 1)
@@ -235,7 +234,7 @@ func TestWatchPending(t *testing.T) {
 	if err := <-result; err != nil {
 		t.Fatal(err)
 	}
-	if fmt.Sprint(called) != "[stop start verify]" {
+	if fmt.Sprint(called) != "[stop hestia.service hestia-sing-box.service start hestia-sing-box.service hestia.service start hestia-smoke@fresh.service]" {
 		t.Fatalf("incorrect recovery operations: %v", called)
 	}
 	data, err := e.readSnapshot()

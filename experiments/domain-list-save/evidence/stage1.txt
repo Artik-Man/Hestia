@@ -1,0 +1,7 @@
+2026-11-04 UTC | hestia-stage1 | installed hestia sha256 ed940fbe20e77a73d84b3315e3c3fb6ce4e6ada1d770387308f159f2a2fed11a
+Before: MainPID=8978 InvocationID=13667f69a40b4c898f865b385dd41aa0
+✔ gateway persists a domain list created through the editor (2634.922791ms)
+Created E2E 2026-11-04T19:50:23.154Z (l-80b1b05a0f59c22cec6ffcabe54b7bc8), POST 201, verified after reload
+1 passed, 0 failed
+After: MainPID=8978 InvocationID=13667f69a40b4c898f865b385dd41aa0
+hestia hestia-panel hestia-sing-box hestia-awg: active

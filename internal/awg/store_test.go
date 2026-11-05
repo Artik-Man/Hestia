@@ -3,6 +3,7 @@ package awg
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -18,11 +19,11 @@ func TestStoreSaveLoadListAndDelete(t *testing.T) {
 		t.Fatalf("Save returned error: %v", err)
 	}
 	entries, err := store.List()
-	if err != nil || len(entries) != 1 || entries[0] != (Metadata{ID: "awg-test", Group: "fi", Priority: 2, Status: "configured", Protocol: "amneziawg", IPv4Address: "10.66.66.2/32", DNSIPv4: "1.1.1.1"}) {
+	if err != nil || len(entries) != 1 || !reflect.DeepEqual(entries[0], Metadata{ID: "awg-test", Group: "fi", Priority: 2, Status: "configured", Protocol: "amneziawg", IPv4Address: "10.66.66.2/32", DNSIPv4: "1.1.1.1"}) {
 		t.Fatalf("unexpected listed metadata: %#v, %v", entries, err)
 	}
 	loaded, config, err := store.Load("awg-test")
-	if err != nil || loaded != entries[0] || !strings.Contains(string(config), "PrivateKey =") {
+	if err != nil || !reflect.DeepEqual(loaded, entries[0]) || !strings.Contains(string(config), "PrivateKey =") {
 		t.Fatalf("unexpected stored profile: %#v, %v", loaded, err)
 	}
 	profileInfo, err := os.Stat(filepath.Join(store.directory, "awg-test", profileFile))

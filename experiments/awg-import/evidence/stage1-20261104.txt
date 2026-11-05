@@ -1,0 +1,11 @@
+2026-11-04 | hestia-stage1 | linux/arm64 | рабочее дерево от 44bb04d
+До изменений:
+GET /api/awg -> 200 []
+POST /api/awg/check -> 503
+После настройки каталога /run/amneziawg:
+POST /api/awg/check -> 200 handshake_confirmed (0,43 с)
+POST /api/awg -> 422
+Первый прогон после исправления компилятора: профиль сохранился. При удалении Linux представил маршрут как «default dev awg0 scope link metric 100», и runtime отказался снимать его. После уточнения проверки принадлежности маршрута сервисы восстановлены из журнала, DELETE -> 204, GET /api/awg -> 200 [].
+Итоговый прогон Playwright: npm run test:e2e, exit 0, tests 1, pass 1, время теста 8,66 с. Подтверждены выбор настоящего файла, handshake, POST создания, выход и профиль в обеих таблицах, сохранение после повторного открытия, DELETE с подтверждением и отсутствие профиля после повторного открытия.
+Проверки обработки формата iproute2: linux/arm64 go test (TestIPRouteMissingTable, TestRoutePolicyIPRoute2Output, TestRouteTeardownDeletesOnlyExactOwnedRoutes) -> PASS.
+После e2e по запросу владельца сохранён отдельный постоянный профиль awg-home: группа default, приоритет 2, POST и последующий GET подтвердили ready.
