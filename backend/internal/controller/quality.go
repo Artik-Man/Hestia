@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"sync/atomic"
+	"time"
 
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
 	"github.com/Artik-Man/Hestia/internal/quality"
@@ -48,7 +50,28 @@ func (w *watcher) startQuality(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	go engine.Run(ctx, func(context.Context) ([]quality.Path, error) { return paths, nil })
+	w.relayReady = make(map[string]*atomic.Bool)
+	w.relayProbes = make(chan struct{}, 32)
+	candidates := make(map[string][]quality.Path)
+	publicPaths := make([]quality.Path, 0, len(paths))
+	for _, path := range paths {
+		if path.Relay != "" {
+			candidates[path.Relay] = append(candidates[path.Relay], path)
+			continue
+		}
+		publicPaths = append(publicPaths, path)
+		if path.Hysteria2 {
+			ready := new(atomic.Bool)
+			w.relayReady[path.ID] = ready
+			go w.monitorRelay(ctx, path, ready)
+		}
+	}
+	for id, paths := range candidates {
+		ready := new(atomic.Bool)
+		w.relayReady[id] = ready
+		go w.monitorCandidates(ctx, id, paths, ready)
+	}
+	go engine.Run(ctx, func(context.Context) ([]quality.Path, error) { return publicPaths, nil })
 	w.quality = engine
 	return nil
 }
@@ -157,4 +180,31 @@ func (w *watcher) refreshQuality() error {
 		return err
 	}
 	return w.quality.ApplySettings(settings)
+}
+
+// monitorRelay publishes reachability independently of optional quality scoring and stops with the watcher.
+func (w *watcher) monitorRelay(ctx context.Context, path quality.Path, ready *atomic.Bool) {
+	ticker := time.NewTicker(15 * time.Second)
+	defer ticker.Stop()
+	var window relayWindow
+	for ctx.Err() == nil {
+		window.observe(w.probeRelay(ctx, path))
+		ready.Store(window.available)
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
+	}
+}
+
+// probeRelay limits concurrent peer checks across all Hysteria profiles and abandons queued probes at shutdown.
+func (w *watcher) probeRelay(ctx context.Context, path quality.Path) bool {
+	select {
+	case w.relayProbes <- struct{}{}:
+		defer func() { <-w.relayProbes }()
+		return quality.HysteriaReady(ctx, path)
+	case <-ctx.Done():
+		return false
+	}
 }

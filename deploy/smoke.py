@@ -84,6 +84,8 @@ def quality_targets(config: dict, devices: dict[str, bool]) -> dict[str, str]:
     try:
         report = json.loads(path.read_text())
     except FileNotFoundError:
+        if "hysteria2" in config.get("connectorKinds", {}).values():
+            raise ValueError("awaiting Hysteria 2 reachability report")
         return {}
     captured = datetime.fromisoformat(report["capturedAt"].replace("Z", "+00:00"))
     if not 0 <= time.time() - captured.timestamp() <= 60:
@@ -94,6 +96,9 @@ def quality_targets(config: dict, devices: dict[str, bool]) -> dict[str, str]:
         rows = observed.get(group["id"], [])
         if sorted(row["id"] for row in rows) != sorted(group["exits"]):
             raise ValueError("quality report and selector membership differ")
+        for row in rows:
+            if config.get("connectorKinds", {}).get(row["id"]) == "hysteria2":
+                devices[row["id"]] = row["available"] is True
         active = [row["id"] for row in rows if row["active"]]
         if active:
             if len(active) != 1 or expected_target(config, {"exits": active}, devices) != active[0]:

@@ -77,6 +77,7 @@ test("country matrix keeps explicit choices when the default changes", async () 
         return route.fulfill({ json: { groups, lists: [] } });
       if (path === "/api/navigation")
         return route.fulfill({ json: { grafanaUrl: "" } });
+      if (path === "/api/hysteria2") return route.fulfill({ json: [] });
       if (path === "/api/awg-underlays") return route.fulfill({ json: [] });
       if (path.startsWith("/api/")) {
         unexpected.push(path);

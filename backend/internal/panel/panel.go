@@ -53,7 +53,7 @@ func sameSnapshotPath(path, installed string) bool {
 
 // readSnapshot reads and validates the current file without contacting a selector.
 // Arrays retain controller order and encode empty collections as JSON arrays.
-func readSnapshot(path string, managed bool) (panelmodel.Snapshot, error) {
+func readSnapshot(path string, managed bool, reportPath string) (panelmodel.Snapshot, error) {
 	var data []byte
 	var err error
 	if !managed && sameSnapshotPath(path, installedSnapshot) {
@@ -75,12 +75,30 @@ func readSnapshot(path string, managed bool) (panelmodel.Snapshot, error) {
 		return panelmodel.Snapshot{}, err
 	}
 	view := panelmodel.Snapshot{Groups: make([]panelmodel.Group, len(cfg.Groups)), Lists: make([]panelmodel.RuleList, len(cfg.Lists))}
+	hasHysteria := false
 	for i, g := range cfg.Groups {
 		exits := make([]panelmodel.Exit, len(g.Exits))
 		for j, id := range g.Exits {
-			exits[j] = panelmodel.Exit{ID: id, Available: cfg.Healthy[id]}
+			isHysteria := cfg.ConnectorKinds[id] == "hysteria2"
+			hasHysteria = hasHysteria || isHysteria
+			exits[j] = panelmodel.Exit{ID: id, Available: cfg.Healthy[id] && !isHysteria}
 		}
 		view.Groups[i] = panelmodel.Group{ID: g.ID, Name: g.Name, IsDefault: i == 0, Exits: exits}
+	}
+	if hasHysteria && reportPath != "" {
+		if report, _ := readFreshQualityReport(reportPath, path, view.Groups); report != nil {
+			for i, group := range report.Groups {
+				available := make(map[string]bool, len(group.Connections))
+				for _, row := range group.Connections {
+					available[row.ID] = row.Available
+				}
+				for j, exit := range view.Groups[i].Exits {
+					if cfg.ConnectorKinds[exit.ID] == "hysteria2" {
+						view.Groups[i].Exits[j].Available = cfg.Healthy[exit.ID] && available[exit.ID]
+					}
+				}
+			}
+		}
 	}
 	for i, l := range cfg.Lists {
 		view.Lists[i] = panelmodel.RuleList{ID: l.ID, Name: l.Name, Group: l.Group, Enabled: l.Group != "", Masks: append([]string{}, l.Masks...)}
@@ -144,7 +162,7 @@ func registerPanelAPI(mux *http.ServeMux, snapshot, grafanaURL string, writes pa
 	config.CreateHooks = nil
 	config.Transformers = append(config.Transformers, func(ctx huma.Context, _ string, body any) (any, error) {
 		// Huma includes the entire request in decode error details, including WireGuard private keys.
-		if problem, ok := body.(*huma.ErrorModel); ok && (strings.HasPrefix(ctx.Operation().Path, "/api/awg") || strings.HasPrefix(ctx.Operation().Path, "/api/wifi-connections")) {
+		if problem, ok := body.(*huma.ErrorModel); ok && (strings.HasPrefix(ctx.Operation().Path, "/api/awg") || strings.HasPrefix(ctx.Operation().Path, hysteriaPath) || strings.HasPrefix(ctx.Operation().Path, "/api/wifi-connections")) {
 			problem.Errors = nil
 		}
 		return body, nil
@@ -158,7 +176,7 @@ func registerPanelAPI(mux *http.ServeMux, snapshot, grafanaURL string, writes pa
 		OperationID: "getGroupsAndRules", Tags: []string{"Panel"}, Method: http.MethodGet, Path: "/api/groups-and-rules",
 		Summary: "Прочитать проверенный снимок групп и доменных списков", Errors: []int{http.StatusServiceUnavailable},
 	}, func(_ context.Context, _ *struct{}) (*snapshotOutput, error) {
-		view, err := readSnapshot(snapshot, writes.createDomainList != nil || writes.binding != nil || writes.order != nil || writes.createGroup != nil)
+		view, err := readSnapshot(snapshot, writes.createDomainList != nil || writes.binding != nil || writes.order != nil || writes.createGroup != nil, writes.quality.report)
 		if err != nil {
 			log.Printf("cannot load snapshot: %v", err)
 			return nil, huma.Error503ServiceUnavailable("Снимок конфигурации недоступен")
@@ -181,6 +199,7 @@ func registerPanelAPI(mux *http.ServeMux, snapshot, grafanaURL string, writes pa
 	registerGroupDelete(api, writes.deleteGroup)
 	registerMoveExit(api, writes.moveExit)
 	registerAWG(api, writes.awg)
+	registerHysteria2(api, writes.physical)
 	registerQuality(api, snapshot, writes.quality)
 	registerTraffic(api, writes.traffic)
 	registerCountryMap(api, writes.countryMap)

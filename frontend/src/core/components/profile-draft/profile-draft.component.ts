@@ -1,4 +1,4 @@
-import { Tooltip } from "primeng/tooltip";
+import { UnderlayPicker } from "../underlay-picker/underlay-picker.component";
 import { Toast } from "primeng/toast";
 import {
   AfterViewInit,
@@ -27,7 +27,7 @@ import {
 } from "../../models/awg-connection";
 import type { AWGConnection } from "../../services/api/generated/model/aWGConnection";
 import { PanelService } from "../../services/api/generated/api/panel.service";
-import { ConnectionCatalog } from "../../services/connection-catalog.service";
+
 import { Notifications } from "../../services/notifications.service";
 import { ButtonDirective } from "primeng/button";
 import { InputText } from "primeng/inputtext";
@@ -48,7 +48,13 @@ import {
 /** ProfileDraft edits the fields of a single manually entered, imported or stored WireGuard/AWG profile in a modal dialog. */
 @Component({
   selector: "hestia-profile-draft",
-  imports: [Tooltip, Toast, ButtonDirective, InputText, ReactiveFormsModule],
+  imports: [
+    UnderlayPicker,
+    Toast,
+    ButtonDirective,
+    InputText,
+    ReactiveFormsModule,
+  ],
   templateUrl: "./profile-draft.component.html",
   styleUrl: "./profile-draft.component.css",
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -67,65 +73,6 @@ export class ProfileDraft implements OnChanges, AfterViewInit {
   protected readonly values = signal<WireGuardValues>({});
   protected readonly imported = signal("");
   protected readonly underlays = signal<string[]>([]);
-  protected readonly choicesOpen = signal(false);
-  protected readonly catalog = inject(ConnectionCatalog);
-  protected readonly loadingCandidates = this.catalog.loading;
-  protected readonly underlayChoices = computed(() =>
-    [
-      ...new Set([...this.underlays(), ...this.catalog.entries().keys()]),
-    ].filter((id) => id !== this.target()),
-  );
-  protected readonly underlaySummary = computed(() =>
-    this.underlays()
-      .map((id) => this.catalog.name(id))
-      .join(" → "),
-  );
-
-  /** toggleChoices refreshes the available transports whenever the chooser opens. */
-  protected toggleChoices(): void {
-    this.choicesOpen.update((open) => !open);
-    if (this.choicesOpen()) this.catalog.reload();
-  }
-
-  private dragging: string | null = null;
-
-  /** toggleUnderlay appends a newly enabled transport or removes it while retaining the other priorities. */
-  protected toggleUnderlay(id: string): void {
-    if (this.underlays().length >= 64 && !this.underlays().includes(id)) return;
-    this.underlays.update((ids) =>
-      ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id],
-    );
-  }
-
-  /** moveUnderlay moves one enabled transport to its requested rank without changing the selected set. */
-  protected moveUnderlay(id: string, to: number): void {
-    const ids = [...this.underlays()];
-    const from = ids.indexOf(id);
-    if (from < 0 || to < 0 || to >= ids.length || from === to) return;
-    ids.splice(from, 1);
-    ids.splice(to, 0, id);
-    this.underlays.set(ids);
-  }
-
-  /** startUnderlayDrag identifies a selected transport for a local reorder. */
-  protected startUnderlayDrag(event: DragEvent, id: string): void {
-    this.dragging = id;
-    event.dataTransfer?.setData("text/plain", id);
-  }
-
-  /** dropUnderlay applies only an internal drag onto another selected transport. */
-  protected dropUnderlay(event: DragEvent, id: string): void {
-    event.preventDefault();
-    if (this.dragging)
-      this.moveUnderlay(this.dragging, this.underlays().indexOf(id));
-    this.dragging = null;
-  }
-
-  /** endUnderlayDrag clears the drag identity after cancellation or a completed drop. */
-  protected endUnderlayDrag(): void {
-    this.dragging = null;
-  }
-
   protected readonly reading = signal(false);
   protected readonly unavailable = signal(false);
   protected readonly submitting = signal(false);
@@ -145,7 +92,6 @@ export class ProfileDraft implements OnChanges, AfterViewInit {
   /** ngAfterViewInit opens the native modal after its focusable controls are attached. */
   ngAfterViewInit(): void {
     this.dialog.nativeElement.showModal();
-    if (!this.catalog.loading()) this.catalog.reload();
   }
 
   /** ngOnChanges initializes a new target once, preserving the current draft as metadata and availability refresh. */
@@ -156,7 +102,7 @@ export class ProfileDraft implements OnChanges, AfterViewInit {
     this.revision++;
     this.values.set({});
     this.underlays.set([]);
-    this.choicesOpen.set(false);
+
     this.imported.set("");
     this.unavailable.set(false);
     this.reading.set(false);

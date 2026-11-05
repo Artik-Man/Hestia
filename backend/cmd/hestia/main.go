@@ -31,6 +31,8 @@ func main() {
 	}
 	if len(os.Args) == 2 {
 		switch os.Args[1] {
+		case "-hysteria2-read", "-hysteria2-list", "-hysteria2-create", "-hysteria2-update", "-hysteria2-delete":
+			os.Exit(runHysteria2Command(os.Args[1], os.Stdin, os.Stdout))
 		case "-physical-list", "-wifi-create", "-wifi-save", "-wifi-delete":
 			os.Exit(runPhysicalCommand(os.Args[1], os.Stdin, os.Stdout))
 		}

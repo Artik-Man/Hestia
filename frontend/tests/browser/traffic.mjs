@@ -74,6 +74,7 @@ test("traffic journal reaches rows past 500 and refresh preserves its filters", 
       }
       if (url.pathname === "/api/navigation")
         return route.fulfill({ json: { grafanaUrl: "" } });
+      if (url.pathname === "/api/hysteria2") return route.fulfill({ json: [] });
       if (url.pathname === "/api/awg-underlays" && !catalogAvailable)
         return route.fulfill({ status: 503 });
       if (url.pathname === "/api/awg-underlays")

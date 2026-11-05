@@ -1,0 +1,163 @@
+<dialog
+  #dialog
+  class="gateway-dialog"
+  aria-labelledby="hy-title"
+  (cancel)="close($event)"
+>
+  <form #form="ngForm" (ngSubmit)="save()">
+    <h2 id="hy-title">
+      {{
+        connection()
+          ? "Редактировать подключение Hysteria 2"
+          : "Новое подключение Hysteria 2"
+      }}
+    </h2>
+    @if (reading()) {
+      <p role="status">Загрузка профиля…</p>
+    }
+    <fieldset [disabled]="busy() || reading() || readFailed()">
+      <label
+        >Импорт YAML
+        <input
+          #yamlFile
+          type="file"
+          accept=".yaml,.yml"
+          (change)="readFile(yamlFile, 'yaml')"
+      /></label>
+      @if (notice()) {
+        <p role="status">{{ notice() }}</p>
+      }
+      <label
+        >Название подключения
+        <input
+          pInputText
+          autofocus
+          required
+          maxlength="80"
+          name="name"
+          [(ngModel)]="name"
+      /></label>
+      @if (!connection()) {
+        <label
+          >Группа
+          <select required name="group" [(ngModel)]="group">
+            <option value="">Выберите группу</option>
+            @for (item of groups(); track item.id) {
+              <option [value]="item.id">{{ item.name || item.id }}</option>
+            }
+          </select></label
+        >
+      }
+      <hestia-underlay-picker
+        [target]="connection()?.id ?? null"
+        [(underlays)]="underlays"
+      />
+      <label
+        >Адрес сервера
+        <input
+          pInputText
+          required
+          name="server"
+          [(ngModel)]="server"
+          autocomplete="off"
+      /></label>
+      <label
+        >UDP-порт
+        <input
+          pInputText
+          required
+          type="number"
+          name="port"
+          min="1"
+          max="65535"
+          step="1"
+          [(ngModel)]="port"
+      /></label>
+      <label
+        >Пароль<input
+          pInputText
+          required
+          type="text"
+          name="password"
+          autocomplete="off"
+          [(ngModel)]="password"
+      /></label>
+      <label
+        >Имя сервера TLS (SNI)
+        <input
+          pInputText
+          name="sni"
+          [(ngModel)]="serverName"
+          placeholder="По умолчанию — адрес сервера"
+      /></label>
+      @if (certificatePEM) {
+        <details class="certificate-preview">
+          <summary>Показать сертификат</summary>
+          <pre aria-label="Сертификат PEM">{{ certificatePEM }}</pre>
+        </details>
+        <div class="certificate-actions">
+          <button
+            pButton
+            type="button"
+            class="secondary"
+            (click)="downloadCertificate()"
+          >
+            Скачать сертификат
+          </button>
+          <button
+            pButton
+            type="button"
+            class="icon-action delete-action connection-remove"
+            aria-label="Удалить сертификат"
+            pTooltip="Удалить сертификат"
+            tooltipEvent="both"
+            (click)="clearCertificate()"
+          >
+            <span class="delete-icon" aria-hidden="true"></span>
+          </button>
+        </div>
+      } @else {
+        <label
+          >Доверенный сертификат PEM<input
+            #certFile
+            type="file"
+            accept=".crt,.pem,.cer"
+            (change)="readFile(certFile, 'cert')"
+        /></label>
+        @if (requiredCertificate) {
+          <p>Выберите сертификат из профиля: {{ requiredCertificate }}</p>
+        } @else {
+          <p>Используются системные центры сертификации.</p>
+        }
+      }
+    </fieldset>
+    @if (error()) {
+      <p class="error" role="alert">{{ error() }}</p>
+    }
+    <div class="actions">
+      <button
+        pButton
+        type="button"
+        class="reset"
+        [disabled]="busy()"
+        (click)="close()"
+      >
+        Отмена
+      </button>
+      <button
+        pButton
+        type="submit"
+        class="save"
+        [disabled]="
+          busy() ||
+          reading() ||
+          readFailed() ||
+          form.invalid ||
+          (!!requiredCertificate && !certificatePEM)
+        "
+      >
+        Сохранить
+      </button>
+    </div>
+  </form>
+</dialog>

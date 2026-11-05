@@ -1,3 +1,5 @@
+import type { Hysteria2Connection } from "../../services/api/generated/model/hysteria2Connection";
+import { Hysteria2Editor } from "../hysteria2-editor/hysteria2-editor.component";
 import { Tooltip } from "primeng/tooltip";
 import { Toast } from "primeng/toast";
 import {
@@ -41,6 +43,7 @@ import {
     Menu,
     InputText,
     ProfileDraft,
+    Hysteria2Editor,
     PhysicalConnections,
   ],
   templateUrl: "./connections.component.html",
@@ -60,7 +63,10 @@ export class Connections implements OnInit {
     direct: "Прямое подключение",
     wireguard: "WireGuard",
     amneziawg: "AmneziaWG",
+    hysteria2: "Hysteria 2",
   } as const;
+  protected readonly hysteriaOpen = signal(false);
+  protected readonly editingHysteria = signal<Hysteria2Connection | null>(null);
   protected readonly creating = signal(false);
   private editorTrigger: HTMLButtonElement | null = null;
   protected readonly connectionTypes: MenuItem[] = [
@@ -69,6 +75,13 @@ export class Connections implements OnInit {
       command: () => {
         this.editing.set(null);
         this.creating.set(true);
+      },
+    },
+    {
+      label: "Hysteria 2",
+      command: () => {
+        this.editingHysteria.set(null);
+        this.hysteriaOpen.set(true);
       },
     },
   ];
@@ -103,12 +116,14 @@ export class Connections implements OnInit {
     return [
       ...new Set([
         ...exits.keys(),
+        ...this.catalog.hysteriaProfiles().keys(),
         ...profiles.keys(),
         ...this.catalog.entries().keys(),
       ]),
     ]
       .map((id) => {
         const profile = profiles.get(id);
+        const hysteria = this.catalog.hysteriaProfiles().get(id);
         const exit = exits.get(id);
         const available = profile
           ? profile.status === "ready"
@@ -117,6 +132,7 @@ export class Connections implements OnInit {
         return {
           id,
           profile,
+          hysteria,
           entry,
           name: profile?.name ?? this.catalog.name(id),
           available,
@@ -125,6 +141,7 @@ export class Connections implements OnInit {
       .filter(
         (row) =>
           row.profile ||
+          row.hysteria ||
           row.entry?.type === "wireguard" ||
           row.entry?.type === "amneziawg",
       );
@@ -248,8 +265,26 @@ export class Connections implements OnInit {
     this.creating.set(true);
   }
 
+  /** editHysteria restores public profile fields in a dedicated editor. */
+  protected editHysteria(
+    connection: Hysteria2Connection,
+    trigger: HTMLButtonElement,
+  ): void {
+    this.editorTrigger = trigger;
+    this.editingHysteria.set(connection);
+    this.hysteriaOpen.set(true);
+  }
+  /** hysteriaSaved refreshes public catalogs and routes after a confirmed gateway mutation. */
+  protected hysteriaSaved(): void {
+    this.closeEditor();
+    this.refresh();
+    this.messages.show("success", "Подключение Hysteria 2 сохранено.");
+  }
+
   /** closeEditor discards the selected file reference and closes the create/update panel. */
   protected closeEditor(): void {
+    this.hysteriaOpen.set(false);
+    this.editingHysteria.set(null);
     this.creating.set(false);
     this.editing.set(null);
     this.editorTrigger?.focus();
@@ -257,11 +292,17 @@ export class Connections implements OnInit {
   }
 
   /** deleteConnection removes one stored profile after explicit browser confirmation and refreshes public metadata. */
-  protected async deleteConnection(connection: AWGConnection): Promise<void> {
+  protected async deleteConnection(
+    connection: AWGConnection | Hysteria2Connection,
+  ): Promise<void> {
     if (!window.confirm(`Удалить профиль «${connection.name}»?`)) return;
     this.deleting.set(connection.id);
     try {
-      await firstValueFrom(this.panel.deleteAWGConnection(connection.id));
+      await firstValueFrom(
+        "server" in connection
+          ? this.panel.deleteHysteria2Connection(connection.id)
+          : this.panel.deleteAWGConnection(connection.id),
+      );
       this.awgConnections.update((items) =>
         items.filter((item) => item.id !== connection.id),
       );

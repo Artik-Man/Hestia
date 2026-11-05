@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
@@ -119,6 +120,8 @@ async function fixture(
     const req = route.request();
     const { pathname, origin: requestOrigin } = new URL(req.url());
     if (requestOrigin !== origin) return route.abort();
+    if (pathname === "/api/hysteria2" && req.method() === "GET")
+      return route.fulfill({ json: [] });
     if (pathname === "/api/physical-connections")
       return route.fulfill({ json: physical });
     const wifiPath = "/api/wifi-connections/" + wifiID;
@@ -795,6 +798,186 @@ test("a failed physical inventory read appears in a PrimeNG error toast", async 
       .getByText(message, { exact: true })
       .waitFor();
     assert.equal(await page.getByText(message, { exact: true }).count(), 1);
+  } finally {
+    await browser.close();
+  }
+});
+
+test("Hysteria 2 imports a YAML and PEM pair, preserves the secret on rename and deletes the profile", async () => {
+  const browser = await chromium.launch({
+    executablePath: process.env.CHROME_BIN,
+  });
+  try {
+    const page = await browser.newPage({ serviceWorkers: "block" });
+    page.setDefaultTimeout(7000);
+    await fixture(page);
+    const id = randomUUID();
+    let record;
+    let password;
+    let detailReads = 0;
+    const writes = [];
+    await page.route("**/api/hysteria2**", async (route) => {
+      const req = route.request();
+      if (req.method() === "GET") {
+        if (new URL(req.url()).pathname === "/api/hysteria2/" + id) {
+          detailReads++;
+          return route.fulfill({
+            json: { ...record, password },
+            headers: { "Cache-Control": "no-store" },
+          });
+        }
+        return route.fulfill({ json: record ? [record] : [] });
+      }
+      if (req.method() === "DELETE") {
+        record = undefined;
+        return route.fulfill({ status: 204 });
+      }
+      const body = req.postDataJSON();
+      writes.push(body);
+      const { password: replacement, ...publicData } = body;
+      password = replacement;
+      record = {
+        ...record,
+        ...publicData,
+        activeUnderlay: publicData.underlays.at(-1),
+        id,
+        priority: 1,
+      };
+      return route.fulfill({ json: record });
+    });
+    await page.goto(url);
+    await page.getByRole("button", { name: "Добавить", exact: true }).click();
+    await page
+      .getByRole("menuitem", { name: "Hysteria 2", exact: true })
+      .click();
+    const dialog = page.getByRole("dialog");
+    await dialog.waitFor();
+    await page.keyboard.press("Escape");
+    const opener = page.getByRole("button", { name: "Добавить", exact: true });
+    await expect(opener).toBeFocused();
+    await opener.press("Enter");
+    await page.waitForFunction(() =>
+      document.activeElement?.closest('[role="menu"]'),
+    );
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("Enter");
+    await dialog.getByLabel("Название подключения").fill("Тест Hysteria");
+    const picker = dialog.locator("#underlay-trigger");
+    await expect(picker).toContainText("Любое интернет-подключение");
+    await picker.press("Enter");
+    await dialog
+      .getByRole("checkbox", { name: "wan-b", exact: true })
+      .press("Space");
+    await dialog
+      .getByRole("checkbox", { name: "existing", exact: true })
+      .press("Space");
+    await dialog.getByRole("button", { name: "Выше: existing" }).press("Enter");
+    await expect(picker).toContainText("existing → wan-b");
+    await picker.press("Enter");
+    await dialog.getByLabel("Импорт YAML").setInputFiles({
+      name: "demo.yaml",
+      mimeType: "text/yaml",
+      buffer: Buffer.from(
+        "server: vpn.example:4443\nauth: demo-password\ntls: { ca: ca.pem }\nsocks5: { listen: 127.0.0.1:1080 }",
+      ),
+    });
+    await expect(dialog.getByText(/Локальный SOCKS5/)).toBeVisible();
+    await expect(dialog.getByLabel("Пароль", { exact: true })).toHaveAttribute(
+      "type",
+      "text",
+    );
+    await expect(dialog.getByLabel("Пароль", { exact: true })).toHaveValue(
+      "demo-password",
+    );
+    const save = dialog.getByRole("button", { name: "Сохранить" });
+    await expect(save).toBeDisabled();
+    await dialog.getByLabel("Доверенный сертификат PEM").setInputFiles({
+      name: "ca.pem",
+      mimeType: "text/plain",
+      buffer: Buffer.from(
+        "-----BEGIN CERTIFICATE-----\ndGVzdA==\n-----END CERTIFICATE-----",
+      ),
+    });
+    await dialog
+      .getByRole("button", { name: "Удалить сертификат" })
+      .press("Enter");
+    await expect(dialog.getByLabel("Доверенный сертификат PEM")).toBeVisible();
+    await expect(save).toBeEnabled();
+    await dialog.getByLabel("Доверенный сертификат PEM").setInputFiles({
+      name: "replacement.pem",
+      mimeType: "text/plain",
+      buffer: Buffer.from(
+        "-----BEGIN CERTIFICATE-----\nY2VydDI=\n-----END CERTIFICATE-----",
+      ),
+    });
+    await perform(page, "POST", "/api/hysteria2", () => save.click());
+    assert.match(writes[0].certificatePEM, /Y2VydDI=/);
+    assert.equal(writes[0].server, "vpn.example");
+    assert.equal(writes[0].port, 4443);
+    assert.equal(writes[0].password, "demo-password");
+    assert.deepEqual(writes[0].underlays, [storedID, "wan-b"]);
+    await page.reload();
+    const row = savedRow(page, "Тест Hysteria");
+    await expect(
+      row.getByRole("cell", { name: "wan-b", exact: true }),
+    ).toBeVisible();
+    assert.equal(detailReads, 0);
+    record = { ...record, name: "Актуальное название" };
+    await row.getByRole("button", { name: /Редактировать/ }).click();
+    await expect(dialog.getByLabel("Пароль", { exact: true })).toHaveValue(
+      "demo-password",
+    );
+    await expect(dialog.getByLabel("Пароль", { exact: true })).toHaveAttribute(
+      "type",
+      "text",
+    );
+    assert.equal(detailReads, 1);
+    await expect(dialog.getByLabel("Название подключения")).toHaveValue(
+      "Актуальное название",
+    );
+    await expect(dialog.getByLabel("Доверенный сертификат PEM")).toHaveCount(0);
+    await dialog
+      .getByText("Показать сертификат", { exact: true })
+      .press("Enter");
+    await expect(
+      dialog.getByLabel("Сертификат PEM", { exact: true }),
+    ).toHaveText(writes[0].certificatePEM);
+    await dialog
+      .getByText("Показать сертификат", { exact: true })
+      .press("Enter");
+    const downloaded = page.waitForEvent("download");
+    await dialog
+      .getByRole("button", { name: "Скачать сертификат" })
+      .press("Enter");
+    assert.equal(
+      await readFile(await (await downloaded).path(), "utf8"),
+      writes[0].certificatePEM,
+    );
+    await dialog
+      .getByRole("button", { name: "Удалить сертификат" })
+      .press("Enter");
+    await expect(dialog.getByLabel("Доверенный сертификат PEM")).toBeVisible();
+    await picker.press("Enter");
+    await dialog
+      .getByRole("checkbox", { name: "Любое интернет-подключение" })
+      .press("Space");
+    await picker.press("Enter");
+    await dialog.getByLabel("Название подключения").fill("Резерв");
+    await perform(page, "PUT", "/api/hysteria2/" + id, () => save.click());
+    assert.equal(writes[1].password, "demo-password");
+    assert.equal(writes[1].certificatePEM, "");
+    assert.deepEqual(writes[1].underlays, []);
+    await expect(savedRow(page, "Резерв")).toContainText(
+      "Любое интернет-подключение",
+    );
+    page.once("dialog", (d) => d.accept());
+    await perform(page, "DELETE", "/api/hysteria2/" + id, () =>
+      savedRow(page, "Резерв")
+        .getByRole("button", { name: /Удалить/ })
+        .click(),
+    );
+    await expect(savedRow(page, "Резерв")).toHaveCount(0);
   } finally {
     await browser.close();
   }

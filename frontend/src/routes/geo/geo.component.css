@@ -44,7 +44,6 @@ thead th {
   top: 0;
   z-index: 2;
   background: var(--ui-raised);
-  min-width: 9.5rem;
   padding: 12px 10px;
 }
 th:first-child {
@@ -52,8 +51,6 @@ th:first-child {
   left: 0;
   z-index: 1;
   text-align: left;
-  min-width: 9rem;
-  max-width: 18rem;
   padding: 9px 14px;
   border-right: 1px solid var(--ui-border);
   background: var(--ui-panel);

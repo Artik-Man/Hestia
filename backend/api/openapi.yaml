@@ -141,6 +141,7 @@ components:
             - direct
             - wireguard
             - amneziawg
+            - hysteria2
           type: string
       required:
         - id
@@ -585,6 +586,155 @@ components:
       required:
         - expected
         - groups
+      type: object
+    Hysteria2Connection:
+      additionalProperties: false
+      properties:
+        activeUnderlay:
+          type: string
+        certificatePEM:
+          maxLength: 24576
+          type: string
+        group:
+          minLength: 1
+          type: string
+        id:
+          format: uuid
+          type: string
+        name:
+          maxLength: 80
+          minLength: 1
+          type: string
+        port:
+          format: int64
+          maximum: 65535
+          minimum: 1
+          type: integer
+        priority:
+          format: int64
+          minimum: 1
+          type: integer
+        server:
+          maxLength: 253
+          minLength: 1
+          type: string
+        serverName:
+          maxLength: 253
+          type: string
+        underlay:
+          maxLength: 63
+          minLength: 1
+          type: string
+        underlays:
+          items:
+            type: string
+          maxItems: 64
+          type: array
+      required:
+        - id
+        - group
+        - priority
+        - name
+        - server
+        - port
+      type: object
+    Hysteria2ConnectionProfile:
+      additionalProperties: false
+      properties:
+        activeUnderlay:
+          type: string
+        certificatePEM:
+          maxLength: 24576
+          type: string
+        group:
+          minLength: 1
+          type: string
+        id:
+          format: uuid
+          type: string
+        name:
+          maxLength: 80
+          minLength: 1
+          type: string
+        password:
+          minLength: 1
+          type: string
+        port:
+          format: int64
+          maximum: 65535
+          minimum: 1
+          type: integer
+        priority:
+          format: int64
+          minimum: 1
+          type: integer
+        server:
+          maxLength: 253
+          minLength: 1
+          type: string
+        serverName:
+          maxLength: 253
+          type: string
+        underlay:
+          maxLength: 63
+          minLength: 1
+          type: string
+        underlays:
+          items:
+            type: string
+          maxItems: 64
+          type: array
+      required:
+        - password
+        - id
+        - group
+        - priority
+        - name
+        - server
+        - port
+      type: object
+    Hysteria2WriteRequest:
+      additionalProperties: false
+      properties:
+        certificatePEM:
+          maxLength: 24576
+          type: string
+        group:
+          maxLength: 63
+          type: string
+        name:
+          maxLength: 80
+          minLength: 1
+          type: string
+        password:
+          maxLength: 2048
+          type: string
+          writeOnly: true
+        port:
+          format: int64
+          maximum: 65535
+          minimum: 1
+          type: integer
+        server:
+          maxLength: 253
+          minLength: 1
+          type: string
+        serverName:
+          maxLength: 253
+          type: string
+        underlay:
+          maxLength: 63
+          minLength: 1
+          type: string
+        underlays:
+          items:
+            type: string
+          maxItems: 64
+          type: array
+      required:
+        - name
+        - server
+        - port
       type: object
     Navigation:
       additionalProperties: false
@@ -2079,6 +2229,249 @@ paths:
                 $ref: "#/components/schemas/ErrorModel"
           description: Service Unavailable
       summary: Изменить название группы подключений
+      tags:
+        - Panel
+  /api/hysteria2:
+    get:
+      operationId: listHysteria2Connections
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Hysteria2Connection"
+                type: array
+          description: OK
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Conflict
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Получить подключения Hysteria 2 без паролей
+      tags:
+        - Panel
+    post:
+      operationId: createHysteria2Connection
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Hysteria2WriteRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Hysteria2Connection"
+          description: OK
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Not Found
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Conflict
+        "413":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Request Entity Too Large
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Добавить подключение Hysteria 2 в группу
+      tags:
+        - Panel
+  /api/hysteria2/{id}:
+    delete:
+      operationId: deleteHysteria2Connection
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            format: uuid
+            type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Not Found
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Conflict
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Удалить подключение Hysteria 2
+      tags:
+        - Panel
+    get:
+      operationId: getHysteria2ConnectionProfile
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            format: uuid
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Hysteria2ConnectionProfile"
+          description: OK
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Not Found
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Conflict
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Открыть сохранённое подключение Hysteria 2, включая пароль
+      tags:
+        - Panel
+    put:
+      operationId: updateHysteria2Connection
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            format: uuid
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Hysteria2WriteRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Hysteria2Connection"
+          description: OK
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Not Found
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Conflict
+        "413":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Request Entity Too Large
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Изменить настройки подключения Hysteria 2
       tags:
         - Panel
   /api/list-binding:

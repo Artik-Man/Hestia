@@ -38,7 +38,8 @@ export function isUnderlayCandidate(
     "type" in value &&
     (value.type === "direct" ||
       value.type === "wireguard" ||
-      value.type === "amneziawg")
+      value.type === "amneziawg" ||
+      value.type === "hysteria2")
   );
 }
 

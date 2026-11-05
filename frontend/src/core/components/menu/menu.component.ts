@@ -1,11 +1,13 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   inject,
   signal,
 } from "@angular/core";
 import { Tooltip } from "primeng/tooltip";
-import { computed } from "@angular/core";
+import { A11yModule } from "@angular/cdk/a11y";
+import { BreakpointObserver } from "@angular/cdk/layout";
 import { ButtonDirective } from "primeng/button";
 import { toSignal } from "@angular/core/rxjs-interop";
 import { RouterLink, RouterLinkActive } from "@angular/router";
@@ -40,7 +42,7 @@ function grafanaLink(value: unknown): string | null {
 /** Menu keeps internal navigation available even when the optional Grafana configuration fails. */
 @Component({
   selector: "hestia-menu",
-  imports: [RouterLink, RouterLinkActive, Tooltip, ButtonDirective],
+  imports: [A11yModule, RouterLink, RouterLinkActive, Tooltip, ButtonDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: "./menu.component.html",
   styleUrl: "./menu.component.css",
@@ -51,10 +53,20 @@ export class Menu {
     this.expanded() ? "Свернуть меню" : "Развернуть меню",
   );
 
-  /** closeOnPhone dismisses the overlay after choosing a destination on narrow screens. */
-  protected closeOnPhone(): void {
-    if (window.matchMedia("(max-width: 600px)").matches)
+  private readonly viewport = toSignal(
+    inject(BreakpointObserver).observe("(width < 1000px)"),
+    { requireSync: true },
+  );
+  protected readonly overlayOpen = computed(
+    () => this.expanded() && this.viewport().matches,
+  );
+
+  /** closeOverlay collapses the temporary navigation and returns focus to its toggle. */
+  protected closeOverlay(trigger: HTMLButtonElement): void {
+    if (this.overlayOpen()) {
       this.expanded.set(false);
+      trigger.focus();
+    }
   }
 
   protected readonly icons = {

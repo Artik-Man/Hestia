@@ -17,6 +17,9 @@ import (
 
 // Path identifies a confined route; the worker must supply one per configured exit including reserves.
 type Path struct {
+	Relay         string                                                  `json:"relay,omitempty"`
+	Candidate     string                                                  `json:"candidate,omitempty"`
+	Hysteria2     bool                                                    `json:"hysteria2,omitempty"`
 	ID            string                                                  `json:"id"`
 	Device        string                                                  `json:"device,omitempty"`
 	Mark          int                                                     `json:"mark,omitempty"`
@@ -241,4 +244,20 @@ func (p Path) DialExit(ctx context.Context, network, target string) (net.Conn, e
 		return nil, errors.New("invalid exit destination")
 	}
 	return p.dial(ctx, network, target)
+}
+
+// HysteriaReady confirms a complete DNS exchange through this exit's authenticated relay.
+// Trying independent resolvers avoids declaring the tunnel down when only one resolver fails.
+func HysteriaReady(ctx context.Context, path Path) bool {
+	if path.SocksAddress == "" {
+		return false
+	}
+	check := DefaultSettings().Checks[0]
+	for _, target := range check.Targets {
+		result := probe(ctx, path, check, target)
+		if result == success || result >= dnsError {
+			return true
+		}
+	}
+	return false
 }

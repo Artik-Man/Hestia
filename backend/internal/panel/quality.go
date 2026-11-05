@@ -142,25 +142,16 @@ func (files qualityFiles) readReport(snapshot string) (panelmodel.QualityReport,
 		}
 		settings = stored
 	}
-	topology, err := readSnapshot(snapshot, false)
+	topology, err := readSnapshot(snapshot, false, "")
 	if err != nil {
 		return panelmodel.QualityReport{}, err
 	}
-	if files.report != "" {
-		data, err := os.ReadFile(files.report)
-		if err == nil {
-			var report panelmodel.QualityReport
-			if err := json.Unmarshal(data, &report); err != nil {
-				return panelmodel.QualityReport{}, err
-			}
-			captured, err := time.Parse(time.RFC3339Nano, report.CapturedAt)
-			age := time.Since(captured)
-			if err == nil && age >= 0 && age <= time.Minute && reflect.DeepEqual(settings, report.Settings) && matchesQualityGroups(report.Groups, topology.Groups) {
-				return report, nil
-			}
-		} else if !errors.Is(err, os.ErrNotExist) {
-			return panelmodel.QualityReport{}, err
-		}
+	report, err := readFreshQualityReport(files.report, snapshot, topology.Groups)
+	if err != nil {
+		return panelmodel.QualityReport{}, err
+	}
+	if report != nil && reflect.DeepEqual(settings, report.Settings) {
+		return *report, nil
 	}
 	view := panelmodel.QualityReport{Settings: settings, Groups: make([]panelmodel.QualityGroup, 0, len(topology.Groups))}
 	for _, group := range topology.Groups {
@@ -171,6 +162,37 @@ func (files qualityFiles) readReport(snapshot string) (panelmodel.QualityReport,
 		view.Groups = append(view.Groups, row)
 	}
 	return view, nil
+}
+
+// readFreshQualityReport accepts a recent report matching the current topology and published after its snapshot.
+func readFreshQualityReport(path, snapshot string, groups []panelmodel.Group) (*panelmodel.QualityReport, error) {
+	if path == "" {
+		return nil, nil
+	}
+	data, err := os.ReadFile(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	var report panelmodel.QualityReport
+	if err := json.Unmarshal(data, &report); err != nil {
+		return nil, err
+	}
+	captured, err := time.Parse(time.RFC3339Nano, report.CapturedAt)
+	age := time.Since(captured)
+	if err != nil || age < 0 || age > time.Minute || !matchesQualityGroups(report.Groups, groups) {
+		return nil, nil
+	}
+	source, err := os.Stat(snapshot)
+	if err != nil {
+		return nil, err
+	}
+	if captured.Before(source.ModTime()) {
+		return nil, nil
+	}
+	return &report, nil
 }
 
 // matchesQualityGroups rejects worker data from a previous topology while permitting ranked exit order.

@@ -220,7 +220,6 @@ table {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
-  table-layout: fixed;
 }
 th,
 td {
@@ -233,7 +232,7 @@ thead {
   background: var(--ui-raised);
   font-size: 13px;
 }
-thead th:first-child {
+hestia-traffic thead th:first-child {
   width: 50%;
 }
 tbody th {
@@ -300,19 +299,13 @@ code {
     padding: 10px 6px;
     font-size: 13px;
   }
-  thead th:first-child {
+  hestia-traffic thead th:first-child {
     width: 42%;
   }
   .state {
     padding: 4px;
     font-size: 11px;
   }
-}
-.connections thead th:first-child {
-  width: 30%;
-}
-.connections th:nth-child(3) {
-  width: 16%;
 }
 .connections .health {
   white-space: normal;
@@ -321,18 +314,9 @@ code {
   flex: none;
 }
 @media (max-width: 620px) {
-  .connections th:nth-child(3) {
-    width: 20%;
-  }
   .connections .health {
     gap: 3px;
     font-size: 12px;
-  }
-  .connections thead th:first-child {
-    width: 22%;
-  }
-  .connections th:last-child {
-    width: 32%;
   }
 }
 main a {

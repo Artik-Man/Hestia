@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"reflect"
+	"sync/atomic"
 	"time"
 
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
@@ -16,15 +17,17 @@ import (
 )
 
 type watcher struct {
-	devices    map[string]string
-	carrier    func(string) bool
-	quality    *quality.Engine
-	client     *http.Client
-	base       string
-	desired    *Config
-	pinned     bool
-	confirmed  map[string]string
-	healthyAWG func(string) bool
+	relayProbes chan struct{}
+	relayReady  map[string]*atomic.Bool
+	devices     map[string]string
+	carrier     func(string) bool
+	quality     *quality.Engine
+	client      *http.Client
+	base        string
+	desired     *Config
+	pinned      bool
+	confirmed   map[string]string
+	healthyAWG  func(string) bool
 }
 
 // newWatcher starts reconciliation with no desired snapshot or confirmed targets.
@@ -84,6 +87,10 @@ func (w *watcher) sync(ctx context.Context) ([]Result, error) {
 		health[id] = available && (w.devices == nil || mapped) && (device == "" || w.carrier(device))
 	}
 	for id, kind := range w.desired.ConnectorKinds {
+		if kind == "hysteria2" {
+			ready := w.relayReady[id]
+			health[id] = health[id] && ready != nil && ready.Load()
+		}
 		if kind == "awg" && !w.healthyAWG(id) {
 			health[id] = false
 		}

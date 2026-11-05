@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -115,6 +116,7 @@ func TestWatcherUsesAWGHeartbeatForFailover(t *testing.T) {
 
 type selectorTransport struct {
 	selected string
+	members  []string
 }
 
 // RoundTrip simulates the local selector API in memory so the failover test needs no socket permissions.
@@ -122,7 +124,11 @@ func (transport *selectorTransport) RoundTrip(request *http.Request) (*http.Resp
 	status, payload := http.StatusNoContent, []byte(nil)
 	if request.Method == http.MethodGet {
 		status = http.StatusOK
-		payload, _ = json.Marshal(selector{Type: "Selector", Now: transport.selected, All: []string{"awg-test", "direct-test", "deny"}})
+		members := transport.members
+		if members == nil {
+			members = []string{"awg-test", "direct-test", "deny"}
+		}
+		payload, _ = json.Marshal(selector{Type: "Selector", Now: transport.selected, All: members})
 	} else {
 		var body struct{ Name string }
 		if err := json.NewDecoder(request.Body).Decode(&body); err != nil {
@@ -172,5 +178,27 @@ func TestWatcherCarrierFailover(t *testing.T) {
 		if err != nil || tr.selected != phase.want {
 			t.Fatalf("carrier %+v: selected %q, err %v", phase, tr.selected, err)
 		}
+	}
+}
+
+// TestWatcherHysteriaRequiresRelayReadiness verifies deny and authorized reserve decisions when authenticated probes stop succeeding.
+func TestWatcherHysteriaRequiresRelayReadiness(t *testing.T) {
+	tr := &selectorTransport{selected: "relay", members: []string{"relay", "backup", "deny"}}
+	w := newWatcher(&http.Client{Transport: tr}, "http://gateway.test")
+	state := &atomic.Bool{}
+	w.relayReady = map[string]*atomic.Bool{"relay": state}
+	snapshot := []byte(`{"groups":[{"id":"default","exits":["relay","backup"]}],"lists":[],"healthy":{"relay":true,"backup":true},"connectorKinds":{"relay":"hysteria2"}}`)
+	for _, phase := range []struct {
+		ready bool
+		want  string
+	}{{false, "backup"}, {true, "relay"}, {false, "backup"}} {
+		state.Store(phase.ready)
+		if _, err := w.step(context.Background(), snapshot); err != nil || tr.selected != phase.want {
+			t.Fatalf("relay readiness=%v: selected %q; expected %q, err=%v", phase.ready, tr.selected, phase.want, err)
+		}
+	}
+	snapshot = bytes.Replace(snapshot, []byte(`"backup":true`), []byte(`"backup":false`), 1)
+	if _, err := w.step(context.Background(), snapshot); err != nil || tr.selected != "deny" {
+		t.Fatalf("failed relay and backup selected %q, err=%v", tr.selected, err)
 	}
 }

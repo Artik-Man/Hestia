@@ -50,82 +50,10 @@
               </label>
             }
           </div>
-          <div class="transport">
-            <label id="underlay-label" for="underlay-trigger"
-              >Подключаться через</label
-            >
-            <button
-              type="button"
-              id="underlay-trigger"
-              aria-labelledby="underlay-label underlay-trigger"
-              [attr.aria-expanded]="choicesOpen()"
-              (click)="toggleChoices()"
-            >
-              {{ underlaySummary() || "Любое интернет-подключение" }}
-              <span aria-hidden="true">▾</span>
-            </button>
-            @if (choicesOpen()) {
-              <div
-                class="transport-options"
-                role="group"
-                aria-labelledby="underlay-label"
-              >
-                <label
-                  ><input
-                    type="checkbox"
-                    [checked]="!underlays().length"
-                    [disabled]="!underlays().length"
-                    (change)="underlays.set([])"
-                  />Любое интернет-подключение</label
-                >
-                @if (loadingCandidates()) {
-                  <p role="status">Загрузка подключений…</p>
-                }
-                @for (id of underlayChoices(); track id) {
-                  @let rank = underlays().indexOf(id);
-                  <div
-                    class="transport-row"
-                    [draggable]="rank >= 0"
-                    (dragstart)="startUnderlayDrag($event, id)"
-                    (dragend)="endUnderlayDrag()"
-                    (dragover)="$event.preventDefault()"
-                    (drop)="dropUnderlay($event, id)"
-                  >
-                    <label
-                      ><input
-                        type="checkbox"
-                        [checked]="rank >= 0"
-                        [disabled]="rank < 0 && underlays().length >= 64"
-                        (change)="toggleUnderlay(id)"
-                      />{{ catalog.name(id) }}</label
-                    >
-                    @if (rank >= 0) {
-                      <button
-                        type="button"
-                        [attr.aria-label]="'Выше: ' + catalog.name(id)"
-                        [disabled]="rank === 0"
-                        (click)="moveUnderlay(id, rank - 1)"
-                        [pTooltip]="'Выше: ' + catalog.name(id)"
-                        tooltipEvent="both"
-                      >
-                        ↑
-                      </button>
-                      <button
-                        type="button"
-                        [attr.aria-label]="'Ниже: ' + catalog.name(id)"
-                        [disabled]="rank === underlays().length - 1"
-                        (click)="moveUnderlay(id, rank + 1)"
-                        [pTooltip]="'Ниже: ' + catalog.name(id)"
-                        tooltipEvent="both"
-                      >
-                        ↓
-                      </button>
-                    }
-                  </div>
-                }
-              </div>
-            }
-          </div>
+          <hestia-underlay-picker
+            [target]="target()"
+            [(underlays)]="underlays"
+          />
           <div class="import-row">
             <input
               hidden

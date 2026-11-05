@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 
 	"github.com/Artik-Man/Hestia/internal/awg"
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
@@ -21,6 +22,13 @@ func validUnderlayGraph(profile storedProfile) bool {
 			return false
 		}
 		deps[item.ID] = item.Underlays
+	}
+	for _, item := range profile.Hysteria2 {
+		edges := item.EffectiveUnderlays()
+		if !awg.ValidUnderlays(item.ID, edges) {
+			return false
+		}
+		deps[item.ID] = edges
 	}
 	const (
 		visiting = 1
@@ -51,6 +59,21 @@ func validUnderlayGraph(profile storedProfile) bool {
 		}
 	}
 	return true
+}
+
+// usesUnderlay reports whether any tunnel currently requires this exit, including as a backup.
+func usesUnderlay(p storedProfile, id string) bool {
+	for _, c := range p.Connectors {
+		if slices.Contains(c.Underlays, id) {
+			return true
+		}
+	}
+	for _, h := range p.Hysteria2 {
+		if slices.Contains(h.EffectiveUnderlays(), id) {
+			return true
+		}
+	}
+	return false
 }
 
 // UnderlayCandidates reads public routing IDs, types and display names from the locked committed generation.
@@ -102,6 +125,12 @@ func (e Engine) connectionCatalog() ([]panelmodel.AWGUnderlayCandidate, error) {
 			name = item.ID
 		}
 		candidates = append(candidates, panelmodel.AWGUnderlayCandidate{ID: item.ID, Type: item.Type, Name: name})
+	}
+	for _, item := range profile.Hysteria2 {
+		if !awg.ValidConnectionID(item.ID) || ValidateGroupName(item.Name) != nil {
+			return nil, ErrUnavailable
+		}
+		candidates = append(candidates, panelmodel.AWGUnderlayCandidate{ID: item.ID, Type: "hysteria2", Name: item.Name})
 	}
 	return candidates, nil
 }

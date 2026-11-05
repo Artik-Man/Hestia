@@ -1,0 +1,51 @@
+dialog {
+  width: min(34rem, calc(100vw - 2rem));
+  max-height: 90dvh;
+  overflow: auto;
+}
+fieldset {
+  border: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+  min-width: 0;
+}
+label {
+  display: grid;
+  gap: 0.25rem;
+}
+input,
+select {
+  width: 100%;
+  min-width: 0;
+}
+select {
+  padding: 0.5rem;
+  color: inherit;
+  background: var(--ui-panel);
+  border: 1px solid var(--ui-border);
+  border-radius: 0.4rem;
+}
+p {
+  margin: 0.25rem 0;
+}
+.error {
+  color: var(--ui-danger);
+}
+
+.certificate-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.certificate-preview summary {
+  cursor: pointer;
+}
+.certificate-preview pre {
+  max-height: 12rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+}

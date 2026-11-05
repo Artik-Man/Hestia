@@ -1,3 +1,5 @@
+import { isHysteria2Connection } from "../models/hysteria2-connection";
+import type { Hysteria2Connection } from "./api/generated/model/hysteria2Connection";
 import { Injectable, inject, signal } from "@angular/core";
 import { PanelService } from "./api/generated/api/panel.service";
 import type { AWGUnderlayCandidate } from "./api/generated/model/aWGUnderlayCandidate";
@@ -16,12 +18,40 @@ export class ConnectionCatalog {
   private readonly rows = signal<ReadonlyMap<string, AWGUnderlayCandidate>>(
     new Map(),
   );
+  private readonly hysteriaRows = signal<
+    ReadonlyMap<string, Hysteria2Connection>
+  >(new Map());
+  readonly hysteriaProfiles = this.hysteriaRows.asReadonly();
+  readonly hysteriaFailed = signal(false);
   readonly entries = this.rows.asReadonly();
   readonly loading = signal(false);
   readonly failed = signal(false);
 
   /** Publishes only the latest validated catalog and records failed reads. */
   constructor() {
+    this.requests
+      .pipe(
+        switchMap(() =>
+          this.api.listHysteria2Connections().pipe(
+            timeout(10000),
+            map((rows: unknown) => {
+              if (
+                !Array.isArray(rows) ||
+                !rows.every(isHysteria2Connection) ||
+                new Set(rows.map((row) => row.id)).size !== rows.length
+              )
+                throw new Error("Invalid Hysteria 2 catalog");
+              return new Map(rows.map((row) => [row.id, row]));
+            }),
+            catchError(() => of(null)),
+          ),
+        ),
+        takeUntilDestroyed(),
+      )
+      .subscribe((rows) => {
+        this.hysteriaFailed.set(rows === null);
+        this.hysteriaRows.set(rows ?? new Map());
+      });
     this.requests
       .pipe(
         switchMap(() =>
@@ -59,6 +89,7 @@ export class ConnectionCatalog {
   name(id: string): string {
     return (
       this.entries().get(id)?.name ??
+      this.hysteriaRows().get(id)?.name ??
       (isConnectionUUID(id) ? "Название недоступно" : id)
     );
   }

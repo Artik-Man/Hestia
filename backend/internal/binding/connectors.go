@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"slices"
 
 	"github.com/Artik-Man/Hestia/internal/awg"
 	"github.com/Artik-Man/Hestia/internal/controller"
@@ -38,7 +37,8 @@ type connectorGroup struct {
 }
 
 type storedProfile struct {
-	Version    int `json:"version"`
+	Hysteria2  []storedHysteria2 `json:"hysteria2,omitempty"`
+	Version    int               `json:"version"`
 	Interfaces []struct {
 		ID             string `json:"id"`
 		Type           string `json:"type"`
@@ -120,10 +120,8 @@ func (e Engine) DeleteAWG(ctx context.Context, id string) error {
 		if index < 0 {
 			return ErrNotFound
 		}
-		for _, c := range current.Connectors {
-			if slices.Contains(c.Underlays, id) {
-				return ErrConflict
-			}
+		if usesUnderlay(current, id) {
+			return ErrConflict
 		}
 		connector := current.Connectors[index]
 		if connector.Status == "ready" {
@@ -388,7 +386,14 @@ func compileConnectorGeneration(ctx context.Context, engine Engine, stage string
 	if err := writeConnectorFile(profilePath, profileBytes); err != nil {
 		return fmt.Errorf("cannot write source profile: %w", err)
 	}
-	if err := engine.run(ctx, python, "-I", profile, profilePath, stage, stage); err != nil {
+	args := []string{"-I", profile, profilePath, stage, stage}
+	for _, item := range profileValue.Interfaces {
+		if item.Type == "wireguard" {
+			args = append(args, engine.dir)
+			break
+		}
+	}
+	if err := engine.run(ctx, python, args...); err != nil {
 		return fmt.Errorf("profile compiler rejected candidate: %w", ErrInvalidConnector)
 	}
 	for _, pair := range [][2]string{{"profile.json", "profile-source.sha256"}, {"sing-box.json", "profile-backend.sha256"}} {

@@ -18,7 +18,8 @@ export namespace AWGUnderlayCandidate {
     export const TypeEnum = {
         Direct: 'direct',
         Wireguard: 'wireguard',
-        Amneziawg: 'amneziawg'
+        Amneziawg: 'amneziawg',
+        Hysteria2: 'hysteria2'
     } as const;
     export type TypeEnum = typeof TypeEnum[keyof typeof TypeEnum];
 }

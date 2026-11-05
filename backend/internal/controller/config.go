@@ -61,7 +61,7 @@ func (cfg Config) validate() error {
 		}
 	}
 	for e, kind := range cfg.ConnectorKinds {
-		if !exits[e] || kind != "awg" {
+		if !exits[e] || (kind != "awg" && kind != "hysteria2") {
 			return fmt.Errorf("unknown or unsupported connector kind for exit %q", e)
 		}
 	}

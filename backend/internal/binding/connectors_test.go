@@ -99,8 +99,9 @@ func TestAWGOmittedPosition(t *testing.T) {
 	}
 }
 
-// TestAWGStage1CompilerLifecycle verifies both generations against the production compiler and the shipped direct/TUN profile.
-func TestAWGStage1CompilerLifecycle(t *testing.T) {
+// managedConnectorTestEngine loads the shipped LAN gateway fixture and executes the production Python compiler.
+func managedConnectorTestEngine(t *testing.T) Engine {
+	t.Helper()
 	e := connectorTestEngine(t)
 	compiler := filepath.Join("..", "..", "..", "deploy", "profile.py")
 	base := mustReadTestFile(t, filepath.Join("..", "..", "..", "deploy", "scheme3", "guest-profile.json"))
@@ -128,6 +129,13 @@ func TestAWGStage1CompilerLifecycle(t *testing.T) {
 		t.Fatal(err)
 	}
 	writeTestDigests(t, e.dir)
+	return e
+}
+
+// TestAWGStage1CompilerLifecycle verifies both generations against the production compiler and the shipped direct/TUN profile.
+func TestAWGStage1CompilerLifecycle(t *testing.T) {
+	e := managedConnectorTestEngine(t)
+	ctx := context.Background()
 	request := panelmodel.AWGSaveRequest{Name: "Офис Москва", ID: "943dcd5f-96ab-4a3b-841b-55d8bcafdc62", Group: "default", Priority: 2, Profile: connectorTestConfig}
 	if err := e.ApplyAWG(ctx, request, false); err != nil {
 		t.Fatalf("create: %v", err)

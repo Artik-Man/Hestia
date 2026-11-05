@@ -317,8 +317,8 @@ def awg_metadata(directory: Path, connector_id: str) -> dict:
 def validate_underlays(profile: dict) -> None:
     """Reject invalid transport choices, including cycles through any lower-priority candidate."""
     nodes = {item["id"]: [] for item in profile["interfaces"]}
-    for connector in profile.get("connectors", []):
-        choices = connector.get("underlays", [])
+    for connector in [*profile.get("connectors", []), *profile.get("hysteria2", [])]:
+        choices = connector.get("underlays", [connector["underlay"]] if "underlay" in connector else [])
         require(isinstance(choices, list) and len(choices) <= 64, "invalid underlay list")
         for exit_id in choices:
             connection_id(exit_id)
@@ -416,15 +416,22 @@ def transport_fragments(profile: dict, directory: Path) -> tuple[list[dict], lis
     return listeners, rules
 
 
-def quality_fragments(endpoints: list[dict], occupied: set) -> tuple[list[dict], list[dict]]:
-    """Build authenticated loopback SOCKS paths to individual userspace WireGuard endpoints."""
+def quality_fragments(endpoints: list[dict], occupied: set, hysteria_profiles: tuple | list = ()) -> tuple[list[dict], list[dict]]:
+    """Build authenticated loopback SOCKS paths confined to individual VPN exits."""
     listeners, rules = [], []
-    for index, endpoint in enumerate(endpoints):
+    secrets = [(endpoint["tag"], base64.b64decode(endpoint["private_key"])) for endpoint in endpoints]
+    for item in hysteria_profiles:
+        require(isinstance(item.get("probeSecret"), str) and re.fullmatch("[0-9a-f]{64}", item["probeSecret"]),
+                "invalid local probe secret")
+        secret = bytes.fromhex(item["probeSecret"])
+        secrets.append((connection_id(item["id"]), secret))
+        for candidate in item.get("underlays", []):
+            secrets.append((hysteria_path_tag(item["id"], candidate), secret))
+    for index, (exit_id, secret) in enumerate(secrets):
         number = 27000 + index
         require(number <= 29999 and number not in occupied, "occupied quality probe port")
-        exit_id = identifier(endpoint["tag"])
         tag = "_quality-" + exit_id
-        password = hmac.new(base64.b64decode(endpoint["private_key"]),
+        password = hmac.new(secret,
                             ("hestia-quality/" + exit_id).encode(), hashlib.sha256).hexdigest()
         listeners.append({"type": "socks", "tag": tag, "listen": "127.0.0.1", "listen_port": number,
                           "users": [{"username": "hestia-quality", "password": password}]})
@@ -437,10 +444,17 @@ def pinned_paths(backend: dict) -> list[dict]:
     paths = [{"id": item["tag"], "device": item["bind_interface"], "mark": item.get("routing_mark", 0)}
              for item in backend.get("outbounds", []) if item["type"] == "direct"
              and item.get("bind_interface") and item["tag"] != "deny"]
+    hysteria_ids = {item["tag"] for item in backend.get("outbounds", []) if item["type"] == "hysteria2"}
     for item in backend.get("inbounds", []):
         if item.get("tag", "").startswith("_quality-") and item["type"] == "socks":
             paths.append({"id": item["tag"][9:], "socksAddress": "127.0.0.1:" + str(item["listen_port"]),
                           "socksPassword": item["users"][0]["password"]})
+            path_id = paths[-1]["id"]
+            if path_id.startswith("_hy2/"):
+                _, relay, candidate = path_id.split("/")
+                paths[-1].update(relay=relay, candidate=candidate)
+            elif path_id in hysteria_ids:
+                paths[-1]["hysteria2"] = True
     return paths
 
 
@@ -449,6 +463,7 @@ def export_paths(backend: dict, directory: Path, source: os.stat_result | None =
     paths = pinned_paths(backend)
     payload = paths
     if source is not None:
+        paths = [item for item in paths if "relay" not in item]
         resolvers = {item["detour"]: item["server"] for item in backend.get("dns", {}).get("servers", [])
                      if item.get("type") == "udp" and item.get("detour")}
         payload = {"inode": source.st_ino, "modified": source.st_mtime_ns, "paths": paths,
@@ -479,7 +494,65 @@ def bind_underlay_dns(outbounds: list[dict], servers: list[dict], manual: bool =
         servers.append(dict(UNDERLAY_DNS))
 
 
-def compile_profile(profile: dict, directory: Path) -> tuple[dict, dict]:
+def hysteria_path_tag(relay: str, candidate: str) -> str:
+    """Return a private outbound tag unique to one relay and transport path."""
+    return "_hy2/" + connection_id(relay) + "/" + connection_id(candidate)
+
+
+def hysteria_outbounds(profile: dict) -> list[dict]:
+    """Build verified QUIC clients and fail-closed ordered selectors while preserving installed legacy bindings."""
+    devices = {item["id"]: item["bind_interface"] for item in profile["interfaces"] if item["type"] == "direct"}
+    profiles = profile.get("hysteria2", [])
+    require(isinstance(profiles, list) and len(profiles) <= 64, "invalid Hysteria 2 profile list")
+    result = []
+    for item in profiles:
+        fields(item, "id name server port password probeSecret" + (" underlay" if "underlay" in item else "") + (" underlays" if "underlays" in item else "") + (" serverName" if "serverName" in item else "")
+               + (" certificatePEM" if "certificatePEM" in item else ""))
+        tag = connection_id(item["id"])
+        group_name(item["name"])
+        require(not ("underlay" in item and "underlays" in item), "ambiguous Hysteria 2 underlays")
+        require(isinstance(item["server"], str) and item["server"] and isinstance(item["password"], str)
+                and item["password"], "missing Hysteria 2 endpoint or credential")
+        tls = {"enabled": True, "server_name": item.get("serverName") or item["server"]}
+        if item.get("certificatePEM"):
+            tls["certificate"] = item["certificatePEM"]
+        outbound = {"type": "hysteria2", "tag": tag, "server": item["server"],
+                    "server_port": port(item["port"]), "password": item["password"], "tls": tls}
+        if "underlay" in item:
+            require(item["underlay"] in devices, "unknown legacy physical connection")
+            result.append(dict(outbound, bind_interface=devices[item["underlay"]], domain_resolver="bootstrap-" + tag))
+        elif candidates := item.get("underlays", []):
+            members = [hysteria_path_tag(tag, candidate) for candidate in candidates]
+            result.append({"type": "selector", "tag": tag, "outbounds": [*members, "deny"],
+                           "default": "deny", "interrupt_exist_connections": True})
+            for candidate, member in zip(candidates, members):
+                if candidate in devices:
+                    result.append(dict(outbound, tag=member, bind_interface=devices[candidate],
+                                       domain_resolver="bootstrap-" + member))
+                else:
+                    result.append(dict(outbound, tag=member, detour=candidate))
+        else:
+            result.append(dict(outbound, domain_resolver="bootstrap-" + tag))
+    return result
+
+
+def connector_kinds(profile: dict) -> dict:
+    """Identify tunnel health policies by public exit ID without exposing private profile fields."""
+    return {**{item["id"]: "awg" for item in profile.get("connectors", [])},
+            **{item["id"]: "hysteria2" for item in profile.get("hysteria2", [])}}
+
+
+def committed_wireguard(interface: dict, backend: dict) -> tuple[dict, dict]:
+    """Recover an unchanged native WG endpoint and scoped DNS from a digest-verified installed backend."""
+    tag = identifier(interface["id"])
+    endpoints = [item for item in backend.get("endpoints", []) if item.get("tag") == tag and item.get("type") == "wireguard"]
+    servers = [item for item in backend.get("dns", {}).get("servers", []) if item.get("tag") == "dns-" + tag
+               and item.get("detour") == tag and item.get("type") == "udp"]
+    require(len(endpoints) == 1 and len(servers) == 1, "missing committed WireGuard endpoint")
+    return endpoints[0], servers[0]
+
+
+def compile_profile(profile: dict, directory: Path, committed: dict | None = None) -> tuple[dict, dict]:
     """Validate a stand profile and derive the matching controller snapshot and sing-box configuration."""
     if (
         profile == {"version": 1, "mode": "bootstrap"}
@@ -517,9 +590,9 @@ def compile_profile(profile: dict, directory: Path) -> tuple[dict, dict]:
     else:
         managed_v2 = "inbounds" in profile
         if managed_v2:
-            fields(profile, "version interfaces connectors groups lists healthy inbounds")
+            fields(profile, "version interfaces connectors groups lists healthy inbounds" + (" hysteria2" if "hysteria2" in profile else ""))
         else:
-            fields(profile, "version interfaces connectors groups lists healthy socks_port")
+            fields(profile, "version interfaces connectors groups lists healthy socks_port" + (" hysteria2" if "hysteria2" in profile else ""))
         connectors = profile["connectors"]
         require(isinstance(connectors, list) and len(connectors) <= 64, "invalid connector list")
     listen = None
@@ -554,7 +627,8 @@ def compile_profile(profile: dict, directory: Path) -> tuple[dict, dict]:
                 }
             )
         else:
-            endpoint, server = wireguard(interface, directory)
+            endpoint, server = (wireguard(interface, directory) if committed is None
+                                else committed_wireguard(interface, committed))
             tag = endpoint["tag"]
             require(interface["type"] == "wireguard", "invalid interface type")
         require(tag not in exits and tag != "deny", "invalid or duplicate interface")
@@ -562,6 +636,10 @@ def compile_profile(profile: dict, directory: Path) -> tuple[dict, dict]:
         if endpoint is not None:
             endpoints.append(endpoint)
             servers.append(server)
+    hysteria = hysteria_outbounds(profile)
+    for item in profile.get("hysteria2", []):
+        require(item["id"] not in exits | {"deny"}, "duplicate Hysteria 2 exit")
+        exits.add(item["id"])
     connector_ids = set()
     for connector in connectors:
         fields(connector, "id type group priority ipv6Blocked status" + (" slot" if "slot" in connector else "") + (" underlays" if "underlays" in connector else "") + (" name" if "name" in connector else ""))
@@ -640,7 +718,7 @@ def compile_profile(profile: dict, directory: Path) -> tuple[dict, dict]:
     transport_inbounds, transport_rules = transport_fragments(profile, directory)
     existing_ports = {item.get("listen_port") for item in inbounds}
     require(all(item["listen_port"] not in existing_ports for item in transport_inbounds), "occupied WireGuard transport port")
-    quality_inbounds, quality_rules = quality_fragments(endpoints, existing_ports | {item["listen_port"] for item in transport_inbounds})
+    quality_inbounds, quality_rules = quality_fragments(endpoints, existing_ports | {item["listen_port"] for item in transport_inbounds}, profile.get("hysteria2", []))
     inbounds += transport_inbounds + quality_inbounds
     routes = quality_rules + routes
     routes = transport_rules + routes
@@ -656,7 +734,7 @@ def compile_profile(profile: dict, directory: Path) -> tuple[dict, dict]:
     backend = {
         "experimental": {"clash_api": {"external_controller": "127.0.0.1:9090"}},
         "inbounds": inbounds,
-        "outbounds": [*outbounds, *direct_outbounds, *awg_outbounds],
+        "outbounds": [*outbounds, *direct_outbounds, *awg_outbounds, *hysteria],
         "route": route,
     }
     if managed_v2 and direct_outbounds:
@@ -664,20 +742,32 @@ def compile_profile(profile: dict, directory: Path) -> tuple[dict, dict]:
             *(item for item in outbounds if item["type"] == "selector"),
             *direct_outbounds,
             *awg_outbounds,
+            *hysteria,
             next(item for item in outbounds if item["tag"] == "deny"),
         ]
     if endpoints:
         backend["endpoints"] = endpoints
+    # Keep bootstrap name resolution on the chosen device and client lookups inside their tunnel.
+    for outbound in hysteria:
+        if "domain_resolver" in outbound:
+            bootstrap = {"type": "udp", "tag": outbound["domain_resolver"], "server": "1.1.1.1"}
+            if "bind_interface" in outbound:
+                bootstrap["bind_interface"] = outbound["bind_interface"]
+            servers.append(bootstrap)
+        if outbound["tag"].startswith("_hy2/"):
+            continue
+        servers.append({"type": "udp", "tag": "dns-" + outbound["tag"], "server": "1.1.1.1",
+                        "detour": outbound["tag"]})
     servers.extend(awg_servers)
-    if awg_servers:
-        bind_underlay_dns(direct_outbounds, servers, bool(transport_rules))
+    if awg_servers or hysteria:
+        bind_underlay_dns(direct_outbounds, servers, bool(transport_rules or hysteria))
     if servers:
         backend["dns"] = {"servers": servers, "strategy": "ipv4_only"}
     snapshot_groups = [snapshot_group(group) for group in groups]
     unique_group_names(snapshot_groups)
     snapshot = {"groups": snapshot_groups, "lists": lists, "healthy": health}
-    if profile["version"] == 2 and connectors:
-        snapshot["connectorKinds"] = {connector["id"]: "awg" for connector in connectors}
+    if connector_kinds(profile):
+        snapshot["connectorKinds"] = connector_kinds(profile)
     return snapshot, backend
 
 
@@ -716,16 +806,16 @@ def managed_profile(base: Path) -> tuple[dict, dict, dict]:
     else:
         managed_v2 = "inbounds" in profile
         if managed_v2:
-            fields(profile, "version interfaces connectors groups lists healthy inbounds")
+            fields(profile, "version interfaces connectors groups lists healthy inbounds" + (" hysteria2" if "hysteria2" in profile else ""))
         else:
-            fields(profile, "version interfaces connectors groups lists healthy socks_port")
+            fields(profile, "version interfaces connectors groups lists healthy socks_port" + (" hysteria2" if "hysteria2" in profile else ""))
         connectors = profile["connectors"]
         require(isinstance(connectors, list), "invalid connector metadata")
     backend = read_verified(base, "sing-box.json", "profile-backend.sha256")
     snapshot = json.loads(
         (base / "snapshot.json").read_bytes(), object_pairs_hook=unique
     )
-    if profile["version"] == 2 and connectors:
+    if connector_kinds(profile):
         fields(snapshot, "groups lists healthy connectorKinds")
     else:
         fields(snapshot, "groups lists healthy")
@@ -745,10 +835,10 @@ def managed_profile(base: Path) -> tuple[dict, dict, dict]:
         and all(k in exits and type(v) is bool for k, v in health.items()),
         "invalid availability",
     )
-    if profile["version"] == 2 and connectors:
+    if connector_kinds(profile):
         require(
             snapshot["connectorKinds"]
-            == {connector["id"]: "awg" for connector in connectors},
+            == connector_kinds(profile),
             "snapshot connector kinds differ from the installed profile",
         )
     lists = profile["lists"]
@@ -758,7 +848,7 @@ def managed_profile(base: Path) -> tuple[dict, dict, dict]:
     require([item for item in backend.get("inbounds", []) if item.get("tag", "").startswith("_wg-transport-")]
             == transport_inbounds, "backend transport listeners differ from the selected underlays")
     quality_inbounds, quality_rules = quality_fragments(backend.get("endpoints", []),
-        {item.get("listen_port") for item in backend.get("inbounds", []) if not item.get("tag", "").startswith("_quality-")})
+        {item.get("listen_port") for item in backend.get("inbounds", []) if not item.get("tag", "").startswith("_quality-")}, profile.get("hysteria2", []))
     installed_quality = [item for item in backend.get("inbounds", []) if item.get("tag", "").startswith("_quality-")]
     if quality_inbounds and not installed_quality:
         # Upgrade only a known pre-quality generation, preserving endpoint keys and route order.
@@ -808,7 +898,7 @@ def managed_profile(base: Path) -> tuple[dict, dict, dict]:
             "backend AWG DNS differs from connector metadata",
         )
     if managed_v2:
-        _, expected = compile_profile(profile, base)
+        _, expected = compile_profile(profile, base, backend)
         # Only upgrade the exact legacy direct bindings and DNS list. The full
         # semantic comparison below rejects unrelated additions or modifications.
         desired_servers = expected.get("dns", {}).get("servers", [])
@@ -1050,6 +1140,7 @@ def stage_order(base: Path, stage: Path, groups: list[dict]) -> None:
         for outbound in direct_routes:
             outbound["domain_resolver"] = UNDERLAY_DNS["tag"]
     connector_routes, _ = connector_outbounds(profile.get("connectors", []), base)
+    connector_routes.extend(hysteria_outbounds(profile))
     require(
         backend["outbounds"]
         == (
@@ -1142,10 +1233,13 @@ def main() -> None:
         stage_order(Path(sys.argv[2]), stage, groups)
         return
     profile, destination = map(Path, sys.argv[1:3])
-    directory = Path(sys.argv[3]) if len(sys.argv) == 4 else profile.parent
-    snapshot, backend = compile_profile(
-        json.loads(profile.read_text(), object_pairs_hook=unique), directory
-    )
+    directory = Path(sys.argv[3]) if len(sys.argv) >= 4 else profile.parent
+    candidate = json.loads(profile.read_text(), object_pairs_hook=unique)
+    committed = None
+    if len(sys.argv) == 5:
+        prior_profile, _, committed = managed_profile(Path(sys.argv[4]))
+        require(prior_profile["interfaces"] == candidate["interfaces"], "native interface change in connector transaction")
+    snapshot, backend = compile_profile(candidate, directory, committed)
     os.umask(0o077)
     for name, data in (("snapshot", snapshot), ("sing-box", backend)):
         with (destination / (name + ".json")).open("x") as output:

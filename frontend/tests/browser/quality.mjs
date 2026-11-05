@@ -32,6 +32,7 @@ test("quality page displays all ranked groups, keeps a measured zero, and persis
       const path = new URL(route.request().url()).pathname;
       if (path === "/api/navigation")
         return route.fulfill({ json: { grafanaUrl: "" } });
+      if (path === "/api/hysteria2") return route.fulfill({ json: [] });
       if (path === "/api/awg-underlays" && !catalogAvailable)
         return route.fulfill({ status: 503 });
       if (path === "/api/awg-underlays")

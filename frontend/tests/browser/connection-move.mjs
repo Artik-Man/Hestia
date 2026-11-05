@@ -17,6 +17,7 @@ test("dragging an exit into an empty group stages a cancellable change until Sav
     page.setDefaultTimeout(4000);
     await page.route("**/*", async (route) => {
       const path = new URL(route.request().url()).pathname;
+      if (path === "/api/hysteria2") return route.fulfill({ json: [] });
       if (path === "/api/awg-underlays")
         return route.fulfill({
           json: [{ id, type: "direct", name: "Мой интернет" }],

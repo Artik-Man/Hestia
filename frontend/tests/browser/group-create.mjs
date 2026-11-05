@@ -17,6 +17,7 @@ test("groups preserve names, show modal and page Toasts, and require confirmatio
     page.setDefaultTimeout(4000);
     await page.route("**/*", async (route) => {
       const path = new URL(route.request().url()).pathname;
+      if (path === "/api/hysteria2") return route.fulfill({ json: [] });
       if (path === "/api/awg-underlays") return route.fulfill({ json: [] });
       if (path === "/api/navigation")
         return route.fulfill({ json: { grafanaUrl: "" } });

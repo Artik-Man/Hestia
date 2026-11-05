@@ -90,7 +90,7 @@ type AWGConnectionProfile struct {
 type AWGUnderlayCandidate struct {
 	Name string `json:"name,omitempty" maxLength:"80"`
 	ID   string `json:"id" minLength:"1"`
-	Type string `json:"type" enum:"direct,wireguard,amneziawg"`
+	Type string `json:"type" enum:"direct,wireguard,amneziawg,hysteria2"`
 }
 
 // AWGPriority uses zero internally for an omitted position and rejects explicit nonpositive positions.

@@ -36,6 +36,9 @@
       />
     </div>
   </div>
+  @if (catalog.hysteriaFailed()) {
+    <p role="status">Не удалось загрузить подключения Hysteria 2.</p>
+  }
   <div class="list-wrap">
     <table aria-label="Виртуальные подключения">
       <thead>
@@ -52,7 +55,15 @@
         @for (row of rows(); track row.id) {
           <tr>
             <th scope="row">{{ row.name }}</th>
-            <td>{{ row.entry ? types[row.entry.type] : "—" }}</td>
+            <td>
+              {{
+                row.hysteria
+                  ? "Hysteria 2"
+                  : row.entry
+                    ? types[row.entry.type]
+                    : "—"
+              }}
+            </td>
             <td>
               <span class="health" [class.up]="row.available"
                 ><span class="dot"></span
@@ -69,16 +80,22 @@
             </td>
             <td>
               {{
-                row.profile
-                  ? row.profile.underlays?.length
-                    ? row.profile.activeUnderlay
-                      ? catalog.name(row.profile.activeUnderlay)
+                row.hysteria
+                  ? row.hysteria.underlays?.length || row.hysteria.underlay
+                    ? row.hysteria.activeUnderlay
+                      ? catalog.name(row.hysteria.activeUnderlay)
                       : "Нет доступного подключения"
                     : "Любое интернет-подключение"
-                  : "—"
+                  : row.profile
+                    ? row.profile.underlays?.length
+                      ? row.profile.activeUnderlay
+                        ? catalog.name(row.profile.activeUnderlay)
+                        : "Нет доступного подключения"
+                      : "Любое интернет-подключение"
+                    : "—"
               }}
             </td>
-            @if (row.profile; as profile) {
+            @if (row.profile || row.hysteria; as profile) {
               <td>
                 <button
                   pButton
@@ -87,7 +104,11 @@
                   #editTrigger
                   [attr.aria-label]="'Редактировать профиль ' + row.name"
                   [disabled]="deleting() === row.id"
-                  (click)="editConnection(profile, editTrigger)"
+                  (click)="
+                    row.hysteria
+                      ? editHysteria(row.hysteria, editTrigger)
+                      : row.profile && editConnection(row.profile, editTrigger)
+                  "
                   [pTooltip]="'Редактировать профиль ' + row.name"
                   tooltipEvent="both"
                 >
@@ -127,6 +148,14 @@
   </div>
 </section>
 
+@if (hysteriaOpen()) {
+  <hestia-hysteria2-editor
+    [groups]="groups()"
+    [connection]="editingHysteria()"
+    (closed)="closeEditor()"
+    (saved)="hysteriaSaved()"
+  />
+}
 @if (creating()) {
   <hestia-profile-draft
     [groups]="groups()"

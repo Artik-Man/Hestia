@@ -24,7 +24,7 @@ export async function openNew(page) {
   const menu = page.getByRole("menu");
   const item = menu.getByRole("menuitem", { name: "WireGuard", exact: true });
   await item.waitFor();
-  assert.equal(await menu.getByRole("menuitem").count(), 1);
+  assert.equal(await item.count(), 1);
   await page.waitForFunction(() =>
     document.activeElement?.closest('[role="menu"]'),
   );

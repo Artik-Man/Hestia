@@ -1,6 +1,16 @@
+@if (overlayOpen()) {
+  <button
+    type="button"
+    class="menu-backdrop"
+    tabindex="-1"
+    aria-label="Закрыть меню"
+    (click)="closeOverlay(trigger)"
+  ></button>
+}
 <aside
   tabindex="-1"
   class="sidebar"
+  [cdkTrapFocus]="overlayOpen()"
   [class.open]="expanded()"
   (keydown.escape)="expanded.set(false); trigger.focus()"
 >
@@ -15,7 +25,7 @@
         [tooltipDisabled]="expanded()"
         tooltipEvent="both"
         tooltipPosition="right"
-        (click)="closeOnPhone()"
+        (click)="closeOverlay(trigger)"
       >
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path [attr.d]="icons[page.path]" /></svg
@@ -25,6 +35,7 @@
     @if (grafanaUrl(); as url) {
       <a
         [href]="url"
+        (click)="closeOverlay(trigger)"
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Grafana (в новой вкладке)"

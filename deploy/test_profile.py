@@ -13,6 +13,7 @@ from profile import (
     compile_profile,
     export_paths,
     managed_profile,
+    pinned_paths,
     semantically_equal_backend,
     stage_binding,
     stage_create_group,
@@ -43,6 +44,31 @@ class ProfileTests(unittest.TestCase):
     def compile(self):
         """Compile the current test profile using only its temporary directory for secrets."""
         return compile_profile(self.profile, self.base)
+
+    def test_ordered_hysteria_candidates_and_cycle(self):
+        """Compile independent physical and VPN clients, probe each privately and reject cross-protocol cycles."""
+        self.profile.update(version=2, connectors=[])
+        self.profile["interfaces"].append({"id": "wan", "type": "direct", "bind_interface": "eth0"})
+        self.profile["groups"][0]["exits"].extend(["wan", "relay", "parent"])
+        base = {"name": "Test", "server": "test.example", "port": 443, "password": "test-only",
+                "probeSecret": "b0" * 32}
+        relay = dict(base, id="relay", underlays=["wan", "fi-wg", "parent"])
+        parent = dict(base, id="parent")
+        self.profile["hysteria2"] = [relay, parent]
+        _, compiled = self.compile()
+        out = {item["tag"]: item for item in compiled["outbounds"]}
+        self.assertEqual(out["relay"]["outbounds"], ["_hy2/relay/wan", "_hy2/relay/fi-wg", "_hy2/relay/parent", "deny"])
+        self.assertEqual(out["relay"]["default"], "deny")
+        self.assertEqual(out["_hy2/relay/wan"]["bind_interface"], "eth0")
+        self.assertEqual(out["_hy2/relay/fi-wg"]["detour"], "fi-wg")
+        self.assertEqual(out["_hy2/relay/parent"]["detour"], "parent")
+        self.assertNotIn("bind_interface", out["parent"])
+        paths = [item for item in pinned_paths(compiled) if item.get("relay") == "relay"]
+        self.assertEqual([item["candidate"] for item in paths], relay["underlays"])
+        self.assertEqual(len(set(item["socksPassword"] for item in paths)), 3)
+        parent["underlays"] = ["relay"]
+        with self.assertRaisesRegex(ValueError, "cyclic"):
+            self.compile()
 
     def test_dns_path_export_scopes_credentials_and_generation(self):
         """Export per-exit resolver addresses, confinement and generation without copying private VPN keys."""
@@ -496,6 +522,36 @@ class BindingTests(unittest.TestCase):
             secret.unlink()
         self.stage = self.base / "stage"
         self.stage.mkdir(mode=0o700)
+
+    def test_hysteria_compilation_preserves_committed_native_wireguard(self):
+        """Add an authenticated exit alongside native WG endpoints after installer secrets have been removed."""
+        direct = {"type": "direct", "id": "wan", "bind_interface": "eth0"}
+        self.profile["interfaces"].append(direct)
+        self.profile["groups"][0]["exits"].append("wan")
+        backend = self.backend
+        backend["outbounds"].append({"type": "direct", "tag": "wan", "bind_interface": "eth0"})
+        # The fixture represents a pre-existing installed physical exit.
+        snapshot = json.loads((self.base / "snapshot.json").read_text())
+        snapshot["groups"] = self.profile["groups"]
+        (self.base / "snapshot.json").write_text(json.dumps(snapshot))
+        for name, sidecar, obj in (("profile", "profile-source", self.profile), ("sing-box", "profile-backend", backend)):
+            data = json.dumps(obj).encode()
+            (self.base / (name + ".json")).write_bytes(data)
+            (self.base / (sidecar + ".sha256")).write_text(hashlib.sha256(data).hexdigest())
+        candidate = dict(self.profile, version=2, connectors=[], hysteria2=[
+            {"id": "relay", "name": "Test", "underlay": "wan", "server": "example.test", "port": 443, "password": "test-only", "probeSecret": "a5" * 32}
+        ])
+        candidate["groups"][1]["exits"].append("relay")
+        path = self.stage / "profile.json"
+        path.write_text(json.dumps(candidate))
+        subprocess.run([sys.executable, "-I", str(Path(__file__).with_name("profile.py")),
+                        str(path), str(self.stage), str(self.stage), str(self.base)], check=True)
+        compiled = json.loads((self.stage / "sing-box.json").read_text())
+        self.assertEqual(compiled["endpoints"], backend["endpoints"])
+        relay = next(item for item in compiled["outbounds"] if item["tag"] == "relay")
+        self.assertEqual(relay["bind_interface"], "eth0")
+        self.assertEqual(relay["tls"], {"enabled": True, "server_name": "example.test"})
+        self.assertIn({"type": "udp", "tag": "dns-relay", "server": "1.1.1.1", "detour": "relay"}, compiled["dns"]["servers"])
 
     def test_move_wireguard_without_reopening_source_config(self):
         """Move a legacy WG exit while preserving DNS, backend credentials and domain routing rules."""

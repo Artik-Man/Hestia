@@ -4,3 +4,5 @@ hestia-panel ALL=(root) NOPASSWD: /usr/local/bin/hestia -awg-check, /usr/local/b
 hestia-panel ALL=(root) NOPASSWD: /usr/local/bin/hestia -create-domain-list, /usr/local/bin/hestia -update-domain-list, /usr/local/bin/hestia -delete-domain-list, /usr/local/bin/hestia -create-group, /usr/local/bin/hestia -rename-group, /usr/local/bin/hestia -rename-direct, /usr/local/bin/hestia -delete-group, /usr/local/bin/hestia -move-exit, /usr/local/bin/hestia -apply-group-order
 # Physical inventory and client Wi-Fi accept typed input on stdin.
 hestia-panel ALL=(root) NOPASSWD: /usr/local/bin/hestia -physical-list, /usr/local/bin/hestia -wifi-create, /usr/local/bin/hestia -wifi-save, /usr/local/bin/hestia -wifi-delete
+# Hysteria 2 profile operations accept validated JSON on stdin.
+hestia-panel ALL=(root) NOPASSWD: /usr/local/bin/hestia -hysteria2-read, /usr/local/bin/hestia -hysteria2-list, /usr/local/bin/hestia -hysteria2-create, /usr/local/bin/hestia -hysteria2-update, /usr/local/bin/hestia -hysteria2-delete
