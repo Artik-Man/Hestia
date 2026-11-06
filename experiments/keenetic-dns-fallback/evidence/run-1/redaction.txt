@@ -1,0 +1,5 @@
+The first retrieval copy was moved outside the repository to /private/tmp/hestia-r4-dns/router-log-retrieval-original.txt because sing-box startup diagnostics included the router gateway address and MAC. The evidence copy replaces those fields with <redacted>. The original's SHA-256 and byte count are recorded below; no topology values are retained in this repository.
+5630f300c27ebebfce8b37d8697409391c306662f00584cd2690f3b2a3bf84d7  original-outside-repository
+original_bytes=2768
+
+The redacted log also removes the reported default interface name/index.

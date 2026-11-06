@@ -1,0 +1,16 @@
+UTC run window: 2026-11-06T19:16:07Z–2026-11-06T19:16:15Z
+Repository baseline: 21b1ca6 (branch codex/keenetic-runtime-round3)
+Prototype source SHA-256:
+  prototype/hy2-harness.go a5f1ef51e3782f7f01150d4af06927d69aec10d84c4e865d69dccc086e8b8a4d
+  prototype/run-hy2-study.sh 0f337a7e5ae9d3fc579e4a4a22e3e680a7223d065b9f11764c21c69025f72f1f
+  prototype/server-template.json 9adaf6e37b99addf0fc9009f9ade663dbc833f7cc877ef055623ee8d9eeeb31a
+  prototype/client-template.json a28d0b63697422c21afba434afc60149c5286a44c43dffc31737677b9a9a2fd6
+Device identities (also recorded in device-identity.txt and run-transcript.txt):
+  sing-box 1.14.4 d953af885f11d6b547c21a3c0ffe70796963afc802fab959d548311002b4908a
+  static Linux ARM64 helper 94a24b3bb2b434c23d8b4abeaea45f27123005ef47e46f2fcdc5169845823b46
+  server config 5dc754e2568b43b824d6e22b294301905940a53999fb3fac3b67430974d47bd5
+  wrong-auth client config c9254336c76701d223d09769eb0e82de44821ff4ccb2384d0b89c77e917bf26e
+  valid client config 024ada9901821af4bd65b8f5c1c4d878a0874f4052604c4fa7fcb9ad618e48a3
+  server certificate c6f870a01e4d8e5822c4568bb0f83cf38c7e93a3d13907dd2da86f74ba0063f6
+  temporary CA certificate b6258f2e4f7a9c87171d1cff1cfc5d24a21cd030820d8a530440286a5f2912c6
+Generated authentication secrets: one valid and one different invalid 256-bit random value from openssl rand -hex 32. Values and private key bytes are not stored in the repository or this manifest. Configuration hashes identify the exact transient device files, but because their password inputs were generated and erased they are not re-creatable from tracked templates alone.

@@ -1,0 +1,4 @@
+2026/11/06 19:19:51 client DNS query name=service.fakeip-local.test. returned_fakeip=198.18.0.2
+2026/11/06 19:19:54 TCP over SOCKS numeric_fakeip=198.18.0.2:19353 marker=HSTIA-FAKEIP-TCP-19353
+2026/11/06 19:19:57 UDP over SOCKS numeric_fakeip=198.18.0.2:19354 marker=HSTIA-FAKEIP-UDP-19354
+2026/11/06 19:19:57 probe success fakeip=198.18.0.2 TCP=HSTIA-FAKEIP-TCP-19353 UDP=HSTIA-FAKEIP-UDP-19354

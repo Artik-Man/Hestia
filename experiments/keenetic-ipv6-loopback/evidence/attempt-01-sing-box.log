@@ -1,0 +1,4 @@
++0000 2026-11-06 19:35:38 INFO inbound/socks[ipv6-loopback-socks]: tcp server started at [::1]:19430
++0000 2026-11-06 19:35:38 INFO network: updated default interface [REDACTED]
++0000 2026-11-06 19:35:38 INFO network: updated network environment: gateway [REDACTED]
++0000 2026-11-06 19:35:38 INFO sing-box started (0.16s)

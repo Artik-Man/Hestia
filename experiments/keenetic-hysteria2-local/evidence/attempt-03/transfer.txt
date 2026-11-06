@@ -1,0 +1,2 @@
+scp: /opt/tmp/hestia-hy2-local.20261106-dce5eb25/run-hy2-study.sh: Not a directory
+exit=1 (scp rejected two remote destinations before transfer)

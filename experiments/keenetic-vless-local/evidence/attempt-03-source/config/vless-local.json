@@ -1,0 +1,6 @@
+{
+  "log": {"level": "debug"},
+  "inbounds": [{"type": "socks", "tag": "vless-good-socks", "listen": "127.0.0.1", "listen_port": 19310}],
+  "outbounds": [{"type": "vless", "tag": "vless-loopback", "server": "127.0.0.1", "server_port": 19316, "uuid": "11111111-1111-4111-8111-111111111111", "packet_encoding": "packetaddr"}],
+  "route": {"final": "vless-loopback"}
+}

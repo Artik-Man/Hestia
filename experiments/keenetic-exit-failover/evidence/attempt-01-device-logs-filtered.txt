@@ -1,0 +1,82 @@
+--- URLTest and VLESS client lines ---
++0000 2026-11-06 19:40:31 [37mDEBUG[0m reference: outbound/vless[exit-a] is unreferenced, closing idle connections
++0000 2026-11-06 19:40:31 [37mDEBUG[0m reference: outbound/vless[exit-b] is unreferenced, closing idle connections
++0000 2026-11-06 19:40:31 [36mINFO[0m outbound/vless[exit-a]: outbound connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:31 [36mINFO[0m outbound/vless[exit-b]: outbound connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:31 [36mINFO[0m outbound/vless[exit-b]: outbound connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:31 [36mINFO[0m outbound/vless[exit-a]: outbound connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:31 [37mDEBUG[0m outbound/urltest[auto-exit]: outbound exit-a available: 15ms
++0000 2026-11-06 19:40:31 [37mDEBUG[0m outbound/urltest[auto-exit]: outbound exit-b available: 102ms
++0000 2026-11-06 19:40:32 [36mINFO[0m [[38;5;67m822916915[0m 5ms] outbound/vless[exit-a]: outbound connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:32 [36mINFO[0m [[38;5;67m822916915[0m 5ms] outbound/vless[exit-a]: outbound connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:32 [36mINFO[0m [[38;5;37m3593324524[0m 1ms] outbound/vless[exit-a]: outbound packet connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:32 [36mINFO[0m [[38;5;37m3593324524[0m 1ms] outbound/vless[exit-a]: outbound packet connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:33 [36mINFO[0m outbound/vless[exit-b]: outbound connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:33 [36mINFO[0m outbound/vless[exit-a]: outbound connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:33 [36mINFO[0m outbound/vless[exit-b]: outbound connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:33 [36mINFO[0m outbound/vless[exit-a]: outbound connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:33 [37mDEBUG[0m outbound/urltest[auto-exit]: outbound exit-a available: 3ms
++0000 2026-11-06 19:40:33 [37mDEBUG[0m outbound/urltest[auto-exit]: outbound exit-b available: 84ms
++0000 2026-11-06 19:40:35 [36mINFO[0m outbound/vless[exit-b]: outbound connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:35 [36mINFO[0m outbound/vless[exit-a]: outbound connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:35 [36mINFO[0m outbound/vless[exit-b]: outbound connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:35 [36mINFO[0m outbound/vless[exit-a]: outbound connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:35 [37mDEBUG[0m outbound/urltest[auto-exit]: outbound exit-a available: 3ms
++0000 2026-11-06 19:40:35 [37mDEBUG[0m outbound/urltest[auto-exit]: outbound exit-b available: 84ms
++0000 2026-11-06 19:40:37 [36mINFO[0m outbound/vless[exit-a]: outbound connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:37 [36mINFO[0m outbound/vless[exit-b]: outbound connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:37 [36mINFO[0m outbound/vless[exit-b]: outbound connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:37 [36mINFO[0m outbound/vless[exit-a]: outbound connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:37 [37mDEBUG[0m outbound/urltest[auto-exit]: outbound exit-a available: 3ms
++0000 2026-11-06 19:40:37 [37mDEBUG[0m outbound/urltest[auto-exit]: outbound exit-b available: 84ms
++0000 2026-11-06 19:40:39 [36mINFO[0m outbound/vless[exit-a]: outbound connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:39 [36mINFO[0m outbound/vless[exit-b]: outbound connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:39 [36mINFO[0m outbound/vless[exit-a]: outbound connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:39 [36mINFO[0m outbound/vless[exit-b]: outbound connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:39 [37mDEBUG[0m outbound/urltest[auto-exit]: outbound exit-a available: 4ms
++0000 2026-11-06 19:40:39 [37mDEBUG[0m outbound/urltest[auto-exit]: outbound exit-b available: 86ms
+--- VLESS server lines ---
+log=exit-a.log
++0000 2026-11-06 19:40:31 [36mINFO[0m inbound/vless[exit-a-in]: tcp server started at 127.0.0.1:19331
++0000 2026-11-06 19:40:31 [36mINFO[0m [[38;5;118m3940642150[0m 0ms] inbound/vless[exit-a-in]: inbound connection from 127.0.0.1:56548
++0000 2026-11-06 19:40:31 [36mINFO[0m [[38;5;118m3940642150[0m 7ms] inbound/vless[exit-a-in]: [synthetic] inbound connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:31 [36mINFO[0m [[38;5;118m3940642150[0m 9ms] outbound/direct[loopback-direct]: outbound connection to 127.0.0.1:19335
++0000 2026-11-06 19:40:32 [36mINFO[0m [[38;5;222m4281685257[0m 0ms] inbound/vless[exit-a-in]: inbound connection from 127.0.0.1:56550
++0000 2026-11-06 19:40:32 [36mINFO[0m [[38;5;222m4281685257[0m 0ms] inbound/vless[exit-a-in]: [synthetic] inbound connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:32 [36mINFO[0m [[38;5;222m4281685257[0m 0ms] outbound/direct[loopback-direct]: outbound connection to 127.0.0.1:19335
++0000 2026-11-06 19:40:32 [36mINFO[0m [[38;5;152m1731186312[0m 0ms] inbound/vless[exit-a-in]: inbound connection from 127.0.0.1:56560
++0000 2026-11-06 19:40:32 [36mINFO[0m [[38;5;152m1731186312[0m 5ms] inbound/vless[exit-a-in]: [synthetic] inbound packet addr connection
++0000 2026-11-06 19:40:32 [36mINFO[0m [[38;5;152m1731186312[0m 5ms] outbound/direct[loopback-direct]: outbound packet connection
++0000 2026-11-06 19:40:33 [36mINFO[0m [[38;5;187m2524856876[0m 0ms] inbound/vless[exit-a-in]: inbound connection from 127.0.0.1:56572
++0000 2026-11-06 19:40:33 [36mINFO[0m [[38;5;187m2524856876[0m 2ms] inbound/vless[exit-a-in]: [synthetic] inbound connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:33 [36mINFO[0m [[38;5;187m2524856876[0m 2ms] outbound/direct[loopback-direct]: outbound connection to 127.0.0.1:19335
++0000 2026-11-06 19:40:35 [36mINFO[0m [[38;5;98m1858511698[0m 0ms] inbound/vless[exit-a-in]: inbound connection from 127.0.0.1:56578
++0000 2026-11-06 19:40:35 [36mINFO[0m [[38;5;98m1858511698[0m 0ms] inbound/vless[exit-a-in]: [synthetic] inbound connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:35 [36mINFO[0m [[38;5;98m1858511698[0m 0ms] outbound/direct[loopback-direct]: outbound connection to 127.0.0.1:19335
++0000 2026-11-06 19:40:37 [36mINFO[0m [[38;5;123m310980716[0m 0ms] inbound/vless[exit-a-in]: inbound connection from 127.0.0.1:56590
++0000 2026-11-06 19:40:37 [36mINFO[0m [[38;5;123m310980716[0m 1ms] inbound/vless[exit-a-in]: [synthetic] inbound connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:37 [36mINFO[0m [[38;5;123m310980716[0m 1ms] outbound/direct[loopback-direct]: outbound connection to 127.0.0.1:19335
++0000 2026-11-06 19:40:39 [36mINFO[0m [[38;5;49m3791467809[0m 0ms] inbound/vless[exit-a-in]: inbound connection from 127.0.0.1:56604
++0000 2026-11-06 19:40:39 [36mINFO[0m [[38;5;49m3791467809[0m 3ms] inbound/vless[exit-a-in]: [synthetic] inbound connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:39 [36mINFO[0m [[38;5;49m3791467809[0m 3ms] outbound/direct[loopback-direct]: outbound connection to 127.0.0.1:19335
+log=exit-b.log
++0000 2026-11-06 19:40:31 [36mINFO[0m inbound/vless[exit-b-in]: tcp server started at 127.0.0.1:19332
++0000 2026-11-06 19:40:31 [36mINFO[0m [[38;5;221m76486369[0m 0ms] inbound/vless[exit-b-in]: inbound connection from 127.0.0.1:60754
++0000 2026-11-06 19:40:31 [36mINFO[0m [[38;5;221m76486369[0m 1ms] inbound/vless[exit-b-in]: [synthetic] inbound connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:31 [36mINFO[0m [[38;5;221m76486369[0m 7ms] outbound/direct[loopback-direct]: outbound connection to 127.0.0.1:19336
++0000 2026-11-06 19:40:33 [36mINFO[0m [[38;5;85m3902202693[0m 0ms] inbound/vless[exit-b-in]: inbound connection from 127.0.0.1:60762
++0000 2026-11-06 19:40:33 [36mINFO[0m [[38;5;85m3902202693[0m 3ms] inbound/vless[exit-b-in]: [synthetic] inbound connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:33 [36mINFO[0m [[38;5;85m3902202693[0m 3ms] outbound/direct[loopback-direct]: outbound connection to 127.0.0.1:19336
++0000 2026-11-06 19:40:35 [36mINFO[0m [[38;5;188m1110865195[0m 0ms] inbound/vless[exit-b-in]: inbound connection from 127.0.0.1:60774
++0000 2026-11-06 19:40:35 [36mINFO[0m [[38;5;188m1110865195[0m 1ms] inbound/vless[exit-b-in]: [synthetic] inbound connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:35 [36mINFO[0m [[38;5;188m1110865195[0m 1ms] outbound/direct[loopback-direct]: outbound connection to 127.0.0.1:19336
++0000 2026-11-06 19:40:37 [36mINFO[0m [[38;5;222m2827524873[0m 0ms] inbound/vless[exit-b-in]: inbound connection from 127.0.0.1:60780
++0000 2026-11-06 19:40:37 [36mINFO[0m [[38;5;222m2827524873[0m 1ms] inbound/vless[exit-b-in]: [synthetic] inbound connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:37 [36mINFO[0m [[38;5;222m2827524873[0m 1ms] outbound/direct[loopback-direct]: outbound connection to 127.0.0.1:19336
++0000 2026-11-06 19:40:39 [36mINFO[0m [[38;5;148m2172808068[0m 0ms] inbound/vless[exit-b-in]: inbound connection from 127.0.0.1:60794
++0000 2026-11-06 19:40:39 [36mINFO[0m [[38;5;148m2172808068[0m 5ms] inbound/vless[exit-b-in]: [synthetic] inbound connection to 127.0.0.1:19334
++0000 2026-11-06 19:40:39 [36mINFO[0m [[38;5;148m2172808068[0m 5ms] outbound/direct[loopback-direct]: outbound connection to 127.0.0.1:19336
+--- endpoint helper lines ---
+endpoints_ready deadline=2026-11-06T19:41:44.858001641Z ports=19335,19336,19337,19338
+udp_target exit=direct payload="DIRECT-CONTROL"
+owned_temp_directory_removed=/opt/tmp/hestia-r4-exits-20261106-1930

@@ -1,0 +1,53 @@
+diff experiments/keenetic-fakeip-local/evidence/attempt-live-1/device-run.sh.orig experiments/keenetic-fakeip-local/evidence/attempt-live-1/device-run.sh
+--- experiments/keenetic-fakeip-local/evidence/attempt-live-1/device-run.sh.orig
++++ experiments/keenetic-fakeip-local/evidence/attempt-live-1/device-run.sh
+@@ -112,7 +112,8 @@
+ printf 'helper_stop_wait_exit=%s\n' "$helper_wait_rc"
+ test -s fakeip.txt
+ test -s fakeip-cache.db
+-printf 'fakeip='; cat fakeip.txt
++printf 'fakeip='
++cat fakeip.txt
+ printf 'routes_rules_after\n'
+ route_hashes
+ touch complete
+diff experiments/keenetic-fakeip-local/evidence/attempt-live-2/device-run.sh.orig experiments/keenetic-fakeip-local/evidence/attempt-live-2/device-run.sh
+--- experiments/keenetic-fakeip-local/evidence/attempt-live-2/device-run.sh.orig
++++ experiments/keenetic-fakeip-local/evidence/attempt-live-2/device-run.sh
+@@ -112,7 +112,8 @@
+ printf 'helper_stop_wait_exit=%s\n' "$helper_wait_rc"
+ test -s fakeip.txt
+ test -s fakeip-cache.db
+-printf 'fakeip='; cat fakeip.txt
++printf 'fakeip='
++cat fakeip.txt
+ printf 'routes_rules_after\n'
+ route_hashes
+ touch complete
+diff experiments/keenetic-fakeip-local/evidence/attempt-basic-1/device-run.sh.orig experiments/keenetic-fakeip-local/evidence/attempt-basic-1/device-run.sh
+--- experiments/keenetic-fakeip-local/evidence/attempt-basic-1/device-run.sh.orig
++++ experiments/keenetic-fakeip-local/evidence/attempt-basic-1/device-run.sh
+@@ -102,7 +102,8 @@
+ set -e
+ helper_pid=
+ printf 'helper_stop_wait_exit=%s\n' "$helper_wait_rc"
+-printf 'fakeip='; cat fakeip.txt
++printf 'fakeip='
++cat fakeip.txt
+ test "$(wc -l <fakeip.txt | tr -d ' ')" = 1
+ printf 'routes_rules_after\n'
+ after=$(route_snapshot)
+diff experiments/keenetic-fakeip-local/evidence/attempt-persistence-1/device-run.sh.orig experiments/keenetic-fakeip-local/evidence/attempt-persistence-1/device-run.sh
+--- experiments/keenetic-fakeip-local/evidence/attempt-persistence-1/device-run.sh.orig
++++ experiments/keenetic-fakeip-local/evidence/attempt-persistence-1/device-run.sh
+@@ -119,7 +119,8 @@
+ printf 'helper_stop_wait_exit=%s\n' "$helper_stop_rc"
+ test -s fakeip.txt
+ test -s fakeip-cache.db
+-printf 'fakeip='; cat fakeip.txt
++printf 'fakeip='
++cat fakeip.txt
+ printf 'probe_first_and_resume\n'
+ cat probe-1.log probe-2.log
+ printf 'cache_file_metadata_final\n'
+exit=1

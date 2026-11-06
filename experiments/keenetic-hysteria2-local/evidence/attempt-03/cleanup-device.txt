@@ -1,0 +1,4 @@
+tcp_owned_listeners=present
+udp_owned_listeners=absent
+temp_directory_removed=yes
+exit=0

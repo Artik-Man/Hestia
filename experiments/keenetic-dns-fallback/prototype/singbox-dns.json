@@ -1,0 +1,62 @@
+{
+  "log": {
+    "level": "debug"
+  },
+  "dns": {
+    "servers": [
+      {
+        "type": "udp",
+        "tag": "synthetic-udp",
+        "server": "127.0.0.1",
+        "server_port": 19350
+      },
+      {
+        "type": "tcp",
+        "tag": "synthetic-tcp",
+        "server": "127.0.0.1",
+        "server_port": 19350
+      }
+    ],
+    "rules": [
+      {
+        "network": "udp",
+        "action": "route",
+        "server": "synthetic-udp",
+        "disable_cache": true
+      },
+      {
+        "network": "tcp",
+        "action": "route",
+        "server": "synthetic-tcp",
+        "disable_cache": true
+      }
+    ],
+    "final": "synthetic-udp",
+    "disable_cache": true,
+    "timeout": "3s"
+  },
+  "inbounds": [
+    {
+      "type": "direct",
+      "tag": "local-dns",
+      "listen": "127.0.0.1",
+      "listen_port": 19351
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "direct",
+      "tag": "direct"
+    }
+  ],
+  "route": {
+    "rules": [
+      {
+        "inbound": "local-dns",
+        "action": "hijack-dns"
+      }
+    ],
+    "final": "direct",
+    "default_domain_resolver": "synthetic-udp"
+  }
+}

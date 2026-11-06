@@ -1,0 +1,20 @@
+{
+  "log": {"level": "info"},
+  "inbounds": [
+    {
+      "type": "hysteria2",
+      "tag": "local-hy2-server",
+      "listen": "127.0.0.1",
+      "listen_port": 19334,
+      "users": [{"name": "synthetic-study", "password": "__PASSWORD__"}],
+      "tls": {
+        "enabled": true,
+        "server_name": "hestia-hy2.test",
+        "certificate_path": "__SERVER_CERT__",
+        "key_path": "__SERVER_KEY__"
+      }
+    }
+  ],
+  "outbounds": [{"type": "direct", "tag": "loopback-direct"}],
+  "route": {"final": "loopback-direct"}
+}

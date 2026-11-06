@@ -1,0 +1,1 @@
+sh -n experiments/keenetic-fakeip-local/evidence/attempt-live-1/device-run.sh

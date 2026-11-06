@@ -1,0 +1,1 @@
+ssh -p 222 ... root@192.168.1.1 "cd /opt/tmp/hestia-hy2-local.20261106-dce5eb25; ls -l hestia-hy2-harness sing-box run-hy2-study.sh; sha256sum hestia-hy2-harness sing-box server.json client-bad-auth.json client-good.json server.crt ca.crt run-hy2-study.sh"

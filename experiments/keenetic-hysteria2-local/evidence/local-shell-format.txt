@@ -1,0 +1,17 @@
+command=/private/tmp/hestia-tools/shfmt --version
+output=v3.11.0
+exit=0
+
+command=/private/tmp/hestia-tools/shellcheck-v0.11.0/shellcheck --version
+output=ShellCheck 0.11.0
+exit=0
+
+command=/private/tmp/hestia-tools/shfmt -w experiments/keenetic-hysteria2-local/prototype/run-hy2-study.sh
+exit=0
+
+command=/private/tmp/hestia-tools/shellcheck-v0.11.0/shellcheck experiments/keenetic-hysteria2-local/prototype/run-hy2-study.sh
+output=(empty)
+exit=0
+
+command=sh -n experiments/keenetic-hysteria2-local/prototype/run-hy2-study.sh
+exit=0

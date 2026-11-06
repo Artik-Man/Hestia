@@ -1,0 +1,7 @@
+attempt=09-remove-private-runtime-directory
+start_utc=2026-11-06T19:08:45Z
+command=ssh -p 222 -i ~/.ssh/hestia_keenetic -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes root@192.168.1.1 set\ -e\;\ test\ -d\ /opt/tmp/hestia-vless-local.20261106-1905\;\ rm\ -rf\ /opt/tmp/hestia-vless-local.20261106-1905\;\ test\ !\ -e\ /opt/tmp/hestia-vless-local.20261106-1905\;\ printf\ \'owned_workdir_absent=yes\\n\'\;\ printf\ \'cleanup_utc=%s\\n\'\ \$\(date\ -u\ +%Y-%m-%dT%H:%M:%SZ\)
+owned_workdir_absent=yes
+cleanup_utc=2026-11-06T19:08:44Z
+exit_code=0
+end_utc=2026-11-06T19:08:45Z

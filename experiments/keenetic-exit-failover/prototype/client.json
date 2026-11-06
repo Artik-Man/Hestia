@@ -1,0 +1,11 @@
+{
+  "log": {"level": "debug", "timestamp": true},
+  "inbounds": [{"type": "socks", "tag": "failover-socks", "listen": "127.0.0.1", "listen_port": 19330}],
+  "outbounds": [
+    {"type": "vless", "tag": "exit-a", "server": "127.0.0.1", "server_port": 19331, "uuid": "11111111-1111-4111-8111-111111111111", "packet_encoding": "packetaddr"},
+    {"type": "vless", "tag": "exit-b", "server": "127.0.0.1", "server_port": 19332, "uuid": "11111111-1111-4111-8111-111111111111", "packet_encoding": "packetaddr"},
+    {"type": "urltest", "tag": "auto-exit", "outbounds": ["exit-a", "exit-b"], "url": "http://127.0.0.1:19334/health", "interval": "1s", "tolerance": 0},
+    {"type": "block", "tag": "fail-closed"}
+  ],
+  "route": {"final": "auto-exit"}
+}

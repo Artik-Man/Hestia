@@ -1,0 +1,7 @@
++0000 2026-11-06 19:42:32 INFO inbound/socks[ipv6-loopback-socks]: tcp server started at [::1]:19430
++0000 2026-11-06 19:42:32 INFO inbound/socks[ipv6-loopback-socks]: inbound connection to [::1]:19431
++0000 2026-11-06 19:42:32 INFO inbound/socks[ipv6-loopback-socks]: inbound packet connection to [::1]:19432
++0000 2026-11-06 19:42:32 INFO inbound/socks[ipv6-loopback-socks]: inbound connection to [::1]:19433
++0000 2026-11-06 19:42:32 INFO outbound/block[ipv6-loopback-block]: blocked connection to [::1]:19433
++0000 2026-11-06 19:42:32 INFO inbound/socks[ipv6-loopback-socks]: inbound packet connection to [::1]:19434
++0000 2026-11-06 19:42:32 INFO outbound/block[ipv6-loopback-block]: blocked packet connection to [::1]:19434

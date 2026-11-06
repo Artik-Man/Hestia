@@ -1,0 +1,1 @@
+ssh -p 222 -i "$HOME/.ssh/hestia_keenetic" -o StrictHostKeyChecking=yes -o BatchMode=yes -o IdentitiesOnly=yes root@192.168.1.1 'cd /opt/tmp/hestia-r4-dns-20261106-2239-f0b3 && ./run-dns-fallback.sh'

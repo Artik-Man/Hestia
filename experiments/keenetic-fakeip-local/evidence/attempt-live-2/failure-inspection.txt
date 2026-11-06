@@ -1,0 +1,8 @@
+# Redacted capture note
+The original raw command output was preserved outside the repository at `/private/tmp/hestia-fakeip-inspection-attempt-live-2.raw` because the directory listing command accidentally printed the binary cache file. Its size and SHA-256 are recorded in this attempt's capture metadata below. This file does not include binary cache bytes.
+
+Observed before redaction: harness readiness line; sing-box fatal startup message `detour to an empty direct outbound makes no sense`; cache file existed at 32768 bytes after failed service initialization; owned PIDs 27593 and 27617 were no longer running. No DNS probe had been executed and no FakeIP/domain mapping was created.
+
+Local raw capture metadata:
+   33633 /private/tmp/hestia-fakeip-inspection-attempt-live-2.raw
+1c2783c742e7ddf3d85a0b309e36a7485f7c5fc6e5483656799f1e1b2c87d165  /private/tmp/hestia-fakeip-inspection-attempt-live-2.raw

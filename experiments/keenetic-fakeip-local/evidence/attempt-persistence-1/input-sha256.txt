@@ -1,0 +1,5 @@
+3c0036e0d839780e3fd3abd8d861b47393bcb9800f484c2650da8188b5186737  experiments/keenetic-fakeip-local/evidence/attempt-persistence-1/input-snapshot/fakeip-harness.go
+e2b58811237efaa32aae83fb0b30aa9791b6e36586ec9fb47880bd8be26fd0e2  experiments/keenetic-fakeip-local/evidence/attempt-persistence-1/input-snapshot/singbox-fakeip-cache.json
+634c232d6bf231c17655e4015be8c333375806b385d5e1a6b7462e92762f2c78  /private/tmp/hestia-fakeip-harness
+e2b58811237efaa32aae83fb0b30aa9791b6e36586ec9fb47880bd8be26fd0e2  experiments/keenetic-fakeip-local/prototype/singbox-fakeip-cache.json
+d2dedf378f5ac6154d6aad200af998ca6dabc44f9c0788ee6b9e9d80c875e0d1  experiments/keenetic-fakeip-local/evidence/attempt-persistence-1/device-run.sh

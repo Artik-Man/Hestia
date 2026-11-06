@@ -1,0 +1,2 @@
+remote_attempt1_directory_removed
+exit=0

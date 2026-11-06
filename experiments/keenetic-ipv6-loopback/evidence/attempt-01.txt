@@ -1,0 +1,34 @@
+# Attempt 1 — stopped before harness invocation
+
+## Preflight and inputs
+
+- Strict SSH connection to the existing known host `[192.168.1.1]:222` succeeded after the default sandbox denied the initial read-only SSH call with `Operation not permitted` (SSH exit 255). The successful retry used `StrictHostKeyChecking=yes`, `BatchMode=yes`, and `IdentitiesOnly=yes`.
+- Read-only exact-resource preflight found `/opt/tmp/kn1012-ipv6-loopback-20261106-01` absent, ports 19430–19439 free, and the exact process/resource label absent.
+- The private directory was created at 2026-11-06T19:31:59Z with mode 0700 (SSH exit 0).
+- Files transferred at 2026-11-06T19:32:12Z–19:32:17Z (SCP exit 0). Transferred sing-box SHA-256 `d953af885f11d6b547c21a3c0ffe70796963afc802fab959d548311002b4908a`, harness `06f4c90bde24b4df2349f33e48a67604ea4fb50fe42ca3886b0f8e97c88d44a2`, config `4dd5a9837c49294cf9cda5fb380e2e3cd9bae855b66cd5e194cd8e5ba5779ef6`.
+- Target runtime reported sing-box 1.14.4. `sing-box check -c singbox-ipv6-loopback.json` passed at 19:32:36Z–19:32:39Z (SSH exit 0).
+- Runner SHA-256 for attempt 1: `67056bf7bb57a2ac7d287ae79bcfde6723f79a38038bfe310a9219b84832a7c5`; preserved as [attempt-01-run-on-device.sh](attempt-01-run-on-device.sh).
+- Runner hash and config check repeated at 19:35:04Z–19:35:08Z, exit 0.
+
+## Exact invocation and result
+
+Start: 2026-11-06T19:35:22Z. End: 2026-11-06T19:35:39Z.
+
+```sh
+ssh -p 222 -i ~/.ssh/hestia_keenetic -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=7 root@192.168.1.1 'cd /opt/tmp/kn1012-ipv6-loopback-20261106-01 && ./run-on-device.sh'
+```
+
+SSH exit code: 23. The runner started sing-box PID 29830, then BusyBox `sleep` rejected fractional argument `0.2` on each readiness-loop iteration. The configured readiness loop exhausted its 25 iterations before starting the harness. Captured output:
+
+```text
+singbox_pid=29830
+sleep: invalid number '0.2'  [repeated for each readiness-loop iteration]
+SOCKS listener did not become ready within 5 seconds
+exit_code=23
+```
+
+This was a runner portability error, not a sing-box/config failure. The sing-box log showed the SOCKS TCP listener started at `[::1]:19430` and sing-box started in 0.16s; interface/gateway metadata was redacted in the evidence copy ([log](attempt-01-sing-box.log), [redaction note](redaction.txt)).
+
+## Cleanup verification
+
+At 2026-11-06T19:35:59Z, exact PID 29830 was absent and ports 19430–19439 were free (SSH exit 0). The attempt log was copied locally at 19:36:13Z (SCP exit 0). No harness process was launched and no marker request was sent. The attempt-specific runner source and output remain preserved; the private directory is retained for the next isolated attempt.

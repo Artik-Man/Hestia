@@ -1,0 +1,68 @@
+utc=2026-11-06T19:33:49Z
+version_command
+
+          release: 5.02.B.3.0-2
+          sandbox: draft
+            title: 5.2 Beta 3
+             arch: aarch64
+
+              ndm: 
+                exact: 0-7dccfb3
+                cdate: 3 Nov 2026
+
+              bsp: 
+                exact: 0-daad179892
+                cdate: 4 Nov 2026
+
+              ndw: 
+             features: dual_image,usb_3_conf,usb_3_first,led_control,
+                       wifi_button,wifi5ghz,vht2ghz,mimo2ghz,mimo5ghz,atf2ghz,
+                       atf5ghz,wifi6,wifi_ft,wpa3,hwnat,hwnat_mib,link_agg,
+                       cable_diag,sfp
+           components: acl,base,cloudcontrol,corewireless,ddns,
+                       dhcpd,dlna,dns-filter,dns-https,dns-tls,dot1x,easyconfig,
+                       exfat,ext,ext-utils,fat,hfsplus,igmp,ike-client,ip6,
+                       iperf3,ipsec,keyword-filter,l2tp,lang-en,lang-ru,mdns,
+                       miniupnpd,monitor,mws,nathelper-ftp,nathelper-h323,
+                       nathelper-pptp,nathelper-rtsp,nathelper-sip,ndmp,ndns,
+                       ntfs,ntfs-utils,openconnect,openvpn,opkg,opkg-kmod-fs,
+                       opkg-kmod-netfilter,opkg-kmod-tc,pingcheck,ppe,pppoe,
+                       pptp,proxy,sftp,ssh,sstp,storage,trafficcontrol,
+                       transmission,tsmb,usb,web-shell,webdav,wireguard,
+                       wireguard-server,zerotier
+
+             ndw3: 
+              version: 5.2.28.1
+
+             ndw4: 
+              version: 5.2.B.3.0
+
+     manufacturer: Keenetic Ltd.
+           vendor: Keenetic
+           series: KN
+            model: Giga (KN-1012)
+       hw_version: 12108000
+          hw_type: router
+            hw_id: KN-1012
+           device: Giga
+          consent: EA
+           region: EA
+      description: Keenetic Giga (KN-1012)
+
+[KLinux Keenetic-G-8919 4.9-ndm-5 #0 SMP Wed Nov 4 10:43:12 2026 aarch64 GNU/Linux
+port_check
+tcp_19310=free
+tcp_19311=free
+tcp_19312=free
+udp_19312=free
+tcp_19313=free
+tcp_19314=free
+udp_19314=free
+route_rule_hashes_before
+d980f9b05b97eae098407214e104b6a23a3a823ad1aa5ba3aaa5419a3a60c619  -
+52a656ed73f1a2c72f79a91fcd6f7cbe5bc59a1b33d5a89fb4e64cfac61c5b9c  -
+208c4cc100e02e620c4114c9062d7102ecc09d30e48bac2552e326f6db5de910  -
+77570d3b73b6f8265509d05ee2d03df846fd2f2d9f537a0dc58e0cb0739b1aaf  -
+loader-present
+9cf11983a8983de8f05aa0134ac0aafc6c34eb45138e8591cc397a6c09a3ab1c  /opt/lib/ld-linux-aarch64.so.1
+exit=0

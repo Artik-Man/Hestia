@@ -1,0 +1,11 @@
+{
+  "time_utc": "2026-11-06T19:24:18Z",
+  "operation": "verified executable read-only usage/help",
+  "host_key_fingerprint_sha256": "SHA256:u5mFSUOHtvmfjURyMmAe8N2BVONvSiTAoV7OLn2Czoo",
+  "binary_sha256": "6e6b0bee69e1270160a16711b6a64f4e036b9b984d8eb80acdf76403c243121e",
+  "command": "ssh -p 222 -i /Users/artikman/.ssh/hestia_keenetic -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=/Users/artikman/.ssh/known_hosts -o ConnectTimeout=7 root@192.168.1.1 '/bin/ndmc -h'",
+  "exit_code": 0,
+  "stdout": "NDM Shell, v5.02.B.3.0-2\n\nUsage:\n  ndmc                              - start ndm session\n  ndmc -c command string            - exec ndm command\n  ndmc -h | --help | -v | --version - show this information\n",
+  "stderr": "",
+  "interpretation": "The binary's own help unambiguously documents `-c command string` and read-only help/version flags. This supports one corrected allowlisted `show version` command."
+}

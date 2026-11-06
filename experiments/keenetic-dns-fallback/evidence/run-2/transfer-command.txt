@@ -1,0 +1,2 @@
+Unique directory: /opt/tmp/hestia-r4-dns-20261106-2239-f0b3
+The exact pinned sing-box ELF was reused from the prior owned temporary directory after its SHA-256 was verified; its hash is the pinned d953af...b4908a. The changed helper, same config, and changed bounded runner were copied with legacy scp into this distinct private directory. The first run's directory and files were not modified.

@@ -1,0 +1,25 @@
+2026-11-06T19:24 UTC onward — local prototype preparation only; no router or network connection was made.
+Working directory: /private/tmp/hestia-keenetic-research-sockets
+
+Attempt 1:
+  gofmt -w experiments/keenetic-ipv6-loopback/prototype/ipv6-loopback-harness.go
+  go vet experiments/keenetic-ipv6-loopback/prototype/ipv6-loopback-harness.go
+  Result: exit 1; vet reported unused import net/http. The import was removed.
+
+Attempt 2:
+  gofmt -w experiments/keenetic-ipv6-loopback/prototype/ipv6-loopback-harness.go
+  go vet experiments/keenetic-ipv6-loopback/prototype/ipv6-loopback-harness.go
+  Result: exit 0; no output.
+
+Build:
+  CGO_ENABLED=0 GOOS=linux GOARCH=arm64 GOTOOLCHAIN=local GOPROXY=off go build -trimpath -buildvcs=false -o /private/tmp/hestia-ipv6-loopback-harness experiments/keenetic-ipv6-loopback/prototype/ipv6-loopback-harness.go
+  Result: exit 0.
+  file /private/tmp/hestia-ipv6-loopback-harness
+  Result: ELF 64-bit LSB executable, ARM aarch64, statically linked.
+
+SHA-256:
+  65f411a891980869996e3bb8255eef3064c7a038bf07a0ad0f3992e262ebf29f  prototype/ipv6-loopback-harness.go
+  4dd5a9837c49294cf9cda5fb380e2e3cd9bae855b66cd5e194cd8e5ba5779ef6  prototype/singbox-ipv6-loopback.json
+  06f4c90bde24b4df2349f33e48a67604ea4fb50fe42ca3886b0f8e97c88d44a2  /private/tmp/hestia-ipv6-loopback-harness
+
+The harness was compiled, not executed. No local socket was bound. sing-box 1.14.4 is not installed locally, so target-version config validation remains pending.

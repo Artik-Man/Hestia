@@ -1,0 +1,28 @@
+# Attempt 2 — stopped before harness invocation
+
+## Preflight and inputs
+
+- At 2026-11-06T19:38:18Z–19:38:19Z, the exact directory existed, PID 29830 was absent, and ports 19430–19439 were free (SSH exit 0).
+- Only SHA-256 hashes of IPv4/IPv6 route and rule text were captured for baseline; raw output was piped directly to `sha256sum` and not retained. Hashes are in [baseline-route-rule-hashes.json](baseline-route-rule-hashes.json).
+- Corrected runner replaced fractional `sleep 0.2` with integer `sleep 1` and limited readiness polling to five iterations. It passed shfmt 3.11.0, ShellCheck 0.11.0, and `sh -n` locally. Runner SHA-256: `5c97e43c6bb7b3ba3bbbb23e016e436a27ff5df9d2a9faba35d5f1e316e41018`; exact input preserved as [attempt-02-run-on-device.sh](attempt-02-run-on-device.sh).
+- At 19:38:50Z–19:38:54Z, remote hashes matched for all four inputs, sing-box 1.14.4 config check passed, PID 29830 remained absent, and ports 19430–19439 remained free (SSH exit 0).
+
+## Exact invocation and result
+
+Start: 2026-11-06T19:39:07Z. End: 2026-11-06T19:39:13Z.
+
+```sh
+ssh -p 222 -i ~/.ssh/hestia_keenetic -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=7 root@192.168.1.1 'cd /opt/tmp/kn1012-ipv6-loopback-20261106-01 && ./run-on-device.sh'
+```
+
+SSH exit code: 23. Runner started sing-box PID 30552. The sing-box log confirms its TCP SOCKS server started at `[::1]:19430` ([sanitized listener line](attempt-02-sing-box.log)). The runner did not recognize that listener in its `netstat` readiness predicate and exited before starting the harness. Captured stdout:
+
+```text
+singbox_pid=30552
+SOCKS listener did not become ready within 5 seconds
+exit_code=23
+```
+
+## Cleanup verification
+
+At 2026-11-06T19:39:30Z–19:39:31Z, PID 30552 was absent and ports 19430–19439 were free (SSH exit 0). The attempt log was retrieved at 19:39:39Z (SCP exit 0), then reduced to the one needed listener line so interface/gateway data is not kept. No harness or marker request was run.

@@ -1,0 +1,4 @@
+Linux 4.9-ndm-5 aarch64
+Linux version 4.9-ndm-5 (developers@keenetic.com) (gcc version 14.3.0 (crosstool-NG 1.27.0_ndm_5.1_05356ea) ) #0 SMP Wed Nov 4 10:43:12 2026
+routes4=awk: cmd. line:1: Unexpected token
+exit=1

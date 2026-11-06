@@ -1,0 +1,40 @@
+attempt=target-hash-runtime-config-checks
+start_utc=2026-11-06T19:05:48Z
+command=ssh -p 222 -i ~/.ssh/hestia_keenetic -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes root@192.168.1.1 set\ -e\;\ cd\ /opt/tmp/hestia-vless-local.20261106-1905\;\ sha256sum\ sing-box\ hestia-vless-local-harness\ vless-local.json\ vless-wrong-uuid.json\ vless-server.json\;\ /opt/lib/ld-linux-aarch64.so.1\ --library-path\ /opt/lib\ ./sing-box\ --version\;\ /opt/lib/ld-linux-aarch64.so.1\ --library-path\ /opt/lib\ ./sing-box\ check\ -c\ vless-server.json\;\ /opt/lib/ld-linux-aarch64.so.1\ --library-path\ /opt/lib\ ./sing-box\ check\ -c\ vless-local.json\;\ /opt/lib/ld-linux-aarch64.so.1\ --library-path\ /opt/lib\ ./sing-box\ check\ -c\ vless-wrong-uuid.json
+d953af885f11d6b547c21a3c0ffe70796963afc802fab959d548311002b4908a  sing-box
+01ac83304e486a1b8c4dfac9bb1d7d12d15ccd12b22899f085c50b1bf28dff12  hestia-vless-local-harness
+f167677acec1b22ca59dcb050380c22d24f32fa072102af0077c4cf28ee1486a  vless-local.json
+5ffc5e5dcdbf3b72a6a817da9896757e91b2ddb1e325c9a314e1aa0e18e406c4  vless-wrong-uuid.json
+8f53b01bfce162fc5bda529528bda548ad785bd229b746cfcc04b3e9e7cc6d5c  vless-server.json
+Error: unknown flag: --version
+Usage:
+  sing-box [command]
+
+Available Commands:
+  api          API service client
+  check        Check configuration
+  completion   Generate the autocompletion script for the specified shell
+  format       Format configuration
+  generate     Generate things
+  geoip        GeoIP tools
+  geosite      Geosite tools
+  help         Help about any command
+  merge        Merge configurations
+  rule-set     Manage rule-sets
+  run          Run service
+  schema       Generate configuration JSON schema
+  tools        Experimental tools
+  version      Print current version of sing-box
+
+Flags:
+  -c, --config stringArray             set configuration file path
+  -C, --config-directory stringArray   set configuration directory path
+  -D, --directory string               set working directory
+      --disable-color                  disable color output
+  -h, --help                           help for sing-box
+
+Use "sing-box [command] --help" for more information about a command.
+
+[31mFATAL[0m[0000] unknown flag: --version
+exit_code=1
+end_utc=2026-11-06T19:05:51Z

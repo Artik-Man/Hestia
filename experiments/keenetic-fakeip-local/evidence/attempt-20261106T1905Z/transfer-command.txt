@@ -1,0 +1,1 @@
+scp -O -p -P 222 -i "$HOME/.ssh/hestia_keenetic" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes /private/tmp/hestia-keenetic-runtime-inspect/sing-box-1.14.4-linux-arm64/sing-box /private/tmp/hestia-fakeip-harness experiments/keenetic-fakeip-local/prototype/singbox-fakeip.json root@192.168.1.1:/opt/tmp/hestia-fakeip-local.20261106-1905/

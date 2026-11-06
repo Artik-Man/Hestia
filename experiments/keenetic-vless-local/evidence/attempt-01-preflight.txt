@@ -1,0 +1,6 @@
+attempt=target-readonly-preflight
+start_utc=2026-11-06T19:04:04Z
+command=ssh -p 222 -i ~/.ssh/hestia_keenetic -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=7 root@192.168.1.1 'set -e; printf "target=Keenetic Giga KN-1012\\n"; uname -srm; printf "loader="; test -x /opt/lib/ld-linux-aarch64.so.1 && echo present; printf "sha256sum="; command -v sha256sum; printf "reserved_listeners\\n"; (netstat -ln 2>/dev/null | grep -E ":1931[0-9] " || true); printf "route4="; ip -4 route show table all | sha256sum; printf "rule4="; ip -4 rule show | sha256sum; printf "route6="; ip -6 route show table all | sha256sum; printf "rule6="; ip -6 rule show | sha256sum'
+ssh: connect to host 192.168.1.1 port 222: Operation not permitted
+exit_code=255
+end_utc=2026-11-06T19:04:04Z

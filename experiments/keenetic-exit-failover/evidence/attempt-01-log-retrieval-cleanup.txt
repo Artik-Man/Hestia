@@ -1,0 +1,4 @@
+retrieval_start_utc=2026-11-06T19:45:47Z
+command=read existing filtered local sing-box and marker logs, then remove only owned attempt directory
+ssh_exit_code=0
+cleanup_end_utc=2026-11-06T19:45:48Z

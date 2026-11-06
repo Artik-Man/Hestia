@@ -1,0 +1,15 @@
+{
+  "time_utc": "2026-11-06T19:21:03Z",
+  "operation": "read-only SSH command-path discovery",
+  "host_key": {
+    "known_hosts_entry": "[192.168.1.1]:222",
+    "algorithm": "ED25519",
+    "fingerprint_sha256": "SHA256:u5mFSUOHtvmfjURyMmAe8N2BVONvSiTAoV7OLn2Czoo",
+    "verification": "matched the existing local known_hosts entry before connection attempt"
+  },
+  "command": "ssh -p 222 -i /Users/artikman/.ssh/hestia_keenetic -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=/Users/artikman/.ssh/known_hosts -o ConnectTimeout=7 root@192.168.1.1 'for name in ndmc ndmq curl wget; do command -v \"$name\" || true; done'",
+  "exit_code": 255,
+  "stdout": "",
+  "stderr": "ssh: connect to host 192.168.1.1 port 222: Operation not permitted\r\n",
+  "interpretation": "The execution sandbox blocked the outbound connection before SSH host-key exchange. This is not a router response and does not establish transport availability."
+}

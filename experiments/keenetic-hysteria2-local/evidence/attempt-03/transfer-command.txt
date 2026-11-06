@@ -1,0 +1,1 @@
+scp -O -p -P 222 -i "$HOME/.ssh/hestia_keenetic" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes /private/tmp/hestia-hy2-harness-v2 root@192.168.1.1:/opt/tmp/hestia-hy2-local.20261106-dce5eb25/hestia-hy2-harness experiments/keenetic-hysteria2-local/prototype/run-hy2-study.sh root@192.168.1.1:/opt/tmp/hestia-hy2-local.20261106-dce5eb25/run-hy2-study.sh

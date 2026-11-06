@@ -1,0 +1,77 @@
+run_start_utc=2026-11-06T19:08:14Z
+reserved_port_conflict=none
+routes4_before=d980f9b05b97eae098407214e104b6a23a3a823ad1aa5ba3aaa5419a3a60c619
+rules4_before=52a656ed73f1a2c72f79a91fcd6f7cbe5bc59a1b33d5a89fb4e64cfac61c5b9c
+routes6_before=208c4cc100e02e620c4114c9062d7102ecc09d30e48bac2552e326f6db5de910
+rules6_before=77570d3b73b6f8265509d05ee2d03df846fd2f2d9f537a0dc58e0cb0739b1aaf
+singbox_pids server=27194 good_uuid_client=27202 wrong_uuid_client=27215 watchdog=27193
+command=./hestia-vless-local-harness -duration=35s -server-pid=27194 -good-client-pid=27202 -bad-client-pid=27215
+harness_stdout_stderr_begin
+2026-11-06T19:08:18.212109349Z endpoints_ready tcp=127.0.0.1:19312 udp=127.0.0.1:19313 good_socks=127.0.0.1:19310 wrong_socks=127.0.0.1:19311 deadline=2026-11-06T19:08:53.212099885Z
+2026-11-06T19:08:18.219178506Z tcp_target received=1 marker=HESTIA-VLESS-TCP-19312
+2026-11-06T19:08:18.220356352Z udp_target received=1 payload="DIRECT-UDP-CONTROL"
+2026-11-06T19:08:18.220672743Z direct_controls tcp_count=1 udp_count=1 result=markers_received
+2026-11-06T19:08:18.254712415Z tcp_target received=2 marker=HESTIA-VLESS-TCP-19312
+2026-11-06T19:08:18.256241892Z vless_tcp result=marker_received tcp_count=2
+2026-11-06T19:08:18.267120891Z udp_target received=2 payload="VLESS-UDP-MARKER-PROBE"
+2026-11-06T19:08:18.267611942Z vless_udp result=marker_received udp_count=2
+2026-11-06T19:08:18.268083066Z process_liveness phase=before_wrong_uuid index=0 pid=27194 state=S
+2026-11-06T19:08:18.268313587Z process_liveness phase=before_wrong_uuid index=1 pid=27202 state=R
+2026-11-06T19:08:18.26850156Z process_liveness phase=before_wrong_uuid index=2 pid=27215 state=S
+2026-11-06T19:08:18.273702458Z wrong_uuid_probe result=rejected tcp_count_before=2 tcp_count_after=2 error="SOCKS tunnel returned no marker (response \"\")"
+2026-11-06T19:08:18.274019849Z process_liveness phase=after_wrong_uuid index=0 pid=27194 state=S
+2026-11-06T19:08:18.274244446Z process_liveness phase=after_wrong_uuid index=1 pid=27202 state=S
+2026-11-06T19:08:18.27437825Z process_liveness phase=after_wrong_uuid index=2 pid=27215 state=S
+2026-11-06T19:08:18.274399718Z final_counts tcp=2 udp=2 result=pass
+harness_stdout_stderr_end
+harness_exit=0
+server_stdout_stderr_begin
+[36mINFO[0m[0000] inbound/vless[vless-loopback-server]: tcp server started at 127.0.0.1:19316
+[redacted: topology-bearing interface detail]
+[redacted: topology-bearing interface detail]
+[36mINFO[0m[0000] sing-box started (0.10s)
+[36mINFO[0m[0001] [[38;5;78m3047173182[0m 0ms] inbound/vless[vless-loopback-server]: inbound connection from 127.0.0.1:51458
+[36mINFO[0m[0001] [[38;5;78m3047173182[0m 18ms] inbound/vless[vless-loopback-server]: [synthetic-fixture] inbound connection to 127.0.0.1:19312
+[36mINFO[0m[0001] [[38;5;78m3047173182[0m 18ms] outbound/direct[loopback-direct]: outbound connection to 127.0.0.1:19312
+[37mDEBUG[0m[0001] [[38;5;78m3047173182[0m 23ms] connection: connection download finished
+[37mDEBUG[0m[0001] [[38;5;78m3047173182[0m 24ms] connection: connection upload finished
+[36mINFO[0m[0001] [[38;5;209m181557441[0m 0ms] inbound/vless[vless-loopback-server]: inbound connection from 127.0.0.1:51468
+[36mINFO[0m[0001] [[38;5;209m181557441[0m 5ms] inbound/vless[vless-loopback-server]: [synthetic-fixture] inbound packet addr connection
+[36mINFO[0m[0001] [[38;5;209m181557441[0m 5ms] outbound/direct[loopback-direct]: outbound packet connection
+[36mINFO[0m[0001] [[38;5;72m1362635832[0m 0ms] inbound/vless[vless-loopback-server]: inbound connection from 127.0.0.1:51480
+[31mERROR[0m[0001] [[38;5;72m1362635832[0m 0ms] inbound/vless[vless-loopback-server]: process connection from 127.0.0.1:51480: unknown UUID: 22222222-2222-4222-8222-222222222222
+server_stdout_stderr_end
+good_client_stdout_stderr_begin
+[36mINFO[0m[0000] inbound/socks[vless-good-socks]: tcp server started at 127.0.0.1:19310
+[redacted: topology-bearing interface detail]
+[redacted: topology-bearing interface detail]
+[36mINFO[0m[0000] sing-box started (0.10s)
+[36mINFO[0m[0001] [[38;5;223m2663629007[0m 0ms] inbound/socks[vless-good-socks]: inbound connection from 127.0.0.1:59036
+[36mINFO[0m[0001] [[38;5;223m2663629007[0m 10ms] inbound/socks[vless-good-socks]: inbound connection to 127.0.0.1:19312
+[36mINFO[0m[0001] [[38;5;223m2663629007[0m 10ms] outbound/vless[vless-loopback]: outbound connection to 127.0.0.1:19312
+[36mINFO[0m[0001] [[38;5;223m2663629007[0m 22ms] outbound/vless[vless-loopback]: outbound connection to 127.0.0.1:19312
+[37mDEBUG[0m[0001] [[38;5;223m2663629007[0m 34ms] connection: connection download finished
+[37mDEBUG[0m[0001] [[38;5;223m2663629007[0m 35ms] connection: connection upload finished
+[36mINFO[0m[0001] [[38;5;209m4246748609[0m 0ms] inbound/socks[vless-good-socks]: inbound connection from 127.0.0.1:59044
+[36mINFO[0m[0001] [[38;5;209m4246748609[0m 1ms] inbound/socks[vless-good-socks]: inbound packet connection to 127.0.0.1:19313
+[36mINFO[0m[0001] [[38;5;209m4246748609[0m 1ms] outbound/vless[vless-loopback]: outbound packet connection to 127.0.0.1:19313
+[36mINFO[0m[0001] [[38;5;209m4246748609[0m 1ms] outbound/vless[vless-loopback]: outbound packet connection to 127.0.0.1:19313
+good_client_stdout_stderr_end
+wrong_uuid_client_stdout_stderr_begin
+[36mINFO[0m[0000] inbound/socks[vless-wrong-uuid-socks]: tcp server started at 127.0.0.1:19311
+[redacted: topology-bearing interface detail]
+[redacted: topology-bearing interface detail]
+[36mINFO[0m[0000] sing-box started (0.02s)
+[36mINFO[0m[0000] [[38;5;43m1341560859[0m 0ms] inbound/socks[vless-wrong-uuid-socks]: inbound connection from 127.0.0.1:55000
+[36mINFO[0m[0000] [[38;5;43m1341560859[0m 1ms] inbound/socks[vless-wrong-uuid-socks]: inbound connection to 127.0.0.1:19312
+[36mINFO[0m[0000] [[38;5;43m1341560859[0m 1ms] outbound/vless[vless-wrong-uuid]: outbound connection to 127.0.0.1:19312
+[36mINFO[0m[0000] [[38;5;43m1341560859[0m 2ms] outbound/vless[vless-wrong-uuid]: outbound connection to 127.0.0.1:19312
+wrong_uuid_client_stdout_stderr_end
+owned_processes_absent=yes
+reserved_listeners_after=none
+routes4_after=d980f9b05b97eae098407214e104b6a23a3a823ad1aa5ba3aaa5419a3a60c619
+rules4_after=52a656ed73f1a2c72f79a91fcd6f7cbe5bc59a1b33d5a89fb4e64cfac61c5b9c
+routes6_after=208c4cc100e02e620c4114c9062d7102ecc09d30e48bac2552e326f6db5de910
+rules6_after=77570d3b73b6f8265509d05ee2d03df846fd2f2d9f537a0dc58e0cb0739b1aaf
+route_rule_hashes_match=yes
+run_end_utc=2026-11-06T19:08:18Z

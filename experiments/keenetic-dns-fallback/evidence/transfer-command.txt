@@ -1,0 +1,9 @@
+Run date: 2026-11-06 UTC
+Host identity: existing strict known_hosts entry for [192.168.1.1]:222; fingerprint SHA256:u5mFSUOHtvmfjURyMmAe8N2BVONvSiTAoV7OLn2Czoo
+Remote private directory: /opt/tmp/hestia-r4-dns-20261106-2235-f0b2
+Exact operations:
+ssh -p 222 -i "$HOME/.ssh/hestia_keenetic" -o StrictHostKeyChecking=yes -o BatchMode=yes -o IdentitiesOnly=yes root@192.168.1.1 'umask 077; mkdir -m 700 /opt/tmp/hestia-r4-dns-20261106-2235-f0b2'
+scp -P 222 -i "$HOME/.ssh/hestia_keenetic" -o StrictHostKeyChecking=yes -o BatchMode=yes -o IdentitiesOnly=yes <local-artifact> root@192.168.1.1:/opt/tmp/hestia-r4-dns-20261106-2235-f0b2/<remote-artifact>
+Only the pinned sing-box ELF, the compiled helper, the fixed JSON config, and the bounded runner are transferred. No system file or configuration is modified.
+The router has no SFTP server. Modern scp attempt exited unsuccessfully before transferring files; the private directory was confirmed empty. The upload was retried with OpenSSH legacy SCP transport:
+scp -O -P 222 -i "$HOME/.ssh/hestia_keenetic" -o StrictHostKeyChecking=yes -o BatchMode=yes -o IdentitiesOnly=yes <local-artifact> root@192.168.1.1:/opt/tmp/hestia-r4-dns-20261106-2235-f0b2/<remote-artifact>

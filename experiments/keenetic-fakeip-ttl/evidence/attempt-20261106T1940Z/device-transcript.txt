@@ -1,0 +1,104 @@
+run_start_utc=2026-11-06T19:40:28Z
+routes_rules_before
+d980f9b05b97eae098407214e104b6a23a3a823ad1aa5ba3aaa5419a3a60c619  -
+52a656ed73f1a2c72f79a91fcd6f7cbe5bc59a1b33d5a89fb4e64cfac61c5b9c  -
+208c4cc100e02e620c4114c9062d7102ecc09d30e48bac2552e326f6db5de910  -
+77570d3b73b6f8265509d05ee2d03df846fd2f2d9f537a0dc58e0cb0739b1aaf  -
+firmware_release=Linux Keenetic-G-8919 4.9-ndm-5 #0 SMP Wed Nov 4 10:43:12 2026 aarch64 GNU/Linux
+helper_pid=30741
+grep: harness.log: No such file or directory
+singbox_pid=30808
+first_probe_start_utc=2026-11-06T19:40:31Z
+first_probe_end_utc=2026-11-06T19:40:31Z
+saved_fakeip=198.18.0.2
+phase_switch_utc=2026-11-06T19:40:36Z
+reuse_probe_start_utc=2026-11-06T19:40:36Z
+reuse_probe_end_utc=2026-11-06T19:40:36Z
+saved_fakeip_after=198.18.0.2
+upstream_query_count=0
+probes_and_controls
+2026/11/06 19:40:31 client DNS query name=service.fakeip-ttl.test. returned_fakeip=198.18.0.2
+2026/11/06 19:40:31 TCP over SOCKS numeric_fakeip=198.18.0.2:19313 marker=HSTIA-TTL-TCP-TARGET-A
+2026/11/06 19:40:31 UDP over SOCKS numeric_fakeip=198.18.0.2:19314 marker=HSTIA-TTL-UDP-TARGET-A
+2026/11/06 19:40:31 probe success fakeip=198.18.0.2 phase=A TCP=HSTIA-TTL-TCP-TARGET-A UDP=HSTIA-TTL-UDP-TARGET-A
+2026/11/06 19:40:36 direct control target=127.0.0.1 TCP=HSTIA-TTL-TCP-TARGET-A UDP=HSTIA-TTL-UDP-TARGET-A
+2026/11/06 19:40:36 direct control target=127.0.0.2 TCP=HSTIA-TTL-TCP-TARGET-B UDP=HSTIA-TTL-UDP-TARGET-B
+2026/11/06 19:40:36 client reuses_saved_fakeip=198.18.0.2 without DNS lookup
+2026/11/06 19:40:36 TCP over SOCKS numeric_fakeip=198.18.0.2:19313 marker=HSTIA-TTL-TCP-TARGET-B
+2026/11/06 19:40:36 UDP over SOCKS numeric_fakeip=198.18.0.2:19314 marker=HSTIA-TTL-UDP-TARGET-B
+2026/11/06 19:40:36 probe success fakeip=198.18.0.2 phase=B TCP=HSTIA-TTL-TCP-TARGET-B UDP=HSTIA-TTL-UDP-TARGET-B
+singbox_fakeip_and_domain_events
+[36mINFO[0m[0000] inbound/socks[fakeip-socks]: tcp server started at 127.0.0.1:19310
+[36mINFO[0m[0000] inbound/direct[fakeip-dns]: tcp server started at 127.0.0.1:19311
+[36mINFO[0m[0000] inbound/direct[fakeip-dns]: udp server started at 127.0.0.1:19311
+[36mINFO[0m[0000] [[38;5;33m2654114792[0m 0ms] inbound/direct[fakeip-dns]: inbound packet connection from 127.0.0.1:60107
+[36mINFO[0m[0000] [[38;5;33m2654114792[0m 0ms] inbound/direct[fakeip-dns]: inbound packet connection to 127.0.0.1:19311
+[37mDEBUG[0m[0000] [[38;5;33m2654114792[0m 0ms] router: match[0] inbound=fakeip-dns => hijack-dns
+[37mDEBUG[0m[0000] [[38;5;33m2654114792[0m 0ms] dns: exchange service.fakeip-ttl.test. IN A
+[37mDEBUG[0m[0000] [[38;5;33m2654114792[0m 1ms] dns: match[0] domain_suffix=fakeip-ttl.test => route(synthetic-fakeip)
+[37mDEBUG[0m[0000] [[38;5;33m2654114792[0m 1ms] dns: exchanged service.fakeip-ttl.test NOERROR 600
+[36mINFO[0m[0000] [[38;5;33m2654114792[0m 1ms] dns: exchanged A service.fakeip-ttl.test. 600 IN A 198.18.0.2
+[36mINFO[0m[0000] [[38;5;152m2854034568[0m 0ms] inbound/socks[fakeip-socks]: inbound connection from 127.0.0.1:59076
+[36mINFO[0m[0000] [[38;5;152m2854034568[0m 1ms] inbound/socks[fakeip-socks]: inbound connection to 198.18.0.2:19313
+[37mDEBUG[0m[0000] [[38;5;152m2854034568[0m 1ms] router: found fakeip domain: service.fakeip-ttl.test
+[37mDEBUG[0m[0000] [[38;5;152m2854034568[0m 1ms] router: match[1] domain_suffix=fakeip-ttl.test => route(loopback-only)
+[36mINFO[0m[0000] [[38;5;152m2854034568[0m 1ms] outbound/direct[loopback-only]: outbound connection to service.fakeip-ttl.test:19313
+[37mDEBUG[0m[0000] [[38;5;152m2854034568[0m 1ms] dns: lookup domain service.fakeip-ttl.test
+[37mDEBUG[0m[0000] [[38;5;152m2854034568[0m 8ms] dns: exchanged service.fakeip-ttl.test NOERROR 3
+[37mDEBUG[0m[0000] [[38;5;152m2854034568[0m 8ms] dns: exchanged A service.fakeip-ttl.test. 3 IN A 127.0.0.1
+[37mDEBUG[0m[0000] [[38;5;152m2854034568[0m 8ms] dns: exchanged service.fakeip-ttl.test NOERROR 0
+[37mDEBUG[0m[0000] [[38;5;152m2854034568[0m 8ms] dns: lookup succeed for service.fakeip-ttl.test: 127.0.0.1
+[36mINFO[0m[0000] [[38;5;32m198650384[0m 0ms] inbound/socks[fakeip-socks]: inbound connection from 127.0.0.1:59084
+[36mINFO[0m[0000] [[38;5;32m198650384[0m 2ms] inbound/socks[fakeip-socks]: inbound packet connection to 198.18.0.2:19314
+[37mDEBUG[0m[0000] [[38;5;32m198650384[0m 2ms] router: found fakeip domain: service.fakeip-ttl.test
+[37mDEBUG[0m[0000] [[38;5;32m198650384[0m 2ms] router: match[1] domain_suffix=fakeip-ttl.test => route(loopback-only)
+[37mDEBUG[0m[0000] [[38;5;32m198650384[0m 2ms] dns: lookup domain service.fakeip-ttl.test
+[37mDEBUG[0m[0000] [[38;5;32m198650384[0m 3ms] dns: exchanged service.fakeip-ttl.test NOERROR 0
+[37mDEBUG[0m[0000] [[38;5;32m198650384[0m 3ms] dns: lookup succeed for service.fakeip-ttl.test: 127.0.0.1
+[36mINFO[0m[0005] [[38;5;206m213977278[0m 0ms] inbound/socks[fakeip-socks]: inbound connection from 127.0.0.1:59094
+[36mINFO[0m[0005] [[38;5;206m213977278[0m 1ms] inbound/socks[fakeip-socks]: inbound connection to 198.18.0.2:19313
+[37mDEBUG[0m[0005] [[38;5;206m213977278[0m 1ms] router: found fakeip domain: service.fakeip-ttl.test
+[37mDEBUG[0m[0005] [[38;5;206m213977278[0m 1ms] router: match[1] domain_suffix=fakeip-ttl.test => route(loopback-only)
+[36mINFO[0m[0005] [[38;5;206m213977278[0m 1ms] outbound/direct[loopback-only]: outbound connection to service.fakeip-ttl.test:19313
+[37mDEBUG[0m[0005] [[38;5;206m213977278[0m 1ms] dns: lookup domain service.fakeip-ttl.test
+[37mDEBUG[0m[0005] [[38;5;206m213977278[0m 2ms] dns: exchanged service.fakeip-ttl.test NOERROR 0
+[37mDEBUG[0m[0005] [[38;5;206m213977278[0m 2ms] dns: exchanged service.fakeip-ttl.test NOERROR 3
+[37mDEBUG[0m[0005] [[38;5;206m213977278[0m 2ms] dns: exchanged A service.fakeip-ttl.test. 3 IN A 127.0.0.2
+[37mDEBUG[0m[0005] [[38;5;206m213977278[0m 2ms] dns: lookup succeed for service.fakeip-ttl.test: 127.0.0.2
+[36mINFO[0m[0005] [[38;5;30m129457934[0m 0ms] inbound/socks[fakeip-socks]: inbound connection from 127.0.0.1:59100
+[36mINFO[0m[0005] [[38;5;30m129457934[0m 1ms] inbound/socks[fakeip-socks]: inbound packet connection to 198.18.0.2:19314
+[37mDEBUG[0m[0005] [[38;5;30m129457934[0m 1ms] router: found fakeip domain: service.fakeip-ttl.test
+[37mDEBUG[0m[0005] [[38;5;30m129457934[0m 1ms] router: match[1] domain_suffix=fakeip-ttl.test => route(loopback-only)
+[37mDEBUG[0m[0005] [[38;5;30m129457934[0m 1ms] dns: lookup domain service.fakeip-ttl.test
+[37mDEBUG[0m[0005] [[38;5;30m129457934[0m 3ms] dns: exchanged service.fakeip-ttl.test NOERROR 0
+[37mDEBUG[0m[0005] [[38;5;30m129457934[0m 3ms] dns: lookup succeed for service.fakeip-ttl.test: 127.0.0.2
+target_dns_and_marker_events
+2026/11/06 19:40:29 ready dns=127.0.0.1:19312 tcp_targets=127.0.0.1:19313,127.0.0.2:19313 udp_targets=127.0.0.1:19314,127.0.0.2:19314
+2026/11/06 19:40:31 synthetic DNS query type=AAAA answer=NOERROR/NODATA phase=A
+2026/11/06 19:40:31 synthetic DNS transport=UDP name=service.fakeip-ttl.test. accepted_queries=1
+2026/11/06 19:40:31 synthetic DNS query type=A answer=127.0.0.1 ttl=3 phase=A
+2026/11/06 19:40:31 synthetic DNS transport=UDP name=service.fakeip-ttl.test. accepted_queries=2
+2026/11/06 19:40:31 TCP marker target=A served=HSTIA-TTL-TCP-TARGET-A count=1
+2026/11/06 19:40:31 synthetic DNS query type=AAAA answer=NOERROR/NODATA phase=A
+2026/11/06 19:40:31 synthetic DNS transport=UDP name=service.fakeip-ttl.test. accepted_queries=3
+2026/11/06 19:40:31 UDP marker target=A served=HSTIA-TTL-UDP-TARGET-A count=1
+2026/11/06 19:40:36 TCP marker target=A served=HSTIA-TTL-TCP-TARGET-A count=2
+2026/11/06 19:40:36 UDP marker target=A served=HSTIA-TTL-UDP-TARGET-A count=2
+2026/11/06 19:40:36 TCP marker target=B served=HSTIA-TTL-TCP-TARGET-B count=3
+2026/11/06 19:40:36 UDP marker target=B served=HSTIA-TTL-UDP-TARGET-B count=3
+2026/11/06 19:40:36 synthetic DNS query type=AAAA answer=NOERROR/NODATA phase=B
+2026/11/06 19:40:36 synthetic DNS transport=UDP name=service.fakeip-ttl.test. accepted_queries=4
+2026/11/06 19:40:36 synthetic DNS query type=A answer=127.0.0.2 ttl=3 phase=B
+2026/11/06 19:40:36 synthetic DNS transport=UDP name=service.fakeip-ttl.test. accepted_queries=5
+2026/11/06 19:40:36 TCP marker target=B served=HSTIA-TTL-TCP-TARGET-B count=4
+2026/11/06 19:40:36 synthetic DNS query type=AAAA answer=NOERROR/NODATA phase=B
+2026/11/06 19:40:36 synthetic DNS transport=UDP name=service.fakeip-ttl.test. accepted_queries=6
+2026/11/06 19:40:36 UDP marker target=B served=HSTIA-TTL-UDP-TARGET-B count=4
+routes_rules_after
+d980f9b05b97eae098407214e104b6a23a3a823ad1aa5ba3aaa5419a3a60c619  -
+52a656ed73f1a2c72f79a91fcd6f7cbe5bc59a1b33d5a89fb4e64cfac61c5b9c  -
+208c4cc100e02e620c4114c9062d7102ecc09d30e48bac2552e326f6db5de910  -
+77570d3b73b6f8265509d05ee2d03df846fd2f2d9f537a0dc58e0cb0739b1aaf  -
+route_rule_hashes_equal=true
+run_end_utc=2026-11-06T19:40:36Z
+ssh_command_exit=0

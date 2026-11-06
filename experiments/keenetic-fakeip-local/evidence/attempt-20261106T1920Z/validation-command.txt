@@ -1,0 +1,1 @@
+ssh -p 222 -i "$HOME/.ssh/hestia_keenetic" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes root@192.168.1.1 "cd /opt/tmp/hestia-fakeip-local.20261106-1920 && /opt/bin/sha256sum sing-box hestia-fakeip-harness singbox-fakeip.json && /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib ./sing-box check -c ./singbox-fakeip.json"

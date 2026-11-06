@@ -1,0 +1,6 @@
+attempt=target-transfer-individual-files
+start_utc=2026-11-06T19:05:25Z
+command=ssh -p 222 -i ~/.ssh/hestia_keenetic -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=7 root@192.168.1.1 'test ! -e /opt/tmp/hestia-vless-local.20261106-1905 && mkdir -m 700 /opt/tmp/hestia-vless-local.20261106-1905' && scp -O -P 222 -i ~/.ssh/hestia_keenetic -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes /private/tmp/hestia-keenetic-runtime-inspect/sing-box-1.14.4-linux-arm64/sing-box /private/tmp/hestia-vless-local-harness experiments/keenetic-vless-local/prototype/vless-local.json experiments/keenetic-vless-local/prototype/vless-wrong-uuid.json experiments/keenetic-vless-local/prototype/vless-server.json root@192.168.1.1:/opt/tmp/hestia-vless-local.20261106-1905/
+mkdir_exit_code=0
+scp_exit_code=0
+end_utc=2026-11-06T19:05:34Z

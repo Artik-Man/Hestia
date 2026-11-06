@@ -1,0 +1,169 @@
+#!/bin/sh
+# Bounded loopback-only sing-box URLTest failover run on the Keenetic.
+set -u
+cd /opt/tmp/hestia-r4-exits-20261106-1930 || exit 2
+loader=/opt/lib/ld-linux-aarch64.so.1
+route_hashes() {
+	printf 'routes4='
+	cat /proc/net/route | sha256sum
+	printf 'rules4='
+	ip -4 rule 2>/dev/null | sha256sum
+	printf 'routes6='
+	cat /proc/net/ipv6_route 2>/dev/null | sha256sum
+	printf 'rules6='
+	ip -6 rule 2>/dev/null | sha256sum
+}
+ports_free() {
+  for port in 19330 19331 19332 19333 19334 19335 19336 19337 19338 19339; do
+    hex=$(printf '%04X' "$port")
+    if grep -qE ":$hex" /proc/net/tcp /proc/net/tcp6 /proc/net/udp /proc/net/udp6 2>/dev/null; then
+      echo "port_busy=$port"
+      return 1
+    fi
+  done
+  return 0
+}
+ports_free || exit 3
+echo "start_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+echo 'command=loopback-only dual-VLESS URLTest failover with TCP/UDP markers, restore, and all-down block'
+echo 'firmware=KeeneticOS 5.2 Beta 3 (release 5.02.B.3.0-2)'
+route_hashes
+exit_a_pid=0
+exit_b_pid=0
+client_pid=0
+harness_pid=0
+watchdog_pid=0
+cleanup() {
+  for pid in "$exit_a_pid" "$exit_b_pid" "$client_pid" "$harness_pid"; do
+    if [ "$pid" -gt 1 ] 2>/dev/null; then kill "$pid" 2>/dev/null || true; fi
+  done
+  if [ "$watchdog_pid" -gt 1 ] 2>/dev/null; then kill "$watchdog_pid" 2>/dev/null || true; fi
+  for pid in "$exit_a_pid" "$exit_b_pid" "$client_pid" "$harness_pid"; do
+    if [ "$pid" -gt 1 ] 2>/dev/null; then wait "$pid" 2>/dev/null || true; fi
+  done
+}
+trap cleanup EXIT HUP INT TERM
+start_a() {
+  "$loader" --library-path /opt/lib ./sing-box run -c exit-a.json >exit-a.log 2>&1 &
+  exit_a_pid=$!
+  echo "$exit_a_pid" >pid-a
+  echo "exit_a_pid=$exit_a_pid"
+}
+start_a
+"$loader" --library-path /opt/lib ./sing-box run -c exit-b.json >exit-b.log 2>&1 &
+exit_b_pid=$!
+echo "$exit_b_pid" >pid-b
+echo "exit_b_pid=$exit_b_pid"
+"$loader" --library-path /opt/lib ./sing-box run -c client.json >client.log 2>&1 &
+client_pid=$!
+echo "$client_pid" >pid-client
+echo "client_pid=$client_pid"
+./hestia-r4-exits-harness --mode serve --duration 75s >harness.log 2>&1 &
+harness_pid=$!
+echo "$harness_pid" >pid-harness
+echo "harness_pid=$harness_pid"
+(
+  sleep 68
+  for file in pid-a pid-b pid-client pid-harness; do
+    if [ -s "$file" ]; then kill "$(cat "$file")" 2>/dev/null || true; fi
+  done
+) >/dev/null 2>&1 &
+watchdog_pid=$!
+echo "watchdog_pid=$watchdog_pid lifetime_seconds=68"
+sleep 2
+./hestia-r4-exits-harness --mode control || exit 10
+initial_a=no
+attempt=0
+while [ "$attempt" -lt 10 ]; do
+  if ./hestia-r4-exits-harness --mode tcp --expect A; then
+    initial_a=yes
+    break
+  fi
+  attempt=$((attempt + 1))
+  sleep 1
+done
+[ "$initial_a" = yes ] || {
+  echo 'preferred_exit_a_selected=no'
+  exit 11
+}
+echo 'preferred_exit_a_selected=yes selector=urltest latency'
+./hestia-r4-exits-harness --mode udp --expect A || exit 12
+echo 'phase=preferred_a_tcp_udp=pass'
+kill "$exit_a_pid" 2>/dev/null || exit 13
+wait "$exit_a_pid" 2>/dev/null || true
+echo "preferred_exit_a_stopped_pid=$exit_a_pid"
+exit_a_pid=0
+secondary_b=no
+attempt=0
+while [ "$attempt" -lt 10 ]; do
+  if ./hestia-r4-exits-harness --mode tcp --expect B; then
+    secondary_b=yes
+    break
+  fi
+  attempt=$((attempt + 1))
+  sleep 1
+done
+[ "$secondary_b" = yes ] || {
+  echo 'secondary_exit_b_selected=no'
+  exit 14
+}
+echo 'secondary_exit_b_selected=yes selector=urltest health'
+./hestia-r4-exits-harness --mode udp --expect B || exit 15
+echo 'phase=secondary_b_tcp_udp=pass'
+start_a
+restored_a=no
+attempt=0
+while [ "$attempt" -lt 10 ]; do
+  if ./hestia-r4-exits-harness --mode tcp --expect A; then
+    restored_a=yes
+    break
+  fi
+  attempt=$((attempt + 1))
+  sleep 1
+done
+[ "$restored_a" = yes ] || {
+  echo 'preferred_exit_a_restored=no'
+  exit 16
+}
+echo 'preferred_exit_a_restored=yes selector=urltest health'
+./hestia-r4-exits-harness --mode udp --expect A || exit 17
+echo 'phase=restored_a_tcp_udp=pass'
+before=$(./hestia-r4-exits-harness --mode stats) || exit 18
+before_markers=$(printf '%s\n' "$before" | sed -E 's/.*"tcp_a":([0-9]+).*"tcp_b":([0-9]+).*"udp_a":([0-9]+).*"udp_b":([0-9]+).*/\1,\2,\3,\4/')
+kill "$exit_a_pid" "$exit_b_pid" 2>/dev/null || exit 19
+wait "$exit_a_pid" 2>/dev/null || true
+wait "$exit_b_pid" 2>/dev/null || true
+echo 'phase=both_exits_stopped'
+./hestia-r4-exits-harness --mode control || exit 20
+tcp_blocked=no
+udp_blocked=no
+if ./hestia-r4-exits-harness --mode tcp --expect any; then echo 'all_down_tcp=unexpected_marker'; else
+  tcp_blocked=yes
+  echo 'all_down_tcp=no_marker'
+fi
+if ./hestia-r4-exits-harness --mode udp --expect any; then echo 'all_down_udp=unexpected_marker'; else
+  udp_blocked=yes
+  echo 'all_down_udp=no_marker'
+fi
+after=$(./hestia-r4-exits-harness --mode stats) || exit 21
+after_markers=$(printf '%s\n' "$after" | sed -E 's/.*"tcp_a":([0-9]+).*"tcp_b":([0-9]+).*"udp_a":([0-9]+).*"udp_b":([0-9]+).*/\1,\2,\3,\4/')
+printf 'marker_counts_before=%s\nmarker_counts_after=%s\n' "$before_markers" "$after_markers"
+[ "$tcp_blocked" = yes ] && [ "$udp_blocked" = yes ] && [ "$before_markers" = "$after_markers" ] || exit 22
+echo 'all_down=fail_closed target_markers_unchanged=yes direct_control=reachable'
+echo 'route_rule_hashes_after_run_start='
+route_hashes
+echo "end_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+echo 'exit_code=0'
+echo '--- final endpoint counters (health separate from markers) ---'
+printf '%s\n' "$after"
+echo '--- relevant sing-box selection and proxy lines ---'
+grep -E 'urltest\[auto-exit\]|outbound/vless\[(exit-a|exit-b)\]|outbound/block\[fail-closed\]' client.log | tail -80 || true
+echo '--- local exit inbound activity ---'
+for file in exit-a.log exit-b.log; do grep -E 'inbound/vless|outbound/direct|sing-box started|failed|error' "$file" | tail -30 || true; done
+cleanup
+exit_a_pid=0
+exit_b_pid=0
+client_pid=0
+harness_pid=0
+watchdog_pid=0
+echo 'owned_processes_absent=yes'

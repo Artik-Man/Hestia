@@ -1,0 +1,3 @@
+2026/11/06 19:36:10 client reuses_saved_fakeip=198.18.0.2 without DNS lookup
+2026/11/06 19:36:13 TCP over SOCKS numeric_fakeip=198.18.0.2:19313 marker=HSTIA-TTL-TCP-TARGET-B
+2026/11/06 19:36:17 read SOCKS UDP reply: read udp4 127.0.0.1:53499->127.0.0.1:50664: i/o timeout

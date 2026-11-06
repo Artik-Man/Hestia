@@ -1,0 +1,23 @@
+files:
+-rw-------    1 root     root           619 Nov  6 22:04 ca.crt
+-rw-------    1 root     root           669 Nov  6 22:10 cleanup.txt
+-rw-------    1 root     root           662 Nov  6 22:07 client-bad-auth.json
+-rw-------    1 root     root           662 Nov  6 22:07 client-good.json
+-rwxr-xr-x    1 root     root       8034903 Nov  6 22:04 hestia-hy2-harness
+-rw-------    1 root     root             6 Nov  6 22:10 marker.pid
+-rw-------    1 root     root            54 Nov  6 22:10 markers.log
+-rwxr-xr-x    1 root     root          5398 Nov  6 22:08 run-hy2-study.sh
+-rw-------    1 root     root           652 Nov  6 22:04 server.crt
+-rw-------    1 root     root           752 Nov  6 22:07 server.json
+-rw-------    1 root     root           241 Nov  6 22:04 server.key
+-rw-------    1 root     root           319 Nov  6 22:10 server.log
+-rw-------    1 root     root             6 Nov  6 22:10 server.pid
+-rwxr-xr-x    1 root     root      75956453 Oct 23 17:50 sing-box
+server-log:
+[36mINFO[0m[0000] inbound/hysteria2[local-hy2-server]: udp server started at 127.0.0.1:19334
+[redacted: local interface detail; topology not retained]
+[redacted: gateway address and MAC; topology not retained]
+[36mINFO[0m[0000] sing-box started (0.02s)
+marker-log:
+./run-hy2-study.sh: line 99: ./hy2-harness: not found
+exit=0

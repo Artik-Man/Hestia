@@ -1,0 +1,48 @@
+# Attempt 3 — completed bounded IPv6 loopback probe
+
+## Preflight and inputs
+
+- Existing known_hosts entry for `[192.168.1.1]:222` was present. SSH accepted that identity with `StrictHostKeyChecking=yes`, `BatchMode=yes`, and `IdentitiesOnly=yes` during all device operations.
+- At 2026-11-06T19:41:50Z–19:41:51Z, the exact private experiment directory existed, PIDs 29830 and 30552 from prior failed attempts were absent, and only assigned ports 19430–19439 were checked and found free (SSH exit 0).
+- Baseline IPv4/IPv6 route and rule text was piped directly to SHA-256; no raw topology was retained. Results: [route-rule-hashes.json](route-rule-hashes.json).
+- All four transferred inputs matched local SHA-256 at 19:42:13Z–19:42:19Z: sing-box `d953af885f11d6b547c21a3c0ffe70796963afc802fab959d548311002b4908a`; harness `06f4c90bde24b4df2349f33e48a67604ea4fb50fe42ca3886b0f8e97c88d44a2`; config `4dd5a9837c49294cf9cda5fb380e2e3cd9bae855b66cd5e194cd8e5ba5779ef6`; runner `8bcd9bb55e7c0b663b7fce19346637c30f7284349813928303a1cf3e845ea4ca`.
+- Target reported sing-box 1.14.4 and `sing-box check -c singbox-ipv6-loopback.json` passed before this run (SSH exit 0).
+- Final runner SHA-256 and source: [attempt-03-run-on-device.sh](attempt-03-run-on-device.sh). Its only readiness detection is an exact sing-box log line for the configured `[::1]:19430` listener. It checks the assigned range before launching, caps harness lifetime at 35 seconds, and starts an owned 39-second watchdog after child PIDs are set.
+
+## Invocation and result
+
+Start: 2026-11-06T19:42:32Z. End: 2026-11-06T19:42:35Z. SSH and harness exit code: 0.
+
+```sh
+ssh -p 222 -i ~/.ssh/hestia_keenetic -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=7 root@192.168.1.1 'cd /opt/tmp/kn1012-ipv6-loopback-20261106-01 && ./run-on-device.sh'
+```
+
+Complete harness output:
+
+```text
+singbox_pid=31217
+harness_pid=31230
+watchdog_pid=31231 timeout_seconds=39
+2026-11-06T19:42:32.635005625Z endpoints_ready family=ipv6 address=::1 socks=[::1]:19430 allow_tcp=[::1]:19431 allow_udp=[::1]:19432 deny_tcp=[::1]:19433 deny_udp=[::1]:19434 deadline=2026-11-06T19:43:07.634996084Z
+2026-11-06T19:42:32.635554144Z udp_endpoint address=[::1]:19434 received="DIRECT-CONTROL" count=1
+2026-11-06T19:42:32.636829718Z tcp_endpoint address=[::1]:19433 count=1
+2026-11-06T19:42:32.637306304Z direct_controls tcp_count=1 udp_count=1 result=markers_received
+2026-11-06T19:42:32.674635144Z tcp_endpoint address=[::1]:19431 count=1
+2026-11-06T19:42:32.675492137Z socks_tcp target=[::1]:19431 result=marker_received
+2026-11-06T19:42:32.683822778Z udp_endpoint address=[::1]:19432 received="SOCKS-UDP-PROBE" count=1
+2026-11-06T19:42:32.684490491Z socks_udp target=[::1]:19432 result=marker_received
+2026-11-06T19:42:32.687621617Z socks_tcp target=[::1]:19433 result=no_witness_marker reply=[5 2 0 1 0 0 0 0 0 0] error=<nil>
+2026-11-06T19:42:33.890422581Z socks_udp target=[::1]:19434 result=timeout error="read udp6 [::1]:56645->[::1]:58979: i/o timeout"
+2026-11-06T19:42:33.8909074Z blocked_probes result=no_markers tcp_count_before=1 tcp_count_after=1 udp_count_before=1 udp_count_after=1
+2026-11-06T19:42:33.890944409Z final_counts allow_tcp=1 allow_udp=1 deny_tcp=1 deny_udp=1
+harness_exit_code=0
+ssh_exit_code=0
+```
+
+Filtered sing-box log lines explicitly record traffic to `[::1]:19431–19434` and `outbound/block` for both denied protocols: [attempt-03-sing-box.log](attempt-03-sing-box.log). Startup interface/gateway metadata was excluded from the evidence copy.
+
+## Post-run checks and cleanup
+
+At 2026-11-06T19:42:58Z, sing-box PID 31217, harness PID 31230 and watchdog PID 31231 were absent; all ports 19430–19439 were free. IPv4/IPv6 route and rule hashes matched the pre-run baseline exactly (SSH exit 0). These hash-only observations do not retain route content.
+
+At 2026-11-06T19:45:23Z, the directory listing contained exactly the five files created by this experiment; the exact directory was removed. The same command confirmed the directory absent, owned PIDs absent, assigned ports free, and route/rule hashes still equal to baseline (SSH exit 0; see [cleanup.txt](cleanup.txt)). No routes, rules, firewall, system DNS, sysctl, VPN or service configuration was changed.

@@ -1,0 +1,3 @@
+3c0036e0d839780e3fd3abd8d861b47393bcb9800f484c2650da8188b5186737  experiments/keenetic-fakeip-local/prototype/fakeip-harness.go
+da9b4e3da5589ff3c96bc8cee3e104ebacef66937fd4063bf87defda6f716c9a  experiments/keenetic-fakeip-local/prototype/singbox-fakeip.json
+634c232d6bf231c17655e4015be8c333375806b385d5e1a6b7462e92762f2c78  /private/tmp/hestia-fakeip-harness

@@ -1,0 +1,11 @@
+attempt=target-config-checks-individual
+start_utc=2026-11-06T19:06:20Z
+command=ssh -p 222 -i ~/.ssh/hestia_keenetic -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes root@192.168.1.1 cd\ /opt/tmp/hestia-vless-local.20261106-1905\;\ for\ c\ in\ \'vless-server.json\'\ \'vless-local.json\'\ \'vless-wrong-uuid.json\'\;\ do\ printf\ \'checking=%s\\n\'\ \$c\;\ /opt/lib/ld-linux-aarch64.so.1\ --library-path\ /opt/lib\ ./sing-box\ check\ -c\ \$c\;\ printf\ \'check_exit=%s\\n\'\ \$\?\;\ done
+checking=vless-server.json
+check_exit=0
+checking=vless-local.json
+check_exit=0
+checking=vless-wrong-uuid.json
+check_exit=0
+ssh_exit_code=0
+end_utc=2026-11-06T19:06:22Z

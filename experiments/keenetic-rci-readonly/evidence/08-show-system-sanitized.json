@@ -1,0 +1,18 @@
+{
+  "time_utc": "2026-11-06T19:27:17Z",
+  "operation": "show-system",
+  "host_key_fingerprint_sha256": "SHA256:u5mFSUOHtvmfjURyMmAe8N2BVONvSiTAoV7OLn2Czoo",
+  "binary_sha256": "6e6b0bee69e1270160a16711b6a64f4e036b9b984d8eb80acdf76403c243121e",
+  "command": "ssh -p 222 -i /Users/artikman/.ssh/hestia_keenetic -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=/Users/artikman/.ssh/known_hosts -o ConnectTimeout=7 root@192.168.1.1 \"out=\\$(/bin/ndmc -c 'show system' 2>&1); rc=\\$?; printf '%s\\\\n' \\\"\\$out\\\" | awk -F: '\\$1 ~ /^[[:space:]]*(uptime|cpuload|memory|swap)[[:space:]]*\\$/ {gsub(/^[[:space:]]+|[[:space:]]+$/, \\\"\\\", \\$1); print \\$1 \\\":\\\" \\$2}'; printf 'ndmc_exit=%s\\\\n' \\\"\\$rc\\\"; exit \\\"\\$rc\\\"\"",
+  "exit_code": 0,
+  "sanitized_stdout": {
+    "cpuload": "2",
+    "memory": "215928/524288",
+    "swap": "0/0",
+    "uptime_seconds": 29878,
+    "ndmc_exit": 0
+  },
+  "redaction": "Remote shell held the complete response only in memory; awk printed only uptime, cpuload, memory, and swap fields. Hostname, domainname, and other unrecognized fields were not persisted or printed.",
+  "stderr": "",
+  "router_state_change": "none observed"
+}

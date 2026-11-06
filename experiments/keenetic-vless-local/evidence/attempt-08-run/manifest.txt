@@ -1,0 +1,7 @@
+attempt=08-input-snapshot
+source/config/script hashes:
+d2601eb198ba3366857571f7a4c0df9597a2421ad1cab76fdba8708e19273a82  experiments/keenetic-vless-local/evidence/attempt-08-run/source/vless-local-harness.go
+f167677acec1b22ca59dcb050380c22d24f32fa072102af0077c4cf28ee1486a  experiments/keenetic-vless-local/evidence/attempt-08-run/config/vless-local.json
+8f53b01bfce162fc5bda529528bda548ad785bd229b746cfcc04b3e9e7cc6d5c  experiments/keenetic-vless-local/evidence/attempt-08-run/config/vless-server.json
+5ffc5e5dcdbf3b72a6a817da9896757e91b2ddb1e325c9a314e1aa0e18e406c4  experiments/keenetic-vless-local/evidence/attempt-08-run/config/vless-wrong-uuid.json
+a185c31b455a5f945708097f0c7c3bf93260bc98f1e8084cd51b2d05a430d5bf  experiments/keenetic-vless-local/evidence/attempt-08-run/remote-run.sh

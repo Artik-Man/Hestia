@@ -1,0 +1,28 @@
+42560e4c785064f569c3b5b6d04566c2afcb3faaa947b91a6774a3dcceab73f1  sing-box-1.log
+0686399c22349c6072fd8969cc1c8dd79417c7eca6c006118782866c212cffa3  sing-box-2.log
+6812d47f50ee2aeeac36a88ce0a077a403b5bd913f5fb6538791ee09d0dd2f23  probe-1.log
+b90abe12e3669156ce6e608da0c28e35629ca2c62f4ca998ef43cd5011686885  probe-2.log
+1bc8fc99b91212700ef7ece771bef975438f59303fcc0dd16c1851e37bb03eaf  harness.log
+0c4007a60c51f6717f4b247977a2b5a9bb0124d534e9e5e83a36d407ab14f847  fakeip.txt
+8555029d8fe4c41d3dda94f1e0517ec2ea1068322a0a4a662efae1cb8c87a10c  fakeip-cache.db
+     3519 sing-box-1.log
+     2735 sing-box-2.log
+      396 probe-1.log
+      377 probe-2.log
+     1138 harness.log
+       11 fakeip.txt
+    32768 fakeip-cache.db
+    40944 total
+198.18.0.2
+d980f9b05b97eae098407214e104b6a23a3a823ad1aa5ba3aaa5419a3a60c619  -
+52a656ed73f1a2c72f79a91fcd6f7cbe5bc59a1b33d5a89fb4e64cfac61c5b9c  -
+208c4cc100e02e620c4114c9062d7102ecc09d30e48bac2552e326f6db5de910  -
+77570d3b73b6f8265509d05ee2d03df846fd2f2d9f537a0dc58e0cb0739b1aaf  -
+complete=yes
+FREE=19350
+FREE=19351
+FREE=19352
+FREE=19353
+FREE=19354
+exit=0
+scp_exit=0

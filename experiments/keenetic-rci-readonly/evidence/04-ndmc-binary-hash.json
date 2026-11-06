@@ -1,0 +1,10 @@
+{
+  "time_utc": "2026-11-06T19:23:15Z",
+  "operation": "read-only hash of existing executable; no execution",
+  "host_key_fingerprint_sha256": "SHA256:u5mFSUOHtvmfjURyMmAe8N2BVONvSiTAoV7OLn2Czoo",
+  "command": "ssh -p 222 -i /Users/artikman/.ssh/hestia_keenetic -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=/Users/artikman/.ssh/known_hosts -o ConnectTimeout=7 root@192.168.1.1 'sha256sum /bin/ndmc'",
+  "exit_code": 0,
+  "stdout": "6e6b0bee69e1270160a16711b6a64f4e036b9b984d8eb80acdf76403c243121e  /bin/ndmc\n",
+  "stderr": "",
+  "interpretation": "Read-only content hash captured after the failed command attempt. This satisfies a precondition for any future invocation only if the parent explicitly authorizes a retry; no retry is currently planned."
+}

@@ -1,0 +1,220 @@
++ set -eu
++ umask 077
++ '[' 1 -ne 1 ]
++ work=/opt/tmp/hestia-hy2-local.20261106-dce5eb25
++ cd /opt/tmp/hestia-hy2-local.20261106-dce5eb25
++ + ip -4 route show table all
+sha256sum
++ cut -d ' ' -f 1
++ route4_before=d980f9b05b97eae098407214e104b6a23a3a823ad1aa5ba3aaa5419a3a60c619
++ + sha256sum
+ip+ cut -d ' ' -f 1
+ -4 rule show
++ rules4_before=7d1a1f918157e024e79fc849477efd3728ac2173e602dff31bc4103b1ee5a55c
++ + sha256sum
+ip -6 route show table all
++ cut -d ' ' -f 1
++ route6_before=208c4cc100e02e620c4114c9062d7102ecc09d30e48bac2552e326f6db5de910
++ ip+ sha256sum
+ -6 rule+ cut -d ' ' -f 1
+ show
++ rules6_before=77570d3b73b6f8265509d05ee2d03df846fd2f2d9f537a0dc58e0cb0739b1aaf
++ server_pid=
++ marker_pid=
++ bad_client_pid=
++ good_client_pid=
++ watchdog_pid=
++ trap cleanup EXIT HUP INT TERM
++ watchdog_pid=27561
++ date -u '+%Y-%m-%dT%H:%M:%SZ'
+run_start_utc=2026-11-06T19:11:47Z
+workdir=/opt/tmp/hestia-hy2-local.20261106-dce5eb25
+sing_box_sha256=+ printf 'run_start_utc=%s\n' 2026-11-06T19:11:47Z
++ printf 'workdir=%s\n' /opt/tmp/hestia-hy2-local.20261106-dce5eb25
++ printf 'sing_box_sha256='
++ + cut -d ' ' -f 1
+sha256sum ./sing-box
+d953af885f11d6b547c21a3c0ffe70796963afc802fab959d548311002b4908a
+helper_sha256=+ printf 'helper_sha256='
++ + sha256sum ./hestia-hy2-harness
+cut -d ' ' -f 1
+e5b133d99f5ee72f8f226b33e4d1a5ad53a141eff2790799be33825b41545529
+config_sha256 file=server.json sha256=+ printf 'config_sha256 file=%s sha256=' server.json
++ + sha256sum server.json
+cut -d ' ' -f 1
+5dc754e2568b43b824d6e22b294301905940a53999fb3fac3b67430974d47bd5
++ /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib ./sing-box check -c server.json
+config_sha256 file=client-bad-auth.json sha256=+ printf 'config_sha256 file=%s sha256=' client-bad-auth.json
+c9254336c76701d223d09769eb0e82de44821ff4ccb2384d0b89c77e917bf26e
++ sha256sum client-bad-auth.json
++ cut -d ' ' -f 1
++ /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib ./sing-box check -c client-bad-auth.json
+config_sha256 file=client-good.json sha256=+ printf 'config_sha256 file=%s sha256=' client-good.json
++ + sha256sum client-good.json
+cut -d ' ' -f 1
+024ada9901821af4bd65b8f5c1c4d878a0874f4052604c4fa7fcb9ad618e48a3
++ /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib ./sing-box check -c client-good.json
++ /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib ./sing-box version
+sing-box version 1.14.4
+
+Environment: go1.26.10 linux/arm64
+Tags: with_gvisor,with_quic,with_dhcp,with_wireguard,with_utls,with_acme,with_clash_api,with_tailscale,with_ccm,with_ocm,with_cloudflared,with_naive_outbound,with_usbip,with_openvpn,with_openconnect,badlinkname,tfogo_checklinkname0,with_purego
+Revision: c005f35300ce76427dc285481ec5695f5b179cd2
+CGO: disabled
++ server_pid=27649
++ printf '%s\n' 27649
++ /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib ./sing-box run -c server.json
++ marker_pid=27650
++ printf '%s\n' 27650
++ attempt=0
++ grep -q 'sing-box started' server.log
++ ./hestia-hy2-harness -mode serve -duration 40s
++ kill -0 27649
++ kill -0 27650
++ attempt=1
++ '[' 1 -ge 15 ]
++ sleep 1
+service_start=ready server_pid=27649 marker_pid=27650
++ grep -q 'sing-box started' server.log
++ grep -q endpoints_ready markers.log
++ printf 'service_start=ready server_pid=%s marker_pid=%s\n' 27649 27650
++ bad_client_pid=27671
++ printf '%s\n' 27671
++ attempt=0
++ /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib+  ./sing-boxgrep run -c -q client-bad-auth.json 'sing-box started'
+ client-bad-auth.log
++ kill -0 27671
++ attempt=1
++ '[' 1 -ge 15 ]
++ sleep 1
+2026-11-06T19:12:01.074846371Z direct_control result=marker_received tcp_count=0
+2026-11-06T19:12:01.075468841Z negative_precondition endpoint=live tcp_count=0 server_pid=27649 server=live
+2026-11-06T19:12:01.100507774Z negative_result result=rejected target_marker=absent endpoint_tcp_count_before=0 after=0 server_pid=27649 server=live probe_error="SOCKS CONNECT rejected reply=1"
+bad_auth_client_stopped=yes
++ grep -q 'sing-box started' client-bad-auth.log
++ ./hestia-hy2-harness -mode bad-auth -server-pid 27649 -duration 12s
++ cat bad-auth-probe.log
++ kill -TERM 27671
++ wait 27671
++ bad_client_pid=
++ printf 'bad_auth_client_stopped=yes\n'
++ good_client_pid=27689
++ printf '%s\n' 27689
++ attempt=0
++ grep -q 'sing-box started' client-good.log
++ /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib ./sing-box run -c client-good.json
++ kill -0 27689
++ attempt=1
++ '[' 1 -ge 15 ]
++ sleep 1
++ grep -q 'sing-box started' client-good.log
++ ./hestia-hy2-harness -mode positive -server-pid 27649 -duration2026-11-06T19:12:02.151321526Z socks_tcp result=marker_received target_count=0
+2026-11-06T19:12:02.159077862Z socks_udp result=marker_received target_count=0
+2026-11-06T19:12:02.159732572Z positive_result tcp_count=0 udp_count=0 server_pid=27649 server=live
+run_end_utc=2026-11-06T19:12:02Z
+[36mINFO[0m[0000] inbound/hysteria2[local-hy2-server]: udp server started at 127.0.0.1:19334
+[36mINFO[0m[0000] [redacted: local interface detail; topology not retained]
+[36mINFO[0m[0000] sing-box started (0.02s)
+[36mINFO[0m[0000] [redacted: gateway address and MAC; topology not retained]
+[36mINFO[0m[0002] [[38;5;121m2038951273[0m 0ms] inbound/hysteria2[local-hy2-server]: inbound connection from 127.0.0.1:55026
+[36mINFO[0m[0002] [[38;5;121m2038951273[0m 0ms] inbound/hysteria2[local-hy2-server]: [synthetic-study] inbound connection to 127.0.0.1:19335
+[36mINFO[0m[0002] [[38;5;121m2038951273[0m 0ms] outbound/direct[loopback-direct]: outbound connection to 127.0.0.1:19335
+[36mINFO[0m[0002] [[38;5;30m3756864014[0m 0ms] inbound/hysteria2[local-hy2-server]: inbound packet connection from 127.0.0.1:55026
+[36mINFO[0m[0002] [[38;5;30m3756864014[0m 0ms] inbound/hysteria2[local-hy2-server]: [synthetic-study] inbound packet connection to 127.0.0.1:19336
+[36mINFO[0m[0002] [[38;5;30m3756864014[0m 0ms] outbound/direct[loopback-direct]: outbound packet connection
+2026-11-06T19:11:59.058721384Z endpoints_ready tcp=127.0.0.1:19335 udp=127.0.0.1:19336 lifetime=40s
+2026-11-06T19:12:01.074087788Z tcp_target address=127.0.0.1:19335 count=1
+2026-11-06T19:12:02.148896507Z tcp_target address=127.0.0.1:19335 count=2
+2026-11-06T19:12:02.157800528Z udp_target address=127.0.0.1:19336 received="HY2-UDP-PROBE" count=1
+[36mINFO[0m[0000] inbound/socks[loopback-socks]: tcp server started at 127.0.0.1:19330
+[36mINFO[0m[0000] [redacted: local interface detail; topology not retained]
+[36mINFO[0m[0000] [redacted: gateway address and MAC; topology not retained]
+[36mINFO[0m[0000] sing-box started (0.02s)
+[36mINFO[0m[0000] [[38;5;84m4255290180[0m 0ms] inbound/socks[loopback-socks]: inbound connection from 127.0.0.1:55754
+[36mINFO[0m[0000] [[38;5;84m4255290180[0m 1ms] inbound/socks[loopback-socks]: inbound connection to 127.0.0.1:19335
+[36mINFO[0m[0000] [[38;5;84m4255290180[0m 1ms] outbound/hysteria2[local-hy2-out]: outbound connection to 127.0.0.1:19335
+[31mERROR[0m[0000] [[38;5;84m4255290180[0m 24ms] connection: open connection to 127.0.0.1:19335 using outbound/hysteria2[local-hy2-out]: authentication failed, status code: 404
+ 18s
++ cat positive-probe.log
++ date -u '+%Y-%m-%dT%H:%M:%SZ'
++ printf 'run_end_utc=%s\n' 2026-11-06T19:12:02Z
++ cat server.log markers.log client-bad-auth.log client-good.log
+[36mINFO[0m[0000] inbound/socks[loopback-socks]: tcp server started at 127.0.0.1:19330
+[36mINFO[0m[0000] [redacted: local interface detail; topology not retained]
+[36mINFO[0m[0000] [redacted: gateway address and MAC; topology not retained]
+[36mINFO[0m[0000] sing-box started (0.02s)
+[36mINFO[0m[0000] [[38;5;191m1745367592[0m 0ms] inbound/socks[loopback-socks]: inbound connection from 127.0.0.1:55764
+[36mINFO[0m[0000] [[38;5;191m1745367592[0m 1ms] inbound/socks[loopback-socks]: inbound connection to 127.0.0.1:19335
+[36mINFO[0m[0000] [[38;5;191m1745367592[0m 1ms] outbound/hysteria2[local-hy2-out]: outbound connection to 127.0.0.1:19335
+[37mDEBUG[0m[0000] [[38;5;191m1745367592[0m 30ms] connection: connection download finished
+[37mDEBUG[0m[0000] [[38;5;191m1745367592[0m 31ms] connection: connection upload finished
+[36mINFO[0m[0000] [[38;5;159m1367938703[0m 0ms] inbound/socks[loopback-socks]: inbound connection from 127.0.0.1:55776
+[36mINFO[0m[0000] [[38;5;159m1367938703[0m 1ms] inbound/socks[loopback-socks]: inbound packet connection to 127.0.0.1:19336
+[36mINFO[0m[0000] [[38;5;159m1367938703[0m 2ms] outbound/hysteria2[local-hy2-out]: outbound packet connection to 127.0.0.1:19336
+routes4_before=d980f9b05b97eae098407214e104b6a23a3a823ad1aa5ba3aaa5419a3a60c619
+routes4_after=d980f9b05b97eae098407214e104b6a23a3a823ad1aa5ba3aaa5419a3a60c619
+rules4_before=7d1a1f918157e024e79fc849477efd3728ac2173e602dff31bc4103b1ee5a55c
+rules4_after=52a656ed73f1a2c72f79a91fcd6f7cbe5bc59a1b33d5a89fb4e64cfac61c5b9c
+routes6_before=208c4cc100e02e620c4114c9062d7102ecc09d30e48bac2552e326f6db5de910
+routes6_after=208c4cc100e02e620c4114c9062d7102ecc09d30e48bac2552e326f6db5de910
+rules6_before=77570d3b73b6f8265509d05ee2d03df846fd2f2d9f537a0dc58e0cb0739b1aaf
+rules6_after=77570d3b73b6f8265509d05ee2d03df846fd2f2d9f537a0dc58e0cb0739b1aaf
+owned_pids_absent=yes
+cleanup_exit=0
++ cleanup
++ result=0
++ trap - EXIT HUP INT TERM
++ set +e
++ '[' -n  ]
++ '[' -n 27689 ]
++ kill -TERM 27689
++ '[' -n 27649 ]
++ kill -TERM 27649
++ '[' -n 27650 ]
++ kill -TERM 27650
++ '[' -n  ]
++ '[' -n 27689 ]
++ wait 27689
++ '[' -n 27649 ]
++ wait 27649
++ '[' -n 27650 ]
++ wait 27650
++ '[' -n 27561 ]
++ kill 27561
++ wait 27561
++ ip -4 route show table all
++ sha256sum
++ cut -d ' ' -f 1
++ route4_after=d980f9b05b97eae098407214e104b6a23a3a823ad1aa5ba3aaa5419a3a60c619
++ ip -4 rule show
++ cut -d ' ' -f 1
++ sha256sum
++ rules4_after=52a656ed73f1a2c72f79a91fcd6f7cbe5bc59a1b33d5a89fb4e64cfac61c5b9c
++ ip -6 route show table all
++ sha256sum
++ cut -d ' ' -f 1
++ route6_after=208c4cc100e02e620c4114c9062d7102ecc09d30e48bac2552e326f6db5de910
++ + ipcut -d ' ' -f 1
+ -6 rule show
++ sha256sum
++ rules6_after=77570d3b73b6f8265509d05ee2d03df846fd2f2d9f537a0dc58e0cb0739b1aaf
++ printf 'routes4_before=%s\nroutes4_after=%s\n' d980f9b05b97eae098407214e104b6a23a3a823ad1aa5ba3aaa5419a3a60c619 d980f9b05b97eae098407214e104b6a23a3a823ad1aa5ba3aaa5419a3a60c619
++ printf 'rules4_before=%s\nrules4_after=%s\n' 7d1a1f918157e024e79fc849477efd3728ac2173e602dff31bc4103b1ee5a55c 52a656ed73f1a2c72f79a91fcd6f7cbe5bc59a1b33d5a89fb4e64cfac61c5b9c
++ printf 'routes6_before=%s\nroutes6_after=%s\n' 208c4cc100e02e620c4114c9062d7102ecc09d30e48bac2552e326f6db5de910 208c4cc100e02e620c4114c9062d7102ecc09d30e48bac2552e326f6db5de910
++ printf 'rules6_before=%s\nrules6_after=%s\n' 77570d3b73b6f8265509d05ee2d03df846fd2f2d9f537a0dc58e0cb0739b1aaf 77570d3b73b6f8265509d05ee2d03df846fd2f2d9f537a0dc58e0cb0739b1aaf
++ printf 'owned_pids_absent='
++ absent=yes
++ '[' -n  ]
++ '[' -n 27689 ]
++ kill -0 27689
++ '[' -n 27649 ]
++ kill -0 27649
++ '[' -n 27650 ]
++ kill -0 27650
++ printf '%s\n' yes
++ printf 'cleanup_exit=%s\n' 0
++ cat cleanup.txt
++ '[' d980f9b05b97eae098407214e104b6a23a3a823ad1aa5ba3aaa5419a3a60c619 '!=' d980f9b05b97eae098407214e104b6a23a3a823ad1aa5ba3aaa5419a3a60c619 ]
++ '[' 7d1a1f918157e024e79fc849477efd3728ac2173e602dff31bc4103b1ee5a55c '!=' 52a656ed73f1a2c72f79a91fcd6f7cbe5bc59a1b33d5a89fb4e64cfac61c5b9c ]
++ exit 1
+ssh_exit=1

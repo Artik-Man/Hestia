@@ -1,0 +1,27 @@
+{
+  "log": {"level": "debug"},
+  "inbounds": [
+    {
+      "type": "socks",
+      "tag": "loopback-socks",
+      "listen": "127.0.0.1",
+      "listen_port": 19330
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "hysteria2",
+      "tag": "local-hy2-out",
+      "server": "127.0.0.1",
+      "server_port": 19334,
+      "password": "__PASSWORD__",
+      "tls": {
+        "enabled": true,
+        "server_name": "hestia-hy2.test",
+        "certificate_path": "__CA_CERT__",
+        "insecure": false
+      }
+    }
+  ],
+  "route": {"final": "local-hy2-out"}
+}

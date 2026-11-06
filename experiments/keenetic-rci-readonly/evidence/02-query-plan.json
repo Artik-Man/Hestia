@@ -1,0 +1,55 @@
+{
+  "created_utc": "2026-11-06T19:21:59Z",
+  "coordination": "Owner confirmed allocation; parent opened the coordination gate.",
+  "target": "Previously documented KN-1012 SSH endpoint only",
+  "host_key": {
+    "known_hosts_entry": "[192.168.1.1]:222",
+    "algorithm": "ED25519",
+    "fingerprint_sha256": "SHA256:u5mFSUOHtvmfjURyMmAe8N2BVONvSiTAoV7OLn2Czoo",
+    "connection_policy": "StrictHostKeyChecking=yes and explicit existing UserKnownHostsFile"
+  },
+  "transport_discovery": {
+    "time_utc": "2026-11-06T19:21:24Z",
+    "command": "ssh -p 222 -i /Users/artikman/.ssh/hestia_keenetic -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=/Users/artikman/.ssh/known_hosts -o ConnectTimeout=7 root@192.168.1.1 'for name in ndmc ndmq curl wget; do command -v \"$name\" || true; done'",
+    "exit_code": 0,
+    "sanitized_stdout": "/bin/ndmc\n/opt/usr/bin/wget\n",
+    "stderr": "",
+    "interpretation": "The fixed read-only CLI executable ndmc is available. ndmq and curl were not found in PATH. wget is present but will not be used because no official RCI transport contract was established."
+  },
+  "planned_queries": [
+    {
+      "id": "show-version",
+      "remote_command": "ndmc show version",
+      "source": "Official KN-1012 CLI manual cited in the report; documented show operation.",
+      "saved_output_policy": "Retain only device model, release/build, architecture, and feature/component names; do not save unrecognized fields."
+    },
+    {
+      "id": "show-system",
+      "remote_command": "ndmc show system",
+      "source": "Official Keenetic CLI command reference describes this as a show-only aggregate system observation.",
+      "saved_output_policy": "Retain only aggregate uptime/load/memory values; no configuration or identifiers."
+    },
+    {
+      "id": "show-ip-policy",
+      "remote_command": "ndmc show ip policy",
+      "source": "Official KN-1012 CLI manual cited in the report (KeeneticOS 4.3; target version may differ).",
+      "saved_output_policy": "Never persist or print raw response; record only command exit status, output byte count, and SHA-256 of response bytes."
+    }
+  ],
+  "execution_limits": {
+    "queries_only": true,
+    "no_upload": true,
+    "no_remote_script": true,
+    "no_rci_writes_or_posts": true,
+    "no_configuration_or_route_tables_saved": true,
+    "staging_directory": "/opt/tmp/codex-kn1012-rci-ro-20261106/ (unused unless a future bounded helper is strictly required)",
+    "process_name": "codex-rci-ro-20261106 (no persistent process planned)",
+    "listeners_or_ports": "none"
+  },
+  "stop_conditions": [
+    "Host fingerprint mismatch or host key prompt.",
+    "ndmc command would not remain within an allowlisted show operation.",
+    "Unexpected raw config/address/table data appears in a response slated for retention.",
+    "A query requires changing authentication, installing a package, using a new protocol/listener, or changing router state."
+  ]
+}

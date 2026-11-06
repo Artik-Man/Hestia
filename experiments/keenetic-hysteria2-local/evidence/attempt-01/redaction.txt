@@ -1,0 +1,1 @@
+Two sing-box network-environment log lines in startup-failure-device-state.txt are replaced with placeholders, retaining event order. Raw interface, gateway, and MAC values were not retained.

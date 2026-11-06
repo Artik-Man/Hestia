@@ -1,0 +1,12 @@
+-rw-------    1 root     root            86 Nov  6 22:10 harness.log
+-rwxr-xr-x    1 root     root       3523420 Nov  6 22:07 hestia-fakeip-harness
+-rw-------    1 root     root             6 Nov  6 22:10 owned-pids
+-rwxr-xr-x    1 root     root      75956453 Nov  6 22:07 sing-box
+-rw-r--r--    1 root     root          1241 Nov  6 22:06 singbox-fakeip.json
+====harness.log
+2026/11/06 19:10:00 ready dns=127.0.0.1:19352 tcp=127.0.0.1:19353 udp=127.0.0.1:19354
+====owned-pids
+27346
+====process-check
+exited=27346
+exit=0

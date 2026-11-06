@@ -1,0 +1,15 @@
+Commands and observed exit status from the workspace:
+
+gofmt -w experiments/keenetic-fakeip-ttl/prototype/fakeip-ttl-harness.go
+exit 0
+
+go vet experiments/keenetic-fakeip-ttl/prototype/fakeip-ttl-harness.go
+exit 0
+CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -o /private/tmp/fakeip-ttl-harness-linux-arm64 experiments/keenetic-fakeip-ttl/prototype/fakeip-ttl-harness.go
+exit 0
+/private/tmp/hestia-tools/shfmt -d -i 4 -ci experiments/keenetic-fakeip-ttl/prototype/device-run.sh
+exit 0
+/private/tmp/hestia-tools/shellcheck-v0.11.0/shellcheck experiments/keenetic-fakeip-ttl/prototype/device-run.sh
+exit 0
+
+Corrected helper SHA-256: 311de937f2385e26a9223b49f15e45252fccebef84cb80b5bbf780cf7938c116

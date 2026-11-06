@@ -1,0 +1,12 @@
+{
+  "time_utc": "2026-11-06T19:22:33Z",
+  "operation": "show-version",
+  "host_key_fingerprint_sha256": "SHA256:u5mFSUOHtvmfjURyMmAe8N2BVONvSiTAoV7OLn2Czoo",
+  "command": "ssh -p 222 -i /Users/artikman/.ssh/hestia_keenetic -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=/Users/artikman/.ssh/known_hosts -o ConnectTimeout=7 root@192.168.1.1 'ndmc show version'",
+  "exit_code": 1,
+  "stdout": "",
+  "stderr": "ndmc: invalid parameters.\n",
+  "files_staged": false,
+  "remote_state_changes": "none intended or observed",
+  "interpretation": "The command parser rejected this invocation form. No version information was returned. Per the stop condition in the predeclared query plan, no alternate syntax or protocol will be attempted without parent review."
+}

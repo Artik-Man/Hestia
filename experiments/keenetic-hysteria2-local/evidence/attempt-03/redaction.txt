@@ -1,0 +1,1 @@
+Replaced sing-box interface and gateway log lines with placeholders, preserving timestamps and event order. Raw local interface, gateway, and MAC values were not retained.

@@ -1,0 +1,11 @@
+attempt=03-upload-input-snapshot
+start_utc=2026-11-06T19:05:00Z
+archive=none; individual files transferred with scp -O; no archive members exist to enumerate
+command=sha256sum source/* config/* /private/tmp/hestia-vless-local-harness /private/tmp/hestia-keenetic-runtime-inspect/sing-box-1.14.4-linux-arm64/sing-box
+d2601eb198ba3366857571f7a4c0df9597a2421ad1cab76fdba8708e19273a82  experiments/keenetic-vless-local/evidence/attempt-03-source/source/vless-local-harness.go
+f167677acec1b22ca59dcb050380c22d24f32fa072102af0077c4cf28ee1486a  experiments/keenetic-vless-local/evidence/attempt-03-source/config/vless-local.json
+8f53b01bfce162fc5bda529528bda548ad785bd229b746cfcc04b3e9e7cc6d5c  experiments/keenetic-vless-local/evidence/attempt-03-source/config/vless-server.json
+5ffc5e5dcdbf3b72a6a817da9896757e91b2ddb1e325c9a314e1aa0e18e406c4  experiments/keenetic-vless-local/evidence/attempt-03-source/config/vless-wrong-uuid.json
+01ac83304e486a1b8c4dfac9bb1d7d12d15ccd12b22899f085c50b1bf28dff12  /private/tmp/hestia-vless-local-harness
+d953af885f11d6b547c21a3c0ffe70796963afc802fab959d548311002b4908a  /private/tmp/hestia-keenetic-runtime-inspect/sing-box-1.14.4-linux-arm64/sing-box
+end_utc=2026-11-06T19:05:00Z

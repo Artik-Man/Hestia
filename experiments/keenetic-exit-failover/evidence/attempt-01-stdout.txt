@@ -1,0 +1,15 @@
+start_utc=2026-11-06T19:40:28Z
+command=loopback-only dual-VLESS URLTest failover with TCP/UDP markers, restore, and all-down block
+firmware=KeeneticOS 5.2 Beta 3 (release 5.02.B.3.0-2)
+routes4=2b1d1b391d827afdc621be68eaa6fbc0ba766e6ec54000bd5c9b83da58425973  -
+rules4=52a656ed73f1a2c72f79a91fcd6f7cbe5bc59a1b33d5a89fb4e64cfac61c5b9c  -
+routes6=b1fcdcab96c8e38c2ece76711794292e75827136e3af6563b43a4e93fd06de0d  -
+rules6=77570d3b73b6f8265509d05ee2d03df846fd2f2d9f537a0dc58e0cb0739b1aaf  -
+exit_a_pid=30768
+exit_b_pid=30773
+client_pid=30774
+harness_pid=30775
+watchdog_pid=30776 lifetime_seconds=68
+direct_control tcp="DIRECT-CONTROL-TCP" udp="DIRECT-CONTROL-UDP" result=reachable
+socks_tcp marker="HTTP/1.0 200 OK\r\nDate: Fri, 06 Nov 2026 19:40:32 GMT\r\nContent-Length: 17\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nEXIT-A-TCP-MARKER" expected=A result=pass
+preferred_exit_a_selected=yes selector=urltest latency

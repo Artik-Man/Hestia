@@ -1,0 +1,4 @@
+Source archive dist/runtime/sing.tgz SHA-256: 436441f76ee2f7fe21b5b2d426d3cb261a480455a704865789ad533e4273ec26
+Official sing-box 1.14.4 Linux ARM64 executable SHA-256: d953af885f11d6b547c21a3c0ffe70796963afc802fab959d548311002b4908a
+Helper build command: CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath
+Corrected helper SHA-256: 311de937f2385e26a9223b49f15e45252fccebef84cb80b5bbf780cf7938c116

@@ -1,0 +1,36 @@
+{
+  "time_utc": "2026-11-06T19:24:45Z",
+  "operation": "show-version",
+  "host_key_fingerprint_sha256": "SHA256:u5mFSUOHtvmfjURyMmAe8N2BVONvSiTAoV7OLn2Czoo",
+  "binary_sha256": "6e6b0bee69e1270160a16711b6a64f4e036b9b984d8eb80acdf76403c243121e",
+  "command": "ssh -p 222 -i /Users/artikman/.ssh/hestia_keenetic -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=/Users/artikman/.ssh/known_hosts -o ConnectTimeout=7 root@192.168.1.1 \"/bin/ndmc -c 'show version'\"",
+  "remote_command": "/bin/ndmc -c 'show version'",
+  "exit_code": 0,
+  "stderr": "",
+  "sanitized_stdout": {
+    "release": "5.02.B.3.0-2",
+    "title": "5.2 Beta 3",
+    "architecture": "aarch64",
+    "features": [
+      "dual_image", "usb_3_conf", "usb_3_first", "led_control", "wifi_button",
+      "wifi5ghz", "vht2ghz", "mimo2ghz", "mimo5ghz", "atf2ghz", "atf5ghz",
+      "wifi6", "wifi_ft", "wpa3", "hwnat", "hwnat_mib", "link_agg", "cable_diag", "sfp"
+    ],
+    "components": [
+      "acl", "base", "cloudcontrol", "corewireless", "ddns", "dhcpd", "dlna",
+      "dns-filter", "dns-https", "dns-tls", "dot1x", "easyconfig", "exfat", "ext",
+      "ext-utils", "fat", "hfsplus", "igmp", "ike-client", "ip6", "iperf3", "ipsec",
+      "keyword-filter", "l2tp", "lang-en", "lang-ru", "mdns", "miniupnpd", "monitor",
+      "mws", "nathelper-ftp", "nathelper-h323", "nathelper-pptp", "nathelper-rtsp",
+      "nathelper-sip", "ndmp", "ndns", "ntfs", "ntfs-utils", "openconnect", "openvpn",
+      "opkg", "opkg-kmod-fs", "opkg-kmod-netfilter", "opkg-kmod-tc", "pingcheck", "ppe",
+      "pppoe", "pptp", "proxy", "sftp", "ssh", "sstp", "storage", "trafficcontrol",
+      "transmission", "tsmb", "usb", "web-shell", "webdav", "wireguard", "wireguard-server",
+      "zerotier"
+    ],
+    "model": "Giga (KN-1012)"
+  },
+  "redaction": "Kept only model, release/title, architecture, features and component names. Removed low-level build identifiers, region/consent fields, descriptions not needed for this study, and terminal control bytes.",
+  "raw_response_saved": false,
+  "router_state_change": "none observed"
+}

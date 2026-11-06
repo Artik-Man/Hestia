@@ -1,0 +1,15 @@
+run_start_utc=2026-11-06T19:35:54Z
+routes_rules_before
+d980f9b05b97eae098407214e104b6a23a3a823ad1aa5ba3aaa5419a3a60c619  -
+52a656ed73f1a2c72f79a91fcd6f7cbe5bc59a1b33d5a89fb4e64cfac61c5b9c  -
+208c4cc100e02e620c4114c9062d7102ecc09d30e48bac2552e326f6db5de910  -
+77570d3b73b6f8265509d05ee2d03df846fd2f2d9f537a0dc58e0cb0739b1aaf  -
+firmware_release=Linux Keenetic-G-8919 4.9-ndm-5 #0 SMP Wed Nov 4 10:43:12 2026 aarch64 GNU/Linux
+helper_pid=30039
+singbox_pid=30073
+first_probe_start_utc=2026-11-06T19:35:57Z
+first_probe_end_utc=2026-11-06T19:36:03Z
+saved_fakeip=198.18.0.2
+phase_switch_utc=2026-11-06T19:36:08Z
+reuse_probe_start_utc=2026-11-06T19:36:10Z
+ssh_command_exit=1

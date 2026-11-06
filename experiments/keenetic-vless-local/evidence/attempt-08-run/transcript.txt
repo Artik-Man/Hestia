@@ -1,0 +1,7 @@
+attempt=08-live-vless-run
+start_utc=2026-11-06T19:08:15Z
+command=ssh -p 222 -i ~/.ssh/hestia_keenetic -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes root@192.168.1.1 'sh -s' < experiments/keenetic-vless-local/evidence/attempt-08-run/remote-run.sh
+exit_code=0
+end_utc=2026-11-06T19:08:19Z
+stdout_file=experiments/keenetic-vless-local/evidence/attempt-08-run/ssh.stdout.txt
+stderr_file=experiments/keenetic-vless-local/evidence/attempt-08-run/ssh.stderr.txt

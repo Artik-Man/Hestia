@@ -1,0 +1,4 @@
+2026/11/06 19:40:36 client reuses_saved_fakeip=198.18.0.2 without DNS lookup
+2026/11/06 19:40:36 TCP over SOCKS numeric_fakeip=198.18.0.2:19313 marker=HSTIA-TTL-TCP-TARGET-B
+2026/11/06 19:40:36 UDP over SOCKS numeric_fakeip=198.18.0.2:19314 marker=HSTIA-TTL-UDP-TARGET-B
+2026/11/06 19:40:36 probe success fakeip=198.18.0.2 phase=B TCP=HSTIA-TTL-TCP-TARGET-B UDP=HSTIA-TTL-UDP-TARGET-B

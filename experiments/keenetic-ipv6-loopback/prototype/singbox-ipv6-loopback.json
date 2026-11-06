@@ -1,0 +1,37 @@
+{
+  "log": {
+    "level": "debug",
+    "timestamp": true
+  },
+  "inbounds": [
+    {
+      "type": "socks",
+      "tag": "ipv6-loopback-socks",
+      "listen": "::1",
+      "listen_port": 19430
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "direct",
+      "tag": "ipv6-loopback-direct"
+    },
+    {
+      "type": "block",
+      "tag": "ipv6-loopback-block"
+    }
+  ],
+  "route": {
+    "rules": [
+      {
+        "port": [
+          19431,
+          19432
+        ],
+        "action": "route",
+        "outbound": "ipv6-loopback-direct"
+      }
+    ],
+    "final": "ipv6-loopback-block"
+  }
+}

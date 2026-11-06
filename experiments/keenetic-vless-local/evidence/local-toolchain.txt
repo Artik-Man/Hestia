@@ -1,0 +1,6 @@
+attempt=local-go-toolchain-identification
+start_utc=2026-11-06T19:10:05Z
+command=go version
+go version go1.27.3 darwin/arm64
+exit_code=0
+end_utc=2026-11-06T19:10:05Z

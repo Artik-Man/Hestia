@@ -1,0 +1,76 @@
+run_utc=2026-11-06T19:19:49Z
+routes_rules_before
+d980f9b05b97eae098407214e104b6a23a3a823ad1aa5ba3aaa5419a3a60c619  -
+52a656ed73f1a2c72f79a91fcd6f7cbe5bc59a1b33d5a89fb4e64cfac61c5b9c  -
+208c4cc100e02e620c4114c9062d7102ecc09d30e48bac2552e326f6db5de910  -
+77570d3b73b6f8265509d05ee2d03df846fd2f2d9f537a0dc58e0cb0739b1aaf  -
+first_singbox_stop_wait_exit=0
+a3b23c4a3ce6a92038bc4236416f673fa01a82a2fecdd47409f907d6b4745962  fakeip-cache.db
+32768 fakeip-cache.db
+second_singbox_stop_wait_exit=0
+helper_stop_wait_exit=143
+fakeip=198.18.0.2
+probe_first_and_resume
+Terminated
+2026/11/06 19:19:51 client DNS query name=service.fakeip-local.test. returned_fakeip=198.18.0.2
+2026/11/06 19:19:54 TCP over SOCKS numeric_fakeip=198.18.0.2:19353 marker=HSTIA-FAKEIP-TCP-19353
+2026/11/06 19:19:57 UDP over SOCKS numeric_fakeip=198.18.0.2:19354 marker=HSTIA-FAKEIP-UDP-19354
+2026/11/06 19:19:57 probe success fakeip=198.18.0.2 TCP=HSTIA-FAKEIP-TCP-19353 UDP=HSTIA-FAKEIP-UDP-19354
+2026/11/06 19:19:58 client reuses_saved_fakeip=198.18.0.2 without DNS lookup
+2026/11/06 19:20:01 TCP over SOCKS numeric_fakeip=198.18.0.2:19353 marker=HSTIA-FAKEIP-TCP-19353
+2026/11/06 19:20:04 UDP over SOCKS numeric_fakeip=198.18.0.2:19354 marker=HSTIA-FAKEIP-UDP-19354
+2026/11/06 19:20:04 probe success fakeip=198.18.0.2 TCP=HSTIA-FAKEIP-TCP-19353 UDP=HSTIA-FAKEIP-UDP-19354
+cache_file_metadata_final
+8555029d8fe4c41d3dda94f1e0517ec2ea1068322a0a4a662efae1cb8c87a10c  fakeip-cache.db
+32768 fakeip-cache.db
+routes_rules_after
+d980f9b05b97eae098407214e104b6a23a3a823ad1aa5ba3aaa5419a3a60c619  -
+52a656ed73f1a2c72f79a91fcd6f7cbe5bc59a1b33d5a89fb4e64cfac61c5b9c  -
+208c4cc100e02e620c4114c9062d7102ecc09d30e48bac2552e326f6db5de910  -
+77570d3b73b6f8265509d05ee2d03df846fd2f2d9f537a0dc58e0cb0739b1aaf  -
+route_rule_hashes_equal=true
+run_end_utc=2026-11-06T19:20:04Z
+sing-box-1.log:[37mDEBUG[0m[0000] [[38;5;86m2340357190[0m 5ms] dns: exchange service.fakeip-local.test. IN A
+sing-box-1.log:[37mDEBUG[0m[0000] [[38;5;86m2340357190[0m 5ms] dns: match[0] domain_suffix=fakeip-local.test => route(synthetic-fakeip)
+sing-box-1.log:[37mDEBUG[0m[0000] [[38;5;86m2340357190[0m 26ms] dns: exchanged service.fakeip-local.test NOERROR 600
+sing-box-1.log:[36mINFO[0m[0000] [[38;5;86m2340357190[0m 26ms] dns: exchanged A service.fakeip-local.test. 600 IN A 198.18.0.2
+sing-box-1.log:[37mDEBUG[0m[0000] [[38;5;203m21887163[0m 0ms] router: found fakeip domain: service.fakeip-local.test
+sing-box-1.log:[37mDEBUG[0m[0000] [[38;5;203m21887163[0m 0ms] router: match[1] domain_suffix=fakeip-local.test => route(loopback-only)
+sing-box-1.log:[36mINFO[0m[0000] [[38;5;203m21887163[0m 1ms] outbound/direct[loopback-only]: outbound connection to service.fakeip-local.test:19353
+sing-box-1.log:[37mDEBUG[0m[0000] [[38;5;203m21887163[0m 1ms] dns: lookup domain service.fakeip-local.test
+sing-box-1.log:[37mDEBUG[0m[0000] [[38;5;203m21887163[0m 8ms] dns: exchanged service.fakeip-local.test NOERROR 30
+sing-box-1.log:[37mDEBUG[0m[0000] [[38;5;203m21887163[0m 8ms] dns: exchanged A service.fakeip-local.test. 30 IN A 127.0.0.1
+sing-box-1.log:[37mDEBUG[0m[0003] [[38;5;203m21887163[0m 3.0s] dns: lookup succeed for service.fakeip-local.test: 127.0.0.1
+sing-box-1.log:[37mDEBUG[0m[0003] [[38;5;119m3886282599[0m 4ms] router: found fakeip domain: service.fakeip-local.test
+sing-box-1.log:[37mDEBUG[0m[0003] [[38;5;119m3886282599[0m 5ms] router: match[1] domain_suffix=fakeip-local.test => route(loopback-only)
+sing-box-1.log:[37mDEBUG[0m[0003] [[38;5;119m3886282599[0m 5ms] dns: lookup domain service.fakeip-local.test
+sing-box-1.log:[37mDEBUG[0m[0003] [[38;5;119m3886282599[0m 6ms] dns: exchanged service.fakeip-local.test NOERROR 30
+sing-box-1.log:[37mDEBUG[0m[0003] [[38;5;119m3886282599[0m 6ms] dns: exchanged A service.fakeip-local.test. 30 IN A 127.0.0.1
+sing-box-1.log:[37mDEBUG[0m[0006] [[38;5;119m3886282599[0m 3.0s] dns: lookup succeed for service.fakeip-local.test: 127.0.0.1
+sing-box-2.log:[37mDEBUG[0m[0000] [[38;5;121m2987401070[0m 1ms] router: found fakeip domain: service.fakeip-local.test
+sing-box-2.log:[37mDEBUG[0m[0000] [[38;5;121m2987401070[0m 1ms] router: match[1] domain_suffix=fakeip-local.test => route(loopback-only)
+sing-box-2.log:[36mINFO[0m[0000] [[38;5;121m2987401070[0m 1ms] outbound/direct[loopback-only]: outbound connection to service.fakeip-local.test:19353
+sing-box-2.log:[37mDEBUG[0m[0000] [[38;5;121m2987401070[0m 1ms] dns: lookup domain service.fakeip-local.test
+sing-box-2.log:[37mDEBUG[0m[0000] [[38;5;121m2987401070[0m 2ms] dns: exchanged service.fakeip-local.test NOERROR 30
+sing-box-2.log:[37mDEBUG[0m[0000] [[38;5;121m2987401070[0m 2ms] dns: exchanged A service.fakeip-local.test. 30 IN A 127.0.0.1
+sing-box-2.log:[37mDEBUG[0m[0003] [[38;5;121m2987401070[0m 3.0s] dns: lookup succeed for service.fakeip-local.test: 127.0.0.1
+sing-box-2.log:[37mDEBUG[0m[0003] [[38;5;34m4285025001[0m 1ms] router: found fakeip domain: service.fakeip-local.test
+sing-box-2.log:[37mDEBUG[0m[0003] [[38;5;34m4285025001[0m 1ms] router: match[1] domain_suffix=fakeip-local.test => route(loopback-only)
+sing-box-2.log:[37mDEBUG[0m[0003] [[38;5;34m4285025001[0m 2ms] dns: lookup domain service.fakeip-local.test
+sing-box-2.log:[37mDEBUG[0m[0003] [[38;5;34m4285025001[0m 2ms] dns: exchanged service.fakeip-local.test NOERROR 30
+sing-box-2.log:[37mDEBUG[0m[0003] [[38;5;34m4285025001[0m 2ms] dns: exchanged A service.fakeip-local.test. 30 IN A 127.0.0.1
+sing-box-2.log:[37mDEBUG[0m[0006] [[38;5;34m4285025001[0m 3.0s] dns: lookup succeed for service.fakeip-local.test: 127.0.0.1
+2026/11/06 19:19:49 ready dns=127.0.0.1:19352 tcp=127.0.0.1:19353 udp=127.0.0.1:19354
+2026/11/06 19:19:51 synthetic DNS transport=UDP name=service.fakeip-local.test. answer=127.0.0.1 count=1
+2026/11/06 19:19:51 DNS UDP reject: expected one IN A query for the exact study hostname
+2026/11/06 19:19:54 TCP marker served=HSTIA-FAKEIP-TCP-19353 count=1
+2026/11/06 19:19:54 DNS UDP reject: expected one IN A query for the exact study hostname
+2026/11/06 19:19:54 synthetic DNS transport=UDP name=service.fakeip-local.test. answer=127.0.0.1 count=2
+2026/11/06 19:19:57 UDP marker served=HSTIA-FAKEIP-UDP-19354 count=1
+2026/11/06 19:19:58 DNS UDP reject: expected one IN A query for the exact study hostname
+2026/11/06 19:19:58 synthetic DNS transport=UDP name=service.fakeip-local.test. answer=127.0.0.1 count=3
+2026/11/06 19:20:01 TCP marker served=HSTIA-FAKEIP-TCP-19353 count=2
+2026/11/06 19:20:01 synthetic DNS transport=UDP name=service.fakeip-local.test. answer=127.0.0.1 count=4
+2026/11/06 19:20:01 DNS UDP reject: expected one IN A query for the exact study hostname
+2026/11/06 19:20:04 UDP marker served=HSTIA-FAKEIP-UDP-19354 count=2
+exit=0

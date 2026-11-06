@@ -1,0 +1,7 @@
+go version go1.27.3 darwin/arm64
+commands=go vet; GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -trimpath; gofmt; shfmt -w -i 4 -ci; shfmt -d -i 4 -ci; ShellCheck 0.11.0 -s sh; sh -n
+all commands exited 0
+8ccd4e2f61fa2b12383d8468b2fb0b88ad6e2fecf6856f8bc1a2dc20be9beff4  experiments/keenetic-dns-fallback/prototype/dns-fallback.go
+d658205fced3b5d89892bcbd608289134c4db3073f327ad645da9f210fd2b31c  experiments/keenetic-dns-fallback/prototype/singbox-dns.json
+4e113311d78ca9071a91a26f28ede8620dc7e5f1887bca53adae40f50aa75266  experiments/keenetic-dns-fallback/prototype/run-dns-fallback.sh
+659b909ddea616429693447a325f9e530de0bfc0ed131b2dad3b86cd709530b4  /private/tmp/hestia-r4-dns/dns-fallback-arm64-run2

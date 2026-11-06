@@ -1,0 +1,23 @@
+command=gofmt -w experiments/keenetic-hysteria2-local/prototype/hy2-harness.go
+exit=0
+
+command=GOTOOLCHAIN=local GOPROXY=off go vet experiments/keenetic-hysteria2-local/prototype/hy2-harness.go
+exit=0
+
+command=CGO_ENABLED=0 GOOS=linux GOARCH=arm64 GOTOOLCHAIN=local GOPROXY=off go build -trimpath -buildvcs=false -o /private/tmp/hestia-hy2-harness experiments/keenetic-hysteria2-local/prototype/hy2-harness.go
+exit=0
+go_version=go version go1.27.3 darwin/arm64
+
+helper_sha256=e5b133d99f5ee72f8f226b33e4d1a5ad53a141eff2790799be33825b41545529
+
+sing_box_sha256=d953af885f11d6b547c21a3c0ffe70796963afc802fab959d548311002b4908a
+command=sh -n experiments/keenetic-hysteria2-local/prototype/run-hy2-study.sh
+exit=0
+command=gofmt -w experiments/keenetic-hysteria2-local/prototype/hy2-harness.go
+exit=0
+command=GOTOOLCHAIN=local GOPROXY=off go vet experiments/keenetic-hysteria2-local/prototype/hy2-harness.go
+exit=0
+command=CGO_ENABLED=0 GOOS=linux GOARCH=arm64 GOTOOLCHAIN=local GOPROXY=off go build -trimpath -buildvcs=false -o /private/tmp/hestia-hy2-harness-v2 experiments/keenetic-hysteria2-local/prototype/hy2-harness.go
+exit=0
+helper_sha256=94a24b3bb2b434c23d8b4abeaea45f27123005ef47e46f2fcdc5169845823b46
+runner_sha256=0f337a7e5ae9d3fc579e4a4a22e3e680a7223d065b9f11764c21c69025f72f1f

@@ -8,11 +8,22 @@
 
 Исследовательские MVP для проверки возможностей Keenetic хранятся в `experiments/<исследование>/prototype/`, рядом с отчётом и `evidence/`. Это отдельные программы для проверки гипотез на устройстве; они не входят в набор тестов Гестии. Такое размещение согласовано владельцем для исследовательских прототипов Keenetic.
 
+- [Локальный VLESS на Keenetic](keenetic-vless-local/README.md).
+- [Локальный Hysteria 2 с TLS](keenetic-hysteria2-local/README.md).
+- [FakeIP и локальные потоки на Keenetic](keenetic-fakeip-local/README.md).
+- [FakeIP и смена адреса после TTL на Keenetic](keenetic-fakeip-ttl/README.md).
+- [Переключение локальных выходов и блокировка на Keenetic](keenetic-exit-failover/README.md).
+- [DNS CNAME и TCP fallback на Keenetic](keenetic-dns-fallback/README.md).
 - [UDP и блокировка sing-box на Keenetic](keenetic-singbox-udp-block/README.md).
 - [Демон AmneziaWG и приватный UAPI](keenetic-awg-uapi/README.md).
 - [Локальный DNS sing-box по UDP/TCP](keenetic-dns-local/README.md).
 - [Совместимость awg-tools на Keenetic](keenetic-awg-runtime/README.md).
 - [Создание и очистка TUN на Keenetic](keenetic-tun/README.md).
+- [Проверка возможностей RCI/CLI только для чтения на KN-1012](keenetic-rci-readonly/README.md) — выборочная проверка команд `show`.
+- [Незавершённая инвентаризация Netfilter](keenetic-netfilter-readonly/README.md).
+- [Незавершённая проверка атомарного хранения](keenetic-storage-atomic/README.md).
+- [Незавершённое исследование Entware rc.func](keenetic-entware-rcfunc-readonly/README.md).
+- [IPv6 SOCKS TCP/UDP и блокировка sing-box на Keenetic](keenetic-ipv6-loopback/README.md).
 
 - [Подготовка диагностики Keenetic](keenetic-capabilities/README.md) — локальная сборка и матрица ещё не выполненных аппаратных проверок.
 - `tests/lab/` — поддерживаемые инструменты проверки, тестовые прототипы и их fixtures. Команда `make test-lab` запускает только модульные тесты, без доступа к ВМ.

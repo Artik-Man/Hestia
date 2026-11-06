@@ -1,0 +1,2 @@
+cp: can't stat '/opt/tmp/hestia-fakeip-local.20261106-1905/sing-box': No such file or directory
+exit=1

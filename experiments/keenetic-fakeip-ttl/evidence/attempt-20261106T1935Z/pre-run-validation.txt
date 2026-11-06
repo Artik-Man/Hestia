@@ -1,0 +1,7 @@
+pre-run ports
+ports-free
+19826a1b0bc58718c20e8af48805d9166d98059b7802cc2da859804f3d4aad92  fakeip-ttl-harness
+d953af885f11d6b547c21a3c0ffe70796963afc802fab959d548311002b4908a  sing-box
+84cab5b239df24e0f2173ac87a2a80a95f3f1787101057c6e85f5ca1296bbd36  singbox-fakeip-ttl.json
+7df9055bf6b8f1a465aa3f78de5cd9f9c01567c22ddb1565b9cb1f579e335217  device-run.sh
+exit=0

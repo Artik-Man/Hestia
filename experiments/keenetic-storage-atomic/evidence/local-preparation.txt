@@ -1,0 +1,13 @@
+Локальная подготовка прототипа
+
+Время фиксации: 2026-11-06 19:44:14 UTC.
+Checkout: /private/tmp/hestia-kn1012-rci-readonly.
+Ветка: codex/keenetic-kn1012-rci-readonly.
+Прототип: prototype/codex-kn1012-atomic-20261106.sh.
+SHA-256: 854d322e057a29055cb82c5d1c9f506d6e2ad4b33d87f917b21632e05a74d2ae.
+
+Выполнена только проверка синтаксиса без исполнения сценария:
+
+    sh -n experiments/keenetic-storage-atomic/prototype/codex-kn1012-atomic-20261106.sh
+
+Команда завершилась с кодом 0, stdout пустой, stderr пустой. Аппаратных подключений и удалённых команд не было. Сетевые и постоянные ресурсы не затрагивались. Координационный gate на удалённый доступ не открыт.

@@ -1,0 +1,31 @@
+{
+  "log": {"level": "debug"},
+  "dns": {
+    "servers": [
+      {"type": "fakeip", "tag": "synthetic-fakeip", "inet4_range": "198.18.0.0/24"},
+      {"type": "udp", "tag": "synthetic-real-dns", "server": "127.0.0.1", "server_port": 19312}
+    ],
+    "rules": [
+      {"domain_suffix": ["fakeip-ttl.test"], "action": "route", "server": "synthetic-fakeip"}
+    ],
+    "final": "synthetic-real-dns",
+    
+    "timeout": "3s"
+  },
+  "inbounds": [
+    {"type": "socks", "tag": "fakeip-socks", "listen": "127.0.0.1", "listen_port": 19310},
+    {"type": "direct", "tag": "fakeip-dns", "listen": "127.0.0.1", "listen_port": 19311}
+  ],
+  "outbounds": [
+    {"type": "direct", "tag": "loopback-only"},
+    {"type": "block", "tag": "deny-other-destinations"}
+  ],
+  "route": {
+    "rules": [
+      {"inbound": "fakeip-dns", "action": "hijack-dns"},
+      {"domain_suffix": ["fakeip-ttl.test"], "action": "route", "outbound": "loopback-only"}
+    ],
+    "final": "deny-other-destinations",
+    "default_domain_resolver": "synthetic-real-dns"
+  }
+}

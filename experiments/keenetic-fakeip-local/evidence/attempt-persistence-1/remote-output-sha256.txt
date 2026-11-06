@@ -1,0 +1,6 @@
+0c4007a60c51f6717f4b247977a2b5a9bb0124d534e9e5e83a36d407ab14f847  experiments/keenetic-fakeip-local/evidence/attempt-persistence-1/remote-output/fakeip.txt
+1bc8fc99b91212700ef7ece771bef975438f59303fcc0dd16c1851e37bb03eaf  experiments/keenetic-fakeip-local/evidence/attempt-persistence-1/remote-output/harness.log
+6812d47f50ee2aeeac36a88ce0a077a403b5bd913f5fb6538791ee09d0dd2f23  experiments/keenetic-fakeip-local/evidence/attempt-persistence-1/remote-output/probe-1.log
+b90abe12e3669156ce6e608da0c28e35629ca2c62f4ca998ef43cd5011686885  experiments/keenetic-fakeip-local/evidence/attempt-persistence-1/remote-output/probe-2.log
+42560e4c785064f569c3b5b6d04566c2afcb3faaa947b91a6774a3dcceab73f1  experiments/keenetic-fakeip-local/evidence/attempt-persistence-1/remote-output/sing-box-1.log
+0686399c22349c6072fd8969cc1c8dd79417c7eca6c006118782866c212cffa3  experiments/keenetic-fakeip-local/evidence/attempt-persistence-1/remote-output/sing-box-2.log

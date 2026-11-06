@@ -1,0 +1,4 @@
+start_utc=2026-11-06T19:40:29Z
+command=ssh -p 222 -i ~/.ssh/hestia_keenetic -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes root@192.168.1.1 sh -s < evidence/attempt-01-run.sh
+ssh_exit_code=12
+end_utc=2026-11-06T19:40:41Z

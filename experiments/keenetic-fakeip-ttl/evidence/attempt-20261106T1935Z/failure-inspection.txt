@@ -1,0 +1,91 @@
+probe_before
+2026/11/06 19:35:57 client DNS query name=service.fakeip-ttl.test. returned_fakeip=198.18.0.2
+2026/11/06 19:36:00 TCP over SOCKS numeric_fakeip=198.18.0.2:19313 marker=HSTIA-TTL-TCP-TARGET-A
+2026/11/06 19:36:03 UDP over SOCKS numeric_fakeip=198.18.0.2:19314 marker=HSTIA-TTL-UDP-TARGET-A
+2026/11/06 19:36:03 probe success fakeip=198.18.0.2 phase=A TCP=HSTIA-TTL-TCP-TARGET-A UDP=HSTIA-TTL-UDP-TARGET-A
+direct_controls
+2026/11/06 19:36:10 direct control target=127.0.0.1 TCP=HSTIA-TTL-TCP-TARGET-A UDP=HSTIA-TTL-UDP-TARGET-A
+2026/11/06 19:36:10 direct control target=127.0.0.2 TCP=HSTIA-TTL-TCP-TARGET-B UDP=HSTIA-TTL-UDP-TARGET-B
+probe_after
+2026/11/06 19:36:10 client reuses_saved_fakeip=198.18.0.2 without DNS lookup
+2026/11/06 19:36:13 TCP over SOCKS numeric_fakeip=198.18.0.2:19313 marker=HSTIA-TTL-TCP-TARGET-B
+2026/11/06 19:36:17 read SOCKS UDP reply: read udp4 127.0.0.1:53499->127.0.0.1:50664: i/o timeout
+singbox_tail
+[36mINFO[0m[0000] inbound/socks[fakeip-socks]: tcp server started at 127.0.0.1:19310
+[36mINFO[0m[0000] inbound/direct[fakeip-dns]: tcp server started at 127.0.0.1:19311
+[36mINFO[0m[0000] inbound/direct[fakeip-dns]: udp server started at 127.0.0.1:19311
+[36mINFO[0m[0000] network: updated default interface eth3, index 11
+[36mINFO[0m[0000] network: updated network environment: gateway 10.40.154.1, gateway_mac d4:4f:67:52:04:e6
+[36mINFO[0m[0000] sing-box started (0.04s)
+[36mINFO[0m[0000] [[38;5;222m2247543817[0m 0ms] inbound/direct[fakeip-dns]: inbound packet connection from 127.0.0.1:53788
+[36mINFO[0m[0000] [[38;5;222m2247543817[0m 0ms] inbound/direct[fakeip-dns]: inbound packet connection to 127.0.0.1:19311
+[37mDEBUG[0m[0000] [[38;5;222m2247543817[0m 0ms] router: match[0] inbound=fakeip-dns => hijack-dns
+[37mDEBUG[0m[0000] [[38;5;222m2247543817[0m 8ms] dns: exchange service.fakeip-ttl.test. IN A
+[37mDEBUG[0m[0000] [[38;5;222m2247543817[0m 8ms] dns: match[0] domain_suffix=fakeip-ttl.test => route(synthetic-fakeip)
+[37mDEBUG[0m[0000] [[38;5;222m2247543817[0m 11ms] dns: exchanged service.fakeip-ttl.test NOERROR 600
+[36mINFO[0m[0000] [[38;5;222m2247543817[0m 11ms] dns: exchanged A service.fakeip-ttl.test. 600 IN A 198.18.0.2
+[36mINFO[0m[0000] [[38;5;43m2881744923[0m 0ms] inbound/socks[fakeip-socks]: inbound connection from 127.0.0.1:59048
+[36mINFO[0m[0000] [[38;5;43m2881744923[0m 0ms] inbound/socks[fakeip-socks]: inbound connection to 198.18.0.2:19313
+[37mDEBUG[0m[0000] [[38;5;43m2881744923[0m 0ms] router: found fakeip domain: service.fakeip-ttl.test
+[37mDEBUG[0m[0000] [[38;5;43m2881744923[0m 1ms] router: match[1] domain_suffix=fakeip-ttl.test => route(loopback-only)
+[36mINFO[0m[0000] [[38;5;43m2881744923[0m 1ms] outbound/direct[loopback-only]: outbound connection to service.fakeip-ttl.test:19313
+[37mDEBUG[0m[0000] [[38;5;43m2881744923[0m 1ms] dns: lookup domain service.fakeip-ttl.test
+[37mDEBUG[0m[0000] [[38;5;43m2881744923[0m 7ms] dns: exchanged service.fakeip-ttl.test NOERROR 3
+[37mDEBUG[0m[0000] [[38;5;43m2881744923[0m 7ms] dns: exchanged A service.fakeip-ttl.test. 3 IN A 127.0.0.1
+[37mDEBUG[0m[0003] [[38;5;43m2881744923[0m 3.0s] dns: lookup succeed for service.fakeip-ttl.test: 127.0.0.1
+[37mDEBUG[0m[0003] [[38;5;43m2881744923[0m 3.0s] connection: connection download finished
+[37mDEBUG[0m[0003] [[38;5;43m2881744923[0m 3.0s] connection: connection upload finished
+[36mINFO[0m[0003] [[38;5;76m134611772[0m 0ms] inbound/socks[fakeip-socks]: inbound connection from 127.0.0.1:59050
+[36mINFO[0m[0003] [[38;5;76m134611772[0m 1ms] inbound/socks[fakeip-socks]: inbound packet connection to 198.18.0.2:19314
+[37mDEBUG[0m[0003] [[38;5;76m134611772[0m 1ms] router: found fakeip domain: service.fakeip-ttl.test
+[37mDEBUG[0m[0003] [[38;5;76m134611772[0m 1ms] router: match[1] domain_suffix=fakeip-ttl.test => route(loopback-only)
+[36mINFO[0m[0003] [[38;5;76m134611772[0m 1ms] outbound/direct[loopback-only]: outbound packet connection
+[37mDEBUG[0m[0003] [[38;5;76m134611772[0m 1ms] dns: lookup domain service.fakeip-ttl.test
+[37mDEBUG[0m[0006] [[38;5;76m134611772[0m 3.0s] dns: lookup succeed for service.fakeip-ttl.test: 127.0.0.1
+[36mINFO[0m[0013] [[38;5;223m2334899407[0m 0ms] inbound/socks[fakeip-socks]: inbound connection from 127.0.0.1:59060
+[36mINFO[0m[0013] [[38;5;223m2334899407[0m 1ms] inbound/socks[fakeip-socks]: inbound connection to 198.18.0.2:19313
+[37mDEBUG[0m[0013] [[38;5;223m2334899407[0m 1ms] router: found fakeip domain: service.fakeip-ttl.test
+[37mDEBUG[0m[0013] [[38;5;223m2334899407[0m 1ms] router: match[1] domain_suffix=fakeip-ttl.test => route(loopback-only)
+[36mINFO[0m[0013] [[38;5;223m2334899407[0m 1ms] outbound/direct[loopback-only]: outbound connection to service.fakeip-ttl.test:19313
+[37mDEBUG[0m[0013] [[38;5;223m2334899407[0m 1ms] dns: lookup domain service.fakeip-ttl.test
+[37mDEBUG[0m[0013] [[38;5;223m2334899407[0m 3ms] dns: exchanged service.fakeip-ttl.test NOERROR 3
+[37mDEBUG[0m[0013] [[38;5;223m2334899407[0m 3ms] dns: exchanged A service.fakeip-ttl.test. 3 IN A 127.0.0.2
+[37mDEBUG[0m[0016] [[38;5;223m2334899407[0m 3.0s] dns: lookup succeed for service.fakeip-ttl.test: 127.0.0.2
+[36mINFO[0m[0016] [[38;5;181m2694452133[0m 0ms] inbound/socks[fakeip-socks]: inbound connection from 127.0.0.1:59064
+[37mDEBUG[0m[0016] [[38;5;223m2334899407[0m 3.0s] connection: connection upload finished
+[36mINFO[0m[0016] [[38;5;181m2694452133[0m 1ms] inbound/socks[fakeip-socks]: inbound packet connection to 198.18.0.2:19314
+[37mDEBUG[0m[0016] [[38;5;181m2694452133[0m 1ms] router: found fakeip domain: service.fakeip-ttl.test
+[37mDEBUG[0m[0016] [[38;5;181m2694452133[0m 1ms] router: match[1] domain_suffix=fakeip-ttl.test => route(loopback-only)
+[36mINFO[0m[0016] [[38;5;181m2694452133[0m 1ms] outbound/direct[loopback-only]: outbound packet connection
+[37mDEBUG[0m[0016] [[38;5;181m2694452133[0m 1ms] dns: lookup domain service.fakeip-ttl.test
+[37mDEBUG[0m[0019] [[38;5;181m2694452133[0m 3.0s] dns: lookup failed for service.fakeip-ttl.test: (exchange6: context deadline exceeded | exchange4: context deadline exceeded)
+[31mERROR[0m[0019] [[38;5;181m2694452133[0m 3.0s] connection: listen packet connection using  using outbound/direct[loopback-only]: lookup service.fakeip-ttl.test: (exchange6: context deadline exceeded | exchange4: context deadline exceeded)
+[37mDEBUG[0m[0022] [[38;5;223m2334899407[0m 9.36s] connection: connection download finished
+helper_tail
+2026/11/06 19:35:54 ready dns=127.0.0.1:19312 tcp_targets=127.0.0.1:19313,127.0.0.2:19313 udp_targets=127.0.0.1:19314,127.0.0.2:19314
+2026/11/06 19:35:57 DNS UDP reject: expected one IN A query for the exact study hostname
+2026/11/06 19:35:57 synthetic DNS A answer=127.0.0.1 ttl=3 phase=A
+2026/11/06 19:35:57 synthetic DNS transport=UDP name=service.fakeip-ttl.test. answer=127.0.0.1 count=1
+2026/11/06 19:36:00 TCP marker target=A served=HSTIA-TTL-TCP-TARGET-A count=1
+2026/11/06 19:36:00 DNS UDP reject: expected one IN A query for the exact study hostname
+2026/11/06 19:36:03 UDP marker target=A served=HSTIA-TTL-UDP-TARGET-A count=1
+2026/11/06 19:36:10 TCP marker target=A served=HSTIA-TTL-TCP-TARGET-A count=2
+2026/11/06 19:36:10 UDP marker target=A served=HSTIA-TTL-UDP-TARGET-A count=2
+2026/11/06 19:36:10 TCP marker target=B served=HSTIA-TTL-TCP-TARGET-B count=3
+2026/11/06 19:36:10 UDP marker target=B served=HSTIA-TTL-UDP-TARGET-B count=3
+2026/11/06 19:36:10 DNS UDP reject: expected one IN A query for the exact study hostname
+2026/11/06 19:36:10 synthetic DNS A answer=127.0.0.2 ttl=3 phase=B
+2026/11/06 19:36:10 synthetic DNS transport=UDP name=service.fakeip-ttl.test. answer=127.0.0.1 count=2
+2026/11/06 19:36:13 TCP marker target=B served=HSTIA-TTL-TCP-TARGET-B count=4
+2026/11/06 19:36:13 synthetic DNS A answer=127.0.0.2 ttl=3 phase=B
+2026/11/06 19:36:19 synthetic DNS transport=UDP name=service.fakeip-ttl.test. answer=127.0.0.1 count=3
+2026/11/06 19:36:19 DNS UDP reject: expected one IN A query for the exact study hostname
+owned_processes
+listeners
+route_rule_hashes_after_failure
+d980f9b05b97eae098407214e104b6a23a3a823ad1aa5ba3aaa5419a3a60c619  -
+52a656ed73f1a2c72f79a91fcd6f7cbe5bc59a1b33d5a89fb4e64cfac61c5b9c  -
+208c4cc100e02e620c4114c9062d7102ecc09d30e48bac2552e326f6db5de910  -
+77570d3b73b6f8265509d05ee2d03df846fd2f2d9f537a0dc58e0cb0739b1aaf  -
+phase=B
+exit=0

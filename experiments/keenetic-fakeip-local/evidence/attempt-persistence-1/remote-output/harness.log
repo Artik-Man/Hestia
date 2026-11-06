@@ -1,0 +1,13 @@
+2026/11/06 19:19:49 ready dns=127.0.0.1:19352 tcp=127.0.0.1:19353 udp=127.0.0.1:19354
+2026/11/06 19:19:51 synthetic DNS transport=UDP name=service.fakeip-local.test. answer=127.0.0.1 count=1
+2026/11/06 19:19:51 DNS UDP reject: expected one IN A query for the exact study hostname
+2026/11/06 19:19:54 TCP marker served=HSTIA-FAKEIP-TCP-19353 count=1
+2026/11/06 19:19:54 DNS UDP reject: expected one IN A query for the exact study hostname
+2026/11/06 19:19:54 synthetic DNS transport=UDP name=service.fakeip-local.test. answer=127.0.0.1 count=2
+2026/11/06 19:19:57 UDP marker served=HSTIA-FAKEIP-UDP-19354 count=1
+2026/11/06 19:19:58 DNS UDP reject: expected one IN A query for the exact study hostname
+2026/11/06 19:19:58 synthetic DNS transport=UDP name=service.fakeip-local.test. answer=127.0.0.1 count=3
+2026/11/06 19:20:01 TCP marker served=HSTIA-FAKEIP-TCP-19353 count=2
+2026/11/06 19:20:01 synthetic DNS transport=UDP name=service.fakeip-local.test. answer=127.0.0.1 count=4
+2026/11/06 19:20:01 DNS UDP reject: expected one IN A query for the exact study hostname
+2026/11/06 19:20:04 UDP marker served=HSTIA-FAKEIP-UDP-19354 count=2

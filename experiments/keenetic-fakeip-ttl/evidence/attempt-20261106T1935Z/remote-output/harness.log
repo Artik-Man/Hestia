@@ -1,0 +1,18 @@
+2026/11/06 19:35:54 ready dns=127.0.0.1:19312 tcp_targets=127.0.0.1:19313,127.0.0.2:19313 udp_targets=127.0.0.1:19314,127.0.0.2:19314
+2026/11/06 19:35:57 DNS UDP reject: expected one IN A query for the exact study hostname
+2026/11/06 19:35:57 synthetic DNS A answer=127.0.0.1 ttl=3 phase=A
+2026/11/06 19:35:57 synthetic DNS transport=UDP name=service.fakeip-ttl.test. answer=127.0.0.1 count=1
+2026/11/06 19:36:00 TCP marker target=A served=HSTIA-TTL-TCP-TARGET-A count=1
+2026/11/06 19:36:00 DNS UDP reject: expected one IN A query for the exact study hostname
+2026/11/06 19:36:03 UDP marker target=A served=HSTIA-TTL-UDP-TARGET-A count=1
+2026/11/06 19:36:10 TCP marker target=A served=HSTIA-TTL-TCP-TARGET-A count=2
+2026/11/06 19:36:10 UDP marker target=A served=HSTIA-TTL-UDP-TARGET-A count=2
+2026/11/06 19:36:10 TCP marker target=B served=HSTIA-TTL-TCP-TARGET-B count=3
+2026/11/06 19:36:10 UDP marker target=B served=HSTIA-TTL-UDP-TARGET-B count=3
+2026/11/06 19:36:10 DNS UDP reject: expected one IN A query for the exact study hostname
+2026/11/06 19:36:10 synthetic DNS A answer=127.0.0.2 ttl=3 phase=B
+2026/11/06 19:36:10 synthetic DNS transport=UDP name=service.fakeip-ttl.test. answer=127.0.0.1 count=2
+2026/11/06 19:36:13 TCP marker target=B served=HSTIA-TTL-TCP-TARGET-B count=4
+2026/11/06 19:36:13 synthetic DNS A answer=127.0.0.2 ttl=3 phase=B
+2026/11/06 19:36:19 synthetic DNS transport=UDP name=service.fakeip-ttl.test. answer=127.0.0.1 count=3
+2026/11/06 19:36:19 DNS UDP reject: expected one IN A query for the exact study hostname

@@ -1,0 +1,9 @@
+2026-11-06 UTC — runner script validation, local only.
+
+Attempt 1 runner (hash 67056bf7bb57a2ac7d287ae79bcfde6723f79a38038bfe310a9219b84832a7c5) passed shfmt 3.11.0, ShellCheck 0.11.0 after documenting the EXIT-trap invocation, and `sh -n`. The device attempt showed BusyBox does not accept fractional seconds for `sleep`.
+
+Corrected runner replaces the readiness polling delay with integer `sleep 1` and limits the loop to five iterations. It passed shfmt 3.11.0, ShellCheck 0.11.0, and `sh -n`. It starts a watchdog only after the harness PID is set; the watchdog deadline is 39 seconds after harness start, while the listener readiness loop is at most 5 seconds, so its total bound from sing-box start is at most 44 seconds.
+
+No local socket was bound and the runner was not executed locally.
+
+Final approved runner changed only the readiness predicate to read the exact sing-box log line `inbound/socks[ipv6-loopback-socks]: tcp server started at [::1]:19430`, after the captured listener proved that netstat protocol labeling was too restrictive. This source passed shfmt 3.11.0, ShellCheck 0.11.0, and `sh -n`; its SHA-256 is `8bcd9bb55e7c0b663b7fce19346637c30f7284349813928303a1cf3e845ea4ca`.

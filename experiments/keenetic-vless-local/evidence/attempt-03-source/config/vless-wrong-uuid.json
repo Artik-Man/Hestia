@@ -1,0 +1,6 @@
+{
+  "log": {"level": "debug"},
+  "inbounds": [{"type": "socks", "tag": "vless-wrong-uuid-socks", "listen": "127.0.0.1", "listen_port": 19311}],
+  "outbounds": [{"type": "vless", "tag": "vless-wrong-uuid", "server": "127.0.0.1", "server_port": 19316, "uuid": "22222222-2222-4222-8222-222222222222", "packet_encoding": "packetaddr"}],
+  "route": {"final": "vless-wrong-uuid"}
+}

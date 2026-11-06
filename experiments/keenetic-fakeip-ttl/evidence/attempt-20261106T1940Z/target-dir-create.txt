@@ -1,0 +1,2 @@
+drwx------    2 root     root          4096 Nov  6 22:39 /opt/tmp/hestia-r4-ttl-attempt2
+exit=0

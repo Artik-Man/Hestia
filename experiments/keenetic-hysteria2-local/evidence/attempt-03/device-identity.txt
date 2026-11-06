@@ -1,0 +1,12 @@
+-rwxr-xr-x    1 root     root       8197704 Nov  6 22:15 hestia-hy2-harness
+-rwxr-xr-x    1 root     root          5426 Nov  6 22:10 run-hy2-study.sh
+-rwxr-xr-x    1 root     root      75956453 Oct 23 17:50 sing-box
+94a24b3bb2b434c23d8b4abeaea45f27123005ef47e46f2fcdc5169845823b46  hestia-hy2-harness
+d953af885f11d6b547c21a3c0ffe70796963afc802fab959d548311002b4908a  sing-box
+5dc754e2568b43b824d6e22b294301905940a53999fb3fac3b67430974d47bd5  server.json
+c9254336c76701d223d09769eb0e82de44821ff4ccb2384d0b89c77e917bf26e  client-bad-auth.json
+024ada9901821af4bd65b8f5c1c4d878a0874f4052604c4fa7fcb9ad618e48a3  client-good.json
+c6f870a01e4d8e5822c4568bb0f83cf38c7e93a3d13907dd2da86f74ba0063f6  server.crt
+b6258f2e4f7a9c87171d1cff1cfc5d24a21cd030820d8a530440286a5f2912c6  ca.crt
+0f337a7e5ae9d3fc579e4a4a22e3e680a7223d065b9f11764c21c69025f72f1f  run-hy2-study.sh
+exit=0

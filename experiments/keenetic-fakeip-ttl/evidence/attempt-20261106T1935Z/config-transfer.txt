@@ -1,0 +1,3 @@
+sh: /opt/libexec/sftp-server: not found
+scp: Connection closed
+exit=255

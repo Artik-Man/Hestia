@@ -1,0 +1,35 @@
+# Независимая проверка базового прогона FakeIP
+
+Дата проверки: 2026-11-06. Анализировались сохранённые локальные материалы; к маршрутизатору и ВМ не обращались.
+
+## Результат
+
+Базовая попытка `attempt-basic-1` (19:15:35–19:15:44Z, удалённый скрипт завершился кодом 0) подтверждает локальное логическое FakeIP-сопоставление и TCP/UDP поток через SOCKS к собственным loopback-ответчикам. Synthetic DNS передал `198.18.0.2` для `service.fakeip-local.test`; sing-box сохранил доменное имя для FakeIP, сопоставил его с правилом `loopback-only`, а helper установил TCP и UDP соединения к числовому FakeIP и получил маркеры.
+
+## Цепочка свидетельств
+
+- В `attempt-basic-1/input-sha256.txt` записаны SHA-256 исходника helper (`3c0036e0…186737`), конфигурации (`0a91e3a3…3a6bb09`), удалённого `device-run.sh` (`1fb29f5b…21019d`), а также локально собранного helper (`634c232d…2f2c78`). Снимки совпадают с текущими прототипами helper и конфигурации.
+- `attempt-basic-1/validation.txt` содержит remote SHA-256 sing-box `d953af88…2b4908a`, helper `634c232d…2f2c78` и конфигурации `0a91e3a3…3a6bb09`; для трёх JSON/ELF проверка записана с exit 0.
+- Независимая ARM64 сборка helper именно из `attempt-basic-1/input-snapshot/fakeip-harness.go`, с `CGO_ENABLED=0 GOOS=linux GOARCH=arm64 GOTOOLCHAIN=local GOPROXY=off go build -trimpath -buildvcs=false`, дала SHA-256 `634c232d6bf231c17655e4015be8c333375806b385d5e1a6b7462e92762f2c78`, совпавший с сохранённым хешем входного и удалённого helper.
+- `device-transcript.txt` фиксирует начало и окончание прогона, проверку route/rule hashes и `route_rule_hashes_equal=true`. Четыре IPv4/IPv6 route/rule hashes совпали до и после. `post-run-verification.txt` повторно содержит логи и адрес FakeIP, показывает все порты 19350–19354 как `FREE` и завершается `exit=0`; передача свидетельств завершилась `scp_exit=0`.
+- Отчёт helper в `remote-output/probe.log` показывает имя запроса и адрес `198.18.0.2`, затем маркеры TCP/UDP через SOCKS. `remote-output/sing-box.log` подтверждает доменное правило для synthetic FakeIP и восстановление домена перед loopback-only подключением. Серверный `harness.log` фиксирует запросы к собственному DNS и ровно по одному TCP/UDP ответчику. SHA-256 всех четырёх remote output-файлов записаны в `remote-output-sha256.txt`.
+
+## Границы вывода
+
+Проверена только базовая loopback-конфигурация и заданный synthetic `.test` домен с диапазоном FakeIP `198.18.0.0/24`. Не делаю вывода о TTL, GeoIP, группах правил или поведении в LAN/WAN. Попытка `attempt-live-1` завершилась до запуска sing-box: script ожидал строку helper `^ready `, тогда как сохранённый лог содержит временную метку перед `ready`; ни DNS-проба, ни перезапуск не происходили. `attempt-live-2` дошла до sing-box, но конфигурация завершилась с ошибкой `detour to an empty direct outbound makes no sense`; сохранённое описание подтверждает, что DNS-проба не выполнялась и доменное сопоставление не создавалось, несмотря на созданный cache-файл. Эти две попытки не проверяли перезапуск с последующим использованием отображения. Отдельный успешный restart-and-reuse результат `attempt-persistence-1` описан ниже. Ошибки двух прежних запусков сохранены и не смешаны с успешными попытками.
+
+## Локальная пересборка
+
+```sh
+CGO_ENABLED=0 GOOS=linux GOARCH=arm64 GOTOOLCHAIN=local GOPROXY=off go build -trimpath -buildvcs=false -o /private/tmp/hestia-fakeip-validator-20261106 experiments/keenetic-fakeip-local/evidence/attempt-basic-1/input-snapshot/fakeip-harness.go
+shasum -a 256 /private/tmp/hestia-fakeip-validator-20261106
+```
+
+Это проверяет воспроизводимость helper и не выполняет сетевую пробу.
+
+
+## Дополнительная проверка persistence `attempt-persistence-1`
+
+Попытка 19:19:49Z–19:20:05Z использовала отдельный cache-enabled config с `store_fakeip: true` и завершилась успешно. Первый helper запросил синтетическую DNS запись, получил `198.18.0.2` и получил TCP/UDP маркеры; после этого первый sing-box завершился при явном `wait` с кодом 0. Скрипт зафиксировал cache file размером 32,768 байт и SHA-256 `a3b23c4a3ce6a92038bc4236416f673fa01a82a2fecdd47409f907d6b4745962`. Затем запущен второй процесс sing-box с тем же конфигом/cache-id. Режим `resume` явно записал `client reuses_saved_fakeip=198.18.0.2 without DNS lookup`, после чего numeric FakeIP TCP и UDP запросы вернули те же маркеры. Журнал второго процесса показывает `found fakeip domain: service.fakeip-local.test` и маршрут к `loopback-only`; helper зафиксировал повторно по одному TCP и UDP ответу. Вывод относится к одному штатному перезапуску процесса, одному домену и тому же cache file/configuration; это не проверка reboot, TTL-expiry, cache corruption или многодоменного состояния.
+
+Входные helper/config снимки, скрипт SHA и remote hashes привязаны к attempt-persistence-1. Независимая локальная ARM64 сборка helper из его снимка даёт SHA-256 `634c232d6bf231c17655e4015be8c333375806b385d5e1a6b7462e92762f2c78`, равный recorded target hash. `post-run-verification.txt` содержит хеши обоих sing-box logs, обоих probe logs, helper log, `fakeip.txt` и финального 32 KiB cache файла; все четыре route/rule hashes до и после равны. `final-cleanup.txt` фиксирует выход всех принадлежащих попыткам PID, удаление обеих приватных директорий, свободные порты 19350–19354 и код 0.

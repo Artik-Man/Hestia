@@ -1,0 +1,15 @@
+{
+  "time_utc": "2026-11-06T19:28:24Z",
+  "operation": "show-ip-policy",
+  "host_key_fingerprint_sha256": "SHA256:u5mFSUOHtvmfjURyMmAe8N2BVONvSiTAoV7OLn2Czoo",
+  "binary_sha256": "6e6b0bee69e1270160a16711b6a64f4e036b9b984d8eb80acdf76403c243121e",
+  "command": "set -o pipefail\nssh -p 222 -i /Users/artikman/.ssh/hestia_keenetic -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=/Users/artikman/.ssh/known_hosts -o ConnectTimeout=7 root@192.168.1.1 \"/bin/ndmc -c 'show ip policy'\" | python3 -c '\nimport hashlib\nimport sys\n\ndigest = hashlib.sha256()\nsize = 0\nfor chunk in iter(lambda: sys.stdin.buffer.read(65536), b\"\"):\n    digest.update(chunk)\n    size += len(chunk)\nprint(f\"output_bytes={size}\")\nprint(f\"sha256={digest.hexdigest()}\")\n'",
+  "remote_command": "/bin/ndmc -c 'show ip policy'",
+  "pipeline_exit_code": 0,
+  "router_command_exit_code": 0,
+  "output_bytes": 122403,
+  "sha256": "dff5ac23c4d187f3290b083a8d5878e2ea1d49a1ecb5f7ab4a9f99e333c7b432",
+  "raw_stdout_saved_or_printed": false,
+  "stderr": "",
+  "router_state_change": "none observed"
+}

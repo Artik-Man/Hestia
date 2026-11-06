@@ -1,0 +1,3 @@
+The local evidence copy of attempt-01-sing-box.log replaces the observed default interface name and gateway address/MAC with [REDACTED]. The placeholders preserve event order and UTC time. Raw network metadata is not retained in this experiment's evidence. The target-side original log remains inside this experiment's exact private temporary directory and is not linked or copied elsewhere.
+
+The attempt-02 sing-box evidence retains only the IPv6 SOCKS listener line needed to diagnose the readiness check. Other local-runtime log lines included interface/gateway metadata and were not retained in the local evidence copy. The original target log remains only in this experiment's private temporary directory.

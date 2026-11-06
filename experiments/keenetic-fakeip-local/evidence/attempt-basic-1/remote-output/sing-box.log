@@ -1,0 +1,33 @@
+[36mINFO[0m[0000] inbound/socks[fakeip-socks]: tcp server started at 127.0.0.1:19350
+[36mINFO[0m[0000] inbound/direct[fakeip-dns]: tcp server started at 127.0.0.1:19351
+[36mINFO[0m[0000] inbound/direct[fakeip-dns]: udp server started at 127.0.0.1:19351
+[36mINFO[0m[0000] network: updated default interface eth3, index 11
+[36mINFO[0m[0000] network: updated network environment: gateway 10.40.154.1, gateway_mac d4:4f:67:52:04:e6
+[36mINFO[0m[0000] sing-box started (0.22s)
+[36mINFO[0m[0000] [[38;5;33m1531622673[0m 0ms] inbound/direct[fakeip-dns]: inbound packet connection from 127.0.0.1:58347
+[36mINFO[0m[0000] [[38;5;33m1531622673[0m 0ms] inbound/direct[fakeip-dns]: inbound packet connection to 127.0.0.1:19351
+[37mDEBUG[0m[0000] [[38;5;33m1531622673[0m 0ms] router: match[0] inbound=fakeip-dns => hijack-dns
+[37mDEBUG[0m[0000] [[38;5;33m1531622673[0m 0ms] dns: exchange service.fakeip-local.test. IN A
+[37mDEBUG[0m[0000] [[38;5;33m1531622673[0m 0ms] dns: match[0] domain_suffix=fakeip-local.test => route(synthetic-fakeip)
+[37mDEBUG[0m[0000] [[38;5;33m1531622673[0m 1ms] dns: exchanged service.fakeip-local.test NOERROR 600
+[36mINFO[0m[0000] [[38;5;33m1531622673[0m 1ms] dns: exchanged A service.fakeip-local.test. 600 IN A 198.18.0.2
+[36mINFO[0m[0000] [[38;5;227m4256154587[0m 0ms] inbound/socks[fakeip-socks]: inbound connection from 127.0.0.1:57586
+[36mINFO[0m[0000] [[38;5;227m4256154587[0m 0ms] inbound/socks[fakeip-socks]: inbound connection to 198.18.0.2:19353
+[37mDEBUG[0m[0000] [[38;5;227m4256154587[0m 1ms] router: found fakeip domain: service.fakeip-local.test
+[37mDEBUG[0m[0000] [[38;5;227m4256154587[0m 1ms] router: match[1] domain_suffix=fakeip-local.test => route(loopback-only)
+[36mINFO[0m[0000] [[38;5;227m4256154587[0m 1ms] outbound/direct[loopback-only]: outbound connection to service.fakeip-local.test:19353
+[37mDEBUG[0m[0000] [[38;5;227m4256154587[0m 1ms] dns: lookup domain service.fakeip-local.test
+[37mDEBUG[0m[0001] [[38;5;227m4256154587[0m 1.14s] dns: exchanged service.fakeip-local.test NOERROR 30
+[37mDEBUG[0m[0001] [[38;5;227m4256154587[0m 1.14s] dns: exchanged A service.fakeip-local.test. 30 IN A 127.0.0.1
+[37mDEBUG[0m[0003] [[38;5;227m4256154587[0m 3.0s] dns: lookup succeed for service.fakeip-local.test: 127.0.0.1
+[37mDEBUG[0m[0003] [[38;5;227m4256154587[0m 3.0s] connection: connection upload finished
+[36mINFO[0m[0003] [[38;5;43m1758229746[0m 0ms] inbound/socks[fakeip-socks]: inbound connection from 127.0.0.1:57588
+[37mDEBUG[0m[0003] [[38;5;227m4256154587[0m 3.0s] connection: connection download finished
+[36mINFO[0m[0003] [[38;5;43m1758229746[0m 2ms] inbound/socks[fakeip-socks]: inbound packet connection to 198.18.0.2:19354
+[37mDEBUG[0m[0003] [[38;5;43m1758229746[0m 2ms] router: found fakeip domain: service.fakeip-local.test
+[37mDEBUG[0m[0003] [[38;5;43m1758229746[0m 2ms] router: match[1] domain_suffix=fakeip-local.test => route(loopback-only)
+[36mINFO[0m[0003] [[38;5;43m1758229746[0m 2ms] outbound/direct[loopback-only]: outbound packet connection
+[37mDEBUG[0m[0003] [[38;5;43m1758229746[0m 2ms] dns: lookup domain service.fakeip-local.test
+[37mDEBUG[0m[0003] [[38;5;43m1758229746[0m 3ms] dns: exchanged service.fakeip-local.test NOERROR 30
+[37mDEBUG[0m[0003] [[38;5;43m1758229746[0m 3ms] dns: exchanged A service.fakeip-local.test. 30 IN A 127.0.0.1
+[37mDEBUG[0m[0006] [[38;5;43m1758229746[0m 3.0s] dns: lookup succeed for service.fakeip-local.test: 127.0.0.1

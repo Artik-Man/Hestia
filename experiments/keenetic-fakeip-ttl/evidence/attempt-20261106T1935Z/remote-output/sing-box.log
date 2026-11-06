@@ -1,0 +1,50 @@
+[36mINFO[0m[0000] inbound/socks[fakeip-socks]: tcp server started at 127.0.0.1:19310
+[36mINFO[0m[0000] inbound/direct[fakeip-dns]: tcp server started at 127.0.0.1:19311
+[36mINFO[0m[0000] inbound/direct[fakeip-dns]: udp server started at 127.0.0.1:19311
+[36mINFO[0m[0000] network: updated default interface eth3, index 11
+[36mINFO[0m[0000] network: updated network environment: gateway 10.40.154.1, gateway_mac d4:4f:67:52:04:e6
+[36mINFO[0m[0000] sing-box started (0.04s)
+[36mINFO[0m[0000] [[38;5;222m2247543817[0m 0ms] inbound/direct[fakeip-dns]: inbound packet connection from 127.0.0.1:53788
+[36mINFO[0m[0000] [[38;5;222m2247543817[0m 0ms] inbound/direct[fakeip-dns]: inbound packet connection to 127.0.0.1:19311
+[37mDEBUG[0m[0000] [[38;5;222m2247543817[0m 0ms] router: match[0] inbound=fakeip-dns => hijack-dns
+[37mDEBUG[0m[0000] [[38;5;222m2247543817[0m 8ms] dns: exchange service.fakeip-ttl.test. IN A
+[37mDEBUG[0m[0000] [[38;5;222m2247543817[0m 8ms] dns: match[0] domain_suffix=fakeip-ttl.test => route(synthetic-fakeip)
+[37mDEBUG[0m[0000] [[38;5;222m2247543817[0m 11ms] dns: exchanged service.fakeip-ttl.test NOERROR 600
+[36mINFO[0m[0000] [[38;5;222m2247543817[0m 11ms] dns: exchanged A service.fakeip-ttl.test. 600 IN A 198.18.0.2
+[36mINFO[0m[0000] [[38;5;43m2881744923[0m 0ms] inbound/socks[fakeip-socks]: inbound connection from 127.0.0.1:59048
+[36mINFO[0m[0000] [[38;5;43m2881744923[0m 0ms] inbound/socks[fakeip-socks]: inbound connection to 198.18.0.2:19313
+[37mDEBUG[0m[0000] [[38;5;43m2881744923[0m 0ms] router: found fakeip domain: service.fakeip-ttl.test
+[37mDEBUG[0m[0000] [[38;5;43m2881744923[0m 1ms] router: match[1] domain_suffix=fakeip-ttl.test => route(loopback-only)
+[36mINFO[0m[0000] [[38;5;43m2881744923[0m 1ms] outbound/direct[loopback-only]: outbound connection to service.fakeip-ttl.test:19313
+[37mDEBUG[0m[0000] [[38;5;43m2881744923[0m 1ms] dns: lookup domain service.fakeip-ttl.test
+[37mDEBUG[0m[0000] [[38;5;43m2881744923[0m 7ms] dns: exchanged service.fakeip-ttl.test NOERROR 3
+[37mDEBUG[0m[0000] [[38;5;43m2881744923[0m 7ms] dns: exchanged A service.fakeip-ttl.test. 3 IN A 127.0.0.1
+[37mDEBUG[0m[0003] [[38;5;43m2881744923[0m 3.0s] dns: lookup succeed for service.fakeip-ttl.test: 127.0.0.1
+[37mDEBUG[0m[0003] [[38;5;43m2881744923[0m 3.0s] connection: connection download finished
+[37mDEBUG[0m[0003] [[38;5;43m2881744923[0m 3.0s] connection: connection upload finished
+[36mINFO[0m[0003] [[38;5;76m134611772[0m 0ms] inbound/socks[fakeip-socks]: inbound connection from 127.0.0.1:59050
+[36mINFO[0m[0003] [[38;5;76m134611772[0m 1ms] inbound/socks[fakeip-socks]: inbound packet connection to 198.18.0.2:19314
+[37mDEBUG[0m[0003] [[38;5;76m134611772[0m 1ms] router: found fakeip domain: service.fakeip-ttl.test
+[37mDEBUG[0m[0003] [[38;5;76m134611772[0m 1ms] router: match[1] domain_suffix=fakeip-ttl.test => route(loopback-only)
+[36mINFO[0m[0003] [[38;5;76m134611772[0m 1ms] outbound/direct[loopback-only]: outbound packet connection
+[37mDEBUG[0m[0003] [[38;5;76m134611772[0m 1ms] dns: lookup domain service.fakeip-ttl.test
+[37mDEBUG[0m[0006] [[38;5;76m134611772[0m 3.0s] dns: lookup succeed for service.fakeip-ttl.test: 127.0.0.1
+[36mINFO[0m[0013] [[38;5;223m2334899407[0m 0ms] inbound/socks[fakeip-socks]: inbound connection from 127.0.0.1:59060
+[36mINFO[0m[0013] [[38;5;223m2334899407[0m 1ms] inbound/socks[fakeip-socks]: inbound connection to 198.18.0.2:19313
+[37mDEBUG[0m[0013] [[38;5;223m2334899407[0m 1ms] router: found fakeip domain: service.fakeip-ttl.test
+[37mDEBUG[0m[0013] [[38;5;223m2334899407[0m 1ms] router: match[1] domain_suffix=fakeip-ttl.test => route(loopback-only)
+[36mINFO[0m[0013] [[38;5;223m2334899407[0m 1ms] outbound/direct[loopback-only]: outbound connection to service.fakeip-ttl.test:19313
+[37mDEBUG[0m[0013] [[38;5;223m2334899407[0m 1ms] dns: lookup domain service.fakeip-ttl.test
+[37mDEBUG[0m[0013] [[38;5;223m2334899407[0m 3ms] dns: exchanged service.fakeip-ttl.test NOERROR 3
+[37mDEBUG[0m[0013] [[38;5;223m2334899407[0m 3ms] dns: exchanged A service.fakeip-ttl.test. 3 IN A 127.0.0.2
+[37mDEBUG[0m[0016] [[38;5;223m2334899407[0m 3.0s] dns: lookup succeed for service.fakeip-ttl.test: 127.0.0.2
+[36mINFO[0m[0016] [[38;5;181m2694452133[0m 0ms] inbound/socks[fakeip-socks]: inbound connection from 127.0.0.1:59064
+[37mDEBUG[0m[0016] [[38;5;223m2334899407[0m 3.0s] connection: connection upload finished
+[36mINFO[0m[0016] [[38;5;181m2694452133[0m 1ms] inbound/socks[fakeip-socks]: inbound packet connection to 198.18.0.2:19314
+[37mDEBUG[0m[0016] [[38;5;181m2694452133[0m 1ms] router: found fakeip domain: service.fakeip-ttl.test
+[37mDEBUG[0m[0016] [[38;5;181m2694452133[0m 1ms] router: match[1] domain_suffix=fakeip-ttl.test => route(loopback-only)
+[36mINFO[0m[0016] [[38;5;181m2694452133[0m 1ms] outbound/direct[loopback-only]: outbound packet connection
+[37mDEBUG[0m[0016] [[38;5;181m2694452133[0m 1ms] dns: lookup domain service.fakeip-ttl.test
+[37mDEBUG[0m[0019] [[38;5;181m2694452133[0m 3.0s] dns: lookup failed for service.fakeip-ttl.test: (exchange6: context deadline exceeded | exchange4: context deadline exceeded)
+[31mERROR[0m[0019] [[38;5;181m2694452133[0m 3.0s] connection: listen packet connection using  using outbound/direct[loopback-only]: lookup service.fakeip-ttl.test: (exchange6: context deadline exceeded | exchange4: context deadline exceeded)
+[37mDEBUG[0m[0022] [[38;5;223m2334899407[0m 9.36s] connection: connection download finished

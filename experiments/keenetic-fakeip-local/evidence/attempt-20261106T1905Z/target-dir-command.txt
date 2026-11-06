@@ -1,0 +1,1 @@
+ssh -p 222 -i "$HOME/.ssh/hestia_keenetic" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes root@192.168.1.1 "set -eu; umask 077; test ! -e /opt/tmp/hestia-fakeip-local.20261106-1905; mkdir /opt/tmp/hestia-fakeip-local.20261106-1905; chmod 700 /opt/tmp/hestia-fakeip-local.20261106-1905"

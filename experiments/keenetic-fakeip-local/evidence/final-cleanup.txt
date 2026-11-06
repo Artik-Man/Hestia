@@ -1,0 +1,12 @@
+process-exited=28060
+process-exited=28070
+own-dir-removed=/opt/tmp/hestia-fakeip-local.basic1
+process-exited=28466
+process-exited=28507
+own-dir-removed=/opt/tmp/hestia-fakeip-local.persistence1
+FREE=19350
+FREE=19351
+FREE=19352
+FREE=19353
+FREE=19354
+exit=0

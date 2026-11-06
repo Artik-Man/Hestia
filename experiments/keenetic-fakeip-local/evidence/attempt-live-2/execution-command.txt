@@ -1,0 +1,1 @@
+ssh -p 222 -i "$HOME/.ssh/hestia_keenetic" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes root@192.168.1.1 "cd /opt/tmp/hestia-fakeip-local.live2 && sh -s" < experiments/keenetic-fakeip-local/evidence/attempt-live-2/device-run.sh
