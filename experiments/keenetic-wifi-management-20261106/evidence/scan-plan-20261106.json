@@ -1,0 +1,26 @@
+{
+  "prepared_utc": "2026-11-06T20:26:12Z",
+  "purpose": "Bounded programmatic read-only scan of both observed Keenetic radios.",
+  "official_source": {
+    "title": "Keenetic Giga III CLI Command Reference, show site-survey",
+    "url": "https://help.keenetic.com/hc/article_attachments/360026456159/cli_manual_kng_re.pdf",
+    "scope_note": "The manual documents show site-survey <name> as displaying available wireless networks without changing settings; it lists WifiMaster0 and WifiMaster1 as radio choices. This is syntax evidence, not a claim that results are timestamped or interruption-free on the target build."
+  },
+  "impact_preflight": {
+    "management_link": "Wi-Fi; virtual route inspection found router reply path outside candidate VPNs, but local management is not wired.",
+    "current_5ghz_station": "WifiMaster1/WifiStation0 connected; defaultgw=false; priority=65531.",
+    "wired_wan": "GigabitEthernet1 defaultgw=true; priority=65532.",
+    "radio_risk": "A survey can briefly disrupt traffic on the radio being surveyed. WifiMaster1 currently carries the connected WISP station and local access point on the same-band radio.",
+    "controls": "Run WifiMaster0 first, then WifiMaster1 only if command exit is zero and before/after status is readable. Use 20-second command timeout, SSH keepalives, no retry loop. Stop on nonzero/timeout/status loss; preserve failed attempt and coordinate one readback if needed."
+  },
+  "commands": [
+    "/bin/ndmc -c 'show site-survey WifiMaster0'",
+    "/bin/ndmc -c 'show site-survey WifiMaster1'"
+  ],
+  "output_policy": "Keep only radio band, complete result count, exact target SSID match boolean and target channel/quality, sanitized master/AP/station states, command status, timestamps and hashes. Never persist raw output, unrelated SSIDs, BSSIDs/MACs, addresses or secrets.",
+  "freshness_policy": "Record whether the command response provides per-result timestamps. If none, mark freshness unconfirmed; do not claim fresh scan results.",
+  "runner_sha256_before_invocation": {
+    "read_wifi_status.py": "61b2dfd8cf9938e2a30e3d7288d4593cc6d964d30efc1987ad99249fdd0cb0af",
+    "scan_wifi_bands.py": "e07d0bd609c04f6b553b2ac79bb48ed092ed19cfbc311c44c7809fa59b9dcd69"
+  }
+}

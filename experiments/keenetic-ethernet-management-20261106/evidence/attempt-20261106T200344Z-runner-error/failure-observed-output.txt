@@ -1,0 +1,12 @@
+ndmc_hash_attempt=attempt-20261106T200344Z-ndmc-hash exit_code=0
+ndmc_hash_matches_expected=true
+Traceback (most recent call last):
+  File "/Users/artikman/Documents/projects/hestia/experiments/keenetic-ethernet-management-20261106/evidence/inventory.py", line 229, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/Users/artikman/Documents/projects/hestia/experiments/keenetic-ethernet-management-20261106/evidence/inventory.py", line 210, in main
+    result, started = run_remote(f"/bin/ndmc -c {shlex_quote(query)}")
+                      ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/artikman/Documents/projects/hestia/experiments/keenetic-ethernet-management-20261106/evidence/inventory.py", line 154, in run_remote
+    raise ValueError("command is outside the explicit allowlist")
+ValueError: command is outside the explicit allowlist

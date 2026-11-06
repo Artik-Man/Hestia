@@ -1,0 +1,1 @@
+Second source snapshot of the read-only profile/management-route preflight, captured before its retry. Compared with source-01, it maps stderr in memory to a bounded reason enum while retaining only stderr byte count and SHA-256. `ast.parse` succeeded locally. Raw output and stderr are never written.

@@ -1,0 +1,1 @@
+Second local source snapshot after strengthening the watchdog: after 90 seconds it now runs the bounded original-admin and original-connection readback/restore routine, rather than sending only one admin-state command. `sh -n` succeeded locally. No device execution occurred. Earlier source snapshots remain unchanged.

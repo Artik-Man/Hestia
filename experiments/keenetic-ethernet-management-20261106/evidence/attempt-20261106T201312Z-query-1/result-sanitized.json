@@ -1,0 +1,1345 @@
+{
+  "command": "ssh -p 222 -i /Users/artikman/.ssh/hestia_keenetic -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=/Users/artikman/.ssh/known_hosts -o ConnectTimeout=7 root@192.168.1.1 \"/bin/ndmc -c 'show interface'\"",
+  "time_utc": "20261106T201312Z",
+  "runner_sha256": "2ea1f108cdce0ccfafe5f32833f8c3b7e81cfc5034b6f632b20d4652ae228eb5",
+  "timed_out": false,
+  "host_key_fingerprint_expected_sha256": "SHA256:u5mFSUOHtvmfjURyMmAe8N2BVONvSiTAoV7OLn2Czoo",
+  "host_key_pin_verified_before_ssh": true,
+  "raw_stdout_bytes": 27821,
+  "raw_stdout_sha256": "f4aa9de3e5bfd58fd99dfd4ba75e9d6b506974d465e25cc619b81e261f9effb2",
+  "raw_stderr_bytes": 0,
+  "raw_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "exit_code": 0,
+  "sanitized_stdout": {
+    "records": [
+      {
+        "block": 1,
+        "fields": [
+          {
+            "key": "id",
+            "indent": 15,
+            "value": "GigabitEthernet0"
+          },
+          {
+            "key": "index",
+            "indent": 12,
+            "value": 0
+          },
+          {
+            "key": "interface-name",
+            "indent": 3,
+            "value": "GigabitEthernet0"
+          },
+          {
+            "key": "type",
+            "indent": 13,
+            "value": "gigabitethernet"
+          },
+          {
+            "key": "link",
+            "indent": 13,
+            "value": "up"
+          },
+          {
+            "key": "state",
+            "indent": 12,
+            "value": "up"
+          }
+        ]
+      },
+      {
+        "block": 2,
+        "fields": [
+          {
+            "key": "id",
+            "indent": 20,
+            "value": "GigabitEthernet0/0"
+          },
+          {
+            "key": "index",
+            "indent": 17,
+            "value": 0
+          },
+          {
+            "key": "type",
+            "indent": 18,
+            "value": "port"
+          },
+          {
+            "key": "link",
+            "indent": 18,
+            "value": "down"
+          }
+        ]
+      },
+      {
+        "block": 3,
+        "fields": [
+          {
+            "key": "id",
+            "indent": 20,
+            "value": "GigabitEthernet0/1"
+          },
+          {
+            "key": "index",
+            "indent": 17,
+            "value": 1
+          },
+          {
+            "key": "type",
+            "indent": 18,
+            "value": "port"
+          },
+          {
+            "key": "link",
+            "indent": 18,
+            "value": "up"
+          },
+          {
+            "key": "speed",
+            "indent": 17,
+            "value": "100"
+          },
+          {
+            "key": "duplex",
+            "indent": 16,
+            "value": "full"
+          }
+        ]
+      },
+      {
+        "block": 4,
+        "fields": [
+          {
+            "key": "id",
+            "indent": 20,
+            "value": "GigabitEthernet0/2"
+          },
+          {
+            "key": "index",
+            "indent": 17,
+            "value": 2
+          },
+          {
+            "key": "type",
+            "indent": 18,
+            "value": "port"
+          },
+          {
+            "key": "link",
+            "indent": 18,
+            "value": "up"
+          },
+          {
+            "key": "speed",
+            "indent": 17,
+            "value": "100"
+          },
+          {
+            "key": "duplex",
+            "indent": 16,
+            "value": "full"
+          }
+        ]
+      },
+      {
+        "block": 5,
+        "fields": [
+          {
+            "key": "id",
+            "indent": 20,
+            "value": "GigabitEthernet0/3"
+          },
+          {
+            "key": "index",
+            "indent": 17,
+            "value": 3
+          },
+          {
+            "key": "type",
+            "indent": 18,
+            "value": "port"
+          },
+          {
+            "key": "link",
+            "indent": 18,
+            "value": "down"
+          }
+        ]
+      },
+      {
+        "block": 6,
+        "fields": [
+          {
+            "key": "id",
+            "indent": 16,
+            "value": "GigabitEthernet0/0"
+          },
+          {
+            "key": "index",
+            "indent": 13,
+            "value": 0
+          },
+          {
+            "key": "type",
+            "indent": 14,
+            "value": "port"
+          },
+          {
+            "key": "link",
+            "indent": 14,
+            "value": "down"
+          }
+        ]
+      },
+      {
+        "block": 7,
+        "fields": [
+          {
+            "key": "id",
+            "indent": 16,
+            "value": "GigabitEthernet0/1"
+          },
+          {
+            "key": "index",
+            "indent": 13,
+            "value": 1
+          },
+          {
+            "key": "type",
+            "indent": 14,
+            "value": "port"
+          },
+          {
+            "key": "link",
+            "indent": 14,
+            "value": "up"
+          },
+          {
+            "key": "speed",
+            "indent": 13,
+            "value": "100"
+          },
+          {
+            "key": "duplex",
+            "indent": 12,
+            "value": "full"
+          }
+        ]
+      },
+      {
+        "block": 8,
+        "fields": [
+          {
+            "key": "id",
+            "indent": 16,
+            "value": "GigabitEthernet0/2"
+          },
+          {
+            "key": "index",
+            "indent": 13,
+            "value": 2
+          },
+          {
+            "key": "type",
+            "indent": 14,
+            "value": "port"
+          },
+          {
+            "key": "link",
+            "indent": 14,
+            "value": "up"
+          },
+          {
+            "key": "speed",
+            "indent": 13,
+            "value": "100"
+          },
+          {
+            "key": "duplex",
+            "indent": 12,
+            "value": "full"
+          }
+        ]
+      },
+      {
+        "block": 9,
+        "fields": [
+          {
+            "key": "id",
+            "indent": 16,
+            "value": "GigabitEthernet0/3"
+          },
+          {
+            "key": "index",
+            "indent": 13,
+            "value": 3
+          },
+          {
+            "key": "type",
+            "indent": 14,
+            "value": "port"
+          },
+          {
+            "key": "link",
+            "indent": 14,
+            "value": "down"
+          }
+        ]
+      },
+      {
+        "block": 10,
+        "fields": [
+          {
+            "key": "index",
+            "indent": 12,
+            "value": 1
+          },
+          {
+            "key": "type",
+            "indent": 13,
+            "value": "vlan"
+          },
+          {
+            "key": "link",
+            "indent": 13,
+            "value": "up"
+          },
+          {
+            "key": "state",
+            "indent": 12,
+            "value": "up"
+          }
+        ]
+      },
+      {
+        "block": 11,
+        "fields": [
+          {
+            "key": "id",
+            "indent": 15,
+            "value": "GigabitEthernet1"
+          },
+          {
+            "key": "index",
+            "indent": 12,
+            "value": 1
+          },
+          {
+            "key": "type",
+            "indent": 13,
+            "value": "gigabitethernet"
+          },
+          {
+            "key": "link",
+            "indent": 13,
+            "value": "up"
+          },
+          {
+            "key": "state",
+            "indent": 12,
+            "value": "up"
+          },
+          {
+            "key": "defaultgw",
+            "indent": 8,
+            "value": true
+          },
+          {
+            "key": "priority",
+            "indent": 9,
+            "value": 65532
+          },
+          {
+            "key": "defaultgw",
+            "indent": 12,
+            "value": false
+          }
+        ]
+      },
+      {
+        "block": 12,
+        "fields": [
+          {
+            "key": "id",
+            "indent": 20,
+            "value": "GigabitEthernet1/0"
+          },
+          {
+            "key": "index",
+            "indent": 17,
+            "value": 0
+          },
+          {
+            "key": "type",
+            "indent": 18,
+            "value": "port"
+          },
+          {
+            "key": "link",
+            "indent": 18,
+            "value": "up"
+          },
+          {
+            "key": "speed",
+            "indent": 17,
+            "value": "1000"
+          },
+          {
+            "key": "duplex",
+            "indent": 16,
+            "value": "full"
+          }
+        ]
+      },
+      {
+        "block": 13,
+        "fields": [
+          {
+            "key": "id",
+            "indent": 16,
+            "value": "GigabitEthernet1/0"
+          },
+          {
+            "key": "index",
+            "indent": 13,
+            "value": 0
+          },
+          {
+            "key": "type",
+            "indent": 14,
+            "value": "port"
+          },
+          {
+            "key": "link",
+            "indent": 14,
+            "value": "up"
+          },
+          {
+            "key": "speed",
+            "indent": 13,
+            "value": "1000"
+          },
+          {
+            "key": "duplex",
+            "indent": 12,
+            "value": "full"
+          }
+        ]
+      },
+      {
+        "block": 14,
+        "fields": [
+          {
+            "key": "id",
+            "indent": 15,
+            "value": "WifiMaster0"
+          },
+          {
+            "key": "index",
+            "indent": 12,
+            "value": 0
+          },
+          {
+            "key": "interface-name",
+            "indent": 3,
+            "value": "WifiMaster0"
+          },
+          {
+            "key": "type",
+            "indent": 13,
+            "value": "wifimaster"
+          },
+          {
+            "key": "link",
+            "indent": 13,
+            "value": "up"
+          },
+          {
+            "key": "state",
+            "indent": 12,
+            "value": "up"
+          }
+        ]
+      },
+      {
+        "block": 15,
+        "fields": [
+          {
+            "key": "index",
+            "indent": 12,
+            "value": 0
+          },
+          {
+            "key": "type",
+            "indent": 13,
+            "value": "accesspoint"
+          },
+          {
+            "key": "link",
+            "indent": 13,
+            "value": "up"
+          },
+          {
+            "key": "state",
+            "indent": 12,
+            "value": "up"
+          },
+          {
+            "key": "ssid",
+            "indent": 13,
+            "matches_iphone": false,
+            "matches_white_paper": false
+          }
+        ]
+      },
+      {
+        "block": 16,
+        "fields": [
+          {
+            "key": "index",
+            "indent": 12,
+            "value": 1
+          },
+          {
+            "key": "type",
+            "indent": 13,
+            "value": "accesspoint"
+          },
+          {
+            "key": "link",
+            "indent": 13,
+            "value": "down"
+          },
+          {
+            "key": "state",
+            "indent": 12,
+            "value": "down"
+          }
+        ]
+      },
+      {
+        "block": 17,
+        "fields": [
+          {
+            "key": "index",
+            "indent": 12,
+            "value": 2
+          },
+          {
+            "key": "type",
+            "indent": 13,
+            "value": "accesspoint"
+          },
+          {
+            "key": "link",
+            "indent": 13,
+            "value": "down"
+          },
+          {
+            "key": "state",
+            "indent": 12,
+            "value": "down"
+          }
+        ]
+      },
+      {
+        "block": 18,
+        "fields": [
+          {
+            "key": "index",
+            "indent": 12,
+            "value": 3
+          },
+          {
+            "key": "type",
+            "indent": 13,
+            "value": "accesspoint"
+          },
+          {
+            "key": "link",
+            "indent": 13,
+            "value": "down"
+          },
+          {
+            "key": "state",
+            "indent": 12,
+            "value": "down"
+          }
+        ]
+      },
+      {
+        "block": 19,
+        "fields": [
+          {
+            "key": "index",
+            "indent": 12,
+            "value": 4
+          },
+          {
+            "key": "type",
+            "indent": 13,
+            "value": "accesspoint"
+          },
+          {
+            "key": "link",
+            "indent": 13,
+            "value": "down"
+          },
+          {
+            "key": "state",
+            "indent": 12,
+            "value": "down"
+          }
+        ]
+      },
+      {
+        "block": 20,
+        "fields": [
+          {
+            "key": "index",
+            "indent": 12,
+            "value": 5
+          },
+          {
+            "key": "type",
+            "indent": 13,
+            "value": "accesspoint"
+          },
+          {
+            "key": "link",
+            "indent": 13,
+            "value": "down"
+          },
+          {
+            "key": "state",
+            "indent": 12,
+            "value": "down"
+          }
+        ]
+      },
+      {
+        "block": 21,
+        "fields": [
+          {
+            "key": "index",
+            "indent": 12,
+            "value": 6
+          },
+          {
+            "key": "type",
+            "indent": 13,
+            "value": "accesspoint"
+          },
+          {
+            "key": "link",
+            "indent": 13,
+            "value": "down"
+          },
+          {
+            "key": "state",
+            "indent": 12,
+            "value": "down"
+          }
+        ]
+      },
+      {
+        "block": 22,
+        "fields": [
+          {
+            "key": "index",
+            "indent": 12,
+            "value": 0
+          },
+          {
+            "key": "type",
+            "indent": 13,
+            "value": "wifistation"
+          },
+          {
+            "key": "link",
+            "indent": 13,
+            "value": "down"
+          },
+          {
+            "key": "state",
+            "indent": 12,
+            "value": "down"
+          }
+        ]
+      },
+      {
+        "block": 23,
+        "fields": [
+          {
+            "key": "id",
+            "indent": 15,
+            "value": "WifiMaster1"
+          },
+          {
+            "key": "index",
+            "indent": 12,
+            "value": 1
+          },
+          {
+            "key": "interface-name",
+            "indent": 3,
+            "value": "WifiMaster1"
+          },
+          {
+            "key": "type",
+            "indent": 13,
+            "value": "wifimaster"
+          },
+          {
+            "key": "link",
+            "indent": 13,
+            "value": "up"
+          },
+          {
+            "key": "state",
+            "indent": 12,
+            "value": "up"
+          }
+        ]
+      },
+      {
+        "block": 24,
+        "fields": [
+          {
+            "key": "index",
+            "indent": 12,
+            "value": 0
+          },
+          {
+            "key": "type",
+            "indent": 13,
+            "value": "accesspoint"
+          },
+          {
+            "key": "link",
+            "indent": 13,
+            "value": "up"
+          },
+          {
+            "key": "state",
+            "indent": 12,
+            "value": "up"
+          },
+          {
+            "key": "ssid",
+            "indent": 13,
+            "matches_iphone": false,
+            "matches_white_paper": false
+          }
+        ]
+      },
+      {
+        "block": 25,
+        "fields": [
+          {
+            "key": "index",
+            "indent": 12,
+            "value": 1
+          },
+          {
+            "key": "type",
+            "indent": 13,
+            "value": "accesspoint"
+          },
+          {
+            "key": "link",
+            "indent": 13,
+            "value": "down"
+          },
+          {
+            "key": "state",
+            "indent": 12,
+            "value": "down"
+          }
+        ]
+      },
+      {
+        "block": 26,
+        "fields": [
+          {
+            "key": "index",
+            "indent": 12,
+            "value": 2
+          },
+          {
+            "key": "type",
+            "indent": 13,
+            "value": "accesspoint"
+          },
+          {
+            "key": "link",
+            "indent": 13,
+            "value": "down"
+          },
+          {
+            "key": "state",
+            "indent": 12,
+            "value": "down"
+          }
+        ]
+      },
+      {
+        "block": 27,
+        "fields": [
+          {
+            "key": "index",
+            "indent": 12,
+            "value": 3
+          },
+          {
+            "key": "type",
+            "indent": 13,
+            "value": "accesspoint"
+          },
+          {
+            "key": "link",
+            "indent": 13,
+            "value": "down"
+          },
+          {
+            "key": "state",
+            "indent": 12,
+            "value": "down"
+          }
+        ]
+      },
+      {
+        "block": 28,
+        "fields": [
+          {
+            "key": "index",
+            "indent": 12,
+            "value": 4
+          },
+          {
+            "key": "type",
+            "indent": 13,
+            "value": "accesspoint"
+          },
+          {
+            "key": "link",
+            "indent": 13,
+            "value": "down"
+          },
+          {
+            "key": "state",
+            "indent": 12,
+            "value": "down"
+          }
+        ]
+      },
+      {
+        "block": 29,
+        "fields": [
+          {
+            "key": "index",
+            "indent": 12,
+            "value": 5
+          },
+          {
+            "key": "type",
+            "indent": 13,
+            "value": "accesspoint"
+          },
+          {
+            "key": "link",
+            "indent": 13,
+            "value": "down"
+          },
+          {
+            "key": "state",
+            "indent": 12,
+            "value": "down"
+          }
+        ]
+      },
+      {
+        "block": 30,
+        "fields": [
+          {
+            "key": "index",
+            "indent": 12,
+            "value": 6
+          },
+          {
+            "key": "type",
+            "indent": 13,
+            "value": "accesspoint"
+          },
+          {
+            "key": "link",
+            "indent": 13,
+            "value": "down"
+          },
+          {
+            "key": "state",
+            "indent": 12,
+            "value": "down"
+          },
+          {
+            "key": "status",
+            "indent": 11,
+            "value": "connected"
+          }
+        ]
+      },
+      {
+        "block": 31,
+        "fields": [
+          {
+            "key": "index",
+            "indent": 12,
+            "value": 0
+          },
+          {
+            "key": "type",
+            "indent": 13,
+            "value": "wifistation"
+          },
+          {
+            "key": "link",
+            "indent": 13,
+            "value": "up"
+          },
+          {
+            "key": "state",
+            "indent": 12,
+            "value": "up"
+          },
+          {
+            "key": "defaultgw",
+            "indent": 8,
+            "value": false
+          },
+          {
+            "key": "priority",
+            "indent": 9,
+            "value": 65531
+          },
+          {
+            "key": "defaultgw",
+            "indent": 12,
+            "value": false
+          },
+          {
+            "key": "ssid",
+            "indent": 13,
+            "matches_iphone": false,
+            "matches_white_paper": false
+          }
+        ]
+      },
+      {
+        "block": 32,
+        "fields": [
+          {
+            "key": "index",
+            "indent": 12,
+            "value": 0
+          },
+          {
+            "key": "interface-name",
+            "indent": 3,
+            "value": "Home"
+          },
+          {
+            "key": "type",
+            "indent": 13,
+            "value": "bridge"
+          },
+          {
+            "key": "link",
+            "indent": 13,
+            "value": "up"
+          },
+          {
+            "key": "state",
+            "indent": 12,
+            "value": "up"
+          }
+        ]
+      },
+      {
+        "block": 33,
+        "fields": [
+          {
+            "key": "id",
+            "indent": 15,
+            "value": "SSTP0"
+          },
+          {
+            "key": "index",
+            "indent": 12,
+            "value": 0
+          },
+          {
+            "key": "interface-name",
+            "indent": 3,
+            "value": "SSTP0"
+          },
+          {
+            "key": "type",
+            "indent": 13,
+            "value": "sstp"
+          },
+          {
+            "key": "link",
+            "indent": 13,
+            "value": "down"
+          },
+          {
+            "key": "state",
+            "indent": 12,
+            "value": "down"
+          },
+          {
+            "key": "defaultgw",
+            "indent": 8,
+            "value": false
+          },
+          {
+            "key": "priority",
+            "indent": 9,
+            "value": 65529
+          },
+          {
+            "key": "defaultgw",
+            "indent": 12,
+            "value": false
+          }
+        ]
+      },
+      {
+        "block": 34,
+        "fields": [
+          {
+            "key": "id",
+            "indent": 15,
+            "value": "SSTP1"
+          },
+          {
+            "key": "index",
+            "indent": 12,
+            "value": 1
+          },
+          {
+            "key": "interface-name",
+            "indent": 3,
+            "value": "SSTP1"
+          },
+          {
+            "key": "type",
+            "indent": 13,
+            "value": "sstp"
+          },
+          {
+            "key": "description",
+            "indent": 6,
+            "value": "Poppuri"
+          },
+          {
+            "key": "link",
+            "indent": 13,
+            "value": "down"
+          },
+          {
+            "key": "state",
+            "indent": 12,
+            "value": "down"
+          },
+          {
+            "key": "defaultgw",
+            "indent": 8,
+            "value": false
+          },
+          {
+            "key": "priority",
+            "indent": 9,
+            "value": 65528
+          },
+          {
+            "key": "defaultgw",
+            "indent": 12,
+            "value": false
+          }
+        ]
+      },
+      {
+        "block": 35,
+        "fields": [
+          {
+            "key": "id",
+            "indent": 15,
+            "value": "Wireguard0"
+          },
+          {
+            "key": "index",
+            "indent": 12,
+            "value": 0
+          },
+          {
+            "key": "interface-name",
+            "indent": 3,
+            "value": "Wireguard0"
+          },
+          {
+            "key": "type",
+            "indent": 13,
+            "value": "wireguard"
+          },
+          {
+            "key": "link",
+            "indent": 13,
+            "value": "down"
+          },
+          {
+            "key": "state",
+            "indent": 12,
+            "value": "down"
+          },
+          {
+            "key": "defaultgw",
+            "indent": 8,
+            "value": false
+          },
+          {
+            "key": "priority",
+            "indent": 9,
+            "value": 21844
+          },
+          {
+            "key": "defaultgw",
+            "indent": 12,
+            "value": false
+          },
+          {
+            "key": "status",
+            "indent": 15,
+            "value": "down"
+          }
+        ]
+      },
+      {
+        "block": 36,
+        "fields": [
+          {
+            "key": "id",
+            "indent": 15,
+            "value": "Wireguard1"
+          },
+          {
+            "key": "index",
+            "indent": 12,
+            "value": 1
+          },
+          {
+            "key": "interface-name",
+            "indent": 3,
+            "value": "Wireguard1"
+          },
+          {
+            "key": "type",
+            "indent": 13,
+            "value": "wireguard"
+          },
+          {
+            "key": "link",
+            "indent": 13,
+            "value": "up"
+          },
+          {
+            "key": "state",
+            "indent": 12,
+            "value": "up"
+          },
+          {
+            "key": "defaultgw",
+            "indent": 8,
+            "value": false
+          },
+          {
+            "key": "priority",
+            "indent": 9,
+            "value": 65192
+          },
+          {
+            "key": "defaultgw",
+            "indent": 12,
+            "value": false
+          },
+          {
+            "key": "status",
+            "indent": 15,
+            "value": "up"
+          }
+        ]
+      },
+      {
+        "block": 37,
+        "fields": [
+          {
+            "key": "id",
+            "indent": 15,
+            "value": "Wireguard2"
+          },
+          {
+            "key": "index",
+            "indent": 12,
+            "value": 2
+          },
+          {
+            "key": "interface-name",
+            "indent": 3,
+            "value": "Wireguard2"
+          },
+          {
+            "key": "type",
+            "indent": 13,
+            "value": "wireguard"
+          },
+          {
+            "key": "description",
+            "indent": 6,
+            "value": "Solar (Moscow)"
+          },
+          {
+            "key": "link",
+            "indent": 13,
+            "value": "down"
+          },
+          {
+            "key": "state",
+            "indent": 12,
+            "value": "down"
+          },
+          {
+            "key": "defaultgw",
+            "indent": 8,
+            "value": false
+          },
+          {
+            "key": "priority",
+            "indent": 9,
+            "value": 65352
+          },
+          {
+            "key": "defaultgw",
+            "indent": 12,
+            "value": false
+          },
+          {
+            "key": "status",
+            "indent": 15,
+            "value": "down"
+          }
+        ]
+      },
+      {
+        "block": 38,
+        "fields": [
+          {
+            "key": "id",
+            "indent": 15,
+            "value": "Wireguard3"
+          },
+          {
+            "key": "index",
+            "indent": 12,
+            "value": 3
+          },
+          {
+            "key": "interface-name",
+            "indent": 3,
+            "value": "Wireguard3"
+          },
+          {
+            "key": "type",
+            "indent": 13,
+            "value": "wireguard"
+          },
+          {
+            "key": "link",
+            "indent": 13,
+            "value": "up"
+          },
+          {
+            "key": "state",
+            "indent": 12,
+            "value": "up"
+          },
+          {
+            "key": "defaultgw",
+            "indent": 8,
+            "value": false
+          },
+          {
+            "key": "priority",
+            "indent": 9,
+            "value": 5461
+          },
+          {
+            "key": "defaultgw",
+            "indent": 12,
+            "value": false
+          },
+          {
+            "key": "status",
+            "indent": 15,
+            "value": "up"
+          }
+        ]
+      },
+      {
+        "block": 39,
+        "fields": [
+          {
+            "key": "index",
+            "indent": 12,
+            "value": 0
+          },
+          {
+            "key": "type",
+            "indent": 13,
+            "value": "zerotier"
+          },
+          {
+            "key": "link",
+            "indent": 13,
+            "value": "down"
+          },
+          {
+            "key": "state",
+            "indent": 12,
+            "value": "down"
+          },
+          {
+            "key": "defaultgw",
+            "indent": 8,
+            "value": false
+          },
+          {
+            "key": "priority",
+            "indent": 9,
+            "value": 10922
+          },
+          {
+            "key": "defaultgw",
+            "indent": 12,
+            "value": false
+          },
+          {
+            "key": "status",
+            "indent": 22,
+            "value": "down"
+          }
+        ]
+      }
+    ]
+  }
+}

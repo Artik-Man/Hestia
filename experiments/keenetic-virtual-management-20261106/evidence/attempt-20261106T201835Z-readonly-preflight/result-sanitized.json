@@ -1,0 +1,23 @@
+{
+  "time_utc": "20261106T201835Z",
+  "runner_sha256": "593220eb0ce55377c5c554be7eb33fad6be5e9da1baf08eb15d039daa9385f5c",
+  "host_key_fingerprint_expected_sha256": "SHA256:u5mFSUOHtvmfjURyMmAe8N2BVONvSiTAoV7OLn2Czoo",
+  "host_key_pin_verified_before_ssh": true,
+  "ndmc_hash": {
+    "command": "sha256sum /bin/ndmc",
+    "exit_code": 255,
+    "timed_out": false,
+    "stdout_bytes": 0,
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stderr_bytes": 68,
+    "stderr_sha256": "3dfeb52f4c0cf856736073aeeaaf322cc98fb040ee35ac91bce4ddb0e1749071",
+    "sha256": null,
+    "matches_pinned": false
+  },
+  "profiles": [],
+  "management_route": {
+    "local_management_route_lookup": "not_run",
+    "ssh_reply_route_lookup": "not_run"
+  },
+  "raw_profile_and_route_output_persisted": false
+}
