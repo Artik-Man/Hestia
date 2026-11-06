@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/Artik-Man/Hestia/internal/awg"
+	"github.com/Artik-Man/Hestia/internal/services"
 )
 
 // AWGActivationLimit bounds a save with up to 64 serial transport candidates plus gateway activation.
@@ -152,9 +153,9 @@ func (e Engine) guarded(ctx context.Context, changes []runtimeChange) bool {
 // Otherwise it drains the router before retiring the changed instances' policy state.
 func (e Engine) stop(ctx context.Context, journal string, routingOnly bool) (runtimePlan, error) {
 	plan, err := e.planInstances(journal, routingOnly)
-	preserve := err == nil && plan.sameTopology && e.guarded(ctx, plan.changes) && e.run(ctx, systemctl, "is-active", "--quiet", router) == nil && e.run(ctx, systemctl, "is-active", "--quiet", watcher) == nil
+	preserve := err == nil && plan.sameTopology && e.guarded(ctx, plan.changes) && e.serviceActive(ctx, services.Router) && e.serviceActive(ctx, services.Controller)
 	if !preserve {
-		if stopErr := e.run(ctx, systemctl, "stop", watcher, router); stopErr != nil {
+		if stopErr := e.serviceManager().Stop(ctx, services.Service{Kind: services.Controller}, services.Service{Kind: services.Router}); stopErr != nil {
 			return plan, errors.Join(err, stopErr)
 		}
 	}
@@ -162,13 +163,13 @@ func (e Engine) stop(ctx context.Context, journal string, routingOnly bool) (run
 		return plan, err
 	}
 	for _, change := range plan.changes {
-		if err := e.run(ctx, systemctl, "stop", instanceUnit(change.id)); err != nil {
+		if err := e.serviceManager().Stop(ctx, services.Service{Kind: services.AWG, Instance: change.id}); err != nil {
 			return plan, err
 		}
 	}
 	if preserve && !e.guarded(ctx, plan.changes) {
 		preserve = false
-		if err := e.run(ctx, systemctl, "stop", watcher, router); err != nil {
+		if err := e.serviceManager().Stop(ctx, services.Service{Kind: services.Controller}, services.Service{Kind: services.Router}); err != nil {
 			return plan, err
 		}
 	}
@@ -182,9 +183,6 @@ func (e Engine) stop(ctx context.Context, journal string, routingOnly bool) (run
 	plan.sameTopology = preserve
 	return plan, nil
 }
-
-// instanceUnit returns the fixed template instance name for an already validated connector ID.
-func instanceUnit(id string) string { return "hestia-awg@" + id + ".service" }
 
 // startVerified confirms real tunnel egress before committing. Manual transports need the guarded backend to reach their peer.
 func (e Engine) startVerified(ctx context.Context, plan runtimePlan) error {
@@ -211,7 +209,7 @@ func (e Engine) startVerified(ctx context.Context, plan runtimePlan) error {
 		}
 	}
 	if len(awaiting) > 0 {
-		if err := e.run(ctx, systemctl, "start", router); err != nil {
+		if err := e.serviceManager().Start(ctx, services.Service{Kind: services.Router}); err != nil {
 			return err
 		}
 		for _, change := range awaiting {
@@ -221,9 +219,9 @@ func (e Engine) startVerified(ctx context.Context, plan runtimePlan) error {
 		}
 	}
 	if plan.sameTopology {
-		return e.run(ctx, systemctl, "start", smokeCurrent)
+		return e.serviceManager().Start(ctx, services.Service{Kind: services.SmokeCurrent})
 	}
-	if err := e.run(ctx, systemctl, "start", router, watcher); err != nil {
+	if err := e.serviceManager().Start(ctx, services.Service{Kind: services.Router}, services.Service{Kind: services.Controller}); err != nil {
 		return err
 	}
 	return e.verify(ctx)
@@ -240,7 +238,7 @@ func (e Engine) startInstance(ctx context.Context, id string, fresh bool) error 
 			return err
 		}
 	}
-	return e.run(ctx, systemctl, "start", instanceUnit(id))
+	return e.serviceManager().Start(ctx, services.Service{Kind: services.AWG, Instance: id})
 }
 
 // waitInstanceGuards permits backend startup only once both address families block traffic escaping this slot.
@@ -277,24 +275,16 @@ func (e Engine) startBootInstance(ctx context.Context, id string, runtime runtim
 	return err
 }
 
-// awgUnitInstalled checks only fixed systemd unit locations before a transaction asks systemd to run the root service.
+// awgUnitInstalled delegates template validation to the selected platform, retaining the public binding error.
 func (e Engine) awgUnitInstalled() (bool, error) {
 	if e.unitCheck != nil {
 		return e.unitCheck()
 	}
-	for _, path := range []string{"/etc/systemd/system/" + awgUnit, "/lib/systemd/system/" + awgUnit, "/usr/lib/systemd/system/" + awgUnit} {
-		info, err := os.Lstat(path)
-		if err == nil {
-			if !info.Mode().IsRegular() || info.Mode()&os.ModeSymlink != 0 {
-				return false, ErrUnavailable
-			}
-			return true, nil
-		}
-		if !errors.Is(err, os.ErrNotExist) {
-			return false, ErrUnavailable
-		}
+	installed, err := e.serviceManager().AWGTemplateInstalled()
+	if err != nil {
+		return false, ErrUnavailable
 	}
-	return false, nil
+	return installed, nil
 }
 
 // waitAWGReady waits for the root service's private marker written only after handshake and bound egress verification.

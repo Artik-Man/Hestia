@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/Artik-Man/Hestia/internal/controller"
+	"github.com/Artik-Man/Hestia/internal/services"
+	"github.com/Artik-Man/Hestia/internal/services/systemd"
 )
 
 var (
@@ -22,23 +24,18 @@ var (
 )
 
 const (
-	python       = "/usr/bin/python3"
-	profile      = "/usr/local/lib/hestia/profile.py"
-	smokeFresh   = "hestia-smoke@fresh.service"
-	smokeCurrent = "hestia-smoke@current.service"
-	backend      = "/usr/local/lib/hestia/sing-box"
-	systemctl    = "/usr/bin/systemctl"
-	watcher      = "hestia.service"
-	router       = "hestia-sing-box.service"
-	awgUnit      = "hestia-awg@.service"
-	awgReady     = "/run/hestia-awg/ready"
-	pending      = ".binding-pending"
+	python   = "/usr/bin/python3"
+	profile  = "/usr/local/lib/hestia/profile.py"
+	backend  = "/usr/local/lib/hestia/sing-box"
+	awgReady = "/run/hestia-awg/ready"
+	pending  = ".binding-pending"
 )
 
 var managedFiles = []string{"profile.json", "profile-source.sha256", "sing-box.json", "profile-backend.sha256", "snapshot.json"}
 
 // Engine operates on fixed trusted installation paths. Its commands take structured arguments without a shell.
 type Engine struct {
+	services       services.Manager
 	dir, lock      string
 	countryMapPath string
 	snapshotGID    int
@@ -56,7 +53,7 @@ func Installed() Engine {
 			gid = value
 		}
 	}
-	return Engine{countryMapPath: "/var/lib/hestia-country-map/policy.json", dir: "/etc/hestia", lock: "/run/hestia-install.lock", snapshotGID: gid, run: runCommand}
+	return Engine{countryMapPath: "/var/lib/hestia-country-map/policy.json", dir: "/etc/hestia", lock: "/run/hestia-install.lock", snapshotGID: gid, run: runCommand, services: systemd.Manager{}}
 }
 
 // runCommand executes one bounded local command and keeps private command output out of errors.
@@ -99,7 +96,7 @@ func checkChange(data []byte, id, expected, target string) error {
 
 // verify requires the running backend's credential and the current watcher's selector confirmations to match the installed files.
 func (e Engine) verify(ctx context.Context) error {
-	return e.run(ctx, systemctl, "start", smokeFresh)
+	return e.serviceManager().Start(ctx, services.Service{Kind: services.SmokeFresh})
 }
 
 // Apply serializes updates with the installer, rejects stale bindings, and returns success only after live verification.
@@ -163,13 +160,13 @@ func (e Engine) apply(ctx context.Context, prepare func(string) error, check fun
 		return err
 	}
 	// The current watcher may have been running longer than its retained journal.
-	if err := e.run(ctx, systemctl, "start", smokeCurrent); err != nil {
+	if err := e.serviceManager().Start(ctx, services.Service{Kind: services.SmokeCurrent}); err != nil {
 		return err
 	}
 	if noChange {
 		return nil
 	}
-	if err := e.run(ctx, systemctl, "is-active", "--quiet", "hestia-binding-watch.path"); err != nil {
+	if err := e.requireServiceActive(ctx, services.BindingWatch); err != nil {
 		return err
 	}
 	if err := e.publishJournal(stage); err != nil {
