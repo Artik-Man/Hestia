@@ -1,0 +1,27 @@
+{
+  "time_utc": "2026-11-06T16:02:47.278635+00:00",
+  "command": [
+    "ssh",
+    "-p",
+    "222",
+    "-i",
+    "/Users/artikman/.ssh/hestia_keenetic",
+    "-o",
+    "BatchMode=yes",
+    "-o",
+    "IdentitiesOnly=yes",
+    "-o",
+    "StrictHostKeyChecking=yes",
+    "-o",
+    "ConnectTimeout=10",
+    "-o",
+    "ServerAliveInterval=5",
+    "-o",
+    "ServerAliveCountMax=2",
+    "root@192.168.1.1",
+    "if [ -d /opt/tmp ]; then df -Pk /opt/tmp; else df -Pk /tmp; fi; command -v mktemp; command -v sha256sum; command -v tar; command -v timeout"
+  ],
+  "exit_code": 255,
+  "stdout": "",
+  "stderr": "ssh: connect to host 192.168.1.1 port 222: Operation not permitted\n"
+}

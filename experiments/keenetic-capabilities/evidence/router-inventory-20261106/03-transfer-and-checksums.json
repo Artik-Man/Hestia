@@ -1,0 +1,29 @@
+{
+  "time_utc": "2026-11-06T16:03:45.939251+00:00",
+  "command": [
+    "ssh",
+    "-p",
+    "222",
+    "-i",
+    "/Users/artikman/.ssh/hestia_keenetic",
+    "-o",
+    "BatchMode=yes",
+    "-o",
+    "IdentitiesOnly=yes",
+    "-o",
+    "StrictHostKeyChecking=yes",
+    "-o",
+    "ConnectTimeout=10",
+    "-o",
+    "ServerAliveInterval=5",
+    "-o",
+    "ServerAliveCountMax=2",
+    "root@192.168.1.1",
+    "set -eu; umask 077; work=$(mktemp -d /opt/tmp/hestia-diagnostics.XXXXXX); printf \"WORKDIR=%s\\n\" \"$work\"; cat > \"$work/bundle.tar.gz\"; cd \"$work\"; printf \"42ce762c8ca3716ca906b9f23e54c404c64d981ddf58031fd771ec3e68c65767  bundle.tar.gz\\n\" | sha256sum -c -; tar -xzf bundle.tar.gz; cd 20261106-keenetic-inventory-1; sha256sum -c SHA256SUMS"
+  ],
+  "stdin_artifact": "dist/keenetic-diagnostics/20261106-keenetic-inventory-1.tar.gz",
+  "stdin_sha256": "42ce762c8ca3716ca906b9f23e54c404c64d981ddf58031fd771ec3e68c65767",
+  "exit_code": 0,
+  "stdout": "WORKDIR=/opt/tmp/hestia-diagnostics.sqtO9h\nbundle.tar.gz: OK\nREADME.md: OK\nSPECIFICATION.md: OK\nbin/hestia-keenetic-diagnostics: OK\nmanifest.json: OK\n",
+  "stderr": ""
+}

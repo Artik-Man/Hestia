@@ -1,0 +1,28 @@
+{
+  "started_utc": "2026-11-06T16:04:05.289549+00:00",
+  "finished_utc": "2026-11-06T16:04:05.729553+00:00",
+  "command": [
+    "ssh",
+    "-p",
+    "222",
+    "-i",
+    "/Users/artikman/.ssh/hestia_keenetic",
+    "-o",
+    "BatchMode=yes",
+    "-o",
+    "IdentitiesOnly=yes",
+    "-o",
+    "StrictHostKeyChecking=yes",
+    "-o",
+    "ConnectTimeout=10",
+    "-o",
+    "ServerAliveInterval=5",
+    "-o",
+    "ServerAliveCountMax=2",
+    "root@192.168.1.1",
+    "cd /opt/tmp/hestia-diagnostics.sqtO9h/20261106-keenetic-inventory-1 && ./bin/hestia-keenetic-diagnostics --help"
+  ],
+  "exit_code": 0,
+  "stdout": "Диагностика Keenetic: --inventory (JSON), --version, --help.\nТолько чтение среды; сетевые возможности не проверяются.\n",
+  "stderr": ""
+}

@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "version": "20261106-keenetic-inventory-1",
+  "revision": "ca2bb3a7d36ce0414e318311ebb3429dc33098e4",
+  "dirty": true,
+  "source_inputs": {
+    "backend/cmd/hestia-keenetic-diagnostics/main.go": "013067fa76fcd583dfeeddd0352ffba43178eddf77632114701596f4f2dc71b7",
+    "backend/go.mod": "d27d0b06b73254d973fabb43117c8b392e8ec9126a31a40834216ecffc9b92fa",
+    "backend/go.sum": "080cdc73764a04e653749fda1126ea52e37d3239ac192eb47244af66993f0f4c",
+    "backend/internal/keeneticdiagnostics/inventory.go": "4d381d99a091c395d7267d1b741b9b269725a13bfb0dad7596ac3e47f3a93b56",
+    "backend/internal/keeneticdiagnostics/inventory_test.go": "cf6831b1de0885d6ec45c995c2a0064830484baa0761b8079573d5e3d0c382db",
+    "docs/features/keenetic-diagnostics.md": "e2bf66c2300d2a6b241849ce7e5ce987fe5debfc5396e40c1343f8e9200c4d93",
+    "scripts/build-keenetic-diagnostics/readme.md": "0a6d185a4784d1a139bbcc91137afa0c9bdecc27daa2f84adc73bdce6e009f90",
+    "scripts/build-keenetic-diagnostics/run.py": "cf0b3f750bdf204dc5f8f87b95de335020ecdd575e1afec7002448084ee29b9a",
+    "scripts/build-keenetic-diagnostics/test_build.py": "271f2c50f7772ae944f295d55a7eae30cfb1a63709ddfc0d81556eb3252bdaae"
+  },
+  "platform": "keenetic-diagnostics-linux-arm64",
+  "architecture": "aarch64",
+  "cgo_enabled": false,
+  "go_version": "go version go1.27.3 darwin/arm64",
+  "deployment": "not-installed",
+  "hardware_validation": "not-performed",
+  "limitations": [
+    "Inventory only; no network capability tests",
+    "Keenetic compatibility is not confirmed",
+    "Not an application installer or an ipk package"
+  ],
+  "files": {
+    "README.md": "0a6d185a4784d1a139bbcc91137afa0c9bdecc27daa2f84adc73bdce6e009f90",
+    "SPECIFICATION.md": "e2bf66c2300d2a6b241849ce7e5ce987fe5debfc5396e40c1343f8e9200c4d93",
+    "bin/hestia-keenetic-diagnostics": "d8a58dac3bc9c327af9610f753525e591667fb70acd43e5ebb1a70e5758525ee"
+  }
+}

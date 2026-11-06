@@ -1,0 +1,27 @@
+{
+  "time_utc": "2026-11-06T16:05:10.195206+00:00",
+  "command": [
+    "ssh",
+    "-p",
+    "222",
+    "-i",
+    "/Users/artikman/.ssh/hestia_keenetic",
+    "-o",
+    "BatchMode=yes",
+    "-o",
+    "IdentitiesOnly=yes",
+    "-o",
+    "StrictHostKeyChecking=yes",
+    "-o",
+    "ConnectTimeout=10",
+    "-o",
+    "ServerAliveInterval=5",
+    "-o",
+    "ServerAliveCountMax=2",
+    "root@192.168.1.1",
+    "cd /opt/tmp/hestia-diagnostics.sqtO9h/20261106-keenetic-inventory-1 && sha256sum inventory.json"
+  ],
+  "exit_code": 0,
+  "stdout": "050cf970599401c83d10d46c0101a9c409c112270fd2ea5abf3efbfd38977abd  inventory.json\n",
+  "stderr": ""
+}

@@ -1,0 +1,27 @@
+{
+  "time_utc": "2026-11-06T16:03:07.859779+00:00",
+  "command": [
+    "ssh",
+    "-p",
+    "222",
+    "-i",
+    "/Users/artikman/.ssh/hestia_keenetic",
+    "-o",
+    "BatchMode=yes",
+    "-o",
+    "IdentitiesOnly=yes",
+    "-o",
+    "StrictHostKeyChecking=yes",
+    "-o",
+    "ConnectTimeout=10",
+    "-o",
+    "ServerAliveInterval=5",
+    "-o",
+    "ServerAliveCountMax=2",
+    "root@192.168.1.1",
+    "if [ -d /opt/tmp ]; then df -Pk /opt/tmp; else df -Pk /tmp; fi; command -v mktemp; command -v sha256sum; command -v tar; command -v timeout"
+  ],
+  "exit_code": 127,
+  "stdout": "Filesystem           1024-blocks    Used Available Capacity Mounted on\n/dev/sda1              7687876     15228   7260644   0% /tmp/mnt/af0122bd-4cc5-7047-b671-5235ac798004\n/opt/bin/mktemp\n/opt/bin/sha256sum\n/opt/usr/bin/tar\n",
+  "stderr": ""
+}

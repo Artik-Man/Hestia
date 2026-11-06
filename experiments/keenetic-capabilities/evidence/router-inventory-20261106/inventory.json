@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "build_version": "20261106-keenetic-inventory-1",
+  "os": "linux",
+  "architecture": "arm64",
+  "platform_status": "present",
+  "kernel_release": {
+    "status": "present",
+    "value": "4.9-ndm-5"
+  },
+  "memory": {
+    "status": "present",
+    "values_kib": {
+      "MemAvailable": 267840,
+      "MemFree": 143208,
+      "MemTotal": 497612,
+      "SwapFree": 0,
+      "SwapTotal": 0
+    }
+  },
+  "paths": {
+    "/dev/net/tun": {
+      "status": "present",
+      "kind": "character_device"
+    },
+    "/opt": {
+      "status": "present",
+      "kind": "directory"
+    }
+  },
+  "utilities": {
+    "amneziawg-go": "absent",
+    "awg": "absent",
+    "ip": "present",
+    "ip6tables": "absent",
+    "iptables": "absent",
+    "ndmq": "absent",
+    "nft": "absent",
+    "opkg": "present",
+    "pppd": "present",
+    "sing-box": "absent",
+    "sstpc": "present"
+  },
+  "capabilities": {
+    "cli_rci": "not_tested",
+    "dns_ipv6": "not_tested",
+    "event_recovery": "not_tested",
+    "fail_closed": "not_tested",
+    "hardware_acceleration": "not_tested",
+    "netfilter": "not_tested",
+    "netns_veth": "not_tested",
+    "opt_persistence": "not_tested",
+    "packet_marks": "not_tested",
+    "policy_routing": "not_tested",
+    "tun": "not_tested",
+    "vpn_runtime": "not_tested",
+    "wisp": "not_tested"
+  },
+  "limitations": [
+    "Инвентаризация не подтверждает модель роутера, версию KeeneticOS или совместимость Hestia.",
+    "Наличие файла или программы не подтверждает работоспособность, права или версию.",
+    "Программы не запускаются; сеть, службы и файлы не изменяются.",
+    "Свободное место /opt и версии runtime требуют отдельной проверки."
+  ]
+}

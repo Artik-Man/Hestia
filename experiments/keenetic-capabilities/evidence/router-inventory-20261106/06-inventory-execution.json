@@ -1,0 +1,28 @@
+{
+  "started_utc": "2026-11-06T16:04:51.695890+00:00",
+  "finished_utc": "2026-11-06T16:04:51.885279+00:00",
+  "command": [
+    "ssh",
+    "-p",
+    "222",
+    "-i",
+    "/Users/artikman/.ssh/hestia_keenetic",
+    "-o",
+    "BatchMode=yes",
+    "-o",
+    "IdentitiesOnly=yes",
+    "-o",
+    "StrictHostKeyChecking=yes",
+    "-o",
+    "ConnectTimeout=10",
+    "-o",
+    "ServerAliveInterval=5",
+    "-o",
+    "ServerAliveCountMax=2",
+    "root@192.168.1.1",
+    "set -eu; umask 077; set -C; cd /opt/tmp/hestia-diagnostics.sqtO9h/20261106-keenetic-inventory-1; ./bin/hestia-keenetic-diagnostics --inventory > inventory.json; cat inventory.json"
+  ],
+  "exit_code": 0,
+  "stdout": "{\n  \"schema_version\": 1,\n  \"build_version\": \"20261106-keenetic-inventory-1\",\n  \"os\": \"linux\",\n  \"architecture\": \"arm64\",\n  \"platform_status\": \"present\",\n  \"kernel_release\": {\n    \"status\": \"present\",\n    \"value\": \"4.9-ndm-5\"\n  },\n  \"memory\": {\n    \"status\": \"present\",\n    \"values_kib\": {\n      \"MemAvailable\": 267840,\n      \"MemFree\": 143208,\n      \"MemTotal\": 497612,\n      \"SwapFree\": 0,\n      \"SwapTotal\": 0\n    }\n  },\n  \"paths\": {\n    \"/dev/net/tun\": {\n      \"status\": \"present\",\n      \"kind\": \"character_device\"\n    },\n    \"/opt\": {\n      \"status\": \"present\",\n      \"kind\": \"directory\"\n    }\n  },\n  \"utilities\": {\n    \"amneziawg-go\": \"absent\",\n    \"awg\": \"absent\",\n    \"ip\": \"present\",\n    \"ip6tables\": \"absent\",\n    \"iptables\": \"absent\",\n    \"ndmq\": \"absent\",\n    \"nft\": \"absent\",\n    \"opkg\": \"present\",\n    \"pppd\": \"present\",\n    \"sing-box\": \"absent\",\n    \"sstpc\": \"present\"\n  },\n  \"capabilities\": {\n    \"cli_rci\": \"not_tested\",\n    \"dns_ipv6\": \"not_tested\",\n    \"event_recovery\": \"not_tested\",\n    \"fail_closed\": \"not_tested\",\n    \"hardware_acceleration\": \"not_tested\",\n    \"netfilter\": \"not_tested\",\n    \"netns_veth\": \"not_tested\",\n    \"opt_persistence\": \"not_tested\",\n    \"packet_marks\": \"not_tested\",\n    \"policy_routing\": \"not_tested\",\n    \"tun\": \"not_tested\",\n    \"vpn_runtime\": \"not_tested\",\n    \"wisp\": \"not_tested\"\n  },\n  \"limitations\": [\n    \"Инвентаризация не подтверждает модель роутера, версию KeeneticOS или совместимость Hestia.\",\n    \"Наличие файла или программы не подтверждает работоспособность, права или версию.\",\n    \"Программы не запускаются; сеть, службы и файлы не изменяются.\",\n    \"Свободное место /opt и версии runtime требуют отдельной проверки.\"\n  ]\n}\n",
+  "stderr": ""
+}
