@@ -1,0 +1,33 @@
+verification_time_utc=2026-11-06T18:30:58Z
+wrapper_gofmt_check=exit=0
+wrapper_vet=exit=0
+daemon_vet=exit=0
+isolated_binary_override_strings=/opt/tmp/hestia-awg-uapi-26b84f
+exit=0
+isolated_binary_build_info=/Users/artikman/Documents/projects/hestia/experiments/keenetic-awg-uapi/prototype/amneziawg-go-isolated: go1.27.3
+	path	github.com/amnezia-vpn/amneziawg-go/v3
+	mod	github.com/amnezia-vpn/amneziawg-go/v3	(devel)
+	dep	golang.org/x/crypto	v0.42.0	h1:chiH31gIWm57EkTXpwnqf8qeuMUi0yekh6mT2AvFlqI=
+	dep	golang.org/x/net	v0.44.0	h1:evd8IRDyfNBMBTTY5XRF1vaZlD+EmWx6x8PkhR04H/I=
+	dep	golang.org/x/sys	v0.36.0	h1:KVRy2GtZBrk1cBYA7MKu5bEZFxQk4NIDV6RLVcC8o0k=
+	build	-buildmode=exe
+	build	-compiler=gc
+	build	-trimpath=true
+	build	DefaultGODEBUG=cryptocustomrand=1,httpservecontentmaxranges=1,tlssecpmlkem=0,tracebacklabels=0,urlstrictcolons=0,x509sslcertoverrideplatform=0
+	build	CGO_ENABLED=0
+	build	GOARCH=arm64
+	build	GOOS=linux
+	build	GOARM64=v8.0
+exit=0
+corrected_local_verification_time_utc=2026-11-06T18:33:55Z
+source_commit=b5928efb6ca19f0153958460c3d141f04abc5c2e
+version_source=package main
+
+const Version = "v3.1.20260828"
+experiments/keenetic-awg-uapi/prototype/amneziawg-go-isolated: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, Go BuildID=9CbkVjgeidBF4tBGp-6D/M4eDu9slODLpCrYe9jiy/2r8WQVZW-18UDUk_MEED/wRkioSCpzrGDtKOTsGg6, BuildID[sha1]=321733ddbee99265625b22150912424a3660cb8a, with debug_info, not stripped
+9b6ad62955e0471197cc535c1a939b79697d90bced9316e351756d1cfdf22937  experiments/keenetic-awg-uapi/prototype/amneziawg-go-isolated
+socket_directory_string=/opt/tmp/hestia-awg-uapi-26b84f
+wrapper_hash=ac962dd1ccb622fe033f7115fcba1ac0b10361df75f580750f07f9c362668a56  experiments/keenetic-awg-uapi/prototype/awg-uapi-probe
+source_vet=exit=0
+
+Evidence formatting note: trailing whitespace in go version -m output was removed before commit; field values are unchanged.

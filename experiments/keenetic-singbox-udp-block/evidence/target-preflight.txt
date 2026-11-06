@@ -1,0 +1,6 @@
+start_utc=2026-11-06T18:29:15Z
+command=ssh -p 222 -i ~/.ssh/hestia_keenetic -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=7 root@192.168.1.1 read-only preflight
+target-reachable
+existing-runtime-path=127
+exit_code=0
+end_utc=2026-11-06T18:29:15Z

@@ -1,0 +1,4 @@
+start_utc=2026-11-06T18:30:32Z
+command=scp -O -p with StrictHostKeyChecking=yes: pinned sing-box, static harness, loopback-only config
+exit_code=0
+end_utc=2026-11-06T18:30:38Z

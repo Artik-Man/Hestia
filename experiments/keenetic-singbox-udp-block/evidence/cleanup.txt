@@ -1,0 +1,6 @@
+start_utc=2026-11-06T18:33:25Z
+command=Remove only own temporary directory and verify exact PIDs 25104/25115/25116 plus path absent
+owned_pids_absent=25104,25115,25116
+temporary_directory_absent=yes
+exit_code=0
+end_utc=2026-11-06T18:33:30Z

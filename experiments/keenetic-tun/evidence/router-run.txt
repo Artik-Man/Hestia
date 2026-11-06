@@ -1,0 +1,31 @@
+started=2026-11-06T17:57:48Z
+device=aarch64
+4.9-ndm-5
+binary_sha256=562d7f75dabcbfbdfe042ea9b995995369007631b5af63fd6fa4015c1110a56b  /opt/tmp/hestia-tun-7d3e4a/probe
+interface_absent_before=htun7d3e4a
+e7dd72b7cdaaa5e1cb3dbbac50ae0e5f72d193fd66261a2ebeb431fea2d803ed  /opt/tmp/hestia-tun-7d3e4a/before-v4-routes
+52a656ed73f1a2c72f79a91fcd6f7cbe5bc59a1b33d5a89fb4e64cfac61c5b9c  /opt/tmp/hestia-tun-7d3e4a/before-v4-rules
+208c4cc100e02e620c4114c9062d7102ecc09d30e48bac2552e326f6db5de910  /opt/tmp/hestia-tun-7d3e4a/before-v6-routes
+77570d3b73b6f8265509d05ee2d03df846fd2f2d9f537a0dc58e0cb0739b1aaf  /opt/tmp/hestia-tun-7d3e4a/before-v6-rules
+     1004 /opt/tmp/hestia-tun-7d3e4a/before-v4-routes
+       19 /opt/tmp/hestia-tun-7d3e4a/before-v4-rules
+      106 /opt/tmp/hestia-tun-7d3e4a/before-v6-routes
+       10 /opt/tmp/hestia-tun-7d3e4a/before-v6-rules
+     1139 total
+probe_exit=0
+probe_stdout={"name":"htun7d3e4a","name_absent_before":true,"create_succeeded":true,"interface_present_after_create":true,"close_succeeded":true,"interface_absent_after_close":true}
+probe_stderr=interface_absent_after_process=true:htun7d3e4a
+e7dd72b7cdaaa5e1cb3dbbac50ae0e5f72d193fd66261a2ebeb431fea2d803ed  /opt/tmp/hestia-tun-7d3e4a/after-v4-routes
+52a656ed73f1a2c72f79a91fcd6f7cbe5bc59a1b33d5a89fb4e64cfac61c5b9c  /opt/tmp/hestia-tun-7d3e4a/after-v4-rules
+208c4cc100e02e620c4114c9062d7102ecc09d30e48bac2552e326f6db5de910  /opt/tmp/hestia-tun-7d3e4a/after-v6-routes
+77570d3b73b6f8265509d05ee2d03df846fd2f2d9f537a0dc58e0cb0739b1aaf  /opt/tmp/hestia-tun-7d3e4a/after-v6-rules
+     1004 /opt/tmp/hestia-tun-7d3e4a/after-v4-routes
+       19 /opt/tmp/hestia-tun-7d3e4a/after-v4-rules
+      106 /opt/tmp/hestia-tun-7d3e4a/after-v6-routes
+       10 /opt/tmp/hestia-tun-7d3e4a/after-v6-rules
+     1139 total
+snapshot_v4-routes=match
+snapshot_v6-routes=match
+snapshot_v4-rules=match
+snapshot_v6-rules=match
+finished=2026-11-06T17:57:48Z

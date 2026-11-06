@@ -1,0 +1,17 @@
+preflight_host_time_utc=2026-11-06T18:31:52Z
+device_time=2026-11-06T18:31:51Z
+hostname=Keenetic-G-8919
+kernel=4.9-ndm-5
+arch=aarch64
+interface_absent=true
+private_runtime_dir_absent=true
+shared_uapi_dir_present=false
+--- ip4 routes
+[REDACTED: ip4 routes; 103 entries; SHA-256 1e518b4651d62f4d2b47295287c7a803c65d7c13940674d6eb94250acc239a54. Device topology removed from shared evidence.]
+--- ip6 routes
+[REDACTED: ip6 routes; 14 entries; SHA-256 94483fe3d20363e24303b9e008af0aba262bb383a265f3bed9e0f0cb4a8530ba. Device topology removed from shared evidence.]
+--- ip4 rules
+[REDACTED: ip4 rules; 19 entries; SHA-256 52a656ed73f1a2c72f79a91fcd6f7cbe5bc59a1b33d5a89fb4e64cfac61c5b9c. Device topology removed from shared evidence.]
+--- ip6 rules
+[REDACTED: ip6 rules; 10 entries; SHA-256 77570d3b73b6f8265509d05ee2d03df846fd2f2d9f537a0dc58e0cb0739b1aaf. Device topology removed from shared evidence.]
+preflight_ssh_exit=0

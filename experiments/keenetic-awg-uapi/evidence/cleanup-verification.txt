@@ -1,0 +1,13 @@
+device_owned_artifact_cleanup_start_host_utc=2026-11-06T18:44:54Z
+rmdir: '/opt/tmp/hestia-awg-uapi-26b84f': Directory not empty
+device_owned_artifact_cleanup_ssh_exit=1
+device_owned_artifact_cleanup_finish_host_utc=2026-11-06T18:44:56Z
+appledouble_cleanup_start_host_utc=2026-11-06T18:45:29Z
+artifact_directory_absent=true
+tun_interface_absent=true
+shared_uapi_directory_absent=true
+cleanup_device_time=2026-11-06T18:45:28Z
+appledouble_cleanup_ssh_exit=0
+appledouble_cleanup_finish_host_utc=2026-11-06T18:45:29Z
+
+cleanup_evidence_gap=Final absence is verified above, but the exact names of the macOS AppleDouble sidecars and their targeted rm command were not retained in this evidence file. Do not infer those names or treat this file as a raw transcript of that cleanup step.

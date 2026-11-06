@@ -1,0 +1,5 @@
+start_utc=2026-11-06T18:33:10Z
+command=awk redaction of two topology-bearing sing-box informational log lines; retain timestamp and level, replace message with explicit reason
+redacted_lines=2
+exit_code=0
+end_utc=2026-11-06T18:33:10Z

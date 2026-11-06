@@ -1,0 +1,5 @@
+ba63801d1ec0e9b632dd74c18fb7379991c7748748caf13a72d8ebb7bafc5d99  experiments/keenetic-dns-local/prototype/dns-local.go
+367943b591400647d8ae03b969a9fbb7beed69cc276f394e6fdc3d2690e55419  experiments/keenetic-dns-local/prototype/singbox-dns.json
+40504d9679259233bc510cd5ca25305abc30a57866440ba9f85e4eb37c9d5345  experiments/keenetic-dns-local/prototype/run-dns-study.sh
+5cf328246a9c4384622c9ac66527c56e3c62dfa838a617cb5d79c13d7e36da9d  experiments/keenetic-dns-local/evidence/run-2/responder.log
+af701f36854e1e45333d70c968701dd2ea87bbb47ee7d70f3bf9dc95bcfe516d  experiments/keenetic-dns-local/evidence/run-2/sing-box.log

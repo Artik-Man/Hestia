@@ -1,0 +1,4 @@
+start_utc=2026-11-06T18:31:26Z
+command=scp updated loopback-only config with verified host key
+exit_code=0
+end_utc=2026-11-06T18:31:27Z

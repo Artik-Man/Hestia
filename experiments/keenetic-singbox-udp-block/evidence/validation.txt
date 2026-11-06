@@ -1,0 +1,39 @@
+# Независимая проверка свидетельств SOCKS UDP и block
+
+Проверяющий: Evidence2 (тестировщик). Проверка выполнена по сохранённым артефактам и локальной пересборке; к роутеру и ВМ не подключался. Дата проверки: 6 ноября 2026 года.
+
+## Подтверждено
+
+- SHA-256 локальной конфигурации `prototype/singbox-udp-block.json` — `44669efcde92d08049b44bfe3061712c9b029ef32a53cb8da750ea280c89c5c5`; совпадает с `config-final-local-hash.txt`, финальной удалённой проверкой `config-final-check.txt` и `hash-and-run.json`.
+- Локальный исходник помощника `prototype/udp-block-harness.go` имеет SHA-256 `1ff62902ad0bba7c37e6f3ef2b3f69924d7a7cd23b94f81906f1e665702d70fb`. Повторные `gofmt -d` и `GOTOOLCHAIN=local GOPROXY=off go vet ./experiments/keenetic-singbox-udp-block/prototype/udp-block-harness.go` завершились без вывода и с кодом 0.
+- Повторная статическая Linux/ARM64 сборка командой из отчёта, с отдельным выходным путём `/private/tmp/hestia-singbox-udp-block-harness-validation`, дала SHA-256 `9e13ff07b4274514bbb75a7405e0c739bf2221f6e5739526954520ad92b00ceb`. Он совпадает с хешем помощника в `hash-and-run.json` и удалённой проверке `target-runtime-checks.txt`.
+- SHA-256 sing-box `d953af885f11d6b547c21a3c0ffe70796963afc802fab959d548311002b4908a` в `hash-and-run.json` совпадает с удалённым хешем в `target-runtime-checks.txt` и ранее независимо описанным хешем бинарника в `keenetic-capabilities/evidence/singbox-loopback-20261106/run-manifest.md`. Предыдущий протокол связывает его с закреплённым официальным архивом и проверенным Entware loader.
+- Последовательность результата в `device-run-transcript.txt` согласуется с `hash-and-run.json` и README: прямой маркер на deny witness получен (счётчик 1), SOCKS TCP и разрешённый SOCKS UDP получили маркеры (счётчики 1), затем отказанная SOCKS UDP проба завершилась таймаутом при счётчике witness `1 → 1`; PID sing-box показан живым до и после. Лог содержит правило `.1/32 → direct` и `outbound/block` для `.2:19183`. Harness завершился кодом 0.
+- Все четыре хеша маршрутов и правил совпадают в пределах начального preflight и измерений до/после основного запуска. Это подтверждает неизменность хешированных снимков; сами таблицы намеренно не сохранены.
+- `cleanup.txt` подтверждает код 0, отсутствие заявленных PID и временного каталога. Документированы две отредактированные топологические строки sing-box; `redaction.txt` указывает причину и число замен.
+- Исходник содержит явные конечные сроки ожидания, отдельный прямой положительный контроль, проверку живого процесса вокруг отрицательной пробы и проверку изменения счётчика. Локальная сборка, форматирование и `vet` повторены независимо; устройство не использовалось.
+
+## Замечания к полноте и воспроизводимости
+
+- `device-run-transcript.txt` не содержит буквальный текст удалённого shell/SSH payload: поле `command` описывает операцию кратким резюме. Поэтому независимая проверка подтверждает согласованность сохранённой последовательности результата, но не позволяет буквально воспроизвести каждую удалённую команду по этому файлу. Не следует дополнять transcript реконструированным скриптом.
+- README указывает, что первая SSH-попытка завершилась `Operation not permitted` с кодом 255, но отдельного сохранённого первичного вывода этой попытки нет. Checkpoint автора прямо говорит, что неудачный вывод был перезаписан успешным повтором. Ошибка описана текстом, но её raw stdout/stderr независимо не проверяется.
+- Device transcript является частично отредактированным свидетельством, а не неизменённым raw log: две строки заменены placeholders. Причина изменения зафиксирована; исходные две строки в репозитории отсутствуют. Политика сохранения хешей вместо исходного содержимого маршрутов/правил также не позволяет проверить их значения, только совпадение снимков.
+- README/свидетельства поддерживают узкий вывод для SOCKS TCP/UDP и block на loopback конкретного KN-1012. Они не подтверждают TCP block, клиентский транзит, DNS, внешний трафик, IPv6, TUN/VPN или поведение Hestia. Повтор на устройстве в рамках независимой проверки не выполнялся.
+
+## Выполненные локальные проверки
+
+```sh
+sha256sum experiments/keenetic-singbox-udp-block/prototype/singbox-udp-block.json \
+  experiments/keenetic-singbox-udp-block/prototype/udp-block-harness.go
+gofmt -d experiments/keenetic-singbox-udp-block/prototype/udp-block-harness.go
+GOTOOLCHAIN=local GOPROXY=off go vet ./experiments/keenetic-singbox-udp-block/prototype/udp-block-harness.go
+CGO_ENABLED=0 GOOS=linux GOARCH=arm64 GOTOOLCHAIN=local GOPROXY=off \
+  go build -trimpath -buildvcs=false \
+  -o /private/tmp/hestia-singbox-udp-block-harness-validation \
+  experiments/keenetic-singbox-udp-block/prototype/udp-block-harness.go
+sha256sum /private/tmp/hestia-singbox-udp-block-harness-validation
+```
+
+## Итог
+
+Согласованность локальных исходников, конфигурации, воспроизводимой сборки и сохранённых результатов подтверждена. Материалы поддерживают заявленный ограниченный loopback результат. Полный первичный удалённый командный payload и raw вывод неудачного первого SSH подключения не сохранены; две строки основного runtime transcript редактированы с документированной причиной. Эти ограничения следует оставить явными и не выдавать материалы за полный неизменённый raw transcript.

@@ -1,0 +1,30 @@
+Command:
+
+```sh
+curl --noproxy '' --fail --silent --show-error --verbose --max-time 8 \
+  --socks5-hostname 127.0.0.1:11082 http://127.0.0.1:18081/
+```
+
+Observed output:
+
+```text
+*   Trying 127.0.0.1:11082...
+* Connected to 127.0.0.1 (127.0.0.1) port 11082
+* SOCKS5 connect to 127.0.0.1:18081 (remotely resolved)
+* SOCKS5 request granted.
+* Connected to 127.0.0.1 (127.0.0.1) port 11082
+> GET / HTTP/1.1
+> Host: 127.0.0.1:18081
+> User-Agent: curl/8.7.1
+> Accept: */*
+>
+* Request completely sent off
+< HTTP/1.1 200 OK
+< Content-Type: text/plain; charset=utf-8
+< Content-Length: 28
+<
+hestia-sing-box-loopback-ok
+* Connection #0 to host 127.0.0.1 left intact
+```
+
+Exit code: 0. The explicit empty `--noproxy` value forces curl through the SOCKS endpoint even when the operator environment normally bypasses proxies for loopback.

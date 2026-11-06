@@ -1,0 +1,35 @@
+{
+  "log": {
+    "level": "info"
+  },
+  "inbounds": [
+    {
+      "type": "socks",
+      "tag": "loopback-socks",
+      "listen": "127.0.0.1",
+      "listen_port": 1080
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "direct",
+      "tag": "loopback-direct"
+    },
+    {
+      "type": "block",
+      "tag": "deny-other-destinations"
+    }
+  ],
+  "route": {
+    "rules": [
+      {
+        "ip_cidr": [
+          "127.0.0.1/32"
+        ],
+        "action": "route",
+        "outbound": "loopback-direct"
+      }
+    ],
+    "final": "deny-other-destinations"
+  }
+}

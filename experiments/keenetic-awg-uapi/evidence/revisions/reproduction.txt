@@ -1,0 +1,9 @@
+revision_reconstruction_utc=2026-11-06T18:40:17Z
+saved_revision_hashes=f135dfdf74a097045def2b7b9ef98984224c785a64e441f001e9aed65c89dabf  experiments/keenetic-awg-uapi/evidence/revisions/probe-before-diagnostic-logging.go
+4ec76a502b7d4832eac8533bb8ffab1235e412ebeb863c19e0c86550f97588ed  experiments/keenetic-awg-uapi/evidence/revisions/probe-before-listener-unlink-fix.go
+pre_unlink_source_build_exit=0
+71cda03a9e91e9ad9836daa5ace99d8797d4721874d80f7b1dd16e81d4f32754  /private/tmp/probe-before-listener-unlink-fix
+pre_logging_source_build_exit=0
+134c33ae2aefb126b2022391913ae527336f99cc130fd69ad7a97ad01d8018d0  /private/tmp/probe-before-diagnostic-logging
+22668ef6690e382db84c914963a65f6f2f708858a6248bc2a8b4cd52c1e67592  experiments/keenetic-awg-uapi/evidence/revisions/probe-before-clamp-aware-compare.go
+b034a528ae625a570d88ebb6146b4283a05afc42270286f1acd9874922eedc10  experiments/keenetic-awg-uapi/evidence/revisions/probe-before-postdelete-check-fix.go

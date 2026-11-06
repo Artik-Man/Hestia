@@ -1,0 +1,65 @@
+#!/bin/sh
+# Run the temporary loopback DNS responder and sing-box with an owned timeout watchdog.
+set -eu
+umask 077
+work=/opt/tmp/hestia-dns-local.20261106-9f4c3d
+cd "$work"
+route4_before=$(ip -4 route show table all | sha256sum | awk '{print $1}')
+rules4_before=$(ip -4 rule show | sha256sum | awk '{print $1}')
+route6_before=$(ip -6 route show table all | sha256sum | awk '{print $1}')
+rules6_before=$(ip -6 rule show | sha256sum | awk '{print $1}')
+./hestia-dns-local-helper responder >responder.log 2>&1 &
+helper_pid=$!
+/opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib ./sing-box run -c singbox-dns.json >sing-box.log 2>&1 &
+singbox_pid=$!
+(
+    sleep 75
+    kill -TERM "$singbox_pid" "$helper_pid" 2>/dev/null || true
+    sleep 2
+    rm -rf "$work"
+) </dev/null >/dev/null 2>&1 &
+watchdog_pid=$!
+printf 'helper_pid=%s\nsingbox_pid=%s\nwatchdog_pid=%s\n' "$helper_pid" "$singbox_pid" "$watchdog_pid" >run-status.txt
+attempt=0
+while ! grep -q 'responder ready' responder.log || ! grep -q 'sing-box started' sing-box.log; do
+    if ! kill -0 "$helper_pid" 2>/dev/null || ! kill -0 "$singbox_pid" 2>/dev/null; then
+        printf 'startup=failed\n' >>run-status.txt
+        break
+    fi
+    attempt=$((attempt + 1))
+    if [ "$attempt" -ge 20 ]; then
+        printf 'startup=timeout\n' >>run-status.txt
+        break
+    fi
+    sleep 1
+done
+if grep -q 'responder ready' responder.log && grep -q 'sing-box started' sing-box.log; then
+    printf 'startup=ready\n' >>run-status.txt
+    if ./hestia-dns-local-helper probe >probe.log 2>&1; then
+        printf 'probe_exit=0\n' >>run-status.txt
+    else
+        probe_rc=$?
+        printf 'probe_exit=%s\n' "$probe_rc" >>run-status.txt
+    fi
+else
+    probe_rc=1
+fi
+kill -TERM "$singbox_pid" "$helper_pid" 2>/dev/null || true
+wait "$singbox_pid" 2>/dev/null || true
+wait "$helper_pid" 2>/dev/null || true
+kill "$watchdog_pid" 2>/dev/null || true
+wait "$watchdog_pid" 2>/dev/null || true
+if kill -0 "$singbox_pid" 2>/dev/null || kill -0 "$helper_pid" 2>/dev/null; then
+    printf 'owned_process_cleanup=failed\n' >>run-status.txt
+    probe_rc=1
+else
+    printf 'owned_process_cleanup=confirmed\n' >>run-status.txt
+fi
+route4_after=$(ip -4 route show table all | sha256sum | awk '{print $1}')
+rules4_after=$(ip -4 rule show | sha256sum | awk '{print $1}')
+route6_after=$(ip -6 route show table all | sha256sum | awk '{print $1}')
+rules6_after=$(ip -6 rule show | sha256sum | awk '{print $1}')
+printf 'routes4_before=%s\nroutes4_after=%s\nrules4_before=%s\nrules4_after=%s\nroutes6_before=%s\nroutes6_after=%s\nrules6_before=%s\nrules6_after=%s\n' "$route4_before" "$route4_after" "$rules4_before" "$rules4_after" "$route6_before" "$route6_after" "$rules6_before" "$rules6_after" >route-rule-hashes.txt
+[ "$route4_before" = "$route4_after" ] && [ "$rules4_before" = "$rules4_after" ] && [ "$route6_before" = "$route6_after" ] && [ "$rules6_before" = "$rules6_after" ] || probe_rc=1
+cat run-status.txt route-rule-hashes.txt
+[ "${probe_rc:-0}" -eq 0 ]

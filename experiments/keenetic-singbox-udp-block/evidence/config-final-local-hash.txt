@@ -1,0 +1,5 @@
+start_utc=2026-11-06T18:31:26Z
+command=shasum -a 256 updated singbox-udp-block.json
+44669efcde92d08049b44bfe3061712c9b029ef32a53cb8da750ea280c89c5c5  experiments/keenetic-singbox-udp-block/prototype/singbox-udp-block.json
+exit_code=0
+end_utc=2026-11-06T18:31:26Z

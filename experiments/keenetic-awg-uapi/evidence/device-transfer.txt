@@ -1,0 +1,58 @@
+corrected_transfer_start_host_utc=2026-11-06T18:34:19Z
+9b6ad62955e0471197cc535c1a939b79697d90bced9316e351756d1cfdf22937  amneziawg-go-isolated
+ac962dd1ccb622fe033f7115fcba1ac0b10361df75f580750f07f9c362668a56  awg-uapi-probe
+amneziawg-go-isolated: OK
+awg-uapi-probe: OK
+--- corrected daemon version
+amneziawg-go v3.1.20260828
+
+Userspace AmneziaWG daemon for linux-arm64.
+Information available at https://amnezia.org
+daemon_version_exit=0
+--- corrected device hashes
+9b6ad62955e0471197cc535c1a939b79697d90bced9316e351756d1cfdf22937  amneziawg-go-isolated
+ac962dd1ccb622fe033f7115fcba1ac0b10361df75f580750f07f9c362668a56  awg-uapi-probe
+corrected_transfer_and_version_exit=0
+corrected_transfer_finish_host_utc=2026-11-06T18:34:20Z
+bounded_wrapper_transfer_start_utc=2026-11-06T18:37:22Z
+de208c103ee5295b22ee85b8745d7a8a80285165d8bdd62787e28d20545493a1  amneziawg-go-isolated
+67cf1c80c297edf78786f2cf1f7a589fc5608e354f55b8923c05f28d31a95123  awg-uapi-probe
+amneziawg-go-isolated: OK
+awg-uapi-probe: OK
+amneziawg-go v3.1.20260828
+
+Userspace AmneziaWG daemon for linux-arm64.
+Information available at https://amnezia.org
+daemon_version_exit=0
+de208c103ee5295b22ee85b8745d7a8a80285165d8bdd62787e28d20545493a1  amneziawg-go-isolated
+67cf1c80c297edf78786f2cf1f7a589fc5608e354f55b8923c05f28d31a95123  awg-uapi-probe
+bounded_wrapper_transfer_exit=0
+bounded_wrapper_transfer_finish_utc=2026-11-06T18:37:26Z
+diagnostic_wrapper_transfer_start_utc=2026-11-06T18:38:49Z
+d6d7bbd848df4e33307f72c5994e2454fea39b8d5ff3e5d87eb63b4946e2ae57  awg-uapi-probe
+awg-uapi-probe: OK
+de208c103ee5295b22ee85b8745d7a8a80285165d8bdd62787e28d20545493a1  amneziawg-go-isolated
+d6d7bbd848df4e33307f72c5994e2454fea39b8d5ff3e5d87eb63b4946e2ae57  awg-uapi-probe
+diagnostic_wrapper_transfer_exit=0
+diagnostic_wrapper_transfer_finish_utc=2026-11-06T18:38:50Z
+listener_fix_transfer_start_utc=2026-11-06T18:40:52Z
+9ff7ab1a097c39c4e017a64fbd7f09518ecd84569188082f8c8d50cf4f0a23e1  awg-uapi-probe
+awg-uapi-probe: OK
+de208c103ee5295b22ee85b8745d7a8a80285165d8bdd62787e28d20545493a1  amneziawg-go-isolated
+9ff7ab1a097c39c4e017a64fbd7f09518ecd84569188082f8c8d50cf4f0a23e1  awg-uapi-probe
+listener_fix_transfer_exit=0
+listener_fix_transfer_finish_utc=2026-11-06T18:40:54Z
+clamp_aware_wrapper_transfer_start_utc=2026-11-06T18:42:42Z
+0f458161605e9d2da456dcd065220c7cc84e27a32e48cbca1f015628df09c760  awg-uapi-probe
+awg-uapi-probe: OK
+de208c103ee5295b22ee85b8745d7a8a80285165d8bdd62787e28d20545493a1  amneziawg-go-isolated
+0f458161605e9d2da456dcd065220c7cc84e27a32e48cbca1f015628df09c760  awg-uapi-probe
+clamp_aware_wrapper_transfer_exit=0
+clamp_aware_wrapper_transfer_finish_utc=2026-11-06T18:42:43Z
+cleanup_assertion_fix_transfer_start_utc=2026-11-06T18:43:53Z
+0846f4465fc8f5d523a3712621ebfcee3e67e8d98b7b9b4099fcdf6c03bedb5a  awg-uapi-probe
+awg-uapi-probe: OK
+de208c103ee5295b22ee85b8745d7a8a80285165d8bdd62787e28d20545493a1  amneziawg-go-isolated
+0846f4465fc8f5d523a3712621ebfcee3e67e8d98b7b9b4099fcdf6c03bedb5a  awg-uapi-probe
+cleanup_assertion_fix_transfer_exit=0
+cleanup_assertion_fix_transfer_finish_utc=2026-11-06T18:43:55Z

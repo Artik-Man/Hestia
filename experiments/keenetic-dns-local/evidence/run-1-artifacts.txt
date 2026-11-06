@@ -1,0 +1,10 @@
+Run 1 code/config identity, independently matching the original `router-validation.txt` remote SHA output:
+helper: 87e84a34e98ecbc99a81f53710a96c492d75e3f4737f944a6d3e6dc6896af482
+config: 51ca1a884cee9b51cf9b4ea6198c0b78dfc434180ed00bf61d12f34c9eccfa99
+sing-box: d953af885f11d6b547c21a3c0ffe70796963afc802fab959d548311002b4908a
+
+The runtime log's interface and gateway detail lines are redacted in the checked-in copy.
+
+ERRATUM (added after evidence review; original digest lines above are preserved): the config digest attribution above is stale and incorrect. `router-validation.txt` is the earlier config SHA-256 51ca1a884cee9b51cf9b4ea6198c0b78dfc434180ed00bf61d12f34c9eccfa99 and its check exited 1. Before the first live run, `router-validation-retry.txt` records a successful check of remote config SHA-256 367943b591400647d8ae03b969a9fbb7beed69cc276f394e6fdc3d2690e55419. `transfer-commands.txt` does not preserve the corrected-config SCP command, and no config digest was sampled at the instant run 1 started. The ordered records make SHA 367943… a plausible run-1 config, but do not independently prove it; SHA 51ca must not be cited as the successful run-1 config. No `ENABLE_DEPRECATED_MISSING_DOMAIN_RESOLVER` setting is recorded or included in the saved run command.
+
+Run 1 used helper binary SHA-256 87e84a34e98ecbc99a81f53710a96c492d75e3f4737f944a6d3e6dc6896af482. The source then present had SHA-256 c9c41d5e8e28c9b6d72ac55b35eaaa9c8860c5aefd59d0f6e556e83981652205, but was edited to add responder transaction-ID logging before run 2 and was not retained as a separate source file. Only run 2's source SHA-256 ba63801d1ec0e9b632dd74c18fb7379991c7748748caf13a72d8ebb7bafc5d99 is reproducible from the current prototype.

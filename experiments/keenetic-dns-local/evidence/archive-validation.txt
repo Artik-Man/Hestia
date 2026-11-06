@@ -1,0 +1,11 @@
+Command: shasum -a 256 /private/tmp/hestia-platform-audit.Fx4hA0C4/sing-box.tgz
+436441f76ee2f7fe21b5b2d426d3cb261a480455a704865789ad533e4273ec26  /private/tmp/hestia-platform-audit.Fx4hA0C4/sing-box.tgz
+Expected pinned SHA-256: 436441f76ee2f7fe21b5b2d426d3cb261a480455a704865789ad533e4273ec26 (scripts/build/runtime-lock.json; deploy/sing-box-1.14.4-linux-arm64.sha256)
+
+Command: tar -tzf /private/tmp/hestia-platform-audit.Fx4hA0C4/sing-box.tgz
+sing-box-1.14.4-linux-arm64/
+sing-box-1.14.4-linux-arm64/LICENSE
+sing-box-1.14.4-linux-arm64/sing-box
+sing-box-1.14.4-linux-arm64/libcronet.so
+
+Only the independently hash-verified `sing-box` ELF was transferred. No archive entry was extracted on the router.

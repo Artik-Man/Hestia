@@ -1,0 +1,5 @@
+[36mINFO[0m[0000] inbound/socks[loopback-socks]: tcp server started at 127.0.0.1:1080
+[36mINFO[0m[0000] sing-box started (0.03s)
+[36mINFO[0m[0015] [[38;5;28m281332963[0m 0ms] inbound/socks[loopback-socks]: inbound connection from 127.0.0.1:60128
+[36mINFO[0m[0015] [[38;5;28m281332963[0m 7ms] inbound/socks[loopback-socks]: inbound connection to 127.0.0.1:18081
+[36mINFO[0m[0015] [[38;5;28m281332963[0m 7ms] outbound/direct[loopback-direct]: outbound connection to 127.0.0.1:18081

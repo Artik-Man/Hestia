@@ -1,0 +1,1 @@
+ssh -p 222 -i "$HOME/.ssh/hestia_keenetic" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes root@192.168.1.1 "cd /opt/tmp/hestia-dns-local.20261106-9f4c3d && ./run-dns-study.sh"

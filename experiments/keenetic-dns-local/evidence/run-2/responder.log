@@ -1,0 +1,6 @@
+2026/11/06 18:33:12 responder ready addr=127.0.0.1:19250
+2026/11/06 18:33:14 responder UDP id=1 query=answer.dns-local.test. rcode=0 counters udp=1 tcp=0 answer=1 nxdomain=0
+2026/11/06 18:33:14 responder UDP id=2 query=missing.dns-local.test. rcode=3 counters udp=2 tcp=0 answer=1 nxdomain=1
+2026/11/06 18:33:14 responder TCP id=1 query=answer.dns-local.test. rcode=0 counters udp=2 tcp=1 answer=2 nxdomain=1
+2026/11/06 18:33:14 responder TCP id=15740 query=answer.dns-local.test. rcode=0 counters udp=2 tcp=2 answer=3 nxdomain=1
+2026/11/06 18:33:14 responder TCP id=16285 query=missing.dns-local.test. rcode=3 counters udp=2 tcp=3 answer=3 nxdomain=2

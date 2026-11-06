@@ -1,0 +1,5 @@
+SSH target: root@192.168.1.1 port 222
+StrictHostKeyChecking=yes; IdentityFile=$HOME/.ssh/hestia_keenetic; IdentitiesOnly=yes; BatchMode=yes
+Known host entry: [192.168.1.1]:222
+Pinned host key fingerprint from local known_hosts: ED25519 SHA256:u5mFSUOHtvmfjURyMmAe8N2BVONvSiTAoV7OLn2Czoo
+SSH connection succeeded; see router-preflight.txt, transfer-commands.txt and execution records.

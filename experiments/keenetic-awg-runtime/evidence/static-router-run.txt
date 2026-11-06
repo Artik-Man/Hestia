@@ -1,0 +1,18 @@
+Curated command/output transcript from the SSH tool response (not a raw SSH JSON capture). Exact start/finish time was not recorded.
+Timestamp: exact SSH start/finish timestamps were not preserved by the command wrapper; run completed in this task session on 2026-11-06 UTC.
+Target identity/kernel from read-only preflight: `Keenetic-G-8919`, Linux 4.9-ndm-5, aarch64.
+Artifact: pinned source commit ee0f0a9aa34ff0a0da4b3433b9512781cfe02843 built by Zig 0.17.1 with target aarch64-linux-musl and LDFLAGS=-static.
+Host SHA-256: a04ad65d551c6524f89d5939a39f382be7d1e5b48c0d833b1809480fc07adaf3.
+SSH used port 222, configured identity, BatchMode, IdentitiesOnly, StrictHostKeyChecking=yes, 10s connect timeout, 5s server keepalive, count 2.
+
+Transfer: `COPYFILE_DISABLE=1 tar -cf - -C <verified-staging-dir> awg | ssh ... root@192.168.1.1 ...`; remote directory created via `mktemp -d /opt/tmp/hestia-awg-static.XXXXXX`, umask 077. Remote computed checksum was checked using `sha256sum -c -` before chmod or execution.
+
+Remote private path: `/opt/tmp/hestia-awg-static.CNLRU1`.
+Remote: `awg: OK`.
+
+1) `./awg --version` -> exit 0; stdout `amneziawg-tools v3.1.20260812 - https://amnezia.org`.
+2) `./awg --help` -> exit 0; stdout usage and list of subcommands. It opens no interface/configuration; source `src/wg.c` has early argument handling for `--version` and `--help` before command dispatch.
+
+Cleanup: removed only this probe's `awg` and emptied/removal of `/opt/tmp/hestia-awg-static.CNLRU1`; stdout `CLEANUP=removed`; SSH exit 0. No process remained. No config/profile/key read, no interface/TUN/UAPI, route, firewall, VPN or tunnel operation occurred.
+
+Failed first static transfer: `/opt/tmp/hestia-awg-static.6YH26w` received tar member named `wg` while remote check expected `awg`; checksum failed before any executable command. Directory contents were inspected; only the transferred `wg` file was removed, then directory removed (cleanup exit 0). Corrected retry used private staging filename `awg`, inspected tar listing, and passed SHA before execution.

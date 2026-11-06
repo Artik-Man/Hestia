@@ -1,0 +1,29 @@
+[36mINFO[0m[0000] inbound/direct[local-dns]: tcp server started at 127.0.0.1:19251
+[36mINFO[0m[0000] inbound/direct[local-dns]: udp server started at 127.0.0.1:19251
+[REDACTED: runtime interface and gateway details omitted]
+[REDACTED: runtime interface and gateway details omitted]
+[36mINFO[0m[0000] sing-box started (0.03s)
+[36mINFO[0m[0001] [[38;5;62m2549310254[0m 0ms] inbound/direct[local-dns]: inbound packet connection from 127.0.0.1:55108
+[36mINFO[0m[0001] [[38;5;62m2549310254[0m 0ms] inbound/direct[local-dns]: inbound packet connection to 127.0.0.1:19251
+[37mDEBUG[0m[0001] [[38;5;62m2549310254[0m 0ms] router: match[0] inbound=local-dns => hijack-dns
+[37mDEBUG[0m[0001] [[38;5;62m2549310254[0m 0ms] dns: exchange answer.dns-local.test. IN A
+[37mDEBUG[0m[0001] [[38;5;62m2549310254[0m 0ms] dns: match[0] network=udp => route(synthetic-udp,disable-cache)
+[37mDEBUG[0m[0001] [[38;5;62m2549310254[0m 2ms] dns: exchanged answer.dns-local.test NOERROR 30
+[36mINFO[0m[0001] [[38;5;62m2549310254[0m 2ms] dns: exchanged A answer.dns-local.test. 30 IN A 192.0.2.42
+[36mINFO[0m[0001] [[38;5;230m304342273[0m 0ms] inbound/direct[local-dns]: inbound packet connection from 127.0.0.1:58890
+[36mINFO[0m[0001] [[38;5;230m304342273[0m 0ms] inbound/direct[local-dns]: inbound packet connection to 127.0.0.1:19251
+[37mDEBUG[0m[0001] [[38;5;230m304342273[0m 0ms] router: match[0] inbound=local-dns => hijack-dns
+[37mDEBUG[0m[0001] [[38;5;230m304342273[0m 0ms] dns: exchange missing.dns-local.test. IN A
+[37mDEBUG[0m[0001] [[38;5;230m304342273[0m 0ms] dns: match[0] network=udp => route(synthetic-udp,disable-cache)
+[37mDEBUG[0m[0001] [[38;5;230m304342273[0m 1ms] dns: exchanged missing.dns-local.test NXDOMAIN 0
+[36mINFO[0m[0001] [[38;5;230m490198744[0m 0ms] inbound/direct[local-dns]: inbound connection from 127.0.0.1:60246
+[37mDEBUG[0m[0001] [[38;5;230m490198744[0m 0ms] router: match[0] inbound=local-dns => hijack-dns
+[37mDEBUG[0m[0001] [[38;5;230m490198744[0m 0ms] dns: exchange answer.dns-local.test. IN A
+[37mDEBUG[0m[0001] [[38;5;230m490198744[0m 0ms] dns: match[1] network=tcp => route(synthetic-tcp,disable-cache)
+[37mDEBUG[0m[0001] [[38;5;230m490198744[0m 2ms] dns: exchanged answer.dns-local.test NOERROR 30
+[36mINFO[0m[0001] [[38;5;230m490198744[0m 2ms] dns: exchanged A answer.dns-local.test. 30 IN A 192.0.2.42
+[36mINFO[0m[0001] [[38;5;86m821440145[0m 0ms] inbound/direct[local-dns]: inbound connection from 127.0.0.1:60262
+[37mDEBUG[0m[0001] [[38;5;86m821440145[0m 0ms] router: match[0] inbound=local-dns => hijack-dns
+[37mDEBUG[0m[0001] [[38;5;86m821440145[0m 0ms] dns: exchange missing.dns-local.test. IN A
+[37mDEBUG[0m[0001] [[38;5;86m821440145[0m 0ms] dns: match[1] network=tcp => route(synthetic-tcp,disable-cache)
+[37mDEBUG[0m[0001] [[38;5;86m821440145[0m 1ms] dns: exchanged missing.dns-local.test NXDOMAIN 0

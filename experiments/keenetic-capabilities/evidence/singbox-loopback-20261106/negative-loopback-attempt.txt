@@ -1,0 +1,8 @@
+Attempted only against a loopback address outside the configured allowlist:
+
+```sh
+curl --noproxy '' --silent --show-error --verbose --connect-timeout 2 --max-time 4 \
+  --socks5-hostname 127.0.0.1:11080 http://127.0.0.2:18081/
+```
+
+Observed curl text: `Recv failure: Connection reset by peer`; curl reported error 97 while receiving the initial SOCKS5 response. The wrapper then tried to store `$?` in zsh's read-only variable `status` and failed (`zsh:3: read-only variable: status`; wrapper exit 1). The bounded sing-box process had already ended by then, so the reset does not prove the configured block outbound rejected this destination. No non-loopback destination was attempted.

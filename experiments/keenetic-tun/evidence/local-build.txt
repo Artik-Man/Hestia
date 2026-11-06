@@ -1,0 +1,14 @@
+Date: 2026-11-06
+Host: macOS arm64
+Go: go version go1.27.3 darwin/arm64
+Commands:
+  gofmt -w tests/lab/keenetic-tun/probe.go
+  GO111MODULE=off go vet tests/lab/keenetic-tun/probe.go
+  GOTOOLCHAIN=local GOPROXY=off GO111MODULE=off GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -trimpath -ldflags='-s -w -buildid=' -o /private/tmp/hestia-tun-probe tests/lab/keenetic-tun/probe.go
+Result: gofmt completed after final source revision; go vet completed without diagnostics; build completed. The one-shot helper has a 10-second self-watchdog.
+file: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, stripped
+SHA-256: 562d7f75dabcbfbdfe042ea9b995995369007631b5af63fd6fa4015c1110a56b
+This local build record does not imply the binary ran on the device.
+
+After the run, the owner directed that this capability prototype live under `experiments/keenetic-tun/prototype/` rather than `tests/lab/`. The source was moved unchanged. It was rebuilt and vetted from the final path; the rebuilt artifact has the same SHA-256 as the transferred binary above, so the recorded device digest still identifies the final source.
+Final validation: `gofmt -d experiments/keenetic-tun/prototype/probe.go` produced no diff; `GO111MODULE=off go vet experiments/keenetic-tun/prototype/probe.go` passed; `SHFMT=/private/tmp/hestia-tools/shfmt make docs-check` passed. No full suite or tests were run for this one-off hardware probe.

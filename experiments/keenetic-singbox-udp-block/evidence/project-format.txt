@@ -1,0 +1,3 @@
+go -C backend fmt ./cmd/... ./internal/... ./tools/...
+go: warning: "./cmd/..." matched no packages
+find deploy tests/lab scripts -type f -name '*.sh' -exec shfmt -i 4 -ci -w {} +

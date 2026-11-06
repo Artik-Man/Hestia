@@ -1,0 +1,19 @@
+start_utc=2026-11-06T18:30:51Z
+command=Remote SHA-256, ELF dependency resolution, version and config check via existing /opt loader
+d953af885f11d6b547c21a3c0ffe70796963afc802fab959d548311002b4908a  sing-box
+9e13ff07b4274514bbb75a7405e0c739bf2221f6e5739526954520ad92b00ceb  hestia-singbox-udp-block-harness
+95729a44c9b060113946eeaeadaf55663c29f27ec2b06c7ca3a73a1c693ead92  singbox-udp-block.json
+	linux-vdso.so.1 (0x0000007faa5b9000)
+	libdl.so.2 => /opt/lib/libdl.so.2 (0x0000007faa577000)
+	libpthread.so.0 => /opt/lib/libpthread.so.0 (0x0000007faa549000)
+	libc.so.6 => /opt/lib/libc.so.6 (0x0000007faa3da000)
+	/lib/ld-linux-aarch64.so.1 => /opt/lib/ld-linux-aarch64.so.1 (0x0000007faa58b000)
+sing-box version 1.14.4
+
+Environment: go1.26.10 linux/arm64
+Tags: with_gvisor,with_quic,with_dhcp,with_wireguard,with_utls,with_acme,with_clash_api,with_tailscale,with_ccm,with_ocm,with_cloudflared,with_naive_outbound,with_usbip,with_openvpn,with_openconnect,badlinkname,tfogo_checklinkname0,with_purego
+Revision: c005f35300ce76427dc285481ec5695f5b179cd2
+CGO: disabled
+[31mFATAL[0m[0000] decode config at ./singbox-udp-block.json: inbounds[0].udp: json: unknown field "udp"
+exit_code=1
+end_utc=2026-11-06T18:30:54Z

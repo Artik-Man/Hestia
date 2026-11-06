@@ -1,0 +1,13 @@
+start_utc=2026-11-06T18:30:08Z
+command=SSH mkdir /opt/tmp/hestia-singbox-udp-block.20261106-1830 with mode 0700 only if absent
+stat: invalid option -- 'c'
+BusyBox v1.37.0 (2026-02-13 14:22:43 UTC) multi-call binary.
+
+Usage: stat [-lt] FILE...
+
+Display file status
+
+	-L	Follow links
+	-t	Terse display
+exit_code=1
+end_utc=2026-11-06T18:30:08Z

@@ -1,0 +1,17 @@
+UTC: 2026-11-06 (wall clock from local task context; exact SSH times are not preserved by shell output)
+Target: SSH root@192.168.1.1 port 222, known-host checking enabled, configured identity file.
+
+Read-only command:
+ssh -p 222 -i <configured-key> -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=10 -o ServerAliveInterval=5 -o ServerAliveCountMax=2 root@192.168.1.1 'set -eu; uname -a; for p in /opt/lib/ld-linux-aarch64.so.1 /opt/lib/ld-2.27.so /opt/lib/libc.so.6 /opt/lib/libpthread.so.0; do if [ -e "$p" ]; then ls -l "$p"; else printf "ABSENT %s\\n" "$p"; fi; done; /opt/lib/ld-linux-aarch64.so.1 --help | head -n 5'
+
+Exit: ssh returned 0. Output:
+Linux Keenetic-G-8919 4.9-ndm-5 #0 SMP Wed Nov 4 10:43:12 2026 aarch64 GNU/Linux
+lrwxr-xr-x    1 root     root            10 Nov  6 14:13 /opt/lib/ld-linux-aarch64.so.1 -> ld-2.27.so
+-rwxr-xr-x    1 root     root        136952 Feb 13  2026 /opt/lib/ld-2.27.so
+lrwxr-xr-x    1 root     root            12 Nov  6 14:13 /opt/lib/libc.so.6 -> libc-2.27.so
+lrwxr-xr-x    1 root     root            18 Nov  6 14:13 /opt/lib/libpthread.so.0 -> libpthread-2.27.so
+/opt/lib/ld-linux-aarch64.so.1 --help produced: error while loading shared libraries: --help: cannot open shared object file
+
+A prior unprivileged sandbox attempt was rejected locally before SSH with `Operation not permitted` (exit 255). The authorized elevated retry above reached the device. Loader invocation syntax is not established by the --help attempt; it does not prove AWG incompatibility.
+
+Failed first transfer attempt: host archive received into /opt/tmp/hestia-awg.yKc1Hm. The manually typed expected SHA-256 was wrong, so remote `sha256sum -c -` failed and `set -e` stopped before chmod or any binary execution. macOS tar added `._awg`; the exact file and private directory were inspected and removed. Cleanup exit 0. Corrected retry will derive expected hash programmatically and disable AppleDouble metadata.

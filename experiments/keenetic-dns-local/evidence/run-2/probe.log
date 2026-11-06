@@ -1,0 +1,5 @@
+2026/11/06 18:33:14 probe pass network=UDP id=62041 name=answer.dns-local.test. type=A rcode=0 address=192.0.2.42
+2026/11/06 18:33:14 probe pass network=UDP id=63239 name=missing.dns-local.test. type=A rcode=3 address=
+2026/11/06 18:33:14 probe pass network=TCP id=15740 name=answer.dns-local.test. type=A rcode=0 address=192.0.2.42
+2026/11/06 18:33:14 probe pass network=TCP id=16285 name=missing.dns-local.test. type=A rcode=3 address=
+2026/11/06 18:33:14 probe success: UDP/TCP A and NXDOMAIN passed against 127.0.0.1:19251

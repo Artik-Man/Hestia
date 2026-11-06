@@ -1,0 +1,5 @@
+start_utc=2026-11-06T18:31:27Z
+command=Remote config hash and sing-box config check via existing /opt loader
+44669efcde92d08049b44bfe3061712c9b029ef32a53cb8da750ea280c89c5c5  singbox-udp-block.json
+exit_code=0
+end_utc=2026-11-06T18:31:28Z

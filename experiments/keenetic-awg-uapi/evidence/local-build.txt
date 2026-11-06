@@ -1,0 +1,87 @@
+build_time_utc=2026-11-06T18:30:03Z
+source_commit=b5928efb6ca19f0153958460c3d141f04abc5c2e
+source_tag=v3.1.20260828
+source_go=module github.com/amnezia-vpn/amneziawg-go/v3
+
+go 1.25.0
+
+require (
+	github.com/goccy/go-yaml v1.17.1
+	go.uber.org/atomic v1.11.0
+	golang.getoutline.org/sdk v0.0.23
+	golang.getoutline.org/sdk/x v0.2.0
+	golang.org/x/crypto v0.42.0
+	golang.org/x/net v0.44.0
+	golang.org/x/sys v0.36.0
+go_version=go version go1.27.3 darwin/arm64
+runtime_input_sha256=7fe87a8d2031e75273c562be43993ae14b352f7de9150edaf79afca340932e1a  dist/runtime/amneziawg-go
+linker_override=-X github.com/amnezia-vpn/amneziawg-go/v3/ipc.socketDirectory=/opt/tmp/hestia-awg-uapi-26b84f
+go: cannot find main module, but found .git/config in /Users/artikman/Documents/projects/hestia
+	to create a module there, run:
+	go mod init
+build_exit=1
+
+retry_time_utc=2026-11-06T18:30:13Z
+build_cwd=/private/tmp/hestia-awg-uapi-source
+open /Users/artikman/Library/Caches/go-build/0f/0ffd7629ec7854974df26092d46b257649cb871421c1d171fba24ab391ab530d-d: operation not permitted
+build_exit=1
+
+retry2_time_utc=2026-11-06T18:30:32Z
+build_cwd=/private/tmp/hestia-awg-uapi-source
+build_exit=0
+/Users/artikman/Documents/projects/hestia/experiments/keenetic-awg-uapi/prototype/amneziawg-go-isolated: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, Go BuildID=P7NIwWMuwR8Vwtxhetig/LG0J0ncDz58J1fkBZ87s/T5pCT-4-b41GAPWYlUPi/yrQfTU7uCVQhfU4HwuNo, BuildID[sha1]=d4578d0084dba40b8a99744ebc6b5fd7521507c4, with debug_info, not stripped
+184c64bdcd865ceae623af88d7c409005f37b77e5e71895bb302523975089070  /Users/artikman/Documents/projects/hestia/experiments/keenetic-awg-uapi/prototype/amneziawg-go-isolated
+
+upstream_target_build_time_utc=2026-11-06T18:33:44Z
+go build -v -o "amneziawg-go"
+github.com/amnezia-vpn/amneziawg-go/v3
+upstream_target_build_exit=0
+generated_version=package main
+
+const Version = "v3.1.20260828"
+amneziawg-go: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, Go BuildID=9CbkVjgeidBF4tBGp-6D/M4eDu9slODLpCrYe9jiy/2r8WQVZW-18UDUk_MEED/wRkioSCpzrGDtKOTsGg6, BuildID[sha1]=321733ddbee99265625b22150912424a3660cb8a, with debug_info, not stripped
+9b6ad62955e0471197cc535c1a939b79697d90bced9316e351756d1cfdf22937  amneziawg-go
+bounded_wrapper_rebuild_utc=2026-11-06T18:36:49Z
+wrapper_build_exit=0
+67cf1c80c297edf78786f2cf1f7a589fc5608e354f55b8923c05f28d31a95123  experiments/keenetic-awg-uapi/prototype/awg-uapi-probe
+make[1]: `amneziawg-go' is up to date.
+daemon_rebuild_exit=0
+9b6ad62955e0471197cc535c1a939b79697d90bced9316e351756d1cfdf22937  experiments/keenetic-awg-uapi/prototype/amneziawg-go-isolated
+gofmt_check=exit=0
+wrapper_vet=exit=0
+daemon_vet=exit=0
+private_runtime_path_string=exit=1
+
+force_daemon_rebuild_utc=2026-11-06T18:37:03Z
+rm -f amneziawg-go
+source_tree_clean_exit=0
+go build -v -o "amneziawg-go"
+daemon_rebuild_exit=0
+daemon_hash=de208c103ee5295b22ee85b8745d7a8a80285165d8bdd62787e28d20545493a1  /Users/artikman/Documents/projects/hestia/experiments/keenetic-awg-uapi/prototype/amneziawg-go-isolated
+private_runtime_path_string=/opt/tmp/hestia-awg-uapi-26b84f/runtime
+path_string_exit=0
+
+diagnostic_capture_rebuild_utc=2026-11-06T18:38:30Z
+wrapper_build_exit=0
+d6d7bbd848df4e33307f72c5994e2454fea39b8d5ff3e5d87eb63b4946e2ae57  experiments/keenetic-awg-uapi/prototype/awg-uapi-probe
+wrapper_vet=exit=0
+gofmt_check=exit=0
+
+listener_lifetime_fix_build_utc=2026-11-06T18:39:46Z
+wrapper_build_exit=0
+experiments/keenetic-awg-uapi/prototype/awg-uapi-probe: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, Go BuildID=OTuVJHSyFQURNQFldLUh/gJgpKvshtjahklRCrC1P/SCztPV9tjK-mKDagdo_x/tHvcdv_tjhR153rRjU_z, BuildID[sha1]=15abe5a5e596565365358e7108633c98784381ec, with debug_info, not stripped
+9ff7ab1a097c39c4e017a64fbd7f09518ecd84569188082f8c8d50cf4f0a23e1  experiments/keenetic-awg-uapi/prototype/awg-uapi-probe
+wrapper_vet=exit=0
+gofmt_check=exit=0
+
+clamp_aware_validation_build_utc=2026-11-06T18:42:26Z
+wrapper_build_exit=0
+0f458161605e9d2da456dcd065220c7cc84e27a32e48cbca1f015628df09c760  experiments/keenetic-awg-uapi/prototype/awg-uapi-probe
+wrapper_vet=exit=0
+gofmt_check=exit=0
+
+cleanup_assertion_fix_build_utc=2026-11-06T18:43:39Z
+wrapper_build_exit=0
+0846f4465fc8f5d523a3712621ebfcee3e67e8d98b7b9b4099fcdf6c03bedb5a  experiments/keenetic-awg-uapi/prototype/awg-uapi-probe
+wrapper_vet=exit=0
+gofmt_check=exit=0

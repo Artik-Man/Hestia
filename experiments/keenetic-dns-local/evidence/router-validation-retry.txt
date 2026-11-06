@@ -1,0 +1,2 @@
+367943b591400647d8ae03b969a9fbb7beed69cc276f394e6fdc3d2690e55419  singbox-dns.json
+exit=0

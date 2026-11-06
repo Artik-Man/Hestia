@@ -1,0 +1,35 @@
+# Независимая проверка свидетельств AWG private UAPI
+
+Проверяющий: Evidence2 (тестировщик). Проверены локальные исходники/сборки и сохранённые свидетельства; к роутеру и ВМ не подключался. Дата: 6 ноября 2026 года.
+
+## Подтверждено
+
+- Финальный исходник probe `prototype/probe.go` имеет SHA-256 `d3f97dd0e7b9c97c0846a52418c4c087a5d6ae8cfdbbf58c3bd657f36f697bba`. Независимые `gofmt -d` и `GOTOOLCHAIN=local GOPROXY=off go vet .../probe.go` прошли без диагностики.
+- Повторная сборка probe с `CGO_ENABLED=0 GOOS=linux GOARCH=arm64 GOTOOLCHAIN=local GOPROXY=off go build -trimpath -buildvcs=false` дала SHA-256 `0846f4465fc8f5d523a3712621ebfcee3e67e8d98b7b9b4099fcdf6c03bedb5a`, совпавший с `dist/keenetic-awg-uapi/awg-uapi-probe`, записью final local build и передачей к финальному прогону.
+- Исследовательский daemon в `dist/keenetic-awg-uapi/amneziawg-go-isolated` имеет SHA-256 `de208c103ee5295b22ee85b8745d7a8a80285165d8bdd62787e28d20545493a1`. Доступное локальное дерево `/private/tmp/hestia-awg-uapi-source` находится на закреплённом commit `b5928efb6ca19f0153958460c3d141f04abc5c2e`; `git status --short` чист. Исходник подтверждает изменяемую linker-параметром `ipc.socketDirectory` и вход daemon через заранее открытые `WG_TUN_FD`/`WG_UAPI_FD`.
+- Итоговый `final_clean_run` завершился с SSH-кодом 0: private UAPI готов; set/get вернули errno 0; peers 0; synthetic key public derivation совпал; интерфейс оставался DOWN (`0x1090`); daemon завершился штатно. После выхода отсутствовали TUN, private UAPI socket/runtime dir, а shared UAPI directory оставался отсутствующим. Ключевые данные не печатались.
+- До редактирования `device-preflight.txt` я независимо вычислил SHA-256 четырёх секций таблиц/правил; все значения совпали с исходным preflight и всеми снимками before/after в `device-run.txt`. Автор удалил из общего свидетельства содержимое таблиц, сохранив их количество строк и хеши. В текущем evidence topology не опубликована.
+- В `device-run.txt` сохранены неудачные попытки с их кодами и причины исправлений. Финальная успешная запись следует за transfer артефактов, содержащим финальные SHA; предыдущие ошибки не скрыты.
+
+## Ограничение очистки
+
+Первый `rmdir` staging-каталога завершился кодом 1 из-за оставшихся файлов. Последующая запись подтверждает exit 0 и отсутствие staging-каталога, TUN и shared UAPI path. Точные имена AppleDouble файлов и адресные аргументы удаления не сохранены; это прямо отмечено в `cleanup-verification.txt` и README. Поэтому итоговое отсутствие подтверждено, но конкретное удаление каждого staging-файла по retained raw evidence независимо проверить нельзя. Не реконструировать пропущенные имена или команду.
+
+## Границы
+
+Результат поддерживает только запуск конкретного статического daemon с private UAPI, временным DOWN TUN и синтетическим ключом без peers. Handshake, VPN/передача пакетов, внешние UDP, маршрутизация, производительность и эксплуатационная готовность не проверялись. Независимый аппаратный повтор не выполнялся.
+
+## Локальные команды
+
+```sh
+sha256sum experiments/keenetic-awg-uapi/prototype/probe.go \
+  dist/keenetic-awg-uapi/awg-uapi-probe \
+  dist/keenetic-awg-uapi/amneziawg-go-isolated
+gofmt -d experiments/keenetic-awg-uapi/prototype/probe.go
+GOTOOLCHAIN=local GOPROXY=off go vet experiments/keenetic-awg-uapi/prototype/probe.go
+CGO_ENABLED=0 GOOS=linux GOARCH=arm64 GOTOOLCHAIN=local GOPROXY=off \
+  go build -trimpath -buildvcs=false \
+  -o /private/tmp/hestia-awg-uapi-probe-validation \
+  experiments/keenetic-awg-uapi/prototype/probe.go
+sha256sum /private/tmp/hestia-awg-uapi-probe-validation
+```

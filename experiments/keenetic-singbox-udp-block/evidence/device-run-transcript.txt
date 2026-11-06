@@ -1,0 +1,51 @@
+start_utc=2026-11-06T18:32:17Z
+command=Single bounded SSH run: hash-only routes/rules, sing-box and helper with exact-PID watchdog/cleanup, loopback SOCKS TCP/UDP allow+block
+run_start_utc=2026-11-06T18:32:16Z
+routes4=d980f9b05b97eae098407214e104b6a23a3a823ad1aa5ba3aaa5419a3a60c619  -
+rules4=52a656ed73f1a2c72f79a91fcd6f7cbe5bc59a1b33d5a89fb4e64cfac61c5b9c  -
+routes6=208c4cc100e02e620c4114c9062d7102ecc09d30e48bac2552e326f6db5de910  -
+rules6=77570d3b73b6f8265509d05ee2d03df846fd2f2d9f537a0dc58e0cb0739b1aaf  -
+singbox_pid=25104
+harness_pid=25115
+watchdog_pid=25116 lifetime_seconds=45
+harness_exit=0
+owned_processes_absent=yes
+routes4=d980f9b05b97eae098407214e104b6a23a3a823ad1aa5ba3aaa5419a3a60c619  -
+rules4=52a656ed73f1a2c72f79a91fcd6f7cbe5bc59a1b33d5a89fb4e64cfac61c5b9c  -
+routes6=208c4cc100e02e620c4114c9062d7102ecc09d30e48bac2552e326f6db5de910  -
+rules6=77570d3b73b6f8265509d05ee2d03df846fd2f2d9f537a0dc58e0cb0739b1aaf  -
+--- harness transcript ---
+2026-11-06T18:32:17.787841716Z endpoints_ready tcp=127.0.0.1:19181 allow_udp=127.0.0.1:19182 deny_witness=127.0.0.2:19183 socks=127.0.0.1:19180 deadline=2026-11-06T18:32:52.787832867Z
+2026-11-06T18:32:17.788489039Z direct_positive_control deny_target_count=1 result=marker_received
+2026-11-06T18:32:17.788445643Z udp_target address=127.0.0.2:19183 received="DIRECT-CONTROL" count=1
+2026-11-06T18:32:17.803741797Z tcp_target address=127.0.0.1:19181 count=1
+2026-11-06T18:32:17.804443981Z socks_tcp result=marker_received target_count=1
+2026-11-06T18:32:17.808235665Z udp_target address=127.0.0.1:19182 received="SOCKS-UDP-MARKER-PROBE" count=1
+2026-11-06T18:32:17.808441026Z socks_udp target=127.0.0.1:19182 result=marker_received target_count=1
+2026-11-06T18:32:17.809323873Z singbox_liveness phase=before_block pid=25104 result=alive
+2026-11-06T18:32:17.809450598Z udp_counts_before_block allow=1 deny_witness=1
+2026-11-06T18:32:19.011780669Z blocked_probe result=timeout target_counter_before=1 target_counter_after=1 error="read udp4 127.0.0.1:51154->127.0.0.1:59771: i/o timeout"
+2026-11-06T18:32:19.012023502Z singbox_liveness phase=after_block pid=25104 result=alive
+2026-11-06T18:32:19.012066667Z final_counts allow_udp=1 deny_witness=1 tcp=1
+--- sing-box transcript ---
++0000 2026-11-06 18:32:17 [36mINFO[0m inbound/socks[loopback-socks-udp-block]: tcp server started at 127.0.0.1:19180
++0000 2026-11-06 18:32:17 [36mINFO[0m [redacted: topology-bearing interface detail]
++0000 2026-11-06 18:32:17 [36mINFO[0m [redacted: topology-bearing gateway detail]
++0000 2026-11-06 18:32:17 [36mINFO[0m sing-box started (0.06s)
++0000 2026-11-06 18:32:17 [36mINFO[0m [[38;5;220m405124044[0m 0ms] inbound/socks[loopback-socks-udp-block]: inbound connection from 127.0.0.1:49730
++0000 2026-11-06 18:32:17 [36mINFO[0m [[38;5;220m405124044[0m 8ms] inbound/socks[loopback-socks-udp-block]: inbound connection to 127.0.0.1:19181
++0000 2026-11-06 18:32:17 [37mDEBUG[0m [[38;5;220m405124044[0m 8ms] router: match[0] ip_cidr=127.0.0.1/32 => route(loopback-direct)
++0000 2026-11-06 18:32:17 [36mINFO[0m [[38;5;220m405124044[0m 8ms] outbound/direct[loopback-direct]: outbound connection to 127.0.0.1:19181
++0000 2026-11-06 18:32:17 [37mDEBUG[0m [[38;5;220m405124044[0m 15ms] connection: connection download finished
++0000 2026-11-06 18:32:17 [37mDEBUG[0m [[38;5;220m405124044[0m 15ms] connection: connection upload finished
++0000 2026-11-06 18:32:17 [36mINFO[0m [[38;5;191m3462219560[0m 0ms] inbound/socks[loopback-socks-udp-block]: inbound connection from 127.0.0.1:49736
++0000 2026-11-06 18:32:17 [36mINFO[0m [[38;5;191m3462219560[0m 1ms] inbound/socks[loopback-socks-udp-block]: inbound packet connection to 127.0.0.1:19182
++0000 2026-11-06 18:32:17 [37mDEBUG[0m [[38;5;191m3462219560[0m 1ms] router: match[0] ip_cidr=127.0.0.1/32 => route(loopback-direct)
++0000 2026-11-06 18:32:17 [36mINFO[0m [[38;5;191m3462219560[0m 1ms] outbound/direct[loopback-direct]: outbound packet connection
++0000 2026-11-06 18:32:17 [36mINFO[0m [[38;5;36m2883645972[0m 0ms] inbound/socks[loopback-socks-udp-block]: inbound connection from 127.0.0.1:49746
++0000 2026-11-06 18:32:17 [36mINFO[0m [[38;5;36m2883645972[0m 1ms] inbound/socks[loopback-socks-udp-block]: inbound packet connection to 127.0.0.2:19183
++0000 2026-11-06 18:32:17 [36mINFO[0m [[38;5;36m2883645972[0m 1ms] outbound/block[deny-other-loopback-destinations]: blocked packet connection to 127.0.0.2:19183
++0000 2026-11-06 18:32:17 [31mERROR[0m [[38;5;36m2883645972[0m 2ms] connection: listen packet connection using  using outbound/block[deny-other-loopback-destinations]: operation not permitted
+run_end_utc=2026-11-06T18:32:19Z
+exit_code=0
+end_utc=2026-11-06T18:32:20Z

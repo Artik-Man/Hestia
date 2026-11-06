@@ -1,0 +1,2 @@
+ac6b7710622310c7787a84d324a113978d81e2522922e900d20c59b228078faf  /private/tmp/hestia-dns-local-helper
+/private/tmp/hestia-dns-local-helper: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, Go BuildID=Y0MHsFcIlNNeEfNdyXoe/w5rnHWQCDlv5AfFcyVfs/LEijLwIC9ltyFzyQdOiU/l_OA_sxsEVVyfaoW0CIg, BuildID[sha1]=e6529b31de037e1f2c4145102bc85904f05ba70a, with debug_info, not stripped

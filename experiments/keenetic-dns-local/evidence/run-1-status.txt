@@ -1,0 +1,6 @@
+helper_pid=24964
+singbox_pid=24965
+watchdog_pid=24966
+startup=ready
+probe_exit=0
+owned_process_cleanup=confirmed

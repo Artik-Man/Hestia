@@ -1,0 +1,24 @@
+Curated command/output transcript from the SSH tool response (not a raw SSH JSON capture). Exact start/finish time was not recorded.
+Timestamp: 2026-11-06 17:57:xx UTC (use task logs for minute-level only)
+Target: KN-1012 / Keenetic-G-8919, Linux 4.9-ndm-5, aarch64.
+Source artifact: dist/artifacts/20261106-170213-66bb2faafc3c/keenetic-arm64-experimental/bin/awg
+Provenance: official amnezia-vpn/amneziawg-tools v3.1.20260812, commit ee0f0a9aa34ff0a0da4b3433b9512781cfe02843. SHA256 was computed from the source artifact with `shasum -a 256` and interpolated programmatically into the remote check.
+Host SHA256: 7b5d8177fba2ebe1454390c069f7385401f95449c6f680e03090d368d7f16a56
+SSH: port 222, identity configured, BatchMode, IdentitiesOnly, StrictHostKeyChecking=yes, 10s connect timeout, 5s server keepalive, count 2.
+
+Transfer command shape:
+COPYFILE_DISABLE=1 tar -cf - -C <pinned bundle>/bin awg | ssh ... root@192.168.1.1 'set -eu; umask 077; work=$(mktemp -d /opt/tmp/hestia-awg.XXXXXX); ...; tar -xf -; printf "%s  awg\\n" <host-computed-sha256> | sha256sum -c -; chmod 700 awg; ulimit -t 5; ...'
+Remote private path: /opt/tmp/hestia-awg.lI4mmW
+Remote SHA256: awg: OK (exit 0)
+
+Commands and outputs:
+1) `/opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib ./awg --version`
+   Exit 1. Loader output: `./awg: /opt/lib/libc.so.6: version 'GLIBC_2.33' not found (required by ./awg)` and similarly `GLIBC_2.34`; each appeared twice. No version string was printed.
+2) `/opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib ./awg --help`
+   Exit 1. No help text; the same incompatible libc symbol-version loading prevented execution.
+
+After the failures, only this probe's `awg` and macOS metadata `._awg` were removed, then `rmdir` removed `/opt/tmp/hestia-awg.lI4mmW`. SSH command exit 0 and `CLEANUP=removed` printed. No process remained. No interface name, profile/config, UAPI, route, firewall, VPN or tunnel operation was used.
+
+Prior direct invocation (from experiments/keenetic-capabilities/evidence/router-runtime-20261106/05-awg-tools-version.json) exited 127 with `sh: .../awg: not found`; ELF analysis showed PT_INTERP `/lib/ld-linux-aarch64.so.1`, DT_NEEDED `libc.so.6`. This probe shows that the existing Entware loader resolves the interpreter, but Entware glibc 2.27 is too old for this pinned binary.
+
+Initial archive attempt on this task used a manually mistranscribed expected digest; remote SHA check failed (exit 1) before chmod/execution. That exact directory plus its AppleDouble `._awg` file was inspected and removed. It is not part of the successful result.

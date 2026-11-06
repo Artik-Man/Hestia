@@ -1,0 +1,5 @@
+start_utc=2026-11-06T18:30:20Z
+command=Verify directory created by prior command (BusyBox stat lacks -c); no additional mutation
+drwx------    2 root     root          4096 Nov  6 21:30 /opt/tmp/hestia-singbox-udp-block.20261106-1830
+exit_code=0
+end_utc=2026-11-06T18:30:20Z

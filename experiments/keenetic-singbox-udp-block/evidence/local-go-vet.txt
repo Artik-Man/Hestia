@@ -1,0 +1,4 @@
+start_utc=2026-11-06T18:28:46Z
+command=GOTOOLCHAIN=local GOPROXY=off go vet ./experiments/keenetic-singbox-udp-block/prototype/udp-block-harness.go
+exit_code=0
+end_utc=2026-11-06T18:28:46Z

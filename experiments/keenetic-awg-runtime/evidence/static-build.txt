@@ -1,0 +1,25 @@
+## Pinned source and build provenance
+
+Source: official repository `https://github.com/amnezia-vpn/amneziawg-tools.git`, tag `v3.1.20260812`, full commit `ee0f0a9aa34ff0a0da4b3433b9512781cfe02843` (`git clone --depth 1 --branch ...`; `git rev-parse HEAD`). Source version file reports `3.1.20260812`; Makefile uses Linux UAPI headers under `src/uapi/linux`.
+
+Toolchain: Zig 0.17.1 aarch64-macos. Official Zig index lists `zig-aarch64-macos-0.17.1.tar.xz`, 54,001,240 bytes, SHA-256 `75f1bc7a1e9852f17ec9a0c1895f767c4ec56d46bc8a834920eece1d0359dd8d`. It was downloaded from the Zig Foundation listed Fastly mirror URL `https://ziglang.freetls.fastly.net/zig-aarch64-macos-0.17.1.tar.xz?source=hestia-awg-prototype`; full archive SHA matched the value from official `https://ziglang.org/download/index.json`. The official index publishes that version/hash. The official mirror list and security guidance are at `https://ziglang.org/download/community-mirrors/`.
+
+Additional attempt: Homebrew API reported `zig` 0.17.1 arm64 bottle SHA `8cfb43412ab96df414cc0ebfe9713901a202b5b8cd1a1e3b920f128e91830d48`, verified by `brew fetch` and independent `shasum`; extracted to task temp only. That bottle could not start because its binary expects absent `/opt/homebrew/opt/llvm@22`, `lld@22` and `zstd` libraries (`dyld: Symbol not found: llvm::StringError::ID`). It was not used for the AWG build. A direct Zig server download remained at 12 KiB; a bounded 64 KiB range attempt stalled at 16,102 bytes and hit its 20s cap. A bounded 64 KiB range from the listed Fastly mirror succeeded; full archive then downloaded and verified.
+
+## Build
+
+In `/private/tmp/hestia-awg-static.hwDrpI/awg-tools/src`:
+
+```sh
+make clean
+env \
+  ZIG_LOCAL_CACHE_DIR=/private/tmp/hestia-awg-static.hwDrpI/zig-local-cache \
+  ZIG_GLOBAL_CACHE_DIR=/private/tmp/hestia-awg-static.hwDrpI/zig-global-cache \
+  make -j2 PLATFORM=linux \
+  CC='/private/tmp/hestia-awg-static.hwDrpI/zig-aarch64-macos-0.17.1/zig cc -target aarch64-linux-musl' \
+  LDFLAGS=-static V=1
+```
+
+Build exit: 0. `file` result: `ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, with debug_info, not stripped`. Artifact was copied to `dist/keenetic-awg-runtime/awg-musl-static-aarch64` (outside Git); SHA-256 `a04ad65d551c6524f89d5939a39f382be7d1e5b48c0d833b1809480fc07adaf3`.
+
+The first compile used default Zig cache settings and succeeded, but a later dry-run reported the default `~/.cache/zig` was not writable. The successful clean rebuild explicitly directed both Zig caches into the private temp directory above. No packages were globally installed; no VM was used.

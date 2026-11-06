@@ -1,0 +1,152 @@
+bounded_device_run_start_host_utc=2026-11-06T18:37:50Z
+device_run_start=2026-11-06T18:37:49Z
+--- routes/rules before
+1e518b4651d62f4d2b47295287c7a803c65d7c13940674d6eb94250acc239a54  -
+94483fe3d20363e24303b9e008af0aba262bb383a265f3bed9e0f0cb4a8530ba  -
+52a656ed73f1a2c72f79a91fcd6f7cbe5bc59a1b33d5a89fb4e64cfac61c5b9c  -
+77570d3b73b6f8265509d05ee2d03df846fd2f2d9f537a0dc58e0cb0739b1aaf  -
+--- private daemon and UAPI
+tun_created=true interface=hawg26b84f
+interface_phase=before_daemon flags=0x1090 up=false
+daemon_started=true pid=25520
+private_uapi_socket_removed=true
+runtime_directory_removed=true
+probe_error=daemon exited before UAPI readiness: exit status 1
+probe_exit=1
+device_run_finish=2026-11-06T18:37:49Z
+--- resource checks
+interface_absent_after=true
+private_runtime_dir_absent_after=true
+shared_uapi_dir_still_absent=true
+--- routes/rules after
+1e518b4651d62f4d2b47295287c7a803c65d7c13940674d6eb94250acc239a54  -
+94483fe3d20363e24303b9e008af0aba262bb383a265f3bed9e0f0cb4a8530ba  -
+52a656ed73f1a2c72f79a91fcd6f7cbe5bc59a1b33d5a89fb4e64cfac61c5b9c  -
+77570d3b73b6f8265509d05ee2d03df846fd2f2d9f537a0dc58e0cb0739b1aaf  -
+bounded_device_run_ssh_exit=1
+bounded_device_run_finish_host_utc=2026-11-06T18:37:50Z
+diagnostic_run_start_host_utc=2026-11-06T18:39:13Z
+diagnostic_run_start=2026-11-06T18:39:13Z
+--- routes/rules before
+1e518b4651d62f4d2b47295287c7a803c65d7c13940674d6eb94250acc239a54  -
+94483fe3d20363e24303b9e008af0aba262bb383a265f3bed9e0f0cb4a8530ba  -
+52a656ed73f1a2c72f79a91fcd6f7cbe5bc59a1b33d5a89fb4e64cfac61c5b9c  -
+77570d3b73b6f8265509d05ee2d03df846fd2f2d9f537a0dc58e0cb0739b1aaf  -
+--- private daemon/UAPI wrapper (15s child deadline)
+tun_created=true interface=hawg26b84f
+interface_phase=before_daemon flags=0x1090 up=false
+daemon_started=true pid=25629
+ERROR: (hawg26b84f) 2026/11/06 18:39:13 Failed to listen on uapi socket: no such file or directory
+private_uapi_socket_removed=true
+runtime_directory_removed=true
+probe_exit=1
+diagnostic_run_finish=probe_error=daemon exited before UAPI readiness: exit status 1
+2026-11-06T18:39:13Z
+--- resource checks
+interface_absent_after=true
+private_runtime_dir_absent_after=true
+shared_uapi_dir_still_absent=true
+--- routes/rules after
+1e518b4651d62f4d2b47295287c7a803c65d7c13940674d6eb94250acc239a54  -
+94483fe3d20363e24303b9e008af0aba262bb383a265f3bed9e0f0cb4a8530ba  -
+52a656ed73f1a2c72f79a91fcd6f7cbe5bc59a1b33d5a89fb4e64cfac61c5b9c  -
+77570d3b73b6f8265509d05ee2d03df846fd2f2d9f537a0dc58e0cb0739b1aaf  -
+diagnostic_run_ssh_exit=1
+diagnostic_run_finish_host_utc=2026-11-06T18:39:14Z
+listener_fix_run_start_host_utc=2026-11-06T18:41:13Z
+listener_fix_run_start=2026-11-06T18:41:13Z
+--- routes/rules before
+1e518b4651d62f4d2b47295287c7a803c65d7c13940674d6eb94250acc239a54  -
+94483fe3d20363e24303b9e008af0aba262bb383a265f3bed9e0f0cb4a8530ba  -
+52a656ed73f1a2c72f79a91fcd6f7cbe5bc59a1b33d5a89fb4e64cfac61c5b9c  -
+77570d3b73b6f8265509d05ee2d03df846fd2f2d9f537a0dc58e0cb0739b1aaf  -
+--- private daemon/UAPI probe, 15s child context
+tun_created=true interface=hawg26b84f
+interface_phase=before_daemon flags=0x1090 up=false
+daemon_started=true pid=25753
+private_uapi_ready=true
+interface_phase=daemon_running flags=0x1090 up=false
+uapi_set_errno=0
+uapi_get_errno=0 peers=0 synthetic_key_roundtrip_and_public_derivation_match=false
+private_uapi_socket_removed=true
+runtime_directory_removed=true
+probe_exit=1
+listener_fix_run_finish=2026-11-06T18:41:13Z
+--- resource checks
+interface_absent_after=true
+private_runtime_dir_absent_after=true
+shared_uapi_dir_still_absent=true
+--- routes/rules after
+probe_error=UAPI synthetic key readback or empty-peer invariant failed
+1e518b4651d62f4d2b47295287c7a803c65d7c13940674d6eb94250acc239a54  -
+94483fe3d20363e24303b9e008af0aba262bb383a265f3bed9e0f0cb4a8530ba  -
+52a656ed73f1a2c72f79a91fcd6f7cbe5bc59a1b33d5a89fb4e64cfac61c5b9c  -
+77570d3b73b6f8265509d05ee2d03df846fd2f2d9f537a0dc58e0cb0739b1aaf  -
+listener_fix_run_ssh_exit=1
+listener_fix_run_finish_host_utc=2026-11-06T18:41:14Z
+final_uapi_run_start_host_utc=2026-11-06T18:43:02Z
+final_uapi_run_start=2026-11-06T18:43:01Z
+--- routes/rules before
+1e518b4651d62f4d2b47295287c7a803c65d7c13940674d6eb94250acc239a54  -
+94483fe3d20363e24303b9e008af0aba262bb383a265f3bed9e0f0cb4a8530ba  -
+52a656ed73f1a2c72f79a91fcd6f7cbe5bc59a1b33d5a89fb4e64cfac61c5b9c  -
+77570d3b73b6f8265509d05ee2d03df846fd2f2d9f537a0dc58e0cb0739b1aaf  -
+--- private daemon/UAPI probe, 15s child context
+tun_created=true interface=hawg26b84f
+interface_phase=before_daemon flags=0x1090 up=false
+daemon_started=true pid=25869
+private_uapi_ready=true
+interface_phase=daemon_running flags=0x1090 up=false
+uapi_set_errno=0
+uapi_get_errno=0 peers=0 returned_key_nonzero=true synthetic_public_derivation_match=true
+interface_phase=after_uapi flags=0x1090 up=false
+daemon_exit=0
+private_uapi_socket_removed=true
+runtime_directory_removed=true
+probe_error=read after_daemon_exit TUN flags: open /sys/class/net/hawg26b84f/flags: no such file or directory
+probe_exit=1
+final_uapi_run_finish=2026-11-06T18:43:01Z
+--- resource checks
+interface_absent_after=true
+private_runtime_dir_absent_after=true
+shared_uapi_dir_still_absent=true
+--- routes/rules after
+1e518b4651d62f4d2b47295287c7a803c65d7c13940674d6eb94250acc239a54  -
+94483fe3d20363e24303b9e008af0aba262bb383a265f3bed9e0f0cb4a8530ba  -
+52a656ed73f1a2c72f79a91fcd6f7cbe5bc59a1b33d5a89fb4e64cfac61c5b9c  -
+77570d3b73b6f8265509d05ee2d03df846fd2f2d9f537a0dc58e0cb0739b1aaf  -
+final_uapi_run_ssh_exit=1
+final_uapi_run_finish_host_utc=2026-11-06T18:43:02Z
+final_clean_run_start_host_utc=2026-11-06T18:44:14Z
+final_clean_run_start=2026-11-06T18:44:13Z
+--- routes/rules before
+1e518b4651d62f4d2b47295287c7a803c65d7c13940674d6eb94250acc239a54  -
+94483fe3d20363e24303b9e008af0aba262bb383a265f3bed9e0f0cb4a8530ba  -
+52a656ed73f1a2c72f79a91fcd6f7cbe5bc59a1b33d5a89fb4e64cfac61c5b9c  -
+77570d3b73b6f8265509d05ee2d03df846fd2f2d9f537a0dc58e0cb0739b1aaf  -
+--- bounded private daemon/UAPI probe
+tun_created=true interface=hawg26b84f
+interface_phase=before_daemon flags=0x1090 up=false
+daemon_started=true pid=25962
+private_uapi_ready=true
+interface_phase=daemon_running flags=0x1090 up=false
+uapi_set_errno=0
+uapi_get_errno=0 peers=0 returned_key_nonzero=true synthetic_public_derivation_match=true
+interface_phase=after_uapi flags=0x1090 up=false
+daemon_exit=0
+interface_absent_after_daemon_exit=true
+private_uapi_socket_removed=true
+runtime_directory_removed=true
+probe_exit=0
+final_clean_run_finish=2026-11-06T18:44:13Z
+--- resource checks
+interface_absent_after=true
+private_runtime_dir_absent_after=true
+shared_uapi_dir_still_absent=true
+--- routes/rules after
+1e518b4651d62f4d2b47295287c7a803c65d7c13940674d6eb94250acc239a54  -
+94483fe3d20363e24303b9e008af0aba262bb383a265f3bed9e0f0cb4a8530ba  -
+52a656ed73f1a2c72f79a91fcd6f7cbe5bc59a1b33d5a89fb4e64cfac61c5b9c  -
+77570d3b73b6f8265509d05ee2d03df846fd2f2d9f537a0dc58e0cb0739b1aaf  -
+final_clean_run_ssh_exit=0
+final_clean_run_finish_host_utc=2026-11-06T18:44:14Z
