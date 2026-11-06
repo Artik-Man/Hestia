@@ -6,23 +6,24 @@ import (
 
 	"os"
 	"path/filepath"
-	"syscall"
+
+	"github.com/Artik-Man/Hestia/internal/storage"
 )
 
 // acquire obtains the existing installer lock without waiting; shared readers never create the lock.
 // Its group-readable permissions are managed by the installer and systemd-tmpfiles.
 func (e Engine) acquire(exclusive bool) (*os.File, error) {
-	how := syscall.LOCK_SH
+	how := storage.LockShared
 	if exclusive {
-		how = syscall.LOCK_EX
+		how = storage.LockExclusive
 	}
-	lock, err := os.OpenFile(e.lock, os.O_RDONLY|syscall.O_NOFOLLOW, 0)
+	lock, err := storage.OpenFile(e.lock, storage.ReadOnly|storage.NoFollow, 0)
 	if err != nil {
 		return nil, ErrUnavailable
 	}
-	if err := syscall.Flock(int(lock.Fd()), how|syscall.LOCK_NB); err != nil {
+	if err := storage.Flock(lock, how|storage.LockNonblock); err != nil {
 		lock.Close()
-		if errors.Is(err, syscall.EWOULDBLOCK) {
+		if storage.IsWouldBlock(err) {
 			return nil, ErrConflict
 		}
 		return nil, ErrUnavailable
@@ -50,7 +51,7 @@ func (e Engine) readSnapshot() ([]byte, error) {
 func (e Engine) validateInstallation() error {
 	for _, name := range []string{e.dir, filepath.Join(e.dir, ".installer-managed")} {
 		info, err := os.Lstat(name)
-		if err != nil || int(info.Sys().(*syscall.Stat_t).Uid) != os.Geteuid() || info.Mode().Perm()&0022 != 0 {
+		if err != nil || int(storage.MustStat(info).Uid) != os.Geteuid() || info.Mode().Perm()&0022 != 0 {
 			return ErrUnavailable
 		}
 		if name == e.dir && !info.IsDir() || name != e.dir && !info.Mode().IsRegular() {
@@ -86,7 +87,7 @@ func copyConfig(src, dest string, info os.FileInfo) error {
 	}
 	defer os.Remove(temp.Name())
 	defer temp.Close()
-	owner := info.Sys().(*syscall.Stat_t)
+	owner := storage.MustStat(info)
 	if err := temp.Chown(int(owner.Uid), int(owner.Gid)); err != nil {
 		return err
 	}

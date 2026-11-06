@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/Artik-Man/Hestia/internal/storage"
 	"net"
 	"net/netip"
 	"os"
@@ -81,7 +82,7 @@ func tcpInputHostPort(raw string) (string, uint16, error) {
 
 // systemNameserver selects the first literal resolver from the gateway's resolver configuration.
 func systemNameserver() (string, error) {
-	data, err := os.ReadFile("/etc/resolv.conf")
+	data, err := os.ReadFile(storage.Installed().ResolvConf)
 	if err != nil {
 		return "", errors.New("не удалось прочитать настройки DNS-сервера")
 	}

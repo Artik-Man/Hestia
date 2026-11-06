@@ -37,6 +37,7 @@
 ## Спецификации функций
 
 - [Платформенный модуль управления службами](features/platform-services.md)
+- [Модули системных операций, хранения и сети](features/platform-modules.md)
 - [Настройки пользователя](features/admin-password.md)
 - [Создание групп подключений](features/connection-groups.md)
 - [Качество связи подключений](features/connection-quality.md)

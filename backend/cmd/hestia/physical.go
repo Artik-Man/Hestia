@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/Artik-Man/Hestia/internal/binding"
+	"github.com/Artik-Man/Hestia/internal/network/linuxphysical"
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
 	"github.com/Artik-Man/Hestia/internal/physical"
 )
@@ -23,7 +24,7 @@ func runPhysicalCommand(mode string, input io.Reader, output io.Writer) int {
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
 	engine := binding.Installed()
-	manager := physical.Manager{}
+	manager := linuxphysical.Manager{}
 	var err error
 	switch mode {
 	case "-physical-list":

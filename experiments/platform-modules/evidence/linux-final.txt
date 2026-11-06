@@ -1,0 +1,59 @@
+base=37eaf06
+backend_snapshot_sha256=de42711cabaea22a0c53f7d1523ea688032615c28841b7d0171a51448747afa9
+host=hestia-binding-test
+architecture=linux/arm64
+toolchain=go1.27.3
+execution=unprivileged precompiled test binaries; verbose count=1 timeout=3m per package
+exit=0
+PACKAGE internal/awg
+PASS
+PACKAGE internal/awgruntime
+PASS
+PACKAGE internal/binding
+PASS
+PACKAGE internal/controller
+PASS
+PACKAGE internal/dnspolicy
+PASS
+PACKAGE internal/dnsresolver
+PASS
+PACKAGE internal/dnsservice
+--- SKIP: TestDNSWorkerPlaywright (0.00s)
+PASS
+PACKAGE internal/geoip
+PASS
+PACKAGE internal/network/linuxphysical
+--- SKIP: TestNetworkManagerOffline (0.00s)
+PASS
+PACKAGE internal/network/linuxroute
+PASS
+PACKAGE internal/network/socket
+PASS
+PACKAGE internal/observer
+PASS
+PACKAGE internal/panel
+--- SKIP: TestDNSPanelPlaywright (0.00s)
+--- SKIP: TestDNSPanelWarmFixture (0.00s)
+PASS
+PACKAGE internal/panelmodel
+PASS
+PACKAGE internal/platformhelper
+PASS
+PACKAGE internal/profileexec
+PASS
+PACKAGE internal/quality
+    --- SKIP: TestRawEchoLoopback/ip4:icmp (0.00s)
+    --- SKIP: TestRawEchoLoopback/ip6:ipv6-icmp (0.00s)
+--- SKIP: TestRealSingBoxLoopback (0.00s)
+PASS
+PACKAGE internal/routing
+PASS
+PACKAGE internal/services/systemd
+PASS
+PACKAGE internal/storage
+PASS
+PACKAGE internal/traffic
+PASS
+PACKAGE internal/trafficcapture
+--- SKIP: TestLocalSingBoxJournal (0.00s)
+PASS

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"github.com/Artik-Man/Hestia/internal/profileexec"
 	"slices"
 
 	"github.com/Artik-Man/Hestia/internal/awg"
@@ -141,7 +142,7 @@ func (e Engine) SaveHysteria2(ctx context.Context, id string, req panelmodel.Hys
 
 // hysteriaSource checks the source against the installed runtime before promoting old profiles to version two.
 func (e Engine) hysteriaSource(ctx context.Context) (storedProfile, error) {
-	if err := e.run(ctx, python, "-I", profile, "--validate-managed", e.dir); err != nil {
+	if err := e.profileCompiler().Apply(ctx, profileexec.Request{Operation: profileexec.Validate, Source: e.dir}); err != nil {
 		return storedProfile{}, ErrUnavailable
 	}
 	p, err := readStoredProfile(e.dir)

@@ -9,7 +9,7 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/Artik-Man/Hestia/internal/awg"
+	"github.com/Artik-Man/Hestia/internal/connectionid"
 	"github.com/Artik-Man/Hestia/internal/services"
 )
 
@@ -31,7 +31,7 @@ type Manager struct {
 // unit maps a known logical role to its fixed systemd name, checking instance input first.
 func unit(service services.Service) (string, error) {
 	if service.Kind == services.AWG {
-		if !awg.ValidConnectionID(service.Instance) {
+		if !connectionid.ValidConnectionID(service.Instance) {
 			return "", ErrInvalid
 		}
 		return "hestia-awg@" + service.Instance + ".service", nil

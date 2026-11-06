@@ -1,4 +1,4 @@
-package physical
+package linuxphysical
 
 import (
 	"crypto/sha256"
@@ -7,12 +7,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
+	"github.com/Artik-Man/Hestia/internal/storage"
 	"io"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
-	"syscall"
 	"unicode"
 	"unicode/utf8"
 )
@@ -109,11 +109,11 @@ func (m Manager) readProfile(id string) (panelmodel.WifiConnection, []byte, erro
 	var record panelmodel.WifiConnection
 	_, dir := m.paths()
 	path := filepath.Join(dir, wifiFilename(id))
-	f, err := os.OpenFile(path, os.O_RDONLY|syscall.O_NOFOLLOW|syscall.O_NONBLOCK, 0)
+	f, err := storage.OpenFile(path, storage.ReadOnly|storage.NoFollow|storage.Nonblock, 0)
 	if errors.Is(err, os.ErrNotExist) {
 		return record, nil, ErrNotFound
 	}
-	if errors.Is(err, syscall.ELOOP) {
+	if storage.IsSymlink(err) {
 		return record, nil, ErrConflict
 	}
 	if err != nil {
@@ -124,7 +124,7 @@ func (m Manager) readProfile(id string) (panelmodel.WifiConnection, []byte, erro
 	if err != nil {
 		return record, nil, err
 	}
-	stat, ok := info.Sys().(*syscall.Stat_t)
+	stat, ok := storage.Stat(info)
 	if !ok || stat.Uid != m.ownerUID || stat.Nlink != 1 || !info.Mode().IsRegular() || info.Mode().Perm()&0077 != 0 || info.Size() > 64<<10 {
 		return record, nil, ErrConflict
 	}

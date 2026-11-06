@@ -4,15 +4,16 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"github.com/Artik-Man/Hestia/internal/network"
+	"github.com/Artik-Man/Hestia/internal/storage"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
-	"syscall"
 )
 
 // SlotCount bounds the tunnel range below Linux reserved route tables.
-const SlotCount = 50
+const SlotCount = network.SlotCount
 
 const (
 	profileFile  = "profile.conf"
@@ -52,7 +53,7 @@ type Store struct {
 // OpenStore creates or validates a private AWG store directory and recovers interrupted swaps.
 func OpenStore(directory string) (*Store, error) {
 	lockPath := filepath.Join(filepath.Dir(directory), ".awg-store.lock")
-	lock, err := os.OpenFile(lockPath, os.O_CREATE|os.O_RDWR|syscall.O_NOFOLLOW, 0600)
+	lock, err := storage.OpenFile(lockPath, storage.Create|storage.ReadWrite|storage.NoFollow, 0600)
 	if err != nil {
 		return nil, errors.New("cannot prepare AWG store lock")
 	}
@@ -68,7 +69,7 @@ func OpenStoreWithLock(directory, lockPath string) (*Store, error) {
 	if err != nil || !lockInfo.Mode().IsRegular() || lockInfo.Mode()&os.ModeSymlink != 0 || lockInfo.Mode().Perm()&0022 != 0 {
 		return nil, errors.New("cannot validate AWG store lock")
 	}
-	lockStat, ok := lockInfo.Sys().(*syscall.Stat_t)
+	lockStat, ok := storage.Stat(lockInfo)
 	if !ok || int(lockStat.Uid) != os.Geteuid() || lockStat.Nlink != 1 {
 		return nil, errors.New("cannot validate AWG store lock")
 	}
@@ -103,7 +104,7 @@ func (s *Store) Save(metadata Metadata, raw []byte) error {
 	metadata.Protocol = profile.Protocol
 	metadata.IPv4Address = profile.IPv4Address
 	metadata.DNSIPv4 = profile.DNSIPv4
-	return s.withLock(syscall.LOCK_EX, func() error {
+	return s.withLock(storage.LockExclusive, func() error {
 		return s.replace(metadata, profile.SecretConfig)
 	})
 }
@@ -134,7 +135,7 @@ func (s *Store) Load(id string) (Metadata, []byte, error) {
 	if !ValidConnectionID(id) {
 		return metadata, nil, errors.New("invalid AWG connection ID")
 	}
-	err := s.withLock(syscall.LOCK_EX, func() error {
+	err := s.withLock(storage.LockExclusive, func() error {
 		if err := s.recover(); err != nil {
 			return err
 		}
@@ -168,7 +169,7 @@ func (s *Store) LoadReadyForRuntime(ids ...string) (Metadata, []byte, error) {
 	if err != nil || info == nil {
 		return selected, nil, errors.New("AWG runtime storage is unavailable")
 	}
-	stat, ok := info.Sys().(*syscall.Stat_t)
+	stat, ok := storage.Stat(info)
 	if !info.IsDir() || info.Mode().Perm() != 0700 || info.Mode()&os.ModeSymlink != 0 || !ok || int(stat.Uid) != os.Geteuid() {
 		return selected, nil, errors.New("AWG runtime storage is unavailable")
 	}
@@ -211,7 +212,7 @@ func (s *Store) Delete(id string) error {
 	if !ValidConnectionID(id) {
 		return errors.New("invalid AWG connection ID")
 	}
-	return s.withLock(syscall.LOCK_EX, func() error {
+	return s.withLock(storage.LockExclusive, func() error {
 		if err := s.recover(); err != nil {
 			return err
 		}
@@ -348,7 +349,7 @@ func (s *Store) deletePath(id string) string { return filepath.Join(s.directory,
 // current state, and supplies fresh entries while still holding that lock.
 func (s *Store) readDirectory(read func([]os.DirEntry) error) error {
 	var recoveryNeeded bool
-	err := s.withLock(syscall.LOCK_SH, func() error {
+	err := s.withLock(storage.LockShared, func() error {
 		entries, err := os.ReadDir(s.directory)
 		if err != nil {
 			return errors.New("cannot inspect AWG storage")
@@ -364,7 +365,7 @@ func (s *Store) readDirectory(read func([]os.DirEntry) error) error {
 	if err != nil || !recoveryNeeded {
 		return err
 	}
-	return s.withLock(syscall.LOCK_EX, func() error {
+	return s.withLock(storage.LockExclusive, func() error {
 		if err := s.recover(); err != nil {
 			return err
 		}
@@ -377,16 +378,16 @@ func (s *Store) readDirectory(read func([]os.DirEntry) error) error {
 }
 
 // withLock takes the specified shared or exclusive installer lock and excludes pending binding transactions.
-func (s *Store) withLock(mode int, operation func() error) error {
-	file, err := os.OpenFile(s.lockPath, os.O_RDWR|syscall.O_NOFOLLOW, 0)
+func (s *Store) withLock(mode storage.LockMode, operation func() error) error {
+	file, err := storage.OpenFile(s.lockPath, storage.ReadWrite|storage.NoFollow, 0)
 	if err != nil {
 		return errors.New("cannot lock AWG storage")
 	}
 	defer file.Close()
-	if err := syscall.Flock(int(file.Fd()), mode); err != nil {
+	if err := storage.Flock(file, mode); err != nil {
 		return errors.New("cannot lock AWG storage")
 	}
-	defer syscall.Flock(int(file.Fd()), syscall.LOCK_UN)
+	defer storage.Flock(file, storage.LockUnlock)
 	if _, err := os.Lstat(filepath.Join(filepath.Dir(s.directory), ".binding-pending")); err == nil || !errors.Is(err, os.ErrNotExist) {
 		return errors.New("AWG store is unavailable during a pending profile transaction")
 	}
@@ -408,11 +409,10 @@ func writeExclusive(path string, data []byte, mode os.FileMode) error {
 
 // readPrivateFile reads a regular non-symlink file within a strict size bound.
 func readPrivateFile(path string, limit int64) ([]byte, error) {
-	fd, err := syscall.Open(path, syscall.O_RDONLY|syscall.O_NOFOLLOW|syscall.O_CLOEXEC, 0)
+	file, err := storage.OpenFile(path, storage.ReadOnly|storage.NoFollow|storage.CloseOnExec, 0)
 	if err != nil {
 		return nil, errors.New("unsafe private file")
 	}
-	file := os.NewFile(uintptr(fd), path)
 	defer file.Close()
 	info, err := file.Stat()
 	if err != nil || !info.Mode().IsRegular() || info.Mode().Perm()&0077 != 0 || info.Size() > limit {

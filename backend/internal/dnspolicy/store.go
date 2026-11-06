@@ -13,7 +13,8 @@ import (
 	"reflect"
 	"slices"
 	"strings"
-	"syscall"
+
+	"github.com/Artik-Man/Hestia/internal/storage"
 )
 
 // DNSSettings defines persisted DNS policy in the units used by the panel.
@@ -50,7 +51,7 @@ var (
 
 // Read returns complete durable state or defaults on first installation; corrupt files fail closed.
 func (s Store) Read() (Snapshot, error) {
-	file, err := os.OpenFile(s.Path, os.O_RDONLY|syscall.O_NONBLOCK, 0)
+	file, err := storage.OpenFile(s.Path, storage.ReadOnly|storage.Nonblock, 0)
 	if errors.Is(err, os.ErrNotExist) {
 		return Snapshot{Policy: Policy{Settings: DNSSettings{AutomaticEnabled: true, Threshold: 5, WindowHours: 24, IntervalMinutes: 10}, Manual: []string{}, Exclusions: []string{}}}, nil
 	}
@@ -123,7 +124,7 @@ func (s Store) Apply(expectedRevision int, policy Policy) (Snapshot, error) {
 		return Snapshot{}, err
 	}
 	defer lock.Close()
-	if err := syscall.Flock(int(lock.Fd()), syscall.LOCK_EX); err != nil {
+	if err := storage.Flock(lock, storage.LockExclusive); err != nil {
 		return Snapshot{}, err
 	}
 	current, err := s.Read()

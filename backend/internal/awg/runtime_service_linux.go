@@ -7,24 +7,25 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"errors"
+	"github.com/Artik-Man/Hestia/internal/awgruntime"
+	"github.com/Artik-Man/Hestia/internal/network/socket"
+	"github.com/Artik-Man/Hestia/internal/storage"
 	"io"
 	"net"
 	"net/http"
 	"os"
-	"os/exec"
 	"os/user"
 	"path/filepath"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 )
 
-const (
-	installedStorePath = "/etc/hestia/awg"
-	readyMarkerPath    = "/run/hestia-awg/ready"
-	healthMarkerPath   = "/run/hestia-awg/health.json"
-	routeManifestPath  = "/run/hestia-awg/routes.json"
+var (
+	installedStorePath = storage.Installed().AWGStore
+	readyMarkerPath    = storage.Installed().AWGReady
+	healthMarkerPath   = storage.Installed().AWGHealth
+	routeManifestPath  = storage.Installed().AWGRoutes
 )
 
 // ServeReadyConnector keeps the requested ready userspace connector active until its service context ends.
@@ -112,7 +113,7 @@ func (InstalledRuntime) ServeReadyConnector(ctx context.Context, id string) (ret
 		return err
 	}
 	stopProcess = stop
-	configDir, err := os.MkdirTemp("/run/hestia-awg", "active-")
+	configDir, err := os.MkdirTemp(storage.Installed().AWGRuntime, "active-")
 	if err != nil {
 		return errors.New("cannot create private runtime configuration")
 	}
@@ -126,7 +127,10 @@ func (InstalledRuntime) ServeReadyConnector(ctx context.Context, id string) (ret
 			return err
 		}
 		defer relay.close()
-		guard := outerPolicy(metadata.Slot)
+		guard, err := outerPolicy(metadata.Slot)
+		if err != nil {
+			return err
+		}
 		if err := guard.outerBarrier(ctx, metadata.ID, true); err != nil {
 			return err
 		}
@@ -135,17 +139,17 @@ func (InstalledRuntime) ServeReadyConnector(ctx context.Context, id string) (ret
 	if err := os.WriteFile(configPath, runtimeConfig, 0600); err != nil {
 		return errors.New("cannot stage private runtime configuration")
 	}
-	if err := runAWG(ctx, awgToolPath, "setconf", policy.device, configPath); err != nil {
+	if err := runtimeDriver.Configure(ctx, policy.device, configPath); err != nil {
 		return errors.New("userspace runtime rejected the stored profile")
 	}
-	if err := runAWG(ctx, ipToolPath, "addr", "add", metadata.IPv4Address, "dev", policy.device, "noprefixroute"); err != nil {
+	if err := runtimeDriver.Address(ctx, policy.device, metadata.IPv4Address); err != nil {
 		return errors.New("cannot configure the AWG IPv4 address")
 	}
-	if err := runAWG(ctx, ipToolPath, "link", "set", "dev", policy.device, "up"); err != nil {
+	if err := runtimeDriver.Activate(ctx, policy.device); err != nil {
 		return errors.New("cannot activate the AWG interface")
 	}
 	if relay != nil {
-		port, err := runProcess(awgToolPath, "show", policy.device, "listen-port")
+		port, err := runProcess(awgruntime.ListenPort, policy.device)
 		if err != nil {
 			return errors.New("cannot inspect WireGuard transport socket")
 		}
@@ -196,16 +200,7 @@ func (InstalledRuntime) ServeReadyConnector(ctx context.Context, id string) (ret
 
 // hestiaOutboundDisabled confirms sing-box is stopped before route teardown can remove fail-closed guards.
 func hestiaOutboundDisabled(ctx context.Context) error {
-	command := exec.CommandContext(ctx, "/usr/bin/systemctl", "is-active", "--quiet", "hestia-sing-box.service")
-	if err := command.Run(); err == nil {
-		return errors.New("Hestia outbound is still active")
-	} else {
-		var exit *exec.ExitError
-		if !errors.As(err, &exit) || exit.ExitCode() != 3 {
-			return errors.New("cannot confirm Hestia outbound is stopped")
-		}
-	}
-	return nil
+	return offlineVerifier.OutboundDisabled(ctx)
 }
 
 // writeReadyMarker publishes a root-only signal only after handshake, IPv4 route, DNS, and HTTPS probes pass.
@@ -254,7 +249,7 @@ func loadRouteManifest(path string, expected routeManifest) (bool, error) {
 	if err != nil || info == nil {
 		return false, errors.New("AWG route ownership record is unsafe")
 	}
-	stat, ok := info.Sys().(*syscall.Stat_t)
+	stat, ok := storage.Stat(info)
 	if !info.Mode().IsRegular() || info.Mode().Perm() != 0600 || !ok || int(stat.Uid) != 0 || stat.Nlink != 1 {
 		return false, errors.New("AWG route ownership record is unsafe")
 	}
@@ -280,21 +275,7 @@ func removeRouteManifest(path string) error {
 
 // boundDialer confines connections to this tunnel's policy mark and interface.
 func (p RoutePolicy) boundDialer() *net.Dialer {
-	return &net.Dialer{
-		Timeout: 5 * time.Second,
-		Control: func(_, _ string, raw syscall.RawConn) error {
-			var socketErr error
-			if err := raw.Control(func(fd uintptr) {
-				socketErr = errors.Join(
-					syscall.SetsockoptInt(int(fd), syscall.SOL_SOCKET, syscall.SO_MARK, p.markValue),
-					syscall.SetsockoptString(int(fd), syscall.SOL_SOCKET, syscall.SO_BINDTODEVICE, p.device),
-				)
-			}); err != nil {
-				return err
-			}
-			return socketErr
-		},
-	}
+	return &net.Dialer{Timeout: 5 * time.Second, Control: socket.Platform{}.Bind(socket.Path{Device: p.device, Mark: p.markValue, Mode: socket.MarkAndDevice})}
 }
 
 // probeMarkedEgress resolves ya.ru through the profile DNS server and fetches HTTPS using the same mark/interface path.
@@ -372,7 +353,11 @@ func RetireStoppedConnector(ctx context.Context, id string, slot int, legacy boo
 		return err
 	}
 	if !legacy {
-		if err := outerPolicy(slot).outerBarrier(ctx, id, false); err != nil {
+		guard, err := outerPolicy(slot)
+		if err != nil {
+			return err
+		}
+		if err := guard.outerBarrier(ctx, id, false); err != nil {
 			return err
 		}
 	}

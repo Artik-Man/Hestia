@@ -12,13 +12,13 @@ import (
 	"net/netip"
 	"os"
 	"slices"
-	"syscall"
 	"time"
 
 	"github.com/Artik-Man/Hestia/internal/binding"
 	"github.com/Artik-Man/Hestia/internal/controller"
 	"github.com/Artik-Man/Hestia/internal/dnsresolver"
 	"github.com/Artik-Man/Hestia/internal/quality"
+	"github.com/Artik-Man/Hestia/internal/storage"
 	"golang.org/x/net/dns/dnsmessage"
 )
 
@@ -56,14 +56,14 @@ func loadRoutes(path string, direct map[string]string) (*installedRoutes, error)
 	return &routes, nil
 }
 
-const installedBackendConfig = "/etc/hestia/sing-box.json"
+var installedBackendConfig = storage.Installed().BackendConfig
 
 var errRouteGeneration = errors.New("installed DNS path generation changed")
 
 // currentGeneration compares the path export to the current backend file without reading VPN secrets.
 func (r *installedRoutes) currentGeneration(path string) bool {
 	info, err := os.Stat(path)
-	return err == nil && info.Sys().(*syscall.Stat_t).Ino == r.Inode && info.ModTime().UnixNano() == r.Modified
+	return err == nil && storage.MustStat(info).Ino == r.Inode && info.ModTime().UnixNano() == r.Modified
 }
 
 // Allowed returns only resolver contexts associated with the current trusted selector generation.

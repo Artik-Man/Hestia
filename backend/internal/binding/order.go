@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/Artik-Man/Hestia/internal/profileexec"
 	"os"
 	"path/filepath"
 	"slices"
@@ -111,7 +112,7 @@ func (e Engine) ApplyOrder(ctx context.Context, change panelmodel.GroupOrderChan
 		if err := os.WriteFile(request, data, 0600); err != nil {
 			return err
 		}
-		if err := e.run(ctx, python, "-I", profile, "--reorder", e.dir, dir); err != nil {
+		if err := e.profileCompiler().Apply(ctx, profileexec.Request{Operation: profileexec.Reorder, Source: e.dir, Stage: dir}); err != nil {
 			return err
 		}
 		return os.Remove(request)

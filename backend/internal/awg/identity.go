@@ -1,13 +1,9 @@
 package awg
 
-import "regexp"
+import "github.com/Artik-Man/Hestia/internal/connectionid"
 
-// ConnectionIDPattern matches a routing ID inside a larger expression: a UUID or a historical connector tag.
-const ConnectionIDPattern = "(?:[a-z][a-z0-9-]{0,62}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"
+// ConnectionIDPattern matches a canonical UUID or historical connector tag.
+const ConnectionIDPattern = connectionid.ConnectionIDPattern
 
-var connectionID = regexp.MustCompile("^" + ConnectionIDPattern + "$")
-
-// ValidConnectionID accepts a canonical lowercase UUID or a legacy tag safe for paths, systemd instances and routing.
-func ValidConnectionID(id string) bool {
-	return connectionID.MatchString(id)
-}
+// ValidConnectionID accepts identities safe for paths, service instances and routing.
+func ValidConnectionID(id string) bool { return connectionid.ValidConnectionID(id) }

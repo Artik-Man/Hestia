@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	"github.com/Artik-Man/Hestia/internal/profileexec"
 	"reflect"
 	"slices"
 	"strings"
@@ -102,11 +103,11 @@ func (e Engine) writeGroup(ctx context.Context, id, name string, create bool) er
 		return nil
 	}
 	prepare := func(stage string) error {
-		mode := "--rename-group"
+		mode := profileexec.RenameGroup
 		if create {
-			mode = "--create-group"
+			mode = profileexec.CreateGroup
 		}
-		return e.run(ctx, python, "-I", profile, mode, e.dir, stage, id, name)
+		return e.profileCompiler().Apply(ctx, profileexec.Request{Operation: mode, Source: e.dir, Stage: stage, ID: id, Name: name})
 	}
 	return e.apply(ctx, prepare, check, false)
 }
@@ -156,7 +157,7 @@ func (e Engine) DeleteGroup(ctx context.Context, id string) error {
 		return nil
 	}
 	prepare := func(stage string) error {
-		return e.run(ctx, python, "-I", profile, "--delete-group", e.dir, stage, id)
+		return e.profileCompiler().Apply(ctx, profileexec.Request{Operation: profileexec.DeleteGroup, Source: e.dir, Stage: stage, ID: id})
 	}
 	return e.apply(ctx, prepare, check, false)
 }

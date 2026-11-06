@@ -2,9 +2,9 @@ package binding
 
 import (
 	"context"
+	"github.com/Artik-Man/Hestia/internal/profileexec"
 	"reflect"
 	"slices"
-	"strconv"
 
 	"github.com/Artik-Man/Hestia/internal/awg"
 	"github.com/Artik-Man/Hestia/internal/controller"
@@ -54,7 +54,7 @@ func (e Engine) MoveExit(ctx context.Context, id, expectedGroup, targetGroup str
 		return nil
 	}
 	prepare := func(stage string) error {
-		return e.run(ctx, python, "-I", profile, "--move-exit", e.dir, stage, id, expectedGroup, targetGroup, strconv.Itoa(priority))
+		return e.profileCompiler().Apply(ctx, profileexec.Request{Operation: profileexec.MoveExit, Source: e.dir, Stage: stage, ID: id, ExpectedGroup: expectedGroup, Target: targetGroup, Priority: priority})
 	}
 	return e.apply(ctx, prepare, check, false)
 }

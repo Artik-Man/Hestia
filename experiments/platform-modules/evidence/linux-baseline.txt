@@ -1,0 +1,38 @@
+source=37eaf06
+host=hestia-binding-test
+architecture=linux/arm64
+toolchain=go1.27.3
+execution=unprivileged precompiled test binaries; count=1 timeout=3m per package
+exit=0
+PACKAGE internal/awg
+PASS
+PACKAGE internal/binding
+PASS
+PACKAGE internal/controller
+PASS
+PACKAGE internal/dnspolicy
+PASS
+PACKAGE internal/dnsresolver
+PASS
+PACKAGE internal/dnsservice
+PASS
+PACKAGE internal/geoip
+PASS
+PACKAGE internal/observer
+PASS
+PACKAGE internal/panel
+PASS
+PACKAGE internal/panelmodel
+PASS
+PACKAGE internal/physical
+PASS
+PACKAGE internal/quality
+PASS
+PACKAGE internal/routing
+PASS
+PACKAGE internal/services/systemd
+PASS
+PACKAGE internal/traffic
+PASS
+PACKAGE internal/trafficcapture
+PASS

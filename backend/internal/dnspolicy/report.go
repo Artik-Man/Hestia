@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"os"
-	"syscall"
 	"time"
+
+	"github.com/Artik-Man/Hestia/internal/storage"
 )
 
 // DNSWarmName records the measured client demand for one automatically selected name.
@@ -37,7 +37,7 @@ const MaxReportNames = 32768
 // ReadWarmReport returns an entire fresh, validated worker snapshot. An absent, incomplete,
 // oversized or stale heartbeat is unavailable even when an earlier report was valid.
 func ReadWarmReport(path string, now time.Time) (DNSWarmReport, error) {
-	file, err := os.OpenFile(path, os.O_RDONLY|syscall.O_NONBLOCK, 0)
+	file, err := storage.OpenFile(path, storage.ReadOnly|storage.Nonblock, 0)
 	if err != nil {
 		return DNSWarmReport{}, err
 	}

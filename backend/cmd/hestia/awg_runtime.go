@@ -5,11 +5,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/Artik-Man/Hestia/internal/services/systemd"
 	"os"
-	"os/exec"
 	"os/signal"
 	"strconv"
-	"strings"
 	"syscall"
 	"time"
 
@@ -40,16 +39,9 @@ func runAWGRetireCommand(id, number string, legacy bool) int {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
-	instance := "hestia-awg@" + id + ".service"
-	if legacy {
-		instance = "hestia-awg.service"
-	}
-	for _, unit := range []string{"hestia-sing-box.service", instance} {
-		state, err := exec.CommandContext(ctx, "/usr/bin/systemctl", "show", "--property=ActiveState", "--value", unit).Output()
-		if err != nil || (strings.TrimSpace(string(state)) != "inactive" && strings.TrimSpace(string(state)) != "failed") {
-			fmt.Fprintln(os.Stderr, "cannot confirm AWG retirement is offline")
-			return 1
-		}
+	if err := (systemd.OfflineVerifier{}).RetirementOffline(ctx, id, legacy); err != nil {
+		fmt.Fprintln(os.Stderr, "cannot confirm AWG retirement is offline")
+		return 1
 	}
 	if err := awg.RetireStoppedConnector(ctx, id, slot, legacy); err != nil {
 		fmt.Fprintln(os.Stderr, err)

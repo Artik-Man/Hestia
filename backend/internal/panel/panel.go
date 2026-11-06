@@ -27,13 +27,14 @@ import (
 	"github.com/Artik-Man/Hestia/internal/controller"
 	"github.com/Artik-Man/Hestia/internal/geoip"
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
+	"github.com/Artik-Man/Hestia/internal/storage"
 	"github.com/Artik-Man/Hestia/internal/traffic"
 	"github.com/Artik-Man/Hestia/internal/trafficcapture"
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humago"
 )
 
-const installedSnapshot = "/etc/hestia/snapshot.json"
+var installedSnapshot = storage.Installed().Snapshot
 
 // sameSnapshotPath recognizes alternate spellings and symlinks to the managed snapshot.
 func sameSnapshotPath(path, installed string) bool {
@@ -60,7 +61,7 @@ func readSnapshot(path string, managed bool, reportPath string) (panelmodel.Snap
 	if !managed && sameSnapshotPath(path, installedSnapshot) {
 		// Legacy installers have no transaction lock for readers. New installations must use it
 		// even if this panel only reads while another panel is applying a change.
-		_, statErr := os.Stat("/etc/tmpfiles.d/hestia-binding.conf")
+		_, statErr := os.Stat(storage.Installed().BindingMarker)
 		managed = !os.IsNotExist(statErr)
 	}
 	if managed {
@@ -312,7 +313,7 @@ func runPanel() error {
 	enableOrder := flag.Bool("enable-group-order", false, "enable confirmed group and exit ordering on the installed gateway")
 	enableBindings := flag.Bool("enable-bindings", false, "enable confirmed list binding changes on the installed gateway")
 	enableAWG := flag.Bool("enable-awg", false, "enable privileged AmneziaWG profile management on the installed gateway")
-	dnsReport := flag.String("dns-report", "/run/hestia-dns/report.json", "path to the DNS worker heartbeat and automatic membership report")
+	dnsReport := flag.String("dns-report", storage.Installed().DNSReport, "path to the DNS worker heartbeat and automatic membership report")
 	dnsPolicy := flag.String("dns-policy", "", "path to the panel-owned durable DNS policy; setting this path enables policy management")
 	countryMap := flag.String("country-map", "", "durable country assignments file for a custom snapshot")
 	geoIPIndex := flag.String("geoip-index", "", "country index produced by the GeoIP importer (managed default /usr/share/hestia/geoip/country.bin)")
@@ -353,7 +354,7 @@ func runPanel() error {
 		writes.countryMap = binding.CustomCountryMap(*snapshot, *countryMap)
 	}
 	if managed && *trafficDir == "" {
-		*trafficDir = "/var/lib/hestia-traffic"
+		*trafficDir = storage.Installed().Traffic
 	}
 	if *trafficCapture && *trafficDir == "" {
 		return errors.New("traffic-capture requires traffic-dir or a managed gateway")
@@ -361,7 +362,7 @@ func runPanel() error {
 	if *dnsPolicy != "" {
 		rulesDir := ""
 		if managed {
-			rulesDir = "/var/lib/hestia-geoip-proposals"
+			rulesDir = storage.Installed().GeoIPProposals
 		}
 		writes.enrichment, err = geoip.NewEnrichment(filepath.Dir(*dnsPolicy), rulesDir)
 		if err != nil {
@@ -369,7 +370,7 @@ func runPanel() error {
 		}
 	}
 	if managed && *geoIPIndex == "" {
-		*geoIPIndex = "/usr/share/hestia/geoip/country.bin"
+		*geoIPIndex = storage.Installed().GeoIPIndex
 	}
 	if *trafficDir != "" && *geoIPIndex != "" {
 		writes.trafficCountries, err = geoip.Load(*geoIPIndex)
@@ -388,10 +389,10 @@ func runPanel() error {
 	}
 	if managed {
 		if writes.quality.settings == "" {
-			writes.quality.settings = "/var/lib/hestia-quality-settings/settings.json"
+			writes.quality.settings = storage.Installed().QualitySettings
 		}
 		if writes.quality.report == "" {
-			writes.quality.report = "/run/hestia-quality/report.json"
+			writes.quality.report = storage.Installed().QualityReport
 		}
 	}
 	if (*enableDomainLists || *enableGroupDelete || *enableExitMove || *enableBindings || *enableOrder || *enableGroupCreate || *enableAWG) && *snapshot != installedSnapshot {

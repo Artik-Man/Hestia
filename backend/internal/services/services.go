@@ -42,3 +42,10 @@ type Manager interface {
 	Status(context.Context, Service) (State, error)
 	AWGTemplateInstalled() (bool, error)
 }
+
+// Offline verifies the historical stop preconditions used before removing connector guards.
+// A generic Inactive state is insufficient; unknown state always returns an error.
+type Offline interface {
+	OutboundDisabled(context.Context) error
+	RetirementOffline(context.Context, string, bool) error
+}

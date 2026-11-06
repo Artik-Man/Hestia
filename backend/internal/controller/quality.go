@@ -14,11 +14,12 @@ import (
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
 	"github.com/Artik-Man/Hestia/internal/quality"
 	"github.com/Artik-Man/Hestia/internal/routing"
+	"github.com/Artik-Man/Hestia/internal/storage"
 )
 
-const (
-	qualitySettingsFile = "/var/lib/hestia-quality-settings/settings.json"
-	qualityRuntimeDir   = "/run/hestia-quality"
+var (
+	qualitySettingsFile = storage.Installed().QualitySettings
+	qualityRuntimeDir   = storage.Installed().QualityRuntime
 )
 
 // readQualityPaths reads the path bindings exported from the installed backend generation.

@@ -3,9 +3,9 @@ package awg
 import (
 	"context"
 	"errors"
+	"github.com/Artik-Man/Hestia/internal/awgruntime"
 	"net"
 	"net/netip"
-	"os/exec"
 	"strconv"
 	"strings"
 	"sync"
@@ -147,14 +147,14 @@ func (r *underlayRelay) receive(path *net.UDPConn) {
 func (r *underlayRelay) proveReply(packet []byte) bool {
 	ctx, cancel := context.WithTimeout(r.ctx, 65*time.Millisecond)
 	defer cancel()
-	if runAWG(ctx, awgToolPath, "set", r.device, "peer", r.peer, "endpoint", r.local.LocalAddr().String()) != nil {
+	if runtimeDriver.Endpoint(ctx, r.device, r.peer, r.local.LocalAddr().String()) != nil {
 		return false
 	}
 	if _, err := r.witness.WriteToUDPAddrPort(packet, r.daemon); err != nil {
 		return false
 	}
 	for {
-		out, err := exec.CommandContext(ctx, awgToolPath, "show", r.device, "endpoints").Output()
+		out, err := runtimeDriver.Observe(ctx, awgruntime.Endpoints, r.device)
 		if err != nil {
 			return false
 		}

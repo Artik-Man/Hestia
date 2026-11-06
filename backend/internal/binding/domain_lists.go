@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"github.com/Artik-Man/Hestia/internal/profileexec"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -90,7 +91,7 @@ func (e Engine) saveDomainList(ctx context.Context, id string, previous *panelmo
 		if err := os.WriteFile(request, data, 0600); err != nil {
 			return err
 		}
-		if err := e.run(ctx, python, "-I", profile, "--save-list", e.dir, stage, id); err != nil {
+		if err := e.profileCompiler().Apply(ctx, profileexec.Request{Operation: profileexec.SaveList, Source: e.dir, Stage: stage, ID: id}); err != nil {
 			return err
 		}
 		return os.Remove(request)
@@ -126,7 +127,7 @@ func (e Engine) DeleteDomainList(ctx context.Context, expected panelmodel.RuleLi
 		return ErrNotFound
 	}
 	prepare := func(stage string) error {
-		return e.run(ctx, python, "-I", profile, "--delete-list", e.dir, stage, expected.ID)
+		return e.profileCompiler().Apply(ctx, profileexec.Request{Operation: profileexec.DeleteList, Source: e.dir, Stage: stage, ID: expected.ID})
 	}
 	return e.applyDomainList(ctx, mutate, prepare, false)
 }

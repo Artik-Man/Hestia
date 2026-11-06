@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"errors"
+	"github.com/Artik-Man/Hestia/internal/profileexec"
 	"os"
 	"path/filepath"
 	"slices"
@@ -347,7 +348,7 @@ func (e Engine) startAWGForBoot(ctx context.Context) error {
 	if err != nil || len(ready) == 0 {
 		return err
 	}
-	if err := e.run(ctx, python, "-I", profile, "--validate-managed", e.dir); err != nil {
+	if err := e.profileCompiler().Apply(ctx, profileexec.Request{Operation: profileexec.Validate, Source: e.dir}); err != nil {
 		return ErrUnavailable
 	}
 	ids := make([]string, 0, len(ready))

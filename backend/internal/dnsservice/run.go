@@ -16,6 +16,7 @@ import (
 
 	"github.com/Artik-Man/Hestia/internal/dnspolicy"
 	"github.com/Artik-Man/Hestia/internal/dnsresolver"
+	"github.com/Artik-Man/Hestia/internal/storage"
 )
 
 // serviceConfig specifies the router-facing socket, sole allowed client, and explicit direct-exit DNS IPs.
@@ -44,21 +45,21 @@ func Run(ctx context.Context, configPath string) error {
 	if err = validateListener(cfg.Listen, cfg.Router); err != nil {
 		return err
 	}
-	routes, err := loadRoutes("/run/hestia-dns/paths.json", cfg.Direct)
+	routes, err := loadRoutes(storage.Installed().DNSPaths, cfg.Direct)
 	if err != nil {
 		return err
 	}
-	store := dnspolicy.Store{Path: "/var/lib/hestia-dns-policy/policy.json"}
+	store := dnspolicy.Store{Path: storage.Installed().DNSPolicy}
 	if _, err = store.Read(); err != nil {
 		return err
 	}
-	resolver := dnsresolver.New(store, routes, "/var/lib/hestia-dns/cache.json")
+	resolver := dnsresolver.New(store, routes, storage.Installed().DNSCache)
 	ctx, cancel := context.WithCancelCause(ctx)
 	defer cancel(nil)
 	var workers sync.WaitGroup
 	err = serve(ctx, cfg.Listen, cfg.Router, resolver, func(_ netip.AddrPort) {
 		workers.Add(2)
-		go func() { defer workers.Done(); runWorker(ctx, resolver, "/run/hestia-dns/report.json") }()
+		go func() { defer workers.Done(); runWorker(ctx, resolver, storage.Installed().DNSReport) }()
 		go func() {
 			defer workers.Done()
 			if err := watchGeneration(ctx, routes, installedBackendConfig, time.Second); err != nil {

@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"errors"
+	"github.com/Artik-Man/Hestia/internal/profileexec"
 	"maps"
 	"os"
 	"path/filepath"
@@ -123,7 +124,7 @@ func (e Engine) applyCountryMap(ctx context.Context, change panelmodel.CountryMa
 		if err = os.WriteFile(request, body, 0600); err != nil {
 			return err
 		}
-		if err = e.run(ctx, python, "-I", profile, "--country-map", e.dir, stage); err != nil {
+		if err = e.profileCompiler().Apply(ctx, profileexec.Request{Operation: profileexec.CountryMap, Source: e.dir, Stage: stage}); err != nil {
 			return err
 		}
 		if err = os.Remove(request); err != nil {

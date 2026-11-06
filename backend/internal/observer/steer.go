@@ -10,7 +10,8 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
-	"syscall"
+
+	"github.com/Artik-Man/Hestia/internal/storage"
 )
 
 // exceptions owns a dedicated, initially empty live source rule-set for the second group exit.
@@ -79,7 +80,7 @@ func openExceptions(path string, s Settings) (*exceptions, error) {
 		return nil, fmt.Errorf("steering requires a UDP target")
 	}
 	root := filepath.Dir(path)
-	dir, err := os.OpenFile(root, os.O_RDONLY|syscall.O_DIRECTORY|syscall.O_NOFOLLOW, 0)
+	dir, err := storage.OpenFile(root, storage.ReadOnly|storage.Directory|storage.NoFollow, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +89,7 @@ func openExceptions(path string, s Settings) (*exceptions, error) {
 		dir.Close()
 		return nil, fmt.Errorf("rule directory must be owned by this user and not writable by others: %s", root)
 	}
-	if err := syscall.Flock(int(dir.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
+	if err := storage.Flock(dir, storage.LockExclusive|storage.LockNonblock); err != nil {
 		dir.Close()
 		return nil, fmt.Errorf("lock rule directory: %w", err)
 	}
@@ -108,13 +109,13 @@ func openExceptions(path string, s Settings) (*exceptions, error) {
 
 // trusted reports whether the current user owns a path and only the owner can write it.
 func trusted(info os.FileInfo) bool {
-	owner, ok := info.Sys().(*syscall.Stat_t)
+	owner, ok := storage.Stat(info)
 	return ok && owner.Uid == uint32(os.Geteuid()) && info.Mode().Perm()&0022 == 0
 }
 
 // readRule reads bounded source data without following symlinks or blocking on special files.
 func readRule(path string) ([]byte, os.FileInfo, error) {
-	f, err := os.OpenFile(path, os.O_RDONLY|syscall.O_NOFOLLOW|syscall.O_NONBLOCK, 0)
+	f, err := storage.OpenFile(path, storage.ReadOnly|storage.NoFollow|storage.Nonblock, 0)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -196,7 +197,7 @@ func (e *exceptions) publish(next []string) error {
 		return err
 	}
 	defer os.Remove(temp.Name())
-	if err = temp.Chown(-1, int(info.Sys().(*syscall.Stat_t).Gid)); err == nil {
+	if err = temp.Chown(-1, int(storage.MustStat(info).Gid)); err == nil {
 		_, err = temp.Write(data)
 	}
 	if err == nil {

@@ -12,9 +12,9 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"syscall"
 
 	"github.com/Artik-Man/Hestia/internal/awg"
+	"github.com/Artik-Man/Hestia/internal/storage"
 )
 
 const awgTreeName = "awg"
@@ -45,7 +45,7 @@ func validateAWGTree(path string) error {
 	if err != nil || !info.IsDir() || info.Mode().Perm() != 0700 || info.Mode()&os.ModeSymlink != 0 {
 		return ErrUnavailable
 	}
-	stat, ok := info.Sys().(*syscall.Stat_t)
+	stat, ok := storage.Stat(info)
 	if !ok || int(stat.Uid) != os.Geteuid() || int(stat.Gid) != os.Getegid() {
 		return ErrUnavailable
 	}
@@ -296,10 +296,10 @@ func verifyAWGTreeDigest(directory string) error {
 }
 
 // infoStat returns trusted Unix ownership metadata when available without dereferencing filesystem links.
-func infoStat(info os.FileInfo) (*syscall.Stat_t, bool) {
+func infoStat(info os.FileInfo) (*storage.Metadata, bool) {
 	if info == nil {
 		return nil, false
 	}
-	stat, ok := info.Sys().(*syscall.Stat_t)
+	stat, ok := storage.Stat(info)
 	return stat, ok
 }

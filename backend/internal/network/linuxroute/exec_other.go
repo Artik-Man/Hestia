@@ -1,6 +1,6 @@
 //go:build !linux
 
-package awg
+package linuxroute
 
 import (
 	"context"

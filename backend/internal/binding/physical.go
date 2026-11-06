@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"github.com/Artik-Man/Hestia/internal/network"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -14,11 +15,7 @@ import (
 )
 
 // PhysicalManager supplies host observations and limits mutations to Hestia-owned NetworkManager profiles.
-type PhysicalManager interface {
-	Inventory(context.Context) (panelmodel.PhysicalInventory, error)
-	SaveWiFi(context.Context, string, panelmodel.WifiConnectionSettings) error
-	DeleteWiFi(context.Context, string) error
-}
+type PhysicalManager = network.Physical
 
 var wifiID = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
 

@@ -5,10 +5,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/Artik-Man/Hestia/internal/platformhelper"
 	"log"
 	"net/http"
-	"os"
-	"os/exec"
 	"regexp"
 
 	"github.com/Artik-Man/Hestia/internal/awg"
@@ -267,15 +266,12 @@ func runAWGHelper(ctx context.Context, mode string, input any, output any) error
 	if err != nil || len(data) > maxAWGRequestBytes {
 		return errors.New("invalid AWG request")
 	}
-	command := exec.CommandContext(ctx, "/usr/bin/sudo", "-n", "--", "/usr/local/bin/hestia", mode)
-	command.Stdin = bytes.NewReader(data)
-	command.Stderr = os.Stderr
-	response, err := command.Output()
+	var response bytes.Buffer
+	err = installedHelperTransport.Execute(ctx, platformhelper.Mode(mode), data, &response, platformhelper.Caller)
 	if err != nil {
 		log.Printf("AWG helper operation failed: %s", mode)
-		var exit *exec.ExitError
-		if errors.As(err, &exit) {
-			switch exit.ExitCode() {
+		if code := platformhelper.ExitCode(err); code >= 0 {
+			switch code {
 			case 42:
 				return awgHTTPFailure{status: http.StatusUnprocessableEntity}
 			case 44:
@@ -289,7 +285,7 @@ func runAWGHelper(ctx context.Context, mode string, input any, output any) error
 	if output == nil {
 		return nil
 	}
-	if err := json.Unmarshal(response, output); err != nil {
+	if err := json.Unmarshal(response.Bytes(), output); err != nil {
 		return errors.New("invalid AWG helper response")
 	}
 	return nil

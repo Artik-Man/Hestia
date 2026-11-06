@@ -1,10 +1,11 @@
 //go:build linux
 
-package awg
+package linuxroute
 
 import (
 	"context"
 	"errors"
+	"github.com/Artik-Man/Hestia/internal/network"
 	"os/exec"
 	"slices"
 	"strconv"
@@ -43,7 +44,7 @@ func missingPolicyTable(args []string, stderr string) bool {
 		return false
 	}
 	table, err := strconv.Atoi(args[4])
-	if err != nil || table < 202 || table >= 202+SlotCount || args[4] != strconv.Itoa(table) {
+	if err != nil || table < 202 || table >= 202+network.SlotCount || args[4] != strconv.Itoa(table) {
 		return false
 	}
 	switch args[0] {

@@ -9,11 +9,11 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"syscall"
 
 	"github.com/Artik-Man/Hestia/internal/controller"
 	"github.com/Artik-Man/Hestia/internal/geoip"
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
+	"github.com/Artik-Man/Hestia/internal/storage"
 )
 
 // ISO 3166-1 alpha-2 country and territory codes (IANA tzdata iso3166.tab).
@@ -44,12 +44,12 @@ func CustomCountryMap(snapshot, path string) func(*panelmodel.CountryMap) (panel
 
 // lockCountryMap serializes initialization and writes across panel processes without excluding other inventory readers.
 func (e Engine) lockCountryMap(snapshot string, change *panelmodel.CountryMap) (panelmodel.CountryMap, error) {
-	lock, err := os.OpenFile(e.countryMapPath+".lock", os.O_CREATE|os.O_RDWR|syscall.O_NOFOLLOW, 0600)
+	lock, err := storage.OpenFile(e.countryMapPath+".lock", storage.Create|storage.ReadWrite|storage.NoFollow, 0600)
 	if err != nil {
 		return panelmodel.CountryMap{}, err
 	}
 	defer lock.Close()
-	if err = syscall.Flock(int(lock.Fd()), syscall.LOCK_EX); err != nil {
+	if err = storage.Flock(lock, storage.LockExclusive); err != nil {
 		return panelmodel.CountryMap{}, err
 	}
 	return e.accessCountryMap(snapshot, change)
@@ -123,7 +123,7 @@ func completeCountryMap(policy panelmodel.CountryMap) bool {
 // readCountryMap reads only a bounded regular policy file, rejecting corruption before writes or group deletion.
 func (e Engine) readCountryMap() (panelmodel.CountryMap, error) {
 	var policy panelmodel.CountryMap
-	f, err := os.OpenFile(e.countryMapPath, os.O_RDONLY|syscall.O_NONBLOCK|syscall.O_NOFOLLOW, 0)
+	f, err := storage.OpenFile(e.countryMapPath, storage.ReadOnly|storage.Nonblock|storage.NoFollow, 0)
 	if err != nil {
 		return policy, err
 	}

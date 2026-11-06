@@ -6,15 +6,15 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"syscall"
 
 	"github.com/Artik-Man/Hestia/internal/controller"
+	"github.com/Artik-Man/Hestia/internal/storage"
 )
 
 // privateDirectory checks a transaction directory with lstat so a symlink cannot redirect file reads.
 func privateDirectory(path string) error {
 	info, err := os.Lstat(path)
-	if err != nil || info.Mode() != os.ModeDir|0700 || (int(info.Sys().(*syscall.Stat_t).Uid) != os.Geteuid() || int(info.Sys().(*syscall.Stat_t).Gid) != os.Getegid()) {
+	if err != nil || info.Mode() != os.ModeDir|0700 || (int(storage.MustStat(info).Uid) != os.Geteuid() || int(storage.MustStat(info).Gid) != os.Getegid()) {
 		return ErrUnavailable
 	}
 	return nil
@@ -31,7 +31,7 @@ func (e Engine) managedInfo(dir, name string, installed bool) (os.FileInfo, erro
 	if err != nil || info.Mode() != mode {
 		return nil, ErrUnavailable
 	}
-	stat := info.Sys().(*syscall.Stat_t)
+	stat := storage.MustStat(info)
 	if int(stat.Uid) != os.Geteuid() || int(stat.Gid) != gid || stat.Nlink != 1 {
 		return nil, ErrUnavailable
 	}

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/Artik-Man/Hestia/internal/profileexec"
 	"os"
 	"path/filepath"
 
@@ -75,7 +76,7 @@ func (e Engine) ApplyAWG(ctx context.Context, request panelmodel.AWGSaveRequest,
 		if installed, err := e.awgUnitInstalled(); err != nil || !installed {
 			return ErrUnavailable
 		}
-		if err := e.run(ctx, python, "-I", profile, "--validate-managed", e.dir); err != nil {
+		if err := e.profileCompiler().Apply(ctx, profileexec.Request{Operation: profileexec.Validate, Source: e.dir}); err != nil {
 			return fmt.Errorf("managed profile validation failed: %w", ErrUnavailable)
 		}
 		if err := stageAWGChange(ctx, e, stage, request, parsed, update); err != nil {
@@ -109,7 +110,7 @@ func (e Engine) DeleteAWG(ctx context.Context, id string) error {
 		return nil
 	}
 	prepare := func(stage string) error {
-		if err := e.run(ctx, python, "-I", profile, "--validate-managed", e.dir); err != nil {
+		if err := e.profileCompiler().Apply(ctx, profileexec.Request{Operation: profileexec.Validate, Source: e.dir}); err != nil {
 			return ErrUnavailable
 		}
 		current, err := readStoredProfile(e.dir)
@@ -386,14 +387,14 @@ func compileConnectorGeneration(ctx context.Context, engine Engine, stage string
 	if err := writeConnectorFile(profilePath, profileBytes); err != nil {
 		return fmt.Errorf("cannot write source profile: %w", err)
 	}
-	args := []string{"-I", profile, profilePath, stage, stage}
+	request := profileexec.Request{Operation: profileexec.Compile, Source: engine.dir, Stage: stage}
 	for _, item := range profileValue.Interfaces {
 		if item.Type == "wireguard" {
-			args = append(args, engine.dir)
+			request.PreserveWireguard = true
 			break
 		}
 	}
-	if err := engine.run(ctx, python, args...); err != nil {
+	if err := engine.profileCompiler().Apply(ctx, request); err != nil {
 		return fmt.Errorf("profile compiler rejected candidate: %w", ErrInvalidConnector)
 	}
 	for _, pair := range [][2]string{{"profile.json", "profile-source.sha256"}, {"sing-box.json", "profile-backend.sha256"}} {

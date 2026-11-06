@@ -6,6 +6,8 @@ import (
 	"context"
 	"errors"
 	"os"
+
+	"github.com/Artik-Man/Hestia/internal/storage"
 )
 
 // InstalledRuntime is unavailable on hosts that cannot create Linux userspace TUN interfaces.
@@ -26,7 +28,7 @@ func RetireStoppedConnector(_ context.Context, id string, slot int, legacy bool)
 	if !ValidConnectionID(id) || slot < 0 || slot >= SlotCount {
 		return errors.New("invalid AWG runtime identity")
 	}
-	path := "/run/hestia-awg/routes.json"
+	path := storage.Installed().AWGRoutes
 	if !legacy {
 		path += "." + id
 	}

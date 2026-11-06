@@ -1,10 +1,8 @@
-package awg
+package linuxroute
 
 import (
 	"context"
 	"errors"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -134,45 +132,6 @@ func cleanRouteRunner() *fakeRouteRunner {
 	return &fakeRouteRunner{outputs: map[string]string{"-o link show": "1: lo: <LOOPBACK>\n2: lima0: <UP>"}, fail: map[string]bool{}}
 }
 
-// TestIPRouteMissingTable verifies only iproute2's exact absent-table response is usable as an empty dump.
-func TestIPRouteMissingTable(t *testing.T) {
-	dir := t.TempDir()
-	program := filepath.Join(dir, "ip")
-	script := `#!/bin/sh
-cat "${0%/*}/stdout"
-cat "${0%/*}/stderr" >&2
-exit 2
-`
-	if err := os.WriteFile(program, []byte(script), 0700); err != nil {
-		t.Fatal(err)
-	}
-	for _, tc := range []struct {
-		family, verb, table, stderr, stdout string
-		empty                               bool
-	}{
-		{"-4", "show", "202", "Error: ipv4: FIB table does not exist.\nDump terminated", "", true},
-		{"-6", "show", "202", "Error: ipv6: FIB table does not exist.\nDump terminated", "", true},
-		{"-4", "show", "202", "Error: ipv6: FIB table does not exist.\nDump terminated", "", false},
-		{"-4", "show", "202", "RTNETLINK answers: Operation not permitted", "", false},
-		{"-4", "show", "202", "Error: ipv4: FIB table does not exist.\nDump terminated\nOther error", "", false},
-		{"-4", "show", "202", "Error: ipv4: FIB table does not exist.\nDump terminated", "default dev eth0", false},
-		{"-4", "del", "202", "Error: ipv4: FIB table does not exist.\nDump terminated", "", false},
-		{"-4", "show", "254", "Error: ipv4: FIB table does not exist.\nDump terminated", "", false},
-		{"-4", "show", "203", "Error: ipv4: FIB table does not exist.\nDump terminated", "", true},
-	} {
-		if err := os.WriteFile(filepath.Join(dir, "stderr"), []byte(tc.stderr+"\n"), 0600); err != nil {
-			t.Fatal(err)
-		}
-		if err := os.WriteFile(filepath.Join(dir, "stdout"), []byte(tc.stdout), 0600); err != nil {
-			t.Fatal(err)
-		}
-		out, err := runIPRoute(context.Background(), program, tc.family, "route", tc.verb, "table", tc.table)
-		if (err == nil) != tc.empty || len(out) != 0 {
-			t.Fatalf("%+v gave %q, %v", tc, out, err)
-		}
-	}
-}
-
 // TestRoutePolicyIPRoute2Output verifies iproute2's mask shorthand and IPv6 loopback guard without admitting foreign selectors.
 func TestRoutePolicyIPRoute2Output(t *testing.T) {
 	runner := cleanRouteRunner()
@@ -185,7 +144,7 @@ func TestRoutePolicyIPRoute2Output(t *testing.T) {
 	if err := policy.AdoptOwnedState(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	if err := policy.verifyReadyPolicy(context.Background()); err != nil {
+	if err := policy.VerifyReadyPolicy(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 	for _, rule := range []string{"1002: from all fwmark 0x202 lookup 2020", "1002: from all fwmark 0x202 iif eth0 lookup 202", "1002: from all fwmark 0x202/0x00ff lookup 202"} {
@@ -204,7 +163,7 @@ func TestSecondTunnelPolicyIgnoresFirst(t *testing.T) {
 		runner.outputs[family+" route show table 203"] = "unreachable default metric 32767"
 	}
 	runner.outputs["-o link show"] = "7: awg0: <UP>\n8: awg1: <UP>"
-	policy, err := newSlotRoutePolicy(runner, 1)
+	policy, err := NewSlotPolicy(runner, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -259,7 +218,7 @@ func TestEarlyPolicyRulesCannotBypassGuard(t *testing.T) {
 	} {
 		runner := cleanRouteRunner()
 		runner.outputs["-4 rule show"] = tc.line
-		policy, err := newSlotRoutePolicy(runner, 1)
+		policy, err := NewSlotPolicy(runner, 1)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -270,8 +229,72 @@ func TestEarlyPolicyRulesCannotBypassGuard(t *testing.T) {
 			runner.outputs[family+" route show table 203"] = "unreachable default metric 32767"
 			runner.outputs[family+" rule show"] = tc.line + "\n1003: from all fwmark 0x203 lookup 203"
 		}
-		if err := policy.verifyReadyPolicy(context.Background()); (err == nil) != tc.safe {
+		if err := policy.VerifyReadyPolicy(context.Background()); (err == nil) != tc.safe {
 			t.Errorf("guard confirmation rule %q safe=%t, err=%v", tc.line, tc.safe, err)
 		}
+	}
+}
+
+// TestOuterBarrierPublishesOwnershipBeforeMutations preserves recovery across partial rule installation.
+func TestOuterBarrierPublishesOwnershipBeforeMutations(t *testing.T) {
+	runner := cleanRouteRunner()
+	policy, err := NewOuterPolicy(runner, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	published := false
+	err = policy.OuterBarrier(context.Background(), false, true, func() error {
+		for _, call := range runner.calls {
+			if strings.Contains(call, "rule add") {
+				t.Fatal("mutation preceded ownership")
+			}
+		}
+		published = true
+		return nil
+	})
+	if err != nil || !published {
+		t.Fatalf("publish %v error %v", published, err)
+	}
+	if len(runner.calls) != 4 || runner.calls[2] != "-4 rule add priority 1101 fwmark 0x51001/0xffffffff unreachable" || runner.calls[3] != "-6 rule add priority 1101 fwmark 0x51001/0xffffffff unreachable" {
+		t.Fatalf("calls %v", runner.calls)
+	}
+}
+
+// TestOuterBarrierRejectsForeignRule refuses to claim an existing terminal rule without ownership.
+func TestOuterBarrierRejectsForeignRule(t *testing.T) {
+	runner := cleanRouteRunner()
+	runner.outputs["-4 rule show"] = "1100: from all fwmark 0x51000 unreachable"
+	policy, err := NewOuterPolicy(runner, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = policy.OuterBarrier(context.Background(), false, true, func() error { t.Fatal("claimed foreign rule"); return nil })
+	if err == nil {
+		t.Fatal("foreign rule accepted")
+	}
+	for _, call := range runner.calls {
+		if strings.Contains(call, "rule add") {
+			t.Fatal("mutated foreign rule")
+		}
+	}
+}
+
+// TestRouteAllocationBounds keeps adapter metadata consistent and rejects invalid slots before execution.
+func TestRouteAllocationBounds(t *testing.T) {
+	for _, slot := range []int{-1, 50} {
+		if _, err := NewSlotPolicy(cleanRouteRunner(), slot); err == nil {
+			t.Fatal("accepted invalid tunnel slot")
+		}
+		if _, err := NewOuterPolicy(cleanRouteRunner(), slot); err == nil {
+			t.Fatal("accepted invalid outer slot")
+		}
+	}
+	policy, err := NewSlotPolicy(cleanRouteRunner(), 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	d := policy.Descriptor()
+	if d.Device != "awg1" || d.Mark != "0x203" || d.MarkValue != 515 || d.Table != "203" || d.Priority != "1003" {
+		t.Fatalf("descriptor %+v", d)
 	}
 }

@@ -5,8 +5,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/Artik-Man/Hestia/internal/profileexec"
+	"github.com/Artik-Man/Hestia/internal/storage"
 	"os"
-	"os/exec"
 	"os/user"
 	"path/filepath"
 	"strconv"
@@ -24,17 +25,18 @@ var (
 )
 
 const (
-	python   = "/usr/bin/python3"
-	profile  = "/usr/local/lib/hestia/profile.py"
-	backend  = "/usr/local/lib/hestia/sing-box"
-	awgReady = "/run/hestia-awg/ready"
-	pending  = ".binding-pending"
+	pending = ".binding-pending"
+)
+
+var (
+	awgReady = storage.Installed().AWGReady
 )
 
 var managedFiles = []string{"profile.json", "profile-source.sha256", "sing-box.json", "profile-backend.sha256", "snapshot.json"}
 
 // Engine operates on fixed trusted installation paths. Its commands take structured arguments without a shell.
 type Engine struct {
+	compiler       profileexec.CompilerAPI
 	services       services.Manager
 	dir, lock      string
 	countryMapPath string
@@ -53,19 +55,12 @@ func Installed() Engine {
 			gid = value
 		}
 	}
-	return Engine{countryMapPath: "/var/lib/hestia-country-map/policy.json", dir: "/etc/hestia", lock: "/run/hestia-install.lock", snapshotGID: gid, run: runCommand, services: systemd.Manager{}}
+	return Engine{countryMapPath: storage.Installed().CountryPolicy, dir: storage.Installed().Config, lock: storage.Installed().InstallLock, snapshotGID: gid, run: runCommand, services: systemd.Manager{}, compiler: profileexec.Installed{}}
 }
 
 // runCommand executes one bounded local command and keeps private command output out of errors.
 func runCommand(ctx context.Context, name string, args ...string) error {
-	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
-	defer cancel()
-	cmd := exec.CommandContext(ctx, name, args...)
-	cmd.Env = []string{"PATH=/usr/sbin:/usr/bin:/sbin:/bin", "LANG=C"}
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("%s failed: %w", filepath.Base(name), err)
-	}
-	return nil
+	return profileexec.RunCommand(ctx, name, args...)
 }
 
 // checkChange checks the expected list binding and confirms that the target exists or is unassigned.
@@ -109,7 +104,7 @@ func (e Engine) Apply(ctx context.Context, id, expected, target string) error {
 		return checkChange(data, id, expected, target)
 	}
 	stageBinding := func(dir string) error {
-		return e.run(ctx, python, "-I", profile, "--rebind", e.dir, dir, id, target)
+		return e.profileCompiler().Apply(ctx, profileexec.Request{Operation: profileexec.Rebind, Source: e.dir, Stage: dir, ID: id, Target: target})
 	}
 	return e.apply(ctx, stageBinding, check, expected == target)
 }
@@ -156,7 +151,7 @@ func (e Engine) apply(ctx context.Context, prepare func(string) error, check fun
 	if err := check(next, true); err != nil {
 		return fmt.Errorf("candidate snapshot is invalid: %w", err)
 	}
-	if err := e.run(ctx, backend, "check", "-c", filepath.Join(stage, "sing-box.json")); err != nil {
+	if err := e.profileCompiler().CheckBackend(ctx, filepath.Join(stage, "sing-box.json")); err != nil {
 		return err
 	}
 	// The current watcher may have been running longer than its retained journal.

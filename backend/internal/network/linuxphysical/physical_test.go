@@ -1,4 +1,4 @@
-package physical
+package linuxphysical
 
 import (
 	"bytes"

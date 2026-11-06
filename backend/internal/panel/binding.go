@@ -1,15 +1,12 @@
 package panel
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
+	"github.com/Artik-Man/Hestia/internal/platformhelper"
 	"io"
 	"log"
 	"net/http"
-	"os"
-	"os/exec"
 
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
 	"github.com/danielgtaylor/huma/v2"
@@ -65,14 +62,10 @@ func runInstalledHelper[T panelmodel.CountryMap | panelmodel.RuleList | panelmod
 		return err
 	}
 	// The helper owns its deadline and rollback. A disconnected browser must not kill it mid-transaction.
-	cmd := exec.Command("/usr/bin/sudo", "-n", "--", "/usr/local/bin/hestia", mode)
-	cmd.Stdin = bytes.NewReader(data)
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = output
-	if err := cmd.Run(); err != nil {
-		var failure *exec.ExitError
-		if errors.As(err, &failure) {
-			switch failure.ExitCode() {
+	err = installedHelperTransport.Execute(ctx, platformhelper.Mode(mode), data, output, platformhelper.Transaction)
+	if err != nil {
+		if code := platformhelper.ExitCode(err); code >= 0 {
+			switch code {
 			case 44:
 				if mode == "-rename-direct" {
 					return huma.Error404NotFound("Подключение не найдено")

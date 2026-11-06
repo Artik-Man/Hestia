@@ -10,8 +10,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/Artik-Man/Hestia/internal/network/linuxphysical"
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
-	"github.com/Artik-Man/Hestia/internal/physical"
 	"github.com/Artik-Man/Hestia/internal/quality"
 	"github.com/Artik-Man/Hestia/internal/routing"
 )
@@ -32,7 +32,7 @@ type watcher struct {
 
 // newWatcher starts reconciliation with no desired snapshot or confirmed targets.
 func newWatcher(client *http.Client, base string) *watcher {
-	return &watcher{client: client, base: base, confirmed: make(map[string]string), healthyAWG: AWGHeartbeatHealthy, carrier: func(device string) bool { return physical.CarrierAt("/sys/class/net", device) }}
+	return &watcher{client: client, base: base, confirmed: make(map[string]string), healthyAWG: AWGHeartbeatHealthy, carrier: linuxphysical.Manager{}.Online}
 }
 
 // CheckSnapshot validates a candidate without connecting to sing-box.

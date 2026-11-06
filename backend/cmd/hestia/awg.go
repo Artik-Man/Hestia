@@ -16,12 +16,13 @@ import (
 	"github.com/Artik-Man/Hestia/internal/binding"
 	"github.com/Artik-Man/Hestia/internal/controller"
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
+	"github.com/Artik-Man/Hestia/internal/storage"
 	"github.com/google/uuid"
 )
 
-const (
-	awgStorePath = "/etc/hestia/awg"
-	installLock  = "/run/hestia-install.lock"
+var (
+	awgStorePath = storage.Installed().AWGStore
+	installLock  = storage.Installed().InstallLock
 )
 
 // runAWGCommand accepts only fixed helper modes, runs with a bounded deadline, and returns stored secrets only in explicit single-profile reads.

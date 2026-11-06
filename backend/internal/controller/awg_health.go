@@ -3,17 +3,19 @@ package controller
 import (
 	"encoding/json"
 	"io"
-	"os"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/Artik-Man/Hestia/internal/awg"
+	"github.com/Artik-Man/Hestia/internal/storage"
 )
 
 const (
-	awgHealthPath   = "/run/hestia-awg/health.json"
 	awgHealthMaxAge = 5 * time.Second
+)
+
+var (
+	awgHealthPath = storage.Installed().AWGHealth
 )
 
 type awgHealthRecord struct {
@@ -39,17 +41,16 @@ func AWGTransportHealth(id string) (string, bool) {
 
 // readAWGHeartbeat verifies a single connector marker, rejecting stale data and unsafe files.
 func readAWGHeartbeat(path, id string) (string, bool) {
-	fd, err := syscall.Open(path, syscall.O_RDONLY|syscall.O_NOFOLLOW|syscall.O_CLOEXEC|syscall.O_NONBLOCK, 0)
+	file, err := storage.OpenFile(path, storage.ReadOnly|storage.NoFollow|storage.CloseOnExec|storage.Nonblock, 0)
 	if err != nil {
 		return "", false
 	}
-	file := os.NewFile(uintptr(fd), path)
 	defer file.Close()
 	info, err := file.Stat()
 	if err != nil || !info.Mode().IsRegular() || info.Mode().Perm() != 0640 {
 		return "", false
 	}
-	stat, ok := info.Sys().(*syscall.Stat_t)
+	stat, ok := storage.Stat(info)
 	if !ok || stat.Uid != 0 || stat.Nlink != 1 {
 		return "", false
 	}
