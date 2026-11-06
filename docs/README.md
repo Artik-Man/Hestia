@@ -10,6 +10,7 @@
 - [Дорожная карта](roadmap.md)
 - [Предлагаемая архитектура](architecture.md)
 - [Гестия внутри Keenetic и на отдельном устройстве](deployment-targets-research.md)
+- [Дорожная карта модульной архитектуры и поставки Keenetic](keenetic-roadmap.md)
 - [Рекомендуемые устройства](hardware.md)
 - [Исследование готовых решений](research.md)
 - [Готовые компоненты для контроллера](go-components.md)
