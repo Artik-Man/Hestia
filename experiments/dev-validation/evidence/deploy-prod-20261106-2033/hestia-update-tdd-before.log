@@ -1,0 +1,45 @@
+FFFF
+======================================================================
+FAIL: test_missing_observer_preflight (test_update_compatibility.UpdateCompatibilityTests.test_missing_observer_preflight)
+Only the observer may be absent; unsafe observer targets still fail.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/hestia-prod-update-fix/scripts/deploy/test_update_compatibility.py", line 37, in test_missing_observer_preflight
+    self.assertNotEqual(subprocess.run(['bash', '-c', setup + fragment], capture_output=True).returncode, 0)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 == 0
+
+======================================================================
+FAIL: test_nexthop_and_equal_destination_order (test_update_compatibility.UpdateCompatibilityTests.test_nexthop_and_equal_destination_order)
+Nexthop order and equal-destination route ordering remain significant.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/hestia-prod-update-fix/scripts/deploy/test_update_compatibility.py", line 78, in test_nexthop_and_equal_destination_order
+    self.assertEqual(self.snapshot(first)[0], 0)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 127 != 0
+
+======================================================================
+FAIL: test_route_changes_and_capture_failure (test_update_compatibility.UpdateCompatibilityTests.test_route_changes_and_capture_failure)
+Attribute changes, duplicate loss and capture failures cannot pass.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/hestia-prod-update-fix/scripts/deploy/test_update_compatibility.py", line 69, in test_route_changes_and_capture_failure
+    self.assertEqual(first[0], 0)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+AssertionError: 127 != 0
+
+======================================================================
+FAIL: test_route_permutation_and_raw_evidence (test_update_compatibility.UpdateCompatibilityTests.test_route_permutation_and_raw_evidence)
+Independent IPv4/IPv6 rows normalize equally while raw order survives.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/hestia-prod-update-fix/scripts/deploy/test_update_compatibility.py", line 60, in test_route_permutation_and_raw_evidence
+    self.assertEqual(first[0], 0)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+AssertionError: 127 != 0
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.040s
+
+FAILED (failures=4)

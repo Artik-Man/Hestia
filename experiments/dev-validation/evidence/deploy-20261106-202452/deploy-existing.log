@@ -1,0 +1,8 @@
+Running as unit: hestia-deploy-20261106-202453-87825.service
+sing-box version 1.14.4
+/var/backups/hestia-deploy.t7SRSTrk/routes6 /var/backups/hestia-deploy.t7SRSTrk/routes6.after differ: byte 295, line 5
+Update failed; prior application restored, backup /var/backups/hestia-deploy.t7SRSTrk
+Finished with result: exit-code
+Main processes terminated with: code=exited/status=1
+Service runtime: 7.114s
+CPU time consumed: 621ms

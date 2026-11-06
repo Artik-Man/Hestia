@@ -1,0 +1,29 @@
+[
+  {
+    "name": "deploy-existing",
+    "status": "PASS",
+    "exit": 0,
+    "seconds": 2.11,
+    "command": [
+      "/private/tmp/hestia-vm-run/bin/limactl",
+      "shell",
+      "hestia-prod",
+      "--",
+      "sudo",
+      "-n",
+      "systemd-run",
+      "--unit=hestia-deploy-20261106-203310-99568",
+      "--collect",
+      "--wait",
+      "--pipe",
+      "--property=RuntimeMaxSec=1800",
+      "--property=TimeoutStopSec=480",
+      "--property=KillMode=control-group",
+      "bash",
+      "/var/tmp/hestia-deploy-20261106-203310-99568/scripts/apply.sh",
+      "/var/tmp/hestia-deploy-20261106-203310-99568",
+      "lima-hestia-prod"
+    ],
+    "log": "/Users/artikman/Documents/projects/hestia/experiments/dev-validation/evidence/deploy-prod-20261106-2033/deploy-existing.log"
+  }
+]

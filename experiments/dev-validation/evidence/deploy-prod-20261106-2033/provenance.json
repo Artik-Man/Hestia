@@ -1,0 +1,10 @@
+{
+  "revision": "3ae72606968c8bacd4b7a5a6e67b8cd62b51ee85",
+  "version": "20261106-203250-3ae72606968c",
+  "manifest_dirty": true,
+  "dirty_reason": "Untracked frontend/node_modules dependency symlink; no tracked source modifications",
+  "source_inputs_checked_against_commit": 515,
+  "mismatches": [],
+  "backup": "/var/backups/hestia-deploy.smxLdRpn",
+  "manifest_sha256": "f11448041aa7fc75fa8d13d0cdf696c43e28a321a8010ccb452f944ac78f0281"
+}

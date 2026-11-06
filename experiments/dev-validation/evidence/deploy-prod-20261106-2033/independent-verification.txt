@@ -1,0 +1,15 @@
+Независимая проверка после установки, 6 ноября 2026 года.
+Стенд: hestia-prod; LIMA_HOME=/private/tmp/hestia-vm-run/lima-state.
+Комплект: dist/artifacts/20261106-203250-3ae72606968c/linux-arm64.
+Ревизия: 3ae72606968c8bacd4b7a5a6e67b8cd62b51ee85.
+Резервная копия: /var/backups/hestia-deploy.smxLdRpn.
+
+PASS: SHA-256 всех трёх бинарников приложения, двух helpers и полного состава UI совпали с манифестом комплекта.
+PASS: hestia, hestia-panel, hestia-sing-box активны.
+PASS: files.tar существует; absent.txt фиксирует прежнее отсутствие /usr/local/bin/hestia-observe.
+PASS: текущий полный digest конфигурации /etc/hestia совпадает с резервной копией.
+PASS: сырые строки основных маршрутов IPv4/IPv6 до, после и на момент независимой проверки совпадают как мультимножества; канонические снимки до и после равны.
+PASS: панель http://192.168.1.133:8080 ответила HTTP 200 и HTML.
+PASS: scripts/test/read_only.py проверил GET /api/navigation, groups-and-rules, awg, awg-underlays, hysteria2, physical-connections, quality, traffic, traffic/settings, country-map, dns/policy: HTTP 200, ограниченный размер, корректный JSON.
+
+Проверки выполнены через limactl shell hestia-prod; данные конфигурации и тела API не выводились. Конфигурация, службы и питание не изменялись проверяющим. Нагрузочные и сквозные сетевые проверки не запускались.
