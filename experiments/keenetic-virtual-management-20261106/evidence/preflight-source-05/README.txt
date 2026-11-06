@@ -1,0 +1,1 @@
+Fifth current source snapshot of the read-only preflight. It keeps the profile-specific status and management-route checks and removes the rejected `?` help probe from future invocations; evidence from the earlier attempt remains in its original attempt directory. `ast.parse` succeeded locally. This snapshot was not remotely executed.

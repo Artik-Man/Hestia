@@ -1,0 +1,19 @@
+{
+  "command": "ssh -p 222 -i /Users/artikman/.ssh/hestia_keenetic -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=/Users/artikman/.ssh/known_hosts -o ConnectTimeout=7 root@192.168.1.1 \"/bin/ndmc -c 'show interface Home'\"",
+  "time_utc": "20261106T200429Z",
+  "host_key_fingerprint_expected_sha256": "SHA256:u5mFSUOHtvmfjURyMmAe8N2BVONvSiTAoV7OLn2Czoo",
+  "raw_stdout_bytes": 1472,
+  "raw_stdout_sha256": "65ac88c215481a73c2fd23b62f675cfc800c305b4cce5996cad07946acceaad7",
+  "raw_stderr_bytes": 0,
+  "raw_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "exit_code": 0,
+  "sanitized_stdout": {
+    "records": [
+      {
+        "type": "bridge",
+        "link": "running",
+        "state": "up"
+      }
+    ]
+  }
+}

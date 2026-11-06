@@ -1,0 +1,16 @@
+Локальный аудит виртуальных подключений Keenetic
+Дата: 2026-11-06
+Граница: только чтение локальных файлов репозитория; сетевых команд, SSH, доступа к ВМ/роутеру, запусков прототипа и изменений сети не было.
+
+Первичные отчёты и доказательства, просмотренные для сверки:
+- experiments/keenetic-tun/README.md; evidence/router-run.txt; evidence/cleanup-verification.txt
+- experiments/keenetic-awg-uapi/README.md; prototype/README.md; evidence/device-run.txt; evidence/cleanup-verification.txt
+- experiments/keenetic-awg-runtime/README.md
+- experiments/keenetic-vless-local/README.md; evidence/attempt-08-run/transcript.txt; evidence/attempt-09-device-cleanup.txt
+- experiments/keenetic-hysteria2-local/README.md; evidence/attempt-03/run-transcript.txt; evidence/attempt-03/listener-check.txt; evidence/attempt-03/cleanup-device.txt
+- experiments/sstp/README.md; experiments/sstp-gateway/README.md
+- docs/architecture.md; docs/keenetic-platform.md; docs/keenetic-roadmap.md; docs/requirements.md; docs/roadmap.md
+
+Свидетельства остаются на исходных путях; этот файл не утверждает повторный запуск или независимое воспроизведение аппаратных прогонов. Секреты и сырые таблицы маршрутизации не копировались.
+
+После аудита root сообщил, что для `Solar (Moscow)` и `Poppuri` владелец отдельно разрешил обратимое отключение/включение, подтвердив отсутствие активных пользователей. Root поручил не выполнять отдельный read-only запрос, потому что Ethernet-исполнитель проводит общий инвентарь `show interface`; ему передан запрос включить ровно эти метки в санитизатор. Локально подготовлен протокол с проверкой management route exclusion и восстановлением исходного статуса. Ни инвентарь, ни изменение статуса виртуального профиля в рамках этого аудита ещё не выполнялись.

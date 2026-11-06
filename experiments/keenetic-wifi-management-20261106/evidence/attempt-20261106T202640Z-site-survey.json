@@ -1,0 +1,222 @@
+{
+  "started_utc": "2026-11-06T20:26:34.709117+00:00",
+  "finished_utc": "2026-11-06T20:26:40.372223+00:00",
+  "band": "5GHz",
+  "radio_id": "WifiMaster1",
+  "ndmc_sha256": "6e6b0bee69e1270160a16711b6a64f4e036b9b984d8eb80acdf76403c243121e",
+  "hash_command": [
+    "ssh",
+    "-p",
+    "222",
+    "-i",
+    "/Users/artikman/.ssh/hestia_keenetic",
+    "-o",
+    "BatchMode=yes",
+    "-o",
+    "IdentitiesOnly=yes",
+    "-o",
+    "StrictHostKeyChecking=yes",
+    "-o",
+    "UserKnownHostsFile=/Users/artikman/.ssh/known_hosts",
+    "-o",
+    "ConnectTimeout=7",
+    "-o",
+    "ServerAliveInterval=5",
+    "-o",
+    "ServerAliveCountMax=2",
+    "root@192.168.1.1",
+    "sha256sum /bin/ndmc"
+  ],
+  "hash_exit_code": 0,
+  "survey_command": [
+    "ssh",
+    "-p",
+    "222",
+    "-i",
+    "/Users/artikman/.ssh/hestia_keenetic",
+    "-o",
+    "BatchMode=yes",
+    "-o",
+    "IdentitiesOnly=yes",
+    "-o",
+    "StrictHostKeyChecking=yes",
+    "-o",
+    "UserKnownHostsFile=/Users/artikman/.ssh/known_hosts",
+    "-o",
+    "ConnectTimeout=7",
+    "-o",
+    "ServerAliveInterval=5",
+    "-o",
+    "ServerAliveCountMax=2",
+    "root@192.168.1.1",
+    "/bin/ndmc -c 'show site-survey WifiMaster1'"
+  ],
+  "survey_started_utc": "2026-11-06T20:26:35.106988+00:00",
+  "survey_finished_utc": "2026-11-06T20:26:39.915673+00:00",
+  "survey_exit_code": 0,
+  "survey_stdout_bytes": 732,
+  "survey_stdout_sha256": "60da7d17e6211d2e54421340a4fd5d37fb270f97e6e4df5e16fe144aee7bdd66",
+  "survey_stderr_bytes": 0,
+  "survey_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "freshness_confirmed": false,
+  "freshness_note": "The command returned survey data; no per-result timestamp was available.",
+  "before_status": {
+    "command": [
+      "ssh",
+      "-p",
+      "222",
+      "-i",
+      "/Users/artikman/.ssh/hestia_keenetic",
+      "-o",
+      "BatchMode=yes",
+      "-o",
+      "IdentitiesOnly=yes",
+      "-o",
+      "StrictHostKeyChecking=yes",
+      "-o",
+      "UserKnownHostsFile=/Users/artikman/.ssh/known_hosts",
+      "-o",
+      "ConnectTimeout=7",
+      "-o",
+      "ServerAliveInterval=5",
+      "-o",
+      "ServerAliveCountMax=2",
+      "root@192.168.1.1",
+      "/bin/ndmc -c 'show interface WifiMaster1'"
+    ],
+    "exit_code": 0,
+    "stdout_bytes": 627,
+    "stdout_sha256": "3ba249ed0382304936285b677c45307724e0b379d8a9c500bcede2aaaf0b957c",
+    "stderr_bytes": 0,
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sanitized_fields": [
+      {
+        "key": "id",
+        "indent": 15,
+        "value": "WifiMaster1"
+      },
+      {
+        "key": "index",
+        "indent": 12,
+        "value": 1
+      },
+      {
+        "key": "interface-name",
+        "indent": 3,
+        "value": "WifiMaster1"
+      },
+      {
+        "key": "type",
+        "indent": 13,
+        "value": "wifimaster"
+      },
+      {
+        "key": "description",
+        "indent": 6,
+        "value": {
+          "matches_iphone": false
+        }
+      },
+      {
+        "key": "link",
+        "indent": 13,
+        "value": "up"
+      },
+      {
+        "key": "connected",
+        "indent": 8,
+        "value": true
+      },
+      {
+        "key": "state",
+        "indent": 12,
+        "value": "up"
+      }
+    ],
+    "observed_utc": "2026-11-06T20:26:35.106544+00:00"
+  },
+  "survey_summary": {
+    "row_count": null,
+    "parsed_row_count": 4,
+    "parse_complete": false,
+    "unparsed_nonempty_line_count": 3,
+    "target_ssid_match_count": null,
+    "target_matches": null
+  },
+  "after_status": {
+    "command": [
+      "ssh",
+      "-p",
+      "222",
+      "-i",
+      "/Users/artikman/.ssh/hestia_keenetic",
+      "-o",
+      "BatchMode=yes",
+      "-o",
+      "IdentitiesOnly=yes",
+      "-o",
+      "StrictHostKeyChecking=yes",
+      "-o",
+      "UserKnownHostsFile=/Users/artikman/.ssh/known_hosts",
+      "-o",
+      "ConnectTimeout=7",
+      "-o",
+      "ServerAliveInterval=5",
+      "-o",
+      "ServerAliveCountMax=2",
+      "root@192.168.1.1",
+      "/bin/ndmc -c 'show interface WifiMaster1'"
+    ],
+    "exit_code": 0,
+    "stdout_bytes": 790,
+    "stdout_sha256": "1fa748e9db79bc314ea84ea6270825126fc9108ddeee5a8a3a00ae92c2cd1d7c",
+    "stderr_bytes": 0,
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sanitized_fields": [
+      {
+        "key": "id",
+        "indent": 15,
+        "value": "WifiMaster1"
+      },
+      {
+        "key": "index",
+        "indent": 12,
+        "value": 1
+      },
+      {
+        "key": "interface-name",
+        "indent": 3,
+        "value": "WifiMaster1"
+      },
+      {
+        "key": "type",
+        "indent": 13,
+        "value": "wifimaster"
+      },
+      {
+        "key": "description",
+        "indent": 6,
+        "value": {
+          "matches_iphone": false
+        }
+      },
+      {
+        "key": "link",
+        "indent": 13,
+        "value": "up"
+      },
+      {
+        "key": "connected",
+        "indent": 8,
+        "value": true
+      },
+      {
+        "key": "state",
+        "indent": 12,
+        "value": "up"
+      }
+    ],
+    "observed_utc": "2026-11-06T20:26:40.372160+00:00"
+  },
+  "raw_stdout_and_stderr_persisted": false
+}

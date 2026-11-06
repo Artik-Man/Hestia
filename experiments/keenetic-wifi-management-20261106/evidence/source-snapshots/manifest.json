@@ -1,0 +1,20 @@
+{
+  "snapshot_preserved_utc": "2026-11-06T20:32:09Z",
+  "preservation_timing": "Late preservation after execution; files were byte-copied from the current prototype only after matching the hashes recorded in scan-repeat-plan-20261106.json. These snapshots prove exact bytes for the authorized repeat, but are not contemporaneous captures.",
+  "files": [
+    {
+      "path": "read_wifi_status.61b2dfd8cf9938e2a30e3d7288d4593cc6d964d30efc1987ad99249fdd0cb0af.py",
+      "sha256": "61b2dfd8cf9938e2a30e3d7288d4593cc6d964d30efc1987ad99249fdd0cb0af",
+      "matching_record": "../scan-repeat-plan-20261106.json"
+    },
+    {
+      "path": "scan_wifi_bands.e42153edd5eb0633c2bf74eb5968093a06ea239eeeac56e028384b3c063666b3.py",
+      "sha256": "e42153edd5eb0633c2bf74eb5968093a06ea239eeeac56e028384b3c063666b3",
+      "matching_record": "../scan-repeat-plan-20261106.json"
+    }
+  ],
+  "limitations": [
+    "The first scan batch refers to scan_wifi_bands.py SHA-256 e07d0bd609c04f6b553b2ac79bb48ed092ed19cfbc311c44c7809fa59b9dcd69, but that exact source version was not snapshotted and is no longer present. It has not been reconstructed.",
+    "The second batch source is preserved exactly by hash match; preservation happened after execution rather than at execution time."
+  ]
+}

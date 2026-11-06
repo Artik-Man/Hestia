@@ -1,0 +1,10 @@
+{
+  "time_utc": "2026-11-06T20:09:51Z",
+  "local_command": "python3 experiments/keenetic-ethernet-management-20261106/prototype/inventory.py",
+  "exit_code": 3,
+  "stdout": "pinned_host_key_matches_known_hosts=false; stopped_without_ssh=true\n",
+  "stderr_bytes": 0,
+  "runner_sha256": "1ebb0e5a8e48e13d0f73a33f59104928de55e69514e746caf7588038b49e8b2e",
+  "ssh_queries_sent": false,
+  "reason": "local verifier checked the default-port host token instead of the port-222 known_hosts token"
+}

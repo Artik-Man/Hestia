@@ -1,0 +1,301 @@
+{
+  "command": "ssh -p 222 -i /Users/artikman/.ssh/hestia_keenetic -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=/Users/artikman/.ssh/known_hosts -o ConnectTimeout=7 root@192.168.1.1 \"/bin/ndmc -c 'show interface Home'\"",
+  "time_utc": "20261106T201012Z",
+  "runner_sha256": "feac0ec3edaf5dad4394aac398fcc0deb5f48855908245a533c40e3ef0f68974",
+  "timed_out": false,
+  "host_key_fingerprint_expected_sha256": "SHA256:u5mFSUOHtvmfjURyMmAe8N2BVONvSiTAoV7OLn2Czoo",
+  "host_key_pin_verified_before_ssh": true,
+  "raw_stdout_bytes": 1472,
+  "raw_stdout_sha256": "ad2fe385d58db6f492997a5b69e68e980e4f3625cf07b35940f845c49ecfa7b7",
+  "raw_stderr_bytes": 0,
+  "raw_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "exit_code": 0,
+  "sanitized_stdout": {
+    "items": [
+      {
+        "indent": 15,
+        "delimiter": "colon",
+        "key": "id",
+        "value_suppressed": true
+      },
+      {
+        "indent": 12,
+        "delimiter": "colon",
+        "key": "index",
+        "value_suppressed": true
+      },
+      {
+        "indent": 3,
+        "delimiter": "colon",
+        "key": "interface-name",
+        "value_suppressed": true
+      },
+      {
+        "indent": 13,
+        "delimiter": "colon",
+        "key": "type",
+        "value": "bridge"
+      },
+      {
+        "indent": 6,
+        "delimiter": "colon",
+        "key": "description",
+        "value_suppressed": true
+      },
+      {
+        "indent": 11,
+        "delimiter": "colon",
+        "key": "traits",
+        "value_suppressed": true
+      },
+      {
+        "indent": 11,
+        "delimiter": "colon",
+        "key": "traits",
+        "value_suppressed": true
+      },
+      {
+        "indent": 11,
+        "delimiter": "colon",
+        "key": "traits",
+        "value_suppressed": true
+      },
+      {
+        "indent": 11,
+        "delimiter": "colon",
+        "key": "traits",
+        "value_suppressed": true
+      },
+      {
+        "indent": 11,
+        "delimiter": "colon",
+        "key": "traits",
+        "value_suppressed": true
+      },
+      {
+        "indent": 11,
+        "delimiter": "colon",
+        "key": "traits",
+        "value_suppressed": true
+      },
+      {
+        "indent": 11,
+        "delimiter": "colon",
+        "key": "traits",
+        "value_suppressed": true
+      },
+      {
+        "indent": 13,
+        "delimiter": "colon",
+        "key": "link",
+        "value": "up"
+      },
+      {
+        "indent": 8,
+        "delimiter": "colon",
+        "key": "connected",
+        "value_suppressed": true
+      },
+      {
+        "indent": 12,
+        "delimiter": "colon",
+        "key": "state",
+        "value": "up"
+      },
+      {
+        "indent": 14,
+        "delimiter": "colon",
+        "key": "mtu",
+        "value_suppressed": true
+      },
+      {
+        "indent": 2,
+        "delimiter": "colon",
+        "key": "tx-queue-length",
+        "value_suppressed": true
+      },
+      {
+        "indent": 7,
+        "delimiter": "colon",
+        "key": "admin-only",
+        "value_suppressed": true
+      },
+      {
+        "indent": 10,
+        "delimiter": "colon",
+        "key": "address",
+        "value_suppressed": true
+      },
+      {
+        "indent": 13,
+        "delimiter": "colon",
+        "key": "mask",
+        "value_suppressed": true
+      },
+      {
+        "indent": 11,
+        "delimiter": "colon",
+        "key": "uptime",
+        "value_suppressed": true
+      },
+      {
+        "indent": 11,
+        "delimiter": "colon",
+        "key": "global",
+        "value_suppressed": true
+      },
+      {
+        "indent": 3,
+        "delimiter": "colon",
+        "key": "security-level",
+        "value_suppressed": true
+      },
+      {
+        "indent": 13,
+        "delimiter": "colon",
+        "key": "ipv6",
+        "value_suppressed": true
+      },
+      {
+        "indent": 12,
+        "delimiter": "colon",
+        "key": "addresses",
+        "value_suppressed": true
+      },
+      {
+        "indent": 18,
+        "delimiter": "colon",
+        "key": "address",
+        "value_suppressed": true
+      },
+      {
+        "indent": 12,
+        "delimiter": "colon",
+        "key": "prefix-length",
+        "value_suppressed": true
+      },
+      {
+        "indent": 20,
+        "delimiter": "colon",
+        "key": "proto",
+        "value_suppressed": true
+      },
+      {
+        "indent": 11,
+        "delimiter": "colon",
+        "key": "valid-lifetime",
+        "value_suppressed": true
+      },
+      {
+        "indent": 12,
+        "delimiter": "colon",
+        "key": "addresses",
+        "value_suppressed": true
+      },
+      {
+        "indent": 18,
+        "delimiter": "colon",
+        "key": "address",
+        "value_suppressed": true
+      },
+      {
+        "indent": 12,
+        "delimiter": "colon",
+        "key": "prefix-length",
+        "value_suppressed": true
+      },
+      {
+        "indent": 20,
+        "delimiter": "colon",
+        "key": "proto",
+        "value_suppressed": true
+      },
+      {
+        "indent": 11,
+        "delimiter": "colon",
+        "key": "valid-lifetime",
+        "value_suppressed": true
+      },
+      {
+        "indent": 14,
+        "delimiter": "colon",
+        "key": "mac",
+        "value_suppressed": true
+      },
+      {
+        "indent": 8,
+        "delimiter": "colon",
+        "key": "auth-type",
+        "value_suppressed": true
+      },
+      {
+        "indent": 11,
+        "delimiter": "colon",
+        "key": "bridge",
+        "value_suppressed": true
+      },
+      {
+        "indent": 12,
+        "delimiter": "none",
+        "value_suppressed": true
+      },
+      {
+        "indent": 12,
+        "delimiter": "none",
+        "value_suppressed": true
+      },
+      {
+        "indent": 12,
+        "delimiter": "none",
+        "value_suppressed": true
+      },
+      {
+        "indent": 10,
+        "delimiter": "colon",
+        "key": "summary",
+        "value_suppressed": true
+      },
+      {
+        "indent": 16,
+        "delimiter": "colon",
+        "key": "layer",
+        "value_suppressed": true
+      },
+      {
+        "indent": 21,
+        "delimiter": "colon",
+        "key": "conf",
+        "value_suppressed": true
+      },
+      {
+        "indent": 21,
+        "delimiter": "colon",
+        "key": "link",
+        "value": "running"
+      },
+      {
+        "indent": 21,
+        "delimiter": "colon",
+        "key": "ipv4",
+        "value_suppressed": true
+      },
+      {
+        "indent": 21,
+        "delimiter": "colon",
+        "key": "ipv6",
+        "value_suppressed": true
+      },
+      {
+        "indent": 21,
+        "delimiter": "colon",
+        "key": "ctrl",
+        "value_suppressed": true
+      },
+      {
+        "indent": 0,
+        "delimiter": "none",
+        "value_suppressed": true
+      }
+    ]
+  }
+}

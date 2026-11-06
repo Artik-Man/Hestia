@@ -8,6 +8,10 @@
 
 Исследовательские MVP для проверки возможностей Keenetic хранятся в `experiments/<исследование>/prototype/`, рядом с отчётом и `evidence/`. Это отдельные программы для проверки гипотез на устройстве; они не входят в набор тестов Гестии. Такое размещение согласовано владельцем для исследовательских прототипов Keenetic.
 
+- [Управление виртуальными подключениями Keenetic](keenetic-virtual-management-20261106/README.md) — сверка runtime и проверка управления существующими VPN.
+- [Управление Ethernet-портами Keenetic](keenetic-ethernet-management-20261106/README.md) — аудит и подготовка ограниченного аппаратного опыта.
+- [Управление Wi-Fi/WISP Keenetic](keenetic-wifi-management-20261106/README.md) — аудит и подготовка опыта с сохранённым профилем телефона.
+
 - [Локальный VLESS на Keenetic](keenetic-vless-local/README.md).
 - [Локальный Hysteria 2 с TLS](keenetic-hysteria2-local/README.md).
 - [FakeIP и локальные потоки на Keenetic](keenetic-fakeip-local/README.md).

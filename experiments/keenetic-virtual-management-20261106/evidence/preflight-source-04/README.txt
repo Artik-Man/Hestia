@@ -1,0 +1,1 @@
+Fourth source snapshot of the read-only preflight, captured before execution. It classifies the local management route's hardware type using `route -n get` and `networksetup -listallhardwareports`, retaining only a `wired_management` boolean. Route/interface output and MAC addresses remain in memory and are not persisted. `ast.parse` succeeded locally.

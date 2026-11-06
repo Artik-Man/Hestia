@@ -1,0 +1,7 @@
+Read-only local management route hardware classification
+Timestamp: 2026-11-06 20:24:11 UTC
+Source: prototype/profile-readonly-preflight.py snapshot `preflight-source-04` (SHA-256 recorded there)
+Command executed: imported `collect_local_route()` from that snapshotted local helper and printed only its sanitized result; helper calls `/sbin/route -n get 192.168.1.1` and `/usr/sbin/networksetup -listallhardwareports`.
+Result: local_management_route_lookup=found; wired_management=false.
+Raw route output, interface name, hardware address, and hardware inventory were not saved.
+A prior default-sandbox call returned `local_management_route_lookup=unknown`; the elevated read-only invocation returned the result above. No device configuration was changed by either call.

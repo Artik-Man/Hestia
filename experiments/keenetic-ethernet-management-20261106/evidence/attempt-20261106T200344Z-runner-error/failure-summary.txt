@@ -1,0 +1,8 @@
+time_utc=2026-11-06T20:03:44Z
+local_command=python3 experiments/keenetic-ethernet-management-20261106/evidence/inventory.py
+local_exit_code=1
+remote_ndmc_hash_check_exit_code=0
+remote_ndmc_hash_matches_expected=true
+interface_queries_sent=false
+reason=local runner allowlist rejected the approved full command string before SSH invocation
+no router state mutation occurred

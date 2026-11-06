@@ -1,0 +1,14 @@
+{
+  "recorded_utc": "2026-11-06T20:32:09Z",
+  "correction_for": [
+    "scan-plan-20261106.json",
+    "scan-repeat-plan-20261106.json",
+    "attempt-20261106T202632Z-site-survey.json",
+    "attempt-20261106T202640Z-site-survey.json",
+    "attempt-20261106T202856Z-site-survey.json",
+    "attempt-20261106T202904Z-site-survey.json"
+  ],
+  "actual_status_queries": "Before and after each site-survey, the command read the WifiMaster radio interface. Before and after the 5GHz survey it additionally read WifiMaster1/WifiStation0. The saved sanitized status fields include the master and station only.",
+  "not_captured": "The survey runs did not query separate access-point interfaces or preserve separate AP child status. Earlier plan wording that implied before/after AP status was captured is corrected; no AP continuity conclusion is supported by these status snapshots.",
+  "no_new_network_requests": true
+}

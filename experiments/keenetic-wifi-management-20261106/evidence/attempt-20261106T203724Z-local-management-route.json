@@ -1,0 +1,11 @@
+{
+  "observed_utc": "2026-11-06T20:37:24.649137+00:00",
+  "source": "experiments/keenetic-virtual-management-20261106/evidence/preflight-source-04/profile-readonly-preflight.py",
+  "source_sha256": "7c0039757a5df800bd7cb2c5de9d6310bbdc204855ce694d0de1430b2e3e49b8",
+  "source_snapshot_verified": true,
+  "route_check": {
+    "local_management_route_lookup": "unknown",
+    "wired_management": "unknown"
+  },
+  "raw_route_and_hardware_inventory_persisted": false
+}

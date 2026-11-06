@@ -1,0 +1,8 @@
+{
+  "attempt_utc": "2026-11-06T20:36:00Z",
+  "local_command": "python3 prototype/verify_local_management_route.py",
+  "approval_result": "automatic escalation review timed out before command execution",
+  "command_started": false,
+  "network_or_router_accessed": false,
+  "raw_route_or_hardware_output_persisted": false
+}

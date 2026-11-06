@@ -1,0 +1,35 @@
+{
+  "ssh_argv": [
+    "ssh",
+    "-p",
+    "222",
+    "-i",
+    "/Users/artikman/.ssh/hestia_keenetic",
+    "-o",
+    "BatchMode=yes",
+    "-o",
+    "IdentitiesOnly=yes",
+    "-o",
+    "StrictHostKeyChecking=yes",
+    "-o",
+    "UserKnownHostsFile=/Users/artikman/.ssh/known_hosts",
+    "-o",
+    "ConnectTimeout=7",
+    "root@192.168.1.1",
+    "sha256sum /bin/ndmc"
+  ],
+  "remote_command": "sha256sum /bin/ndmc",
+  "time_utc": "20261106T202248Z",
+  "runner_sha256": "c863174123ba310fff2b3275cda4c66163d2087e4e47d5d047457624cb328aa7",
+  "timed_out": false,
+  "host_key_fingerprint_expected_sha256": "SHA256:u5mFSUOHtvmfjURyMmAe8N2BVONvSiTAoV7OLn2Czoo",
+  "host_key_pin_verified_before_ssh": true,
+  "raw_stdout_bytes": 76,
+  "raw_stdout_sha256": "bf428230223764c379cf6d22e5b82e368497210653dbf994b2cd7d7d887b48b9",
+  "raw_stderr_bytes": 0,
+  "raw_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "exit_code": 0,
+  "sanitized_stdout": {
+    "ndmc_sha256": "6e6b0bee69e1270160a16711b6a64f4e036b9b984d8eb80acdf76403c243121e"
+  }
+}

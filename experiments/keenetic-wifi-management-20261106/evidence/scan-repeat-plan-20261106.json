@@ -1,0 +1,21 @@
+{
+  "prepared_utc": "2026-11-06T20:28:30Z",
+  "authorization": "Root confirmed exactly one bounded repeat after first scan commands returned exit 0 but the parser reported ambiguous output lines. No further survey repeats after this batch.",
+  "first_attempt_refs": [
+    "attempt-20261106T202632Z-site-survey.json",
+    "attempt-20261106T202640Z-site-survey.json"
+  ],
+  "reason": "The first parser retained output hashes/byte counts and did not preserve raw Wi-Fi data, but three nonempty lines per band were structurally ambiguous. Counts and target matches therefore remain unknown. The revised parser records only delimiter/token counts and booleans for ambiguous lines; it never keeps their content.",
+  "commands": [
+    "/bin/ndmc -c 'show site-survey WifiMaster0'",
+    "/bin/ndmc -c 'show site-survey WifiMaster1'"
+  ],
+  "execution_policy": "Sequential 2.4GHz then 5GHz. Strict SSH host pin, ndmc hash check per radio, 20-second timeout, keepalives, before/after master+AP states, exact 5GHz station status before/after. Stop on nonzero, timeout, parse ambiguity does not trigger another scan, or status/management failure. No retries and no config mutation.",
+  "safety_note": "Management is over Wi-Fi. 5GHz scan may briefly disturb the active WISP station and local AP. If SSH drops, save the bounded failure and do not run the next band; coordinate only one readback.",
+  "result_filter": "Band, complete row count, exact White paper match count and target-only channel/quality, pre/post allowed interface statuses, timestamps, exit codes, output hashes/byte counts, structural metadata for unknown lines. No raw output, unrelated SSIDs, BSSIDs/MACs, IPs, or secrets.",
+  "freshness": "No per-network timestamp is documented; record freshness as unconfirmed.",
+  "runner_sha256_before_repeat": {
+    "read_wifi_status.py": "61b2dfd8cf9938e2a30e3d7288d4593cc6d964d30efc1987ad99249fdd0cb0af",
+    "scan_wifi_bands.py": "e42153edd5eb0633c2bf74eb5968093a06ea239eeeac56e028384b3c063666b3"
+  }
+}

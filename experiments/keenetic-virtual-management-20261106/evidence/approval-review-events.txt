@@ -1,0 +1,10 @@
+Tool coordination record (not a router attempt)
+Date: 2026-11-06
+
+After the concrete Solar lifecycle script and runner were locally snapshotted and reviewed by root, an escalated `exec_command` for `python3 experiments/keenetic-virtual-management-20261106/prototype/run-profile-lifecycle.py 'Solar (Moscow)'` yielded:
+
+`exec_command failed: CreateProcess { message: "Rejected(\"The automatic permission approval review did not finish before its deadline. Do not assume the action is unsafe based on the timeout alone. You may retry once, or ask the user for guidance or explicit approval.\")" }`
+
+A subsequent escalated invocation of the already-snapshotted read-only `profile-readonly-preflight.py` yielded the same automatic approval review deadline error. Neither call produced a local lifecycle attempt directory or profile status output. They are recorded as tool approval events, not as router execution attempts; no remote state change is asserted from those results.
+
+A second read-only retry was started but terminated on root's instruction to stop further heavy runner retries while root performs one small, sanitized status query. It did not produce a result or attempt evidence. No Poppuri lifecycle command was issued.

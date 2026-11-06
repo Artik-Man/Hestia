@@ -1,0 +1,1 @@
+Final local runner snapshot, captured before lifecycle execution. It requires the allowlisted completed result plus explicit restore accepted, admin down, and connected no lines before marking an attempt complete. Source syntax parsed successfully. This runner will be invoked for one profile at a time, with independent sanitized read-only state verification between profiles.
