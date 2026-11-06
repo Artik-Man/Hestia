@@ -45,8 +45,8 @@ flowchart LR
 flowchart LR
     Net["Интернет / провайдер"] <-->|WAN| R["Keenetic Giga"]
     subgraph Mac["MacBook — хост двух ВМ Lima"]
-        C["hestia-test-client · 192.168.1.124"]
-        G["hestia-stage1 · Гестия · 192.168.1.133"]
+        C["hestia-client · 192.168.1.124"]
+        G["hestia-prod · Гестия · 192.168.1.133"]
     end
     C -->|"LAN через мост en0"| R
     R -.->|"WireGuard · выбранный поток"| G

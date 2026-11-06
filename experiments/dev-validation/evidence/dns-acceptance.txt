@@ -1,0 +1,8 @@
+target=hestia-dev
+base=66bb2fa
+exit=0
+isolation=private net namespace and temporary chroot; synthetic DNS upstream198.18.0.53
+PASS: two router queries reached the threshold; HTTP report shows two client requests
+PASS: exclusion removed automatic membership; physical upstream received another manual refresh
+PASS: removing exclusion restored automatic membership without counting background DNS
+PASS: selector denied; router received SERVFAIL; no upstream packet

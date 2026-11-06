@@ -1,5 +1,7 @@
 # Клиент за Гестией и два SSTP с одинаковым внутренним IP
 
+Исходники проверки: [tests/lab/sstp-gateway](../../tests/lab/sstp-gateway/). Отчёт и свидетельства остаются здесь. Перед повторным запуском применяйте [правила выбора стенда](../../docs/virtual-machines.md); исторические имена ВМ не являются указанием создать или запустить их.
+
 Проверяем новые TCP- и UDP-потоки от отдельного клиента за общим шлюзом. Два одновременно установленных SSTP получают одинаковые локальный и удалённый PPP-адреса. В каждом сетевом пространстве есть свой маршрут к сервису с одинаковым адресом и портом. Клиент один раз получает FakeIP и использует его до конца серии.
 
 | Состояние | Критерий |
@@ -29,14 +31,14 @@ flowchart LR
 
 ```sh
 out=$(mktemp -d)
-sudo bash experiments/sstp-gateway/lab.sh "$out"
+sudo bash tests/lab/sstp-gateway/lab.sh "$out"
 sudo cat "$out/verification.txt"
 ```
 
 Для проверки опубликованных захватов на машине с Python 3 и tcpdump:
 
 ```sh
-python3 -B experiments/sstp-gateway/probes.py verify experiments/sstp-gateway/evidence
+python3 -B tests/lab/sstp-gateway/probes.py verify experiments/sstp-gateway/evidence
 ```
 
 ## Результат 4 ноября 2026 года

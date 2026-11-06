@@ -1,0 +1,37 @@
+case=awg-multi
+source=66bb2fa
+a59e9ae9848f197273441699a1dcd645a3aa21d6dae61cebebacfa83e92cd208  /opt/hestia-dev/releases/66bb2fa/hestia
+7fe87a8d2031e75273c562be43993ae14b352f7de9150edaf79afca340932e1a  /opt/hestia-dev/releases/66bb2fa/amneziawg-go
+7b5d8177fba2ebe1454390c069f7385401f95449c6f680e03090d368d7f16a56  /opt/hestia-dev/releases/66bb2fa/awg
+d953af885f11d6b547c21a3c0ffe70796963afc802fab959d548311002b4908a  /opt/hestia-dev/releases/66bb2fa/sing-box-1.14.4-linux-arm64/sing-box
+AWG runtime stopped: an earlier routing rule can bypass the AWG guard
+foreign catch-all rejected before mutation; distinct scheme-3-style ingress rules present
+WG without keepalive and AWG with 25s keepalive are ready; settings restored; main IPv4 table unchanged
+default dev awg0 scope link metric 100 
+unreachable default metric 32767 
+unreachable default dev lo metric 32767 pref medium
+10.77.0.1 dev awg0 table 202 src 10.77.0.2 mark 0x202 uid 0 
+    cache 
+198.18.0.2 dev lan0 src 198.18.0.1 uid 0 
+    cache 
+default dev awg1 scope link metric 100 
+unreachable default metric 32767 
+unreachable default dev lo metric 32767 pref medium
+10.77.0.1 dev awg1 table 203 src 10.77.0.2 mark 0x203 uid 0 
+    cache 
+198.18.1.2 dev lan1 src 198.18.1.1 uid 0 
+    cache 
+sing-box groups verified: client-0 -> tunnel-a, client-1 -> tunnel-b
+slot 1 through_group=False peer=tunnel-b replies=1 single TLS connection
+RTNETLINK answers: No route to host
+RTNETLINK answers: No route to host
+10.77.0.1 via 198.18.0.2 dev lan0 src 198.18.0.1 uid 0 
+    cache 
+fd77::2 from :: dev lan0 proto kernel src fd77::1 metric 256 pref medium
+underlay capture: two unmarked controls, zero marked packets; group 0 healthy, group 1 blocked
+secondary unreachable for IPv4 and IPv6 with unmarked underlay alive
+AWG runtime stopped: AmneziaWG handshake was not confirmed
+candidate with unreachable peer rejected within deadline, original group stream alive
+slot 1 through_group=False peer=tunnel-b replies=1 single TLS connection
+slot 0 through_group=True peer=tunnel-a replies=108 single TLS connection
+peer identity and same TLS session verified across neighbor stop/restart

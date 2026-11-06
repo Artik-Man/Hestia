@@ -1,0 +1,39 @@
+Running as unit: hestia-validation-20261106-165020-53956.service
+a59e9ae9848f197273441699a1dcd645a3aa21d6dae61cebebacfa83e92cd208  /usr/local/bin/hestia
+3a91e8e8456d56332c993e22e7a1b150dba7036ee16c7342fe0b21b556efa857  /usr/local/bin/hestia-panel
+66eead9b8d1acd1928c374ee879e6fe7e8ffaa3c7736833f0c4861fac28c3927  /usr/local/bin/hestia-observe
+7b5d8177fba2ebe1454390c069f7385401f95449c6f680e03090d368d7f16a56  /usr/local/bin/awg
+7fe87a8d2031e75273c562be43993ae14b352f7de9150edaf79afca340932e1a  /usr/local/lib/hestia/amneziawg-go
+d953af885f11d6b547c21a3c0ffe70796963afc802fab959d548311002b4908a  /usr/local/lib/hestia/sing-box
+ecfd7c9137aadcd28562693c9ce36da1cf7086a58fcce6d1157f1bf5d0826cd5  /usr/local/lib/hestia/profile.py
+04964dd35fd679a90c572c3a4f44cf837310a971ee3009687b0172945def3c7d  /usr/local/lib/hestia/publish_geoip.py
+5bdc60293dcefebebfc91fce4a6fbe4624e64377ff52326893385306f5c667e4  /usr/local/lib/hestia/smoke.py
+9a9f8fa4590148832fa7bafdf406845c66ea118c8d6c46b171007da9730e08c3  /usr/local/lib/hestia/hestia-observe.service
+7fe87a8d2031e75273c562be43993ae14b352f7de9150edaf79afca340932e1a  /usr/local/lib/hestia/amneziawg-go
+ecfd7c9137aadcd28562693c9ce36da1cf7086a58fcce6d1157f1bf5d0826cd5  /usr/local/lib/hestia/profile.py
+d953af885f11d6b547c21a3c0ffe70796963afc802fab959d548311002b4908a  /usr/local/lib/hestia/sing-box
+33f4ebcb839711fab21708cd8d73d86baed12821636550a298fd8b5721c57eeb  /usr/local/share/hestia-panel/current/chunk-NVGVRYDB.js
+623b65215e40d2de3f201b41eabeccdeba60a17afb17b21f9a9d3f52de23dbed  /usr/local/share/hestia-panel/current/chunk-Y5IQ6IW4.js
+48ddff58b6e9ea02b775b37acc9c370a304d327ee6555e5a35b3bfe5a51fb4bd  /usr/local/share/hestia-panel/current/chunk-CYSNB7A5.js
+139cf65bd3df6ef9b703ca872b726c7d0edf0db1c7781004be28b1fcf161e903  /usr/local/share/hestia-panel/current/chunk-K22EAMT3.js
+5c231beb3618bfb8ad820bc12fdea79d0cc11b3b4092858ea45c67e496c54bff  /usr/local/share/hestia-panel/current/assets/trash.svg
+4fd0219f2a56745df6326eafeb9498a750b385f410f86cab1c945d3f6d9f599f  /usr/local/share/hestia-panel/current/assets/hestia.svg
+52e45ad67105e0bfaafb7efd6e8dc9b4e437adbb57a1d84056baf68ca54065a5  /usr/local/share/hestia-panel/current/assets/pencil.svg
+36c6a879686539650ffc9ca931960cbfdf6b3ed5824498ce283f66beacefeca5  /usr/local/share/hestia-panel/current/assets/hearth.svg
+2e4ee3bac13f71b5feb266570f4101eb4897f057b33fb76fd7e7ebce071428bc  /usr/local/share/hestia-panel/current/chunk-6UWR6QSZ.js
+7183a7b41e6c1d227bf38d2912a5690a279b61877d5e9729d8d840bc7978cec3  /usr/local/share/hestia-panel/current/chunk-GD6VUJIQ.js
+8f1f3f28a9a888ec36a4a9485529ea3d3a863cd4e11bc8abde4eeedca8ed4db6  /usr/local/share/hestia-panel/current/chunk-5MSZTQ7Q.js
+14ff6d1e2c0e2937b1f966c96abd1626de62c07bc52e350a2d8e8b8621c488ac  /usr/local/share/hestia-panel/current/chunk-HNZMTI5O.js
+c4b43ed5b156500ece4d305dca4d4f25b707be3cae0117e16ac039b8f6433247  /usr/local/share/hestia-panel/current/styles-DJGCNOAD.css
+c9e2edfd47e2d19e7c45f13aa6f6bb137a532742caba0cd11adb436d44a6f635  /usr/local/share/hestia-panel/current/chunk-MCCUZTQ3.js
+fec2980d3f69340bb588e36d5241f653c322474d5a6b7aaf6d2a5b5db75f4578  /usr/local/share/hestia-panel/current/main-4QXN5PRJ.js
+82297a4b557f1f6a5134882790742da5697009420390d47ae7ad438c49faf71e  /usr/local/share/hestia-panel/current/chunk-2FDZ44VM.js
+4b295b89a27a2fa68c0a2ff7f7c85b0d2d8af35046aa1a1061dcbe0475d9c26e  /usr/local/share/hestia-panel/current/chunk-MWES4UV5.js
+b7ba048384e450713ce919610c1fdbd7043b4a350f93999858b04d25143dc665  /usr/local/share/hestia-panel/current/chunk-FTU343RP.js
+8cdbc799429d839acb7e99b62e646e01f88ddab96f587e665f1f404e093a8a04  /usr/local/share/hestia-panel/current/index.html
+1bab55133dc0f59ef49be46e3c5ae0d2a53b8f09a270602cb04025c9cbf89c4d  /usr/local/share/hestia-panel/current/chunk-IVZXVWD7.js
+PASS actual stand=lima-hestia-dev; private labs use compatibility hostname lima-hestia-dev
+Finished with result: success
+Main processes terminated with: code=exited/status=0
+Service runtime: 745ms
+CPU time consumed: 745ms

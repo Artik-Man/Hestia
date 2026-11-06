@@ -1,5 +1,7 @@
 # Постоянная служба на ARM64
 
+Исходники проверки: [tests/lab/controller-service](../../tests/lab/controller-service/). Отчёт и свидетельства остаются здесь. Перед повторным запуском применяйте [правила выбора стенда](../../docs/virtual-machines.md); исторические имена ВМ не являются указанием создать или запустить их.
+
 Проверяем, может ли работающий процесс Гестии следить за снимком доступности, переключать группы и сохранять действующие маршруты при ошибке во входном файле. Испытание запускает unit systemd. Стенд изменяет только файл состояния атомарной заменой. Селекторы sing-box изначально выбирают `deny`; единственным источником изменений селекторов во время прогона служит Гестия.
 
 | Фаза | Ожидаемое наблюдение |
@@ -23,14 +25,14 @@ CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go -C backend build -o /tmp/hestia ./cmd/h
 
 ```sh
 out=$(mktemp -d)
-sudo bash experiments/controller-service/lab.sh /tmp/hestia "$out"
+sudo bash tests/lab/controller-service/lab.sh /tmp/hestia "$out"
 sudo cat "$out/verification.txt"
 ```
 
 Стенд использует временный экземпляр поставляемого unit-файла. Его дополнительные настройки задают пространство тестового шлюза, временные пути бинарника и снимка, а также интервал 200 мс. После проверки служба остановлена и удалена из временной конфигурации systemd. Для независимой проверки сохранённого прогона на машине с Python 3 и tcpdump выполните:
 
 ```sh
-python3 -B experiments/controller-service/verify.py experiments/controller-service/evidence
+python3 -B tests/lab/controller-service/verify.py experiments/controller-service/evidence
 ```
 
 ## Наблюдения на Debian ARM64

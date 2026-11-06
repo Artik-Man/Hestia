@@ -1,5 +1,7 @@
 # Полный отказ группы с активным адресным исключением
 
+Исходники проверки: [tests/lab/steer-deny](../../tests/lab/steer-deny/). Отчёт и свидетельства остаются здесь. Перед повторным запуском применяйте [правила выбора стенда](../../docs/virtual-machines.md); исторические имена ВМ не являются указанием создать или запустить их.
+
 При неудачном порядке правил sing-box сообщает, что селектор группы закрыт, но исключение ещё направляет UDP до X на FI2. Холодному запросу домена FI предшествует внешний DNS-запрос через FI1. Это воспроизведено в изолированной Debian ARM64. Для исправления внешняя проверка FI теперь предшествует и резолвингу реального адреса, и обработке адресного исключения. После допуска второе локальное SOCKS-входящее соединение попадает во внутренние правила FI. У внутреннего DNS транспорт использует селектор обычного выхода FI. [Отрицательный контроль](evidence/negative/verification.txt), [положительная серия](evidence/positive/verification.txt).
 
 | Фаза защищённого стенда | FI TCP по FakeIP и прямому IP | FI UDP по FakeIP и прямому IP | Внешний DNS для нового FI-имени | RU TCP, UDP и DNS |
@@ -16,8 +18,8 @@
 Для повторения соберите ARM64-бинарник Гестии и перенесите его с каталогом экспериментов на выделенную Debian ARM64-ВМ. Нужны sing-box 1.14.4, TUN, iproute2, iptables, Python 3, curl и tcpdump. Обе команды выполняются в госте из корня проекта, каждый выходной каталог должен быть пуст.
 
 ```sh
-sudo bash experiments/steer-deny/lab.sh ./hestia negative /var/tmp/deny-control
-sudo bash experiments/steer-deny/lab.sh ./hestia positive /var/tmp/deny-protected
+sudo bash tests/lab/steer-deny/lab.sh ./hestia negative /var/tmp/deny-control
+sudo bash tests/lab/steer-deny/lab.sh ./hestia positive /var/tmp/deny-protected
 ```
 
-В строках `PASS negative` проверяется ожидаемое воспроизведение утечки. Для независимого повторного разбора сохранённой серии запустите `python3 experiments/steer-deny/check.py verify experiments/steer-deny/evidence/positive positive` на Linux с tcpdump.
+В строках `PASS negative` проверяется ожидаемое воспроизведение утечки. Для независимого повторного разбора сохранённой серии запустите `python3 tests/lab/steer-deny/check.py verify experiments/steer-deny/evidence/positive positive` на Linux с tcpdump.

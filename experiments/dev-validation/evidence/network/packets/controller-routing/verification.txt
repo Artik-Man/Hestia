@@ -1,0 +1,7 @@
+PASS warm: verified 6 probe outcomes on three uplinks
+PASS gate: verified 4 probe outcomes on three uplinks
+PASS failover: verified 4 probe outcomes on three uplinks
+PASS blocked: verified 4 probe outcomes on three uplinks
+PASS control: verified 2 probe outcomes on three uplinks
+PASS recovery: verified 4 probe outcomes on three uplinks
+PASS Go decisions, invalid snapshot, single original FI DNS query, LAN attempts and external DNS denial

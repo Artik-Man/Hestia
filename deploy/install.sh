@@ -52,15 +52,48 @@ work=$(mktemp -d)
 managed=()
 had_group=1
 transaction=0
+released=0
 services=(hestia-sing-box.service hestia.service)
 managed_units=(hestia-binding-recovery.service hestia-binding-watch.path hestia-binding-watch.service "${services[@]}" hestia-dns.service)
 declare -A enabled active
+# generation_fingerprint records every installed configuration entry, including retained AWG metadata and absence through the path inventory.
+generation_fingerprint() {
+    local path
+    find "$config" -print0 | sort -z | while IFS= read -r -d '' path; do
+        [[ ! -L $path && (-f $path || -d $path) ]] || return 1
+        printf '%s\0' "$path"
+        stat -c '%u:%g:%a' -- "$path" || return 1
+        if [[ -f $path ]]; then sha256sum -- "$path" || return 1; fi
+    done
+}
+# release_install_lock records the published generation before allowing systemd recovery to take the lock.
+release_install_lock() {
+    sha256sum "${managed[@]}" >"$work/published.sha256"
+    generation_fingerprint >"$work/published-generation"
+    released=1
+    flock -u 9
+}
+# acquire_rollback_lock excludes writers and refuses to overwrite an intervening configuration generation.
+acquire_rollback_lock() {
+    flock -w 20 9 || return 1
+    if ((released)) && { [[ -e $config/.binding-pending || -L $config/.binding-pending ]] ||
+        ! sha256sum -c "$work/published.sha256" >/dev/null 2>&1 ||
+        ! generation_fingerprint >"$work/current-generation" ||
+        ! cmp -s "$work/published-generation" "$work/current-generation"; }; then
+        flock -u 9
+        return 1
+    fi
+}
 # cleanup rolls back replaced files and service states after a failed transaction and removes temporary artifacts.
 cleanup() {
     local rc=$? i file unit
     trap - EXIT INT TERM
     if ((rc != 0 && transaction)); then
         set +e
+        if ! acquire_rollback_lock; then
+            echo "Rollback refused because configuration changed or is busy; backup retained at $work" >&2
+            exit "$rc"
+        fi
         echo "Installation failed; restoring previous Hestia files and service states." >&2
         systemctl stop hestia.service hestia-sing-box.service hestia-binding-watch.path hestia-binding-watch.service hestia-binding-recovery.service >/dev/null 2>&1
         systemctl disable hestia.service hestia-sing-box.service hestia-binding-watch.path >/dev/null 2>&1
@@ -68,17 +101,18 @@ cleanup() {
             file=${managed[i]}
             if [[ -e $work/backup-$i ]]; then cp -a --remove-destination "$work/backup-$i" "$file"; else rm -f -- "$file"; fi
         done
+        if ((had_group == 0)); then
+            chown root:root /run/hestia-install.lock
+            chmod 0600 /run/hestia-install.lock
+            groupdel hestia-snapshot
+        fi
+        flock -u 9
         systemctl daemon-reload
         for unit in "${managed_units[@]}"; do
             if [[ ${enabled[$unit]} == enabled ]]; then systemctl enable "$unit"; fi
             # The path unit starts its one-shot worker; never wait for that worker under the installer lock.
             if [[ ${active[$unit]} == active && $unit != hestia-binding-watch.service ]]; then systemctl start "$unit"; fi
         done
-        if ((had_group == 0)); then
-            chown root:root /run/hestia-install.lock
-            chmod 0600 /run/hestia-install.lock
-            groupdel hestia-snapshot
-        fi
     fi
     rm -rf -- "$work"
     exit "$rc"
@@ -245,6 +279,7 @@ for unit in "${managed_units[@]}"; do replace "$repo/deploy/systemd/$unit" "/etc
 replace "$repo/deploy/systemd/hestia.service.d/backend.conf" /etc/systemd/system/hestia.service.d/backend.conf 0644
 echo 1 >"$work/marker"
 replace "$work/marker" "$marker" 0600
+release_install_lock
 systemctl daemon-reload
 systemctl enable hestia-binding-watch.path "${services[@]}"
 systemctl stop hestia.service

@@ -1,5 +1,7 @@
 # Смена группы списка через два WireGuard-подключения
 
+Исходники проверки: [tests/lab/list-binding](../../tests/lab/list-binding/). Отчёт и свидетельства остаются здесь. Перед повторным запуском применяйте [правила выбора стенда](../../docs/virtual-machines.md); исторические имена ВМ не являются указанием создать или запустить их.
+
 Проверяем, через какой выход проходит **новое TCP-соединение** после изменения привязки через панель, какой маршрут остаётся при отклонении запроса и как шлюз восстанавливается после гибели помощника в середине применения.
 
 ## Стенд
@@ -26,25 +28,24 @@
 
 ## Повторение
 
-Используйте новую изолированную проектную ВМ. Инструменты `wireguard-tools`, `dnsmasq-base`, `curl`, `sudo`, `iproute2` и Python 3 нужны в госте. Пример запуска с хоста из корня проекта:
+Используйте согласованный изолированный Linux ARM64-стенд по действующим правилам ВМ. Создание новой ВМ требует отдельного разрешения; прежний профиль доступен в [историческом комплекте](../README.md#историческая-подготовка-вм). Инструменты `wireguard-tools`, `dnsmasq-base`, `curl`, `sudo`, `iproute2` и Python 3 нужны в госте. Пример запуска с хоста из корня проекта:
 
 ```sh
-limactl start --name hestia-binding-test --tty=false experiments/fakeip/vm/lima.yaml
 CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go -C backend build -o /tmp/hestia-binding ./cmd/hestia
 CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go -C backend build -o /tmp/hestia-binding-panel ./cmd/hestia-panel
 (cd frontend && npm ci && npm run build)
 ```
 
-Передайте в гостевую ВМ в один рабочий каталог оба собранных файла, каталоги `deploy/`, `experiments/list-binding/`, `frontend/dist/hestia/browser/` и официальный архив `sing-box-1.14.4-linux-arm64.tar.gz`. Установщик проверяет его по закреплённой SHA-256. Далее выполняйте в этом каталоге гостя:
+Передайте в гостевую ВМ в один рабочий каталог оба собранных файла, каталоги `deploy/`, `tests/lab/list-binding/`, `frontend/dist/hestia/browser/` и официальный архив `sing-box-1.14.4-linux-arm64.tar.gz`. Установщик проверяет его по закреплённой SHA-256. Далее выполняйте в этом каталоге гостя:
 
 ```sh
 sudo apt-get install -y --no-install-recommends wireguard-tools dnsmasq-base
-sudo bash experiments/list-binding/peers.sh
+sudo bash tests/lab/list-binding/peers.sh
 sudo bash deploy/install.sh --config /var/tmp/hestia-binding-lab/profile.json \
     --controller-binary ./hestia-binding --sing-box-archive ./sing-box-1.14.4-linux-arm64.tar.gz
-sudo bash experiments/list-binding/panel.sh ./hestia-binding-panel ./frontend/dist/hestia/browser
-sudo python3 -I experiments/list-binding/verify.py
-sudo python3 -I experiments/list-binding/verify.py --crash
+sudo bash tests/lab/list-binding/panel.sh ./hestia-binding-panel ./frontend/dist/hestia/browser
+sudo python3 -I tests/lab/list-binding/verify.py
+sudo python3 -I tests/lab/list-binding/verify.py --crash
 ```
 
 Оба прогона должны завершиться строкой `PASS`. Первый оставляет список без привязки. Второй начинает с этого состояния и возвращает его. Временные drop-in удаляются по завершении проверки. Рабочие ключи и конфигурации sing-box из гостя в отчёт не переносят.

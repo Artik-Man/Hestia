@@ -1,0 +1,24 @@
+Final Linux lifecycle suite: seven tests pass. Negative control: remove publication unlock; recovery test must fail with exit49.
+
+.......
+----------------------------------------------------------------------
+Ran 7 tests in 0.056s
+
+OK
+
+EXPECTED FAILURE:
+F
+======================================================================
+FAIL: test_recovery_starts_outside_publication_lock (test_install_lifecycle.InstallLifecycleTests.test_recovery_starts_outside_publication_lock)
+The actual activation sequence lets the required recovery process acquire its lock.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/hestia-installer-regression/negative/test_install_lifecycle.py", line 62, in test_recovery_starts_outside_publication_lock
+    self.assertEqual(result.returncode, 0, result.stderr)
+AssertionError: 49 != 0 : recovery-lock-conflict
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.003s
+
+FAILED (failures=1)

@@ -1,0 +1,9 @@
+{"phase": "baseline", "iface": "fi1", "token": "user-baseline-ux", "peer": "10.88.2.1", "target": "203.0.113.77", "proto": "udp"}
+{"phase": "baseline", "iface": "fi1", "token": "user-baseline-tx", "peer": "10.88.2.1", "target": "203.0.113.77", "proto": "tcp"}
+{"phase": "baseline", "iface": "fi1", "token": "user-baseline-uy", "peer": "10.88.2.1", "target": "203.0.113.78", "proto": "udp"}
+{"phase": "switched", "iface": "fi2", "token": "user-switched-ux", "peer": "10.88.3.1", "target": "203.0.113.77", "proto": "udp"}
+{"phase": "switched", "iface": "fi1", "token": "user-switched-tx", "peer": "10.88.2.1", "target": "203.0.113.77", "proto": "tcp"}
+{"phase": "switched", "iface": "fi1", "token": "user-switched-uy", "peer": "10.88.2.1", "target": "203.0.113.78", "proto": "udp"}
+{"phase": "recovered", "iface": "fi2", "token": "user-recovered-ux", "peer": "10.88.3.1", "target": "203.0.113.77", "proto": "udp"}
+{"phase": "recovered", "iface": "fi1", "token": "user-recovered-tx", "peer": "10.88.2.1", "target": "203.0.113.77", "proto": "tcp"}
+{"phase": "recovered", "iface": "fi1", "token": "user-recovered-uy", "peer": "10.88.2.1", "target": "203.0.113.78", "proto": "udp"}

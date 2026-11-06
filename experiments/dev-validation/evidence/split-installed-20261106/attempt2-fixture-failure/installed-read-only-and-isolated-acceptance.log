@@ -1,0 +1,19 @@
+Running as unit: hestia-validation-20261106-165020-53956.service
+PASS read-only GET /api/navigation
+PASS read-only GET /api/groups-and-rules
+PASS read-only GET /api/awg
+PASS read-only GET /api/awg-underlays
+PASS read-only GET /api/hysteria2
+PASS read-only GET /api/physical-connections
+PASS read-only GET /api/quality
+PASS read-only GET /api/traffic
+PASS read-only GET /api/traffic/settings
+PASS read-only GET /api/country-map
+PASS read-only GET /api/dns/policy
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+FileNotFoundError: [Errno 2] No such file or directory: 'initial.json'
+Finished with result: exit-code
+Main processes terminated with: code=exited/status=1
+Service runtime: 11.033s
+CPU time consumed: 975ms

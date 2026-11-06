@@ -1,5 +1,7 @@
 # Адресное переключение UDP внутри группы подключений
 
+Исходники проверки: [tests/lab/scoped](../../tests/lab/scoped/). Отчёт и свидетельства остаются здесь. Перед повторным запуском применяйте [правила выбора стенда](../../docs/virtual-machines.md); исторические имена ВМ не являются указанием создать или запустить их.
+
 Проверяем переключение новых потоков по паре «реальный IPv4 назначения, протокол». Группа содержит два доступных подключения, FI-1 и FI-2. Исходный выбор — FI-1. Клиент использует один и тот же порт сервиса для всех проб.
 
 | Фаза | UDP до X | TCP до X | UDP до других контрольных адресов |
@@ -37,12 +39,12 @@
 
 ```sh
 out=$(mktemp -d)
-sudo bash experiments/scoped/lab.sh "$out"
+sudo bash tests/lab/scoped/lab.sh "$out"
 sudo cat "$out/verification.txt"
 ```
 
 Сохранённые результаты можно проверить отдельно на машине с Python 3 и tcpdump:
 
 ```sh
-python3 -B experiments/scoped/probes.py verify experiments/scoped/evidence
+python3 -B tests/lab/scoped/probes.py verify experiments/scoped/evidence
 ```

@@ -1,8 +1,12 @@
 # Оценка подключений и переключение по результатам TCP и UDP
 
+Исходники проверки: [tests/lab/connection-quality](../../tests/lab/connection-quality/). Отчёт и свидетельства остаются здесь. Перед повторным запуском применяйте [правила выбора стенда](../../docs/virtual-machines.md); исторические имена ВМ не являются указанием создать или запустить их.
+
+Имена ВМ в описании приведены к принятой 6 ноября 2026 года схеме [prod/dev/client](../../AGENTS.md#виртуальные-машины). Исходные имена в свидетельствах и путях резервных копий сохранены.
+
 5 ноября 2026 года проверили, измеряет ли шлюз резервный выход и совпадают ли ранжирование в API и фактический выбор sing-box при ухудшении UDP через основной выход.
 
-Стенд — изолированная ВМ hestia-load-01, Debian Linux ARM64, sing-box 1.14.4, рабочее дерево поверх 44bb04d. Версия ядра и SHA-256 обеих сборок записаны в [протоколе](evidence/arm64.txt). Контроллер и панель запускались с разными непривилегированными UID, контроллеру предоставлена CAP_NET_RAW. В отдельном сетевом пространстве созданы два выхода veth. На каждом пути свои синтетические адресаты с одинаковыми IP 1.1.1.1 и 8.8.8.8. У стенда отсутствовал внешний маршрут. Дополнительная пустая группа проверяет блокировку и представление пустой таблицы в API.
+Стенд — изолированная ВМ hestia-dev, Debian Linux ARM64, sing-box 1.14.4, рабочее дерево поверх 44bb04d. Версия ядра и SHA-256 обеих сборок записаны в [протоколе](evidence/arm64.txt). Контроллер и панель запускались с разными непривилегированными UID, контроллеру предоставлена CAP_NET_RAW. В отдельном сетевом пространстве созданы два выхода veth. На каждом пути свои синтетические адресаты с одинаковыми IP 1.1.1.1 и 8.8.8.8. У стенда отсутствовал внешний маршрут. Дополнительная пустая группа проверяет блокировку и представление пустой таблицы в API.
 
 Через PUT /api/quality/settings сохранили проверки TCP и UDP с интервалом и тайм-аутом в одну секунду при часовом окне. Сначала обе цели отвечали через оба выхода. Ожидались полные баллы и сохранение первого выхода. Затем прекратили ответы DNS через первый выход до обеих целей, сохранив TCP на обоих путях. Ожидались частичные потери UDP, более высокий средний балл второго выхода, его первая позиция в отчёте GET /api/quality и подтверждение тем же выходом через /proxies/finland в sing-box.
 
@@ -13,10 +17,10 @@
 ```sh
 lab=$(mktemp -d)
 GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go -C backend build -buildvcs=false -o "$lab/" ./cmd/hestia ./cmd/hestia-panel
-GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go -C backend build -buildvcs=false -o "$lab/quality-test-service" ../experiments/connection-quality/service/main.go
-cp /path/to/linux-arm64/sing-box deploy/profile.py experiments/connection-quality/{respond.py,verify.py,run.sh} "$lab/"
-ssh_config="$HOME/.lima/hestia-load-01/ssh.config"
-tar -C "$lab" -czf - . | ssh -F "$ssh_config" lima-hestia-load-01 'set -e; d=$(mktemp -d); cd "$d"; tar xz; uname -srmo; sha256sum hestia hestia-panel; sudo unshare --mount --net --pid --fork --mount-proc bash run.sh; cat events.jsonl'
+GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go -C backend build -buildvcs=false -o "$lab/quality-test-service" ../tests/lab/connection-quality/service/main.go
+cp /path/to/linux-arm64/sing-box deploy/profile.py tests/lab/connection-quality/{respond.py,verify.py,run.sh} "$lab/"
+ssh_config="$HOME/.lima/hestia-dev/ssh.config"
+tar -C "$lab" -czf - . | ssh -F "$ssh_config" lima-hestia-dev 'set -e; d=$(mktemp -d); cd "$d"; tar xz; uname -srmo; sha256sum hestia hestia-panel; sudo unshare --mount --net --pid --fork --mount-proc bash run.sh; cat events.jsonl'
 ```
 
 На macOS ARM64 отдельно проверен аутентифицированный путь SOCKS через настоящий sing-box. Контрольный сервер подтвердил TCP-подключение и DNS-запрос через UDP ASSOCIATE. Закрытый TCP-порт учтён как неудачный обмен, неверный пароль — как локальная ошибка измерителя. Команда и результат приведены в [протоколе SOCKS](evidence/macos-socks.txt).
@@ -32,6 +36,6 @@ tar -C "$lab" -czf - . | ssh -F "$ssh_config" lima-hestia-load-01 'set -e; d=$(m
 
 ## Переключение при потере линка
 
-5 ноября 2026 года на hestia-load-01 проверили, может ли выход со 100 баллами удерживать трафик после потери линка. Рабочее дерево поверх 0c9b759, Debian ARM64, sing-box 1.14.4. Команды воспроизведения приведены выше. В отдельном сетевом пространстве смонтировали его sysfs, чтобы контроллер видел carrier обоих veth. Оба подключения оставались разрешены в профиле. Период опроса контроллера составлял 200 мс.
+5 ноября 2026 года на hestia-dev проверили, может ли выход со 100 баллами удерживать трафик после потери линка. Рабочее дерево поверх 0c9b759, Debian ARM64, sing-box 1.14.4. Команды воспроизведения приведены выше. В отдельном сетевом пространстве смонтировали его sysfs, чтобы контроллер видел carrier обоих veth. Оба подключения оставались разрешены в профиле. Период опроса контроллера составлял 200 мс.
 
 При выключении дальнего конца veth у выхода two ожидали перехода на доступный one. Таблица подняла one с 69,44 балла на первое место, two со 100 баллами получил статус недоступного. При потере линка на обоих выходах селектор переключился на deny. После восстановления линка two селектор выбрал его. Во всех трёх наблюдениях активный выход в API совпал с фактическим селектором. Стенд воспроизводит изменение Linux carrier с помощью veth. Поведение драйвера физического порта и отзыв ключа на VPN-сервере требуют отдельных испытаний. [Журнал API и селектора с контрольными суммами сборок](evidence/arm64-carrier.txt).

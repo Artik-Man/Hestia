@@ -1,5 +1,7 @@
 # Обновление реального адреса при сохранении FakeIP
 
+Исходники проверки: [tests/lab/dns-rotation](../../tests/lab/dns-rotation/). Отчёт и свидетельства остаются здесь. Перед повторным запуском применяйте [правила выбора стенда](../../docs/virtual-machines.md); исторические имена ВМ не являются указанием создать или запустить их.
+
 На изолированной Debian ARM64 клиент получил один FakeIP для каждого из двух доменов, затем установил новые TCP- и UDP-соединения до этих же FakeIP до и после истечения TTL. Управляемые DNS-серверы начали выдавать `203.0.113.22` вместо `203.0.113.11` ещё до окончания TTL. Захват LAN подтвердил по одному клиентскому A-запросу на имя за весь прогон. [Клиентские события](evidence/positive/clients.jsonl), [захват LAN](evidence/positive/lan0.pcap).
 
 | Имя и FakeIP | Пока предыдущая A-запись действовала | Первые новые потоки после истечения TTL |
@@ -13,13 +15,13 @@ TTL обеих записей составлял 4 секунды. Автори�
 
 Это экспериментальный Python-компонент и sing-box 1.14.4 с синтетическими странами для двух IPv4. Проверены новые соединения, одиночные A-записи и обычный DNS по UDP. Опыт не измеряет поведение уже открытой сессии при ротации и не проверяет CNAME, AAAA, прогрев или выдачу просроченных записей. Исходный набор прежних DNS-Geo проверок повторно прошёл на той же ВМ после выделения общей схемы сетевых пространств. [Описание кэша](CACHE.md), [регрессия](evidence/dns-geo-regression.txt).
 
-Для повторения перенесите `experiments/dns-rotation` и `experiments/dns-geo` в отдельную Debian ARM64-ВМ с TUN, sing-box 1.14.4, iproute2, tcpdump, Python 3 и python3-dnspython. Из корня проекта запустите оба сценария с пустыми каталогами результатов:
+Для повторения перенесите `tests/lab/dns-rotation` и `tests/lab/dns-geo` в отдельную Debian ARM64-ВМ с TUN, sing-box 1.14.4, iproute2, tcpdump, Python 3 и python3-dnspython. Из корня проекта запустите оба сценария с пустыми каталогами результатов:
 
 ```sh
-sudo bash experiments/dns-rotation/lab.sh old /var/tmp/old-rotation
-sudo bash experiments/dns-rotation/lab.sh refresh /var/tmp/new-rotation
+sudo bash tests/lab/dns-rotation/lab.sh old /var/tmp/old-rotation
+sudo bash tests/lab/dns-rotation/lab.sh refresh /var/tmp/new-rotation
 ```
 
-Для повторного разбора финальных захватов используйте `python3 experiments/dns-rotation/verify.py refresh experiments/dns-rotation/evidence/positive`. При проверке каждого потока скрипт сопоставляет снимки на LAN/RU/FI, отдельные записи получателей и ответы управляемых DNS-серверов.
+Для повторного разбора финальных захватов используйте `python3 tests/lab/dns-rotation/verify.py refresh experiments/dns-rotation/evidence/positive`. При проверке каждого потока скрипт сопоставляет снимки на LAN/RU/FI, отдельные записи получателей и ответы управляемых DNS-серверов.
 
 SHA-256 файлов финального ARM64-прогона сохранены в протоколах [прототипа](evidence/positive/cache.sha256) и [исходной фикстуры](evidence/negative/cache.sha256).

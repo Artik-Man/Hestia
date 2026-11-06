@@ -1,5 +1,9 @@
 # Порядок групп и выходов на трёх WireGuard-пирах
 
+Исходники проверки: [tests/lab/group-order](../../tests/lab/group-order/). Отчёт и свидетельства остаются здесь. Перед повторным запуском применяйте [правила выбора стенда](../../docs/virtual-machines.md); исторические имена ВМ не являются указанием создать или запустить их.
+
+Имена ВМ в описании приведены к принятой 6 ноября 2026 года схеме [prod/dev/client](../../AGENTS.md#виртуальные-машины). Исходные имена в свидетельствах и путях резервных копий сохранены.
+
 Проверяем фактический путь нового TCP-соединения после перестановки выходов внутри группы и после смены первой группы. Отдельно проверяем выбор при двух одинаковых доменных масках, отклонение новой конфигурации и сохранение через браузерную панель.
 
 ## Среда
@@ -29,28 +33,28 @@ Chromium загрузил main-YZH4SAE7.js от действующей пане�
 
 ## Повторение
 
-Используйте отдельную ВМ hestia-binding-test с профилем [Debian 12 ARM64](../fakeip/vm/lima.yaml), инструментами wireguard-tools, dnsmasq-base, curl, sudo, iproute2 и Python 3. На машине разработки выполните из корня проекта:
+Используйте согласованный изолированный ARM64-стенд; исходный профиль [Debian 12 ARM64](../README.md#историческая-подготовка-вм) сохранён в Git. В госте нужны инструменты wireguard-tools, dnsmasq-base, curl, sudo, iproute2 и Python 3. На машине разработки выполните из корня проекта:
 
     CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go -C backend build -o /tmp/hestia-order-controller ./cmd/hestia
     CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go -C backend build -o /tmp/hestia-order-panel ./cmd/hestia-panel
     (cd frontend && npm ci && npm run build)
 
-Передайте в отдельный каталог гостя оба бинарника, каталоги `deploy/`, `experiments/group-order/`, `frontend/dist/hestia/browser/`, общий сценарий `experiments/list-binding/peer.sh` и официальный архив sing-box 1.14.4. Выполните в этом каталоге свежего гостя:
+Передайте в отдельный каталог гостя оба бинарника, каталоги `deploy/`, `tests/lab/group-order/`, `frontend/dist/hestia/browser/`, общий сценарий `tests/lab/list-binding/peer.sh` и официальный архив sing-box 1.14.4. Выполните в этом каталоге свежего гостя:
 
-    sudo bash experiments/group-order/peers.sh
+    sudo bash tests/lab/group-order/peers.sh
     sudo bash deploy/install.sh --config /var/tmp/hestia-group-order/profile.json \
         --controller-binary ./hestia-order-controller --sing-box-archive ./sing-box-1.14.4-linux-arm64.tar.gz
-    sudo bash experiments/group-order/panel.sh ./hestia-order-panel ./frontend/dist/hestia/browser
-    sudo python3 -I experiments/group-order/verify.py
+    sudo bash tests/lab/group-order/panel.sh ./hestia-order-panel ./frontend/dist/hestia/browser
+    sudo python3 -I tests/lab/group-order/verify.py
 
 Первый прогон должен завершиться строкой PASS и восстановить исходный порядок. Перенаправьте локальный порт по SSH на 127.0.0.1:18439 этой ВМ. Откройте `/#/groups`, передвиньте group-beta на первое место, затем внутри group-alpha передвиньте exit-reserve перед exit-alpha. Нажмите «Сохранить» и дождитесь подтверждения шлюза. Выполните в госте:
 
-    sudo python3 -I experiments/group-order/verify.py --after-browser
+    sudo python3 -I tests/lab/group-order/verify.py --after-browser
 
 Временный systemd drop-in для инъекции отказа удаляется после проверки. Сценарии запускаются только на явно выбранном госте. После испытаний ВМ выключают, сохранив диск.
 
 ### Перенос мышью между группами, 4 ноября 2026
 
-На hestia-stage1 с установленной сборкой main-OMW2YZZF.js проверили, формирует ли перетаскивание выхода в пустую группу запрос с правильной позицией. В Chromium открыли «Группы», перетащили за ручку awg-home из default в «Внешний мир». Получили ожидаемую позицию 1. Чтобы сохранить рабочую конфигурацию, Playwright перехватил PUT до отправки на шлюз ([результат](evidence/drag-transfer.txt)). На ВМ проверен жест, а сохранение и восстановление списка после перезагрузки проверены с тестовым API: из frontend выполнить `npm run build && npm run test:browser`. Серверный перенос через компилятор профиля и обработку устаревшей исходной группы проверяет `make check`.
+На hestia-prod с установленной сборкой main-OMW2YZZF.js проверили, формирует ли перетаскивание выхода в пустую группу запрос с правильной позицией. В Chromium открыли «Группы», перетащили за ручку awg-home из default в «Внешний мир». Получили ожидаемую позицию 1. Чтобы сохранить рабочую конфигурацию, Playwright перехватил PUT до отправки на шлюз ([результат](evidence/drag-transfer.txt)). На ВМ проверен жест, а сохранение и восстановление списка после перезагрузки проверены с тестовым API: из frontend выполнить `npm run build && npm run test:browser`. Серверный перенос через компилятор профиля и обработку устаревшей исходной группы проверяет `make check`.
 
 Последующая проверка от 4 ноября изменила критерий: переносы остаются в черновике до «Сохранить». Chromium подтвердил отсутствие записи при перетаскивании и отмене, один запрос при сохранении и новое распределение после перезагрузки. Это локальный тест с подменой API, а не операция на рабочем шлюзе. [Результат](../group-names/evidence/groups-toast.txt).

@@ -1,0 +1,48 @@
+active
+active
+active
+PASS read-only GET /api/navigation
+PASS read-only GET /api/groups-and-rules
+PASS read-only GET /api/awg
+PASS read-only GET /api/awg-underlays
+PASS read-only GET /api/hysteria2
+PASS read-only GET /api/physical-connections
+PASS read-only GET /api/quality
+PASS read-only GET /api/traffic
+PASS read-only GET /api/traffic/settings
+PASS read-only GET /api/country-map
+PASS read-only GET /api/dns/policy
+/usr/local/bin/hestia: OK
+/usr/local/bin/hestia-panel: OK
+/usr/local/bin/hestia-observe: OK
+/usr/local/bin/awg: OK
+/usr/local/lib/hestia/amneziawg-go: OK
+/usr/local/lib/hestia/sing-box: OK
+/usr/local/lib/hestia/profile.py: OK
+/usr/local/lib/hestia/publish_geoip.py: OK
+/usr/local/lib/hestia/smoke.py: OK
+/usr/local/lib/hestia/hestia-observe.service: OK
+/usr/local/lib/hestia/amneziawg-go: OK
+/usr/local/lib/hestia/profile.py: OK
+/usr/local/lib/hestia/sing-box: OK
+/usr/local/share/hestia-panel/current/chunk-NVGVRYDB.js: OK
+/usr/local/share/hestia-panel/current/chunk-Y5IQ6IW4.js: OK
+/usr/local/share/hestia-panel/current/chunk-CYSNB7A5.js: OK
+/usr/local/share/hestia-panel/current/chunk-K22EAMT3.js: OK
+/usr/local/share/hestia-panel/current/assets/trash.svg: OK
+/usr/local/share/hestia-panel/current/assets/hestia.svg: OK
+/usr/local/share/hestia-panel/current/assets/pencil.svg: OK
+/usr/local/share/hestia-panel/current/assets/hearth.svg: OK
+/usr/local/share/hestia-panel/current/chunk-6UWR6QSZ.js: OK
+/usr/local/share/hestia-panel/current/chunk-GD6VUJIQ.js: OK
+/usr/local/share/hestia-panel/current/chunk-5MSZTQ7Q.js: OK
+/usr/local/share/hestia-panel/current/chunk-HNZMTI5O.js: OK
+/usr/local/share/hestia-panel/current/styles-DJGCNOAD.css: OK
+/usr/local/share/hestia-panel/current/chunk-MCCUZTQ3.js: OK
+/usr/local/share/hestia-panel/current/main-4QXN5PRJ.js: OK
+/usr/local/share/hestia-panel/current/chunk-2FDZ44VM.js: OK
+/usr/local/share/hestia-panel/current/chunk-MWES4UV5.js: OK
+/usr/local/share/hestia-panel/current/chunk-FTU343RP.js: OK
+/usr/local/share/hestia-panel/current/index.html: OK
+/usr/local/share/hestia-panel/current/chunk-IVZXVWD7.js: OK
+/var/tmp/hestia-validation-20261106-170212-60420/installed-inventory /var/tmp/hestia-validation-20261106-170212-60420/installed-inventory.after differ: byte 378, line 10

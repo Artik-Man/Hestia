@@ -1,6 +1,8 @@
 # Приёмка установки Гестии на чистой Debian ARM64
 
-Испытаны три независимые ВМ из [образа Debian 12 ARM64](../fakeip/vm/lima.yaml). Гестия установлена обычным способом в гостевую ОС с systemd как PID 1. Сервисы запускаются автоматически после перезагрузки. В хост-систему Гестию не устанавливали.
+Исходники проверки: [tests/lab/installer](../../tests/lab/installer/). Отчёт и свидетельства остаются здесь. Перед повторным запуском применяйте [правила выбора стенда](../../docs/virtual-machines.md); исторические имена ВМ не являются указанием создать или запустить их.
+
+Испытаны три независимые ВМ из [образа Debian 12 ARM64](../README.md#историческая-подготовка-вм). Гестия установлена обычным способом в гостевую ОС с systemd как PID 1. Сервисы запускаются автоматически после перезагрузки. В хост-систему Гестию не устанавливали.
 
 | Сценарий | Результат |
 |---|---|
@@ -22,15 +24,15 @@
 
 ```sh
 out=/var/tmp/hestia-installer-proof
-sudo bash experiments/installer/lab.sh first /var/tmp/hestia /var/tmp/sing-box.tgz "$out"
+sudo bash tests/lab/installer/lab.sh first /var/tmp/hestia /var/tmp/sing-box.tgz "$out"
 sudo systemctl reboot
 ```
 
 После загрузки из того же каталога:
 
 ```sh
-sudo bash experiments/installer/lab.sh reboot /var/tmp/hestia /var/tmp/sing-box.tgz "$out"
-sudo python3 -B experiments/installer/report.py bootstrap "$out"
+sudo bash tests/lab/installer/lab.sh reboot /var/tmp/hestia /var/tmp/sing-box.tgz "$out"
+sudo python3 -B tests/lab/installer/report.py bootstrap "$out"
 ```
 
 Для сквозного переноса выполнить [сборку комплекта](../../deploy/docs/installer.md), поместить установщик, профиль и два тестовых файла VPN в отдельный каталог исходной чистой ВМ. Проверочный сценарий и `profile-test.py` поместить в другой каталог. Исходное дерево проекта установщику не требуется. Выполнить от root:

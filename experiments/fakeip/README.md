@@ -1,5 +1,9 @@
 # Два домена на одном IP через разные выходы
 
+Исходники проверки: [tests/lab/fakeip](../../tests/lab/fakeip/). Отчёт и свидетельства остаются здесь. Перед повторным запуском применяйте [правила выбора стенда](../../docs/virtual-machines.md); исторические имена ВМ не являются указанием создать или запустить их.
+
+Имена ВМ в описании приведены к принятой 6 ноября 2026 года схеме [prod/dev/client](../../AGENTS.md#виртуальные-машины). Исходные имена в свидетельствах и путях резервных копий сохранены.
+
 Эксперимент от 4 ноября 2026 года. Проверяем, сохраняет ли sing-box 1.14.4 соответствие между доменом и подключением при одинаковом реальном IPv4 **и порте** назначения. Для каждого из двух доменов клиент делает обычный DNS-запрос типа A, затем открывает TCP-соединение и отправляет UDP-датаграмму. Четыре пробы запускаются конкурентно. Приложению доступны только выданные ему виртуальные адреса. Политика в этом опыте — фиксированный выход для каждой группы.
 
 ## Топология
@@ -19,7 +23,7 @@ DNS клиента перехватывается действием `hijack-dns
 
 ## Повторный запуск
 
-Нужна Linux-ВМ с root, `/dev/net/tun`, network namespaces и veth, а также bash, iproute2, sysctl, tcpdump и Python 3. Установить [sing-box 1.14.4](https://github.com/SagerNet/sing-box/releases/tag/v1.14.4) для архитектуры гостя. Запустить из этого каталога в ВМ:
+Нужна Linux-ВМ с root, `/dev/net/tun`, network namespaces и veth, а также bash, iproute2, sysctl, tcpdump и Python 3. Установить [sing-box 1.14.4](https://github.com/SagerNet/sing-box/releases/tag/v1.14.4) для архитектуры гостя. Запустить из каталога `tests/lab/fakeip` в ВМ:
 
 ```sh
 sudo env SING_BOX="$(command -v sing-box)" bash lab.sh "$(mktemp -d)"
@@ -34,18 +38,22 @@ sudo env SING_BOX="$(command -v sing-box)" bash lab.sh "$(mktemp -d)"
 
 Собственный модуль ядра не используется. Процесс sing-box работает в userspace; туннельный интерфейс, veth, network namespaces, системные сокеты и policy routing предоставляет ядро Linux. У [официального образа ROCK 5T](https://docs.radxa.com/en/rock5/rock5t/download) своя сборка Debian Bookworm с ядром 6.1. На плате нужно проверить наличие тех же возможностей ядра и реальные Ethernet-интерфейсы.
 
-## Чистый стенд на macOS с Apple Silicon
+## Историческая подготовка на macOS с Apple Silicon
+
+Приведённые ниже команды относятся к [старому комплекту подготовки](../README.md#историческая-подготовка-вм), который теперь извлекается из Git в отдельный каталог. Они сохранены для понимания прежнего опыта. Сначала извлеките комплект по указанной инструкции; управление питанием и подготовку ВМ отдельно согласуйте по действующим правилам.
 
 Конфигурация Lima фиксирует Debian 12 ARM64 и SHA-512 образа. Для запуска нужны Lima (проверено на 2.2.1), 2 ГиБ RAM, место для виртуального диска до 7 ГиБ и доступ к источникам Debian и GitHub. У гостя собственный диск, каталоги хоста не монтируются. Версии дополнительных пакетов выбирает репозиторий Debian на момент подготовки.
 
-Из каталога `experiments/fakeip` на хосте создайте отдельную ВМ. Для чистого запуска имя должно быть свободно. Архив sing-box проверяется по закреплённому SHA-256 внутри гостя перед установкой.
+Из каталога `$archive_dir/experiments/fakeip` извлечённого комплекта на хосте используйте существующую ВМ разработки `hestia-dev` с `LIMA_HOME="$HOME/.lima"`. Архив sing-box проверяется по закреплённому SHA-256 внутри гостя перед установкой. Команды ниже проверяют повторное применение подготовки; воспроизведение исходной проверки на чистом образе требует отдельно согласованного пересоздания dev-стенда или временной ВМ.
 
 ```sh
-vm=hestia-stage1
+export LIMA_HOME="$HOME/.lima"
+export PATH="/private/tmp/hestia-vm-run/bin:$PATH"
+vm=hestia-dev
 archive_dir=$(mktemp -d)
 curl --fail --location --output "$archive_dir/sing-box.tgz" \
   https://github.com/SagerNet/sing-box/releases/download/v1.14.4/sing-box-1.14.4-linux-arm64.tar.gz
-limactl start --name "$vm" --tty=false vm/lima.yaml
+limactl start --tty=false "$vm"
 limactl copy config.json lab.sh traffic.py vm/provision.sh "$archive_dir/sing-box.tgz" "$vm:/tmp/"
 ```
 

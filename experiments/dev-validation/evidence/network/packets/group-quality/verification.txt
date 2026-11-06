@@ -1,0 +1,3 @@
+PASS 38 rounds, 152 probes independently traced; switches [('fi1', 'fi2'), ('fi2', 'fi1')]
+PASS 30 new flows to unmeasured Z across five phases; RU control stays RU
+PASS complete X outage via both paths while Y delivered every probe preserved FI2 and actual traffic

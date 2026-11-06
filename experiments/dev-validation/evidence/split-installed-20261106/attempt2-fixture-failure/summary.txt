@@ -1,0 +1,5 @@
+PASS installed-snapshot
+FAIL installed-read-only-and-isolated-acceptance
+FAIL installed-isolated-network
+PASS installed-final-invariants
+PASS guest-logs

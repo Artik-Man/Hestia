@@ -1,5 +1,7 @@
 # Разные A и TTL при прогреве и смене доступной группы
 
+Исходники проверки: [tests/lab/dns-split-warm](../../tests/lab/dns-split-warm/). Отчёт и свидетельства остаются здесь. Перед повторным запуском применяйте [правила выбора стенда](../../docs/virtual-machines.md); исторические имена ВМ не являются указанием создать или запустить их.
+
 На Debian ARM64 два резолвера давали для одного имени разные адреса и сроки действия. Быстрый FI отвечал `203.0.113.22` с TTL 16 с. RU отвечал с TTL 4 с: сначала `203.0.113.33`, затем `203.0.113.11` и снова `203.0.113.33`. Каждый адрес был доступен через обе физические пары veth. Для оценки фактической маршрутизации синтетическая карта назначала `.22` группе FI, а `.11` и `.33` группе RU. Принадлежность DNS-сервера и группа по реальному адресу — отдельные решения. Этим опытом проверена именно такая комбинация карты и ответов.
 
 Исправленный прогрев проверен на 22 новых клиентских TCP/UDP-потоках. Клиент держал первоначальный FakeIP каждого имени во всех фазах. В начале каждого интервала после запрета FI новые потоки к горячему имени предшествовали следующему клиентскому DNS-запросу. Отключение группы было логическим: оба внешних линка физически работали, а основной маршрут Linux шёл через RU. [Проверка](evidence/warm/verification.txt), [события и время](evidence/warm/events.jsonl), [захваты LAN/RU/FI](evidence/warm).
@@ -15,21 +17,21 @@
 
 В трёх сериях мы проверили по 22 потока. В режиме без прогрева первый переход к RU вызвал обычный внешний запрос за `.11`. Предыдущая реализация прогрева правильно отработала первую смену, но ошиблась при повторном входе в ранее использованный RU-контекст. Пока FI обслуживала новые потоки, RU уже обновил `.11` на `.33`. До окончания предыдущего RU-ответа оставалось ещё около 2,88 с. Старая версия выдала `.11`, хотя получила новое значение. Исправленная версия использовала `.33` без дополнительного запроса. Она не заменила всё ещё действующий FI-ответ данными RU. Целочисленный TTL LAN проверяется относительно времени реального получения соответствующего ответа на физическом интерфейсе. Допускается округление вниз и небольшая разница между временем захвата и обработкой. [Обычный спрос](evidence/demand/verification.txt), [прежний прогрев](evidence/superseded/verification.txt), [клиентские TTL](evidence/warm/dns-client.jsonl), [протоколы RU](evidence/warm/ru-peer.log) и [FI](evidence/warm/fi-peer.log).
 
-Для повторения нужны каталоги `experiments/dns-split-warm`, `experiments/dns-warm`, `experiments/dns-rotation`, `experiments/dns-geo` и отдельная Linux ARM64-ВМ с TUN, sing-box 1.14.4, Python 3, python3-dnspython, iproute2 и tcpdump. Выполните из корня проекта в ВМ, используя пустые каталоги результатов:
+Для повторения нужны каталоги `tests/lab/dns-split-warm`, `tests/lab/dns-warm`, `tests/lab/dns-rotation`, `tests/lab/dns-geo` и отдельная Linux ARM64-ВМ с TUN, sing-box 1.14.4, Python 3, python3-dnspython, iproute2 и tcpdump. Выполните из корня проекта в ВМ, используя пустые каталоги результатов:
 
 ```sh
-sudo bash experiments/dns-split-warm/lab.sh demand /var/tmp/split-demand
-sudo bash experiments/dns-split-warm/lab.sh warm /var/tmp/split-warm
+sudo bash tests/lab/dns-split-warm/lab.sh demand /var/tmp/split-demand
+sudo bash tests/lab/dns-split-warm/lab.sh warm /var/tmp/split-warm
 ```
 
 Для воспроизведения первоначальной ошибки можно извлечь старый файл в одноразовой копии проекта внутри ВМ:
 
 ```sh
-git show 7f61de9:experiments/dns-warm/cache.py > experiments/dns-warm/before.py
-sudo env SPLIT_WARM_GATEWAY="$PWD/experiments/dns-warm/before.py" \
-  bash experiments/dns-split-warm/lab.sh superseded /var/tmp/split-before
+git show 7f61de9:experiments/dns-warm/cache.py > tests/lab/dns-warm/before.py
+sudo env SPLIT_WARM_GATEWAY="$PWD/tests/lab/dns-warm/before.py" \
+  bash tests/lab/dns-split-warm/lab.sh superseded /var/tmp/split-before
 ```
 
-Для независимой проверки сохранённых пакетов выполните `python3 experiments/dns-split-warm/verify.py warm experiments/dns-split-warm/evidence/warm`. Проверены одиночные IPv4 IN/A и краткие интервалы на контролируемой ВМ. Открытые до смены политики сеансы и комбинации DNS/GeoIP за пределами приведённой карты в эти критерии не входят. [Настройки](evidence/warm/settings.json), [хеши](evidence/warm/code.sha256).
+Для независимой проверки сохранённых пакетов выполните `python3 tests/lab/dns-split-warm/verify.py warm experiments/dns-split-warm/evidence/warm`. Проверены одиночные IPv4 IN/A и краткие интервалы на контролируемой ВМ. Открытые до смены политики сеансы и комбинации DNS/GeoIP за пределами приведённой карты в эти критерии не входят. [Настройки](evidence/warm/settings.json), [хеши](evidence/warm/code.sha256).
 
 На исправленном кэше также повторно прошёл [исходный тест частоты N/X/Y](evidence/regression-warm.txt), включая редкий домен и прекращение фоновых запросов после падения частоты.

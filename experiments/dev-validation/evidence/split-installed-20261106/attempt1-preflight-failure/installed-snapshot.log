@@ -1,0 +1,5 @@
+Running as unit: hestia-validation-20261106-164704-51644.service
+Finished with result: exit-code
+Main processes terminated with: code=exited/status=1
+Service runtime: 4ms
+CPU time consumed: 3ms

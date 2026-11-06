@@ -1,0 +1,1 @@
+{"name":"example","transport":"ssh","host":"gateway.example.invalid","user":"operator","port":22,"expected_hostname":"gateway","platform":"linux-arm64","fixture":false}

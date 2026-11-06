@@ -8,7 +8,7 @@ umask 077
 }
 action=$1
 instance=$2
-[[ $instance =~ ^[a-z][a-z0-9-]{0,50}$ && $instance != hestia-stage1 && $instance != hestia-test-client ]] ||
+[[ $instance =~ ^[a-z][a-z0-9-]{0,50}$ && $instance != hestia-prod && $instance != hestia-client && $instance != hestia-stage1 && $instance != hestia-test-client ]] ||
     {
         echo "Choose a separate lab instance name" >&2
         exit 2

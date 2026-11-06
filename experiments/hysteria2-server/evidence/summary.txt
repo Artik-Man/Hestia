@@ -1,0 +1,15 @@
+Independent Tester observations, 2026-11-06 16:45–16:46 Europe/Moscow.
+Endpoint redacted as VPS_IP. Credentials not recorded.
+Client/server: Hysteria 2 v2.13.0; client macOS ARM64; server Ubuntu 24.04.3 x86_64.
+Baseline: hysteria-server inactive, disabled; Docker UDP42346 v4/v6.
+TLS: client configured ca=server-cert.pem, sni=VPS_IP, insecure=false.
+16:45:42 INFO connected to server addr=VPS_IP:443 udpEnabled=true.
+SOCKS5 listening 127.0.0.1:10819; UDP forward 127.0.0.1:10539 -> 1.1.1.1:53.
+HTTPS via SOCKS5 to https://api.ipify.org returned VPS_IP, exit 0.
+UDP dig example.com A: NOERROR, ANSWER 2, query 37 msec, server 127.0.0.1#10539, exit 0.
+16:46:07 bad password: authentication error HTTP status code 404, exit 1.
+16:46:10 no CA: tls failed to verify certificate, x509 certificate signed by unknown authority, exit 1.
+16:46:23 positive client terminated gracefully, exit 0.
+Final systemd: enabled, active, User=hysteria Group=hysteria NRestarts=0.
+Final listeners: Hysteria UDP443; Docker UDP42346 v4/v6 preserved.
+Config /etc/hysteria/config.yaml permissions 640 root:hysteria.

@@ -1,0 +1,9 @@
+default via 192.168.5.2 dev eth0 proto dhcp src 192.168.5.15 metric 200 
+192.168.5.0/24 dev eth0 proto kernel scope link src 192.168.5.15 metric 200 
+192.168.5.2 dev eth0 proto dhcp scope link src 192.168.5.15 metric 200 
+fe80::/64 dev eth0 proto kernel metric 256 pref medium
+0:	from all lookup local
+32766:	from all lookup main
+32767:	from all lookup default
+0:	from all lookup local
+32766:	from all lookup main

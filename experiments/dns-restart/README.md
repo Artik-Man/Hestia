@@ -1,5 +1,9 @@
 # Перезапуск прогретого DNS-кэша и движка FakeIP
 
+Исходники проверки: [tests/lab/dns-restart](../../tests/lab/dns-restart/). Отчёт и свидетельства остаются здесь. Перед повторным запуском применяйте [правила выбора стенда](../../docs/virtual-machines.md); исторические имена ВМ не являются указанием создать или запустить их.
+
+Имена ВМ в описании приведены к принятой 6 ноября 2026 года схеме [prod/dev/client](../../AGENTS.md#виртуальные-машины). Исходные имена в свидетельствах и путях резервных копий сохранены.
+
 4 ноября 2026 года на отдельной ARM64-ВМ проверили три вида перезапуска при разных DNS-ответах RU и FI. У RU авторитетный адрес был `.11`, TTL 14 секунд; у FI — `.22`, TTL 29 секунд. Перед отказом FI прогрев получили оба резолвера для `hot.lab.test`; после запрета FI активный RU-кандидат `.11` повторно использовался без внешнего DNS-запроса. Затем RU-запись переключили на `.33`. В тесте подменены внешние выходы и авторитетные DNS, адреса синтетические.
 
 ## Результаты
@@ -25,16 +29,16 @@
 
 Использована изолированная Debian ARM64 Lima-ВМ `hestia-dns-geo`, Linux `6.1.0-53-cloud-arm64`, sing-box `1.14.4`, Python dnspython `2.3.0-1`. Внутри ВМ отдельные network namespaces моделировали LAN, RU и FI. Доступность FI отозвали маркером DNS-прототипа, оставив физический лабораторный интерфейс поднятым; отсутствие выхода проверили захватами. Домены `lab.test` и адреса `203.0.113.0/24` — тестовые.
 
-Проверялись новые потоки IPv4 с одиночными IN/A-записями. Это перезапуски процессов, не выключение питания всей ВМ. Результат не проверяет производственную службу Гестии, реальный VPN, восстановление после внезапной потери питания, испорченный файл карты, DNSSEC, CNAME, AAAA, IPv6 или открытые TCP-сессии. `hestia-stage1`, адрес `192.168.1.133`, Keenetic и личные подключения не использовались. После опыта `hestia-dns-geo` остановлена.
+Проверялись новые потоки IPv4 с одиночными IN/A-записями. Это перезапуски процессов, не выключение питания всей ВМ. Результат не проверяет производственную службу Гестии, реальный VPN, восстановление после внезапной потери питания, испорченный файл карты, DNSSEC, CNAME, AAAA, IPv6 или открытые TCP-сессии. `hestia-prod`, адрес `192.168.1.133`, Keenetic и личные подключения не использовались. После опыта `hestia-dns-geo` остановлена.
 
 ## Повторение
 
-На отдельной Debian ARM64-ВМ с sing-box 1.14.4, dnspython, iproute2 и tcpdump перенесите каталоги `experiments/dns-restart`, `experiments/dns-split-warm`, `experiments/dns-warm`, `experiments/dns-rotation` и `experiments/dns-geo`, сохраняя соседство. Скрипт отказывается запускаться, если hostname гостя не `hestia-dns-geo`/`lima-hestia-dns-geo`, архитектура не ARM64 или отсутствует TUN. Для каждого режима нужен новый пустой каталог результатов:
+На отдельной Debian ARM64-ВМ с sing-box 1.14.4, dnspython, iproute2 и tcpdump перенесите каталоги `tests/lab/dns-restart`, `tests/lab/dns-split-warm`, `tests/lab/dns-warm`, `tests/lab/dns-rotation` и `tests/lab/dns-geo`, сохраняя соседство. Скрипт отказывается запускаться, если hostname гостя не `hestia-dns-geo`/`lima-hestia-dns-geo`, архитектура не ARM64 или отсутствует TUN. Для каждого режима нужен новый пустой каталог результатов:
 
 ```sh
-sudo bash experiments/dns-restart/lab.sh dns /var/tmp/hestia-restart-dns
-sudo bash experiments/dns-restart/lab.sh engine /var/tmp/hestia-restart-engine
-sudo bash experiments/dns-restart/lab.sh engine-persist /var/tmp/hestia-restart-persist
+sudo bash tests/lab/dns-restart/lab.sh dns /var/tmp/hestia-restart-dns
+sudo bash tests/lab/dns-restart/lab.sh engine /var/tmp/hestia-restart-engine
+sudo bash tests/lab/dns-restart/lab.sh engine-persist /var/tmp/hestia-restart-persist
 ```
 
 Код завершения 1 у режима `engine` ожидаем, если верификатор повторно обнаружил переназначение старого FI-only FakeIP. Захваты и журналы при этом остаются для разбора. Режим `engine-persist` использует отдельный тестовый файл сопоставлений и не меняет рабочую конфигурацию.
@@ -42,5 +46,5 @@ sudo bash experiments/dns-restart/lab.sh engine-persist /var/tmp/hestia-restart-
 Fault-injection тесты офлайн-аудитора запускаются командой:
 
 ```sh
-python3 -B -m unittest discover -s experiments/dns-restart -p 'test_verify.py'
+python3 -B -m unittest discover -s tests/lab/dns-restart -p 'test_verify.py'
 ```

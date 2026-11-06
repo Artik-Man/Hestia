@@ -1,0 +1,13 @@
+date=2026-11-06
+command=python3 scripts/test-source/run.py
+scope=source; no stand access
+PASS source-check
+PASS api-reproducibility
+PASS frontend-format
+PASS frontend-lint
+PASS frontend-unit
+PASS frontend-build
+PASS frontend-browser
+PASS source-race
+final_make_check=PASS after final workflow corrections
+logs=/tmp/hestia-split-source-20261106-final /tmp/hestia-split-check-final.log

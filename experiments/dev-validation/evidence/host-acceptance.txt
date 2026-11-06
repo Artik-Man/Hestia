@@ -1,0 +1,20 @@
+date=2026-11-06
+base=66bb2fa
+host=macOS arm64
+go=1.27.3
+node=26.8.2
+playwright=1.63.0
+make check=PASS exit0 (Go fmt/vet/tests, ShellCheck/shfmt, installer34, lab5 modules, docs-check)
+make build=PASS exit0 linux/arm64 CGO_ENABLED=0
+make generate-api=PASS exit0
+git diff --exit-code backend/api/openapi.yaml frontend/src/core/services/api/generated=PASS unchanged
+frontend format:check=PASS
+frontend lint=PASS
+frontend npm test=PASS 23/23
+frontend production build=PASS
+frontend browser=PASS 18/18
+DNSPanelPlaywright=PASS
+DNSWorkerPlaywright=PASS
+go test -race -count=1 binding controller dnsresolver dnsservice quality storage network/...=PASS exit0
+scope=host checks completed before external migration experiments->tests/lab; application source unchanged; root owns new-tree final make check
+logs=/tmp/hestia-dev-host-check.log /tmp/hestia-dev-build.log /tmp/hestia-dev-api.log /tmp/hestia-dev-frontend-build.log /tmp/hestia-dev-browser.log /tmp/hestia-dev-race.log

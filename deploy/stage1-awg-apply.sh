@@ -12,7 +12,7 @@ die() {
 [[ $# == 1 && $EUID == 0 ]] || die "Usage: sudo bash stage1-awg-apply.sh PACKAGE_DIRECTORY"
 bundle=$(realpath -e -- "$1")
 [[ $bundle == "$1" && -d $bundle && ! -L $1 && $(stat -c '%u:%a' -- "$bundle") == 0:700 ]] || die "Package directory must be canonical, root-owned, and mode 0700"
-[[ $(hostname -s) == lima-hestia-stage1 ]] || die "Refusing a guest other than lima-hestia-stage1"
+[[ $(hostname -s) == lima-hestia-prod ]] || die "Refusing a guest other than lima-hestia-prod"
 ip -4 -o addr show dev lima0 scope global | awk '$4 ~ /^192\.168\.1\.133\// { found=1 } END { exit !found }' || die "Refusing a guest without 192.168.1.133 on lima0"
 
 # die_if_untrusted_dir checks every existing component without following symlinks; target trees must be root-owned and not writable by group/other.

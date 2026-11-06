@@ -1,0 +1,1 @@
+{"name":"dev","transport":"lima","instance":"hestia-dev","lima_home":"~/.lima","expected_hostname":"lima-hestia-dev","platform":"linux-arm64","fixture":true}

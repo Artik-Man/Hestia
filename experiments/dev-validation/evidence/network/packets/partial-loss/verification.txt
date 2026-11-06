@@ -1,0 +1,9 @@
+baseline: 100 pairs, losses FI1/FI2=[0, 0], last-first=11.88s
+burst: 3 pairs, losses FI1/FI2=[3, 0], last-first=0.24s
+clean: 17 pairs, losses FI1/FI2=[0, 0], last-first=1.92s
+partial: 220 pairs, losses FI1/FI2=[22, 0], last-first=26.28s
+recovered: 100 pairs, losses FI1/FI2=[0, 0], last-first=11.88s
+Switch after 51 sustained pairs, 6.00s since impairment; p=0.00390625, losses={'fi1': 9, 'fi2': 0}.
+Wire PASS: 880 health requests on assigned interfaces, 9 client flows on expected egress; RU captured none of these tokens. Server matches echo observations.
+Max in-block start lag: 5.502 ms.
+Replay at 36s spacing: 3600s window, switch=[(140, 'partial', 'fi2')], final equal 100/100 healthy pairs, FI2 held.

@@ -62,7 +62,7 @@ awg_drained=0
 new_awg_started=0
 gateway_ip=$(ip -4 -o addr show dev lima0 scope global | awk '{print $4}')
 gateway_ip=${gateway_ip%/*}
-[[ $gateway_ip =~ ^192\.168\.1\.[0-9]+$ && $gateway_ip != 192.168.1.133 && $(hostname -s) != lima-hestia-stage1 ]] ||
+[[ $gateway_ip =~ ^192\.168\.1\.[0-9]+$ && $gateway_ip != 192.168.1.133 && $(hostname -s) != lima-hestia-prod && $(hostname -s) != lima-hestia-stage1 ]] ||
     {
         echo "Expected a separate isolated VM on the scheme 3 LAN" >&2
         exit 1

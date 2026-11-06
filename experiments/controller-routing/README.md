@@ -1,5 +1,7 @@
 # Go-контроллер применяет решение на работающем шлюзе
 
+Исходники проверки: [tests/lab/controller-routing](../../tests/lab/controller-routing/). Отчёт и свидетельства остаются здесь. Перед повторным запуском применяйте [правила выбора стенда](../../docs/virtual-machines.md); исторические имена ВМ не являются указанием создать или запустить их.
+
 На Debian ARM64 с ядром `6.1.0-53-cloud-arm64` исполняемый файл Гестии, собранный из `cmd/hestia`, выбирал выход по конфигурации и доступности подключений. Оба селектора sing-box запускались в состоянии `deny`. Только проверяемая Go-команда изменяла их через локальный API. Сценарий отдельно читал выбранный выход и проверял фактическую доставку по захватам.
 
 | Доступность и решение | Результат в сети |
@@ -24,16 +26,20 @@ Go-команда применяет выбор для группы по зап�
 CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go -C backend build -o /tmp/hestia ./cmd/hestia
 ```
 
-Перенести в ВМ исполняемый файл и каталоги `experiments/controller-routing`, `experiments/failover`, `experiments/fakeip` с сохранением взаимного расположения. Из корня копии проекта в гостевой ВМ:
+Перенести в ВМ исполняемый файл и каталоги `tests/lab/controller-routing`, `tests/lab/failover`, `tests/lab/fakeip` с сохранением взаимного расположения. Из корня копии проекта в гостевой ВМ:
 
 ```sh
 out=$(mktemp -d)
-sudo bash experiments/controller-routing/lab.sh /tmp/hestia "$out"
+sudo bash tests/lab/controller-routing/lab.sh /tmp/hestia "$out"
 sudo cat "$out/verification.txt"
 ```
 
 Для проверки опубликованного архива достаточно Python 3 и tcpdump:
 
 ```sh
-python3 -B experiments/controller-routing/verify.py experiments/controller-routing/evidence
+python3 -B tests/lab/controller-routing/verify.py experiments/controller-routing/evidence
 ```
+
+## Повторный прогон 6 ноября 2026 года
+
+На `hestia-dev` с установленной модульной сборкой на базе `66bb2fa` (SHA-256 `a59e9ae9848f197273441699a1dcd645a3aa21d6dae61cebebacfa83e92cd208`) повторён сценарий в приватных mount/net/PID namespaces. Проверены ожидаемые 24 новые TCP/UDP-попытки, решения Go-контроллера, отказ ошибочному snapshot, сохранение FakeIP и блокировка внешнего DNS при исправном RU-контроле. Результат — exit 0. [Журнал](../dev-validation/evidence/network/controller-routing.txt), [сводный протокол](../dev-validation/README.md). Команда соответствует приведённой выше, дополнительно выполняется через [ограниченный runner](../../tests/lab/dev-validation/network.sh) с приватным `/run` и тайм-аутом 600 секунд. Назначения и серверы локальные; этот прогон не использует внешние VPN или рабочий шлюз владельца.

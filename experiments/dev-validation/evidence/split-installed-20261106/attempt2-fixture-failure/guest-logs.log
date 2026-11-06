@@ -1,0 +1,203 @@
+LOG awg-multi.log
+case=awg-multi
+artifact-directory=/var/tmp/hestia-validation-20261106-165020-53956/bin
+a59e9ae9848f197273441699a1dcd645a3aa21d6dae61cebebacfa83e92cd208  /var/tmp/hestia-validation-20261106-165020-53956/bin/hestia
+7fe87a8d2031e75273c562be43993ae14b352f7de9150edaf79afca340932e1a  /var/tmp/hestia-validation-20261106-165020-53956/bin/amneziawg-go
+7b5d8177fba2ebe1454390c069f7385401f95449c6f680e03090d368d7f16a56  /var/tmp/hestia-validation-20261106-165020-53956/bin/awg
+d953af885f11d6b547c21a3c0ffe70796963afc802fab959d548311002b4908a  /var/tmp/hestia-validation-20261106-165020-53956/bin/sing-box
+AWG runtime stopped: an earlier routing rule can bypass the AWG guard
+foreign catch-all rejected before mutation; distinct scheme-3-style ingress rules present
+WG without keepalive and AWG with 25s keepalive are ready; settings restored; main IPv4 table unchanged
+default dev awg0 scope link metric 100 
+unreachable default metric 32767 
+unreachable default dev lo metric 32767 pref medium
+10.77.0.1 dev awg0 table 202 src 10.77.0.2 mark 0x202 uid 0 
+    cache 
+198.18.0.2 dev lan0 src 198.18.0.1 uid 0 
+    cache 
+default dev awg1 scope link metric 100 
+unreachable default metric 32767 
+unreachable default dev lo metric 32767 pref medium
+10.77.0.1 dev awg1 table 203 src 10.77.0.2 mark 0x203 uid 0 
+    cache 
+198.18.1.2 dev lan1 src 198.18.1.1 uid 0 
+    cache 
+sing-box groups verified: client-0 -> tunnel-a, client-1 -> tunnel-b
+slot 1 through_group=False peer=tunnel-b replies=1 single TLS connection
+RTNETLINK answers: No route to host
+RTNETLINK answers: No route to host
+10.77.0.1 via 198.18.0.2 dev lan0 src 198.18.0.1 uid 0 
+    cache 
+fd77::2 from :: dev lan0 proto kernel src fd77::1 metric 256 pref medium
+underlay capture: two unmarked controls, zero marked packets; group 0 healthy, group 1 blocked
+secondary unreachable for IPv4 and IPv6 with unmarked underlay alive
+AWG runtime stopped: AmneziaWG handshake was not confirmed
+candidate with unreachable peer rejected within deadline, original group stream alive
+slot 1 through_group=False peer=tunnel-b replies=1 single TLS connection
+slot 0 through_group=True peer=tunnel-a replies=109 single TLS connection
+peer identity and same TLS session verified across neighbor stop/restart
+LOG controller-routing.log
+case=controller-routing
+artifact-directory=/var/tmp/hestia-validation-20261106-165020-53956/bin
+a59e9ae9848f197273441699a1dcd645a3aa21d6dae61cebebacfa83e92cd208  /var/tmp/hestia-validation-20261106-165020-53956/bin/hestia
+7fe87a8d2031e75273c562be43993ae14b352f7de9150edaf79afca340932e1a  /var/tmp/hestia-validation-20261106-165020-53956/bin/amneziawg-go
+7b5d8177fba2ebe1454390c069f7385401f95449c6f680e03090d368d7f16a56  /var/tmp/hestia-validation-20261106-165020-53956/bin/awg
+d953af885f11d6b547c21a3c0ffe70796963afc802fab959d548311002b4908a  /var/tmp/hestia-validation-20261106-165020-53956/bin/sing-box
+/var/tmp/hestia-validation-20261106-165020-53956/repo/tests/lab/controller-routing/lab.sh: line 10: cd: /var/tmp/hestia-validation-20261106-165020-53956/repo/tests/lab/controller-routing/../failover: No such file or directory
+LOG group-quality.log
+case=group-quality
+artifact-directory=/var/tmp/hestia-validation-20261106-165020-53956/bin
+a59e9ae9848f197273441699a1dcd645a3aa21d6dae61cebebacfa83e92cd208  /var/tmp/hestia-validation-20261106-165020-53956/bin/hestia
+7fe87a8d2031e75273c562be43993ae14b352f7de9150edaf79afca340932e1a  /var/tmp/hestia-validation-20261106-165020-53956/bin/amneziawg-go
+7b5d8177fba2ebe1454390c069f7385401f95449c6f680e03090d368d7f16a56  /var/tmp/hestia-validation-20261106-165020-53956/bin/awg
+d953af885f11d6b547c21a3c0ffe70796963afc802fab959d548311002b4908a  /var/tmp/hestia-validation-20261106-165020-53956/bin/sing-box
+/var/tmp/hestia-validation-20261106-165020-53956/repo/tests/lab/group-quality/lab.sh: line 11: cd: /var/tmp/hestia-validation-20261106-165020-53956/repo/tests/lab/group-quality/../failover: No such file or directory
+LOG hysteria-ordered.log
+case=hysteria-ordered
+artifact-directory=/var/tmp/hestia-validation-20261106-165020-53956/bin
+a59e9ae9848f197273441699a1dcd645a3aa21d6dae61cebebacfa83e92cd208  /var/tmp/hestia-validation-20261106-165020-53956/bin/hestia
+7fe87a8d2031e75273c562be43993ae14b352f7de9150edaf79afca340932e1a  /var/tmp/hestia-validation-20261106-165020-53956/bin/amneziawg-go
+7b5d8177fba2ebe1454390c069f7385401f95449c6f680e03090d368d7f16a56  /var/tmp/hestia-validation-20261106-165020-53956/bin/awg
+d953af885f11d6b547c21a3c0ffe70796963afc802fab959d548311002b4908a  /var/tmp/hestia-validation-20261106-165020-53956/bin/sing-box
+Traceback (most recent call last):
+  File "<stdin>", line 4, in <module>
+  File "/usr/lib/python3.11/pathlib.py", line 1059, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/pathlib.py", line 1045, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/var/tmp/hestia-validation-20261106-165020-53956/repo/tests/lab/hysteria2/../../../deploy/scheme3/guest-profile.json'
+LOG hysteria-plain.log
+case=hysteria-plain
+artifact-directory=/var/tmp/hestia-validation-20261106-165020-53956/bin
+a59e9ae9848f197273441699a1dcd645a3aa21d6dae61cebebacfa83e92cd208  /var/tmp/hestia-validation-20261106-165020-53956/bin/hestia
+7fe87a8d2031e75273c562be43993ae14b352f7de9150edaf79afca340932e1a  /var/tmp/hestia-validation-20261106-165020-53956/bin/amneziawg-go
+7b5d8177fba2ebe1454390c069f7385401f95449c6f680e03090d368d7f16a56  /var/tmp/hestia-validation-20261106-165020-53956/bin/awg
+d953af885f11d6b547c21a3c0ffe70796963afc802fab959d548311002b4908a  /var/tmp/hestia-validation-20261106-165020-53956/bin/sing-box
+Traceback (most recent call last):
+  File "<stdin>", line 4, in <module>
+  File "/usr/lib/python3.11/pathlib.py", line 1059, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/pathlib.py", line 1045, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/var/tmp/hestia-validation-20261106-165020-53956/repo/tests/lab/hysteria2/../../../deploy/scheme3/guest-profile.json'
+LOG hysteria-watch.log
+case=hysteria-watch
+artifact-directory=/var/tmp/hestia-validation-20261106-165020-53956/bin
+a59e9ae9848f197273441699a1dcd645a3aa21d6dae61cebebacfa83e92cd208  /var/tmp/hestia-validation-20261106-165020-53956/bin/hestia
+7fe87a8d2031e75273c562be43993ae14b352f7de9150edaf79afca340932e1a  /var/tmp/hestia-validation-20261106-165020-53956/bin/amneziawg-go
+7b5d8177fba2ebe1454390c069f7385401f95449c6f680e03090d368d7f16a56  /var/tmp/hestia-validation-20261106-165020-53956/bin/awg
+d953af885f11d6b547c21a3c0ffe70796963afc802fab959d548311002b4908a  /var/tmp/hestia-validation-20261106-165020-53956/bin/sing-box
+Traceback (most recent call last):
+  File "<stdin>", line 4, in <module>
+  File "/usr/lib/python3.11/pathlib.py", line 1059, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/pathlib.py", line 1045, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/var/tmp/hestia-validation-20261106-165020-53956/repo/tests/lab/hysteria2/../../../deploy/scheme3/guest-profile.json'
+LOG partial-loss.log
+case=partial-loss
+artifact-directory=/var/tmp/hestia-validation-20261106-165020-53956/bin
+a59e9ae9848f197273441699a1dcd645a3aa21d6dae61cebebacfa83e92cd208  /var/tmp/hestia-validation-20261106-165020-53956/bin/hestia
+7fe87a8d2031e75273c562be43993ae14b352f7de9150edaf79afca340932e1a  /var/tmp/hestia-validation-20261106-165020-53956/bin/amneziawg-go
+7b5d8177fba2ebe1454390c069f7385401f95449c6f680e03090d368d7f16a56  /var/tmp/hestia-validation-20261106-165020-53956/bin/awg
+d953af885f11d6b547c21a3c0ffe70796963afc802fab959d548311002b4908a  /var/tmp/hestia-validation-20261106-165020-53956/bin/sing-box
+[31mFATAL[0m[0000] read config at /var/tmp/hestia-validation-20261106-165020-53956/repo/tests/lab/partial-loss/../scoped/config.json: open /var/tmp/hestia-validation-20261106-165020-53956/repo/tests/lab/partial-loss/../scoped/config.json: no such file or directory
+LOG physical-inventory.log
+case=physical-inventory
+artifact-directory=/var/tmp/hestia-validation-20261106-165020-53956/bin
+a59e9ae9848f197273441699a1dcd645a3aa21d6dae61cebebacfa83e92cd208  /var/tmp/hestia-validation-20261106-165020-53956/bin/hestia
+7fe87a8d2031e75273c562be43993ae14b352f7de9150edaf79afca340932e1a  /var/tmp/hestia-validation-20261106-165020-53956/bin/amneziawg-go
+7b5d8177fba2ebe1454390c069f7385401f95449c6f680e03090d368d7f16a56  /var/tmp/hestia-validation-20261106-165020-53956/bin/awg
+d953af885f11d6b547c21a3c0ffe70796963afc802fab959d548311002b4908a  /var/tmp/hestia-validation-20261106-165020-53956/bin/sing-box
+kernel 6.1.0-54-cloud-arm64; helper sha256 a59e9ae9848f197273441699a1dcd645a3aa21d6dae61cebebacfa83e92cd208
+{"interfaces": [{"exitIds": ["bench-ethernet"], "interfaceName": "eth0", "kind": "ethernet", "online": true, "present": true}, {"exitIds": ["bench-absent"], "interfaceName": "hst-missing", "kind": "ethernet", "online": false, "present": false}], "wifiAvailable": false, "wifiProfiles": []}
+LOG wg-automatic.log
+case=wg-automatic
+artifact-directory=/var/tmp/hestia-validation-20261106-165020-53956/bin
+a59e9ae9848f197273441699a1dcd645a3aa21d6dae61cebebacfa83e92cd208  /var/tmp/hestia-validation-20261106-165020-53956/bin/hestia
+7fe87a8d2031e75273c562be43993ae14b352f7de9150edaf79afca340932e1a  /var/tmp/hestia-validation-20261106-165020-53956/bin/amneziawg-go
+7b5d8177fba2ebe1454390c069f7385401f95449c6f680e03090d368d7f16a56  /var/tmp/hestia-validation-20261106-165020-53956/bin/awg
+d953af885f11d6b547c21a3c0ffe70796963afc802fab959d548311002b4908a  /var/tmp/hestia-validation-20261106-165020-53956/bin/sing-box
+kernel=6.1.0-54-cloud-arm64; unmarked route to peer: 198.19.10.10 via 198.18.2.2 dev forbidden src 198.18.2.1 uid 0 
+hestia sha256=a59e9ae9848f197273441699a1dcd645a3aa21d6dae61cebebacfa83e92cd208
+automatic-control: echo matched; encrypted trial via forbidden only
+LOG wg-default.log
+case=wg-default
+artifact-directory=/var/tmp/hestia-validation-20261106-165020-53956/bin
+a59e9ae9848f197273441699a1dcd645a3aa21d6dae61cebebacfa83e92cd208  /var/tmp/hestia-validation-20261106-165020-53956/bin/hestia
+7fe87a8d2031e75273c562be43993ae14b352f7de9150edaf79afca340932e1a  /var/tmp/hestia-validation-20261106-165020-53956/bin/amneziawg-go
+7b5d8177fba2ebe1454390c069f7385401f95449c6f680e03090d368d7f16a56  /var/tmp/hestia-validation-20261106-165020-53956/bin/awg
+d953af885f11d6b547c21a3c0ffe70796963afc802fab959d548311002b4908a  /var/tmp/hestia-validation-20261106-165020-53956/bin/sing-box
+kernel=6.1.0-54-cloud-arm64; unmarked route to peer: 198.19.10.10 via 198.18.2.2 dev forbidden src 198.18.2.1 uid 0 
+hestia sha256=a59e9ae9848f197273441699a1dcd645a3aa21d6dae61cebebacfa83e92cd208
+guarded startup: child service running with IPv4 and IPv6 guards; readiness withheld before backend
+quality preflight preferred: HTTP 200 {"delay":8}
+quality preflight backup: HTTP 200 {"delay":1}
+initial: echo matched; encrypted trial via chosen0 only
+failed-primary: echo matched; encrypted trial via chosen1 only
+recovered-primary: echo matched; encrypted trial via chosen0 only
+all selected paths down: no echo; 0 WireGuard packets on forbidden; 1 unmarked control packet captured
+restored-backup: echo matched; encrypted trial via chosen1 only
+main routing table unchanged
+LOG wg-loss.log
+case=wg-loss
+artifact-directory=/var/tmp/hestia-validation-20261106-165020-53956/bin
+a59e9ae9848f197273441699a1dcd645a3aa21d6dae61cebebacfa83e92cd208  /var/tmp/hestia-validation-20261106-165020-53956/bin/hestia
+7fe87a8d2031e75273c562be43993ae14b352f7de9150edaf79afca340932e1a  /var/tmp/hestia-validation-20261106-165020-53956/bin/amneziawg-go
+7b5d8177fba2ebe1454390c069f7385401f95449c6f680e03090d368d7f16a56  /var/tmp/hestia-validation-20261106-165020-53956/bin/awg
+d953af885f11d6b547c21a3c0ffe70796963afc802fab959d548311002b4908a  /var/tmp/hestia-validation-20261106-165020-53956/bin/sing-box
+kernel=6.1.0-54-cloud-arm64; unmarked route to peer: 198.19.10.10 via 198.18.2.2 dev forbidden src 198.18.2.1 uid 0 
+hestia sha256=a59e9ae9848f197273441699a1dcd645a3aa21d6dae61cebebacfa83e92cd208
+guarded startup: child service running with IPv4 and IPv6 guards; readiness withheld before backend
+quality preflight preferred: HTTP 200 {"delay":8}
+quality preflight backup: HTTP 200 {"delay":1}
+initial: echo matched; encrypted trial via chosen0 only
+preferred HTTPS healthy, only WireGuard UDP dropped
+udp-only-failover: echo matched; encrypted trial via chosen1 only
+backup stable through 65s of persistent selective UDP loss (151 fresh echoes), all trials captured on verified backup
+restoring preferred with an additional 120ms of outbound latency; backup stays faster
+recovered-peer: echo matched; encrypted trial via chosen0 only
+LOG wg-native.log
+case=wg-native
+artifact-directory=/var/tmp/hestia-validation-20261106-165020-53956/bin
+a59e9ae9848f197273441699a1dcd645a3aa21d6dae61cebebacfa83e92cd208  /var/tmp/hestia-validation-20261106-165020-53956/bin/hestia
+7fe87a8d2031e75273c562be43993ae14b352f7de9150edaf79afca340932e1a  /var/tmp/hestia-validation-20261106-165020-53956/bin/amneziawg-go
+7b5d8177fba2ebe1454390c069f7385401f95449c6f680e03090d368d7f16a56  /var/tmp/hestia-validation-20261106-165020-53956/bin/awg
+d953af885f11d6b547c21a3c0ffe70796963afc802fab959d548311002b4908a  /var/tmp/hestia-validation-20261106-165020-53956/bin/sing-box
+kernel=6.1.0-54-cloud-arm64; unmarked route to peer: 198.19.10.10 via 198.18.2.2 dev forbidden src 198.18.2.1 uid 0 
+hestia sha256=a59e9ae9848f197273441699a1dcd645a3aa21d6dae61cebebacfa83e92cd208
+guarded startup: child service running with IPv4 and IPv6 guards; readiness withheld before backend
+quality preflight preferred: HTTP 200 {"delay":2}
+quality preflight backup: HTTP 200 {"delay":2}
+initial: echo matched; encrypted trial via chosen0 only
+preferred: independent native WireGuard handshake and child outer UDP observed after decryption
+failed-primary: echo matched; encrypted trial via chosen1 only
+recovered-primary: echo matched; encrypted trial via chosen0 only
+all selected paths down: no echo; 0 WireGuard packets on forbidden; 1 unmarked control packet captured
+restored-backup: echo matched; encrypted trial via chosen1 only
+main routing table unchanged
+LOG wg-padding.log
+case=wg-padding
+artifact-directory=/var/tmp/hestia-validation-20261106-165020-53956/bin
+a59e9ae9848f197273441699a1dcd645a3aa21d6dae61cebebacfa83e92cd208  /var/tmp/hestia-validation-20261106-165020-53956/bin/hestia
+7fe87a8d2031e75273c562be43993ae14b352f7de9150edaf79afca340932e1a  /var/tmp/hestia-validation-20261106-165020-53956/bin/amneziawg-go
+7b5d8177fba2ebe1454390c069f7385401f95449c6f680e03090d368d7f16a56  /var/tmp/hestia-validation-20261106-165020-53956/bin/awg
+d953af885f11d6b547c21a3c0ffe70796963afc802fab959d548311002b4908a  /var/tmp/hestia-validation-20261106-165020-53956/bin/sing-box
+AmneziaWG peers configured with ContentPaddingAddition=7-23 and RandomTrailers=on
+kernel=6.1.0-54-cloud-arm64; unmarked route to peer: 198.19.10.10 via 198.18.2.2 dev forbidden src 198.18.2.1 uid 0 
+hestia sha256=a59e9ae9848f197273441699a1dcd645a3aa21d6dae61cebebacfa83e92cd208
+guarded startup: child service running with IPv4 and IPv6 guards; readiness withheld before backend
+quality preflight preferred: HTTP 200 {"delay":10}
+quality preflight backup: HTTP 200 {"delay":1}
+initial: echo matched; encrypted trial via chosen0 only
+failed-primary: echo matched; encrypted trial via chosen1 only
+recovered-primary: echo matched; encrypted trial via chosen0 only
+all selected paths down: no echo; 0 WireGuard packets on forbidden; 1 unmarked control packet captured
+restored-backup: echo matched; encrypted trial via chosen1 only
+main routing table unchanged

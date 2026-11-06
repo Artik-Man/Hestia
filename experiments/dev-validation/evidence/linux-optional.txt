@@ -1,0 +1,19 @@
+target=hestia-dev
+base=66bb2fa
+exit=0
+scope=nmcli offline and local loopback only; no NetworkManager daemon or external traffic
+nmcli tool, version 1.42.4
+sing-box version 1.14.4
+--- PASS: TestNetworkManagerOffline (0.01s)
+PASS
+--- PASS: TestRawEchoLoopback (0.00s)
+    --- PASS: TestRawEchoLoopback/ip4:icmp (0.00s)
+    --- PASS: TestRawEchoLoopback/ip6:ipv6-icmp (0.00s)
+--- PASS: TestRealSingBoxLoopback (0.06s)
+    --- PASS: TestRealSingBoxLoopback/HTTP3 (0.01s)
+        --- PASS: TestRealSingBoxLoopback/HTTP3/verified_HTTP3 (0.00s)
+        --- PASS: TestRealSingBoxLoopback/HTTP3/redirect_is_not_followed (0.00s)
+        --- PASS: TestRealSingBoxLoopback/HTTP3/wrong_TLS_name (0.00s)
+PASS
+--- PASS: TestLocalSingBoxJournal (2.30s)
+PASS

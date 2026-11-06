@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build and transfer the reviewed AWG panel/runtime bundle to the fixed stage1 Lima guest.
+# Build and transfer the reviewed AWG panel/runtime bundle to the fixed hestia-prod Lima guest.
 set -euo pipefail
 umask 077
 [[ $# == 0 || ($# == 1 && $1 == --fresh) ]] || {
@@ -7,13 +7,13 @@ umask 077
     exit 2
 }
 repo=$(cd "$(dirname "$0")/.." && pwd)
-instance=hestia-stage1
+instance=hestia-prod
 apply=stage1-awg-apply.sh
 extra=(hestia-dns.service hestia-binding.conf hestia-binding-recovery.service hestia-binding-watch.path hestia-binding-watch.service)
 if [[ ${1:-} == --fresh ]]; then
     apply=stage1-fresh-apply.sh
     runtime=/private/tmp/hestia-vm-run
-    if [[ -d $runtime/lima-state/hestia-stage1 ]]; then
+    if [[ -d $runtime/lima-state/hestia-prod ]]; then
         export LIMA_HOME=${LIMA_HOME:-$runtime/lima-state}
         LIMACTL=${LIMACTL:-$runtime/bin/limactl}
     fi
@@ -34,7 +34,7 @@ guest() {
 
 # cleanup removes only this invocation's private staging package from the named VM and local temp directory.
 cleanup() {
-    if [[ $remote =~ ^/tmp/hestia-stage1-awg\.[A-Za-z0-9]+$ ]]; then
+    if [[ $remote =~ ^/tmp/hestia-prod-awg\.[A-Za-z0-9]+$ ]]; then
         guest sudo rm -rf -- "$remote" >/dev/null 2>&1 || :
     fi
     rm -rf -- "$work"
@@ -43,11 +43,11 @@ trap cleanup EXIT
 
 names=$("$vm" list --quiet)
 grep -Fx "$instance" <<<"$names" >/dev/null || {
-    echo "The existing Lima instance hestia-stage1 was not found; this script never creates or starts VMs." >&2
+    echo "The existing Lima instance hestia-prod was not found; this script never creates or starts VMs." >&2
     exit 1
 }
-[[ $(guest hostname -s) == lima-hestia-stage1 ]] || {
-    echo "Refusing a guest whose hostname is not lima-hestia-stage1" >&2
+[[ $(guest hostname -s) == lima-hestia-prod ]] || {
+    echo "Refusing a guest whose hostname is not lima-hestia-prod" >&2
     exit 1
 }
 guest ip -4 -o addr show dev lima0 scope global |
@@ -112,8 +112,8 @@ COPYFILE_DISABLE=1 tar -C "$work" -czf "$work/stage1-awg-update.tgz" \
     "$apply" ${extra[@]+"${extra[@]}"} awg-upgrade.sh profile.py smoke.py adopt-profile.py guest-profile.json hestia.service stage1-backend-credential.sh stage1-backend-credential.dropin hestia-smoke@.service hestia-awg@.service \
     hestia-awg.conf hestia-awg.sudoers hestia-panel.service.in
 
-remote=$(guest mktemp -d /tmp/hestia-stage1-awg.XXXXXXXX)
-[[ $remote =~ ^/tmp/hestia-stage1-awg\.[A-Za-z0-9]+$ ]] || {
+remote=$(guest mktemp -d /tmp/hestia-prod-awg.XXXXXXXX)
+[[ $remote =~ ^/tmp/hestia-prod-awg\.[A-Za-z0-9]+$ ]] || {
     echo "Guest returned an unsafe staging path" >&2
     exit 1
 }

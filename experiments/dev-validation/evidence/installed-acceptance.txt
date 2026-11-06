@@ -1,0 +1,40 @@
+target=hestia-dev
+base=66bb2fa
+hestia_sha256=a59e9ae9848f197273441699a1dcd645a3aa21d6dae61cebebacfa83e92cd208
+hestia_panel_sha256=3a91e8e8456d56332c993e22e7a1b150dba7036ee16c7342fe0b21b556efa857
+services=hestia,hestia-panel,hestia-sing-box,hestia-binding-watch.path active
+listeners=application TCP127.0.0.1:8080,9090,1080 only
+live_domain_browser=PASS POST201 PUT200 DELETE204; reload, deletion cancel, final absence checked
+profile_before_sha256=1bc89749c175b9db2f189b5e15dda0dc2085e276f408cb816eba3512741cc4fc
+profile_after=normal editor canonicalized JSON; semantic equality with deny-only seed confirmed, lists0
+snapshot_backend_hashes=unchanged
+cleanup=temporary SSH forward cancelled, own acceptance bundle removed, DNS config absent, DNS unit inactive
+GET /api/navigation 200
+GET /api/groups-and-rules 200
+GET /api/awg 200
+GET /api/awg-underlays 200
+GET /api/hysteria2 200
+GET /api/physical-connections 200
+GET /api/quality 200
+GET /api/traffic 200
+GET /api/traffic/settings 200
+GET /api/country-map 200
+GET /api/dns/policy 200
+PASS actual installed list binding to deny group
+PASS stale binding rejected 409
+PASS installed configuration restored
+invalid binding request
+malformed_binding_exit=1
+requested order must permute every existing group and its exits
+malformed_group_exit=42
+forbidden_command_exit=1
+PASS: routing services and binding watch active, local API owner, loaded backend credential, controller confirmation and selector targets
+3da7b38c64ece94e490a5d5e8c5448203789ceab767564683f635f9750c9c5c4  /etc/hestia/profile.json
+4e8e43ad0ffc41e4d16f73fff39cdf7fa506ebcef98f65ba064694c34fccfa79  /etc/hestia/snapshot.json
+e5a204e7d60d011825e029fc527bf2bda1f326a46f682aec9885f6b2ae64fd15  /etc/hestia/sing-box.json
+PASS installed systemd DNS UDP allowed client returns SERVFAIL for deny-only profile
+PASS installed systemd DNS TCP returns SERVFAIL
+PASS unapproved source gets no DNS response
+RESTORED dormant DNS unit and absent dns.json
+PASS: routing services and binding watch active, local API owner, loaded backend credential, controller confirmation and selector targets
+ACCEPTANCE_CLEANUP_PASS

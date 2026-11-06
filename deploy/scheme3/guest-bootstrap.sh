@@ -14,7 +14,7 @@ fail() {
 }
 
 [[ $EUID == 0 && -f /etc/debian_version && -d /run/systemd/system ]] || fail 'Run as root inside the Debian systemd guest.'
-[[ $(hostname -s) != *hestia-stage1* ]] || fail 'Refusing the personal VM.'
+[[ $(hostname -s) != *hestia-prod* && $(hostname -s) != *hestia-stage1* ]] || fail 'Refusing the personal VM.'
 for cmd in wg wg-quick ip iptables ss sysctl systemctl flock; do
     command -v "$cmd" >/dev/null || fail "Missing dependency: $cmd"
 done

@@ -1,0 +1,14 @@
+case	exit	evidence
+awg-multi	0	awg-multi.txt
+wg-default	0	wg-default.txt
+wg-automatic	0	wg-automatic.txt
+wg-native	0	wg-native.txt
+wg-loss	0	wg-loss.txt
+wg-padding	0	wg-padding.txt
+hysteria-plain	0	hysteria-plain.txt
+hysteria-watch	0	hysteria-watch.txt
+hysteria-ordered	0	hysteria-ordered.txt
+controller-routing	0	controller-routing.txt
+group-quality	0	group-quality.txt
+physical-inventory	0	physical-inventory.txt
+partial-loss	0	partial-loss.txt

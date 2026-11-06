@@ -1,0 +1,9 @@
+2026-11-06T13:16:19,743484253+00:00 verified baseline selector=fi1
+2026-11-06T13:16:19,752084102+00:00 partial loss both targets FI1
+2026-11-06T13:16:20,850173186+00:00 verified switched selector=fi2
+2026-11-06T13:16:20,883170099+00:00 both paths recovered
+2026-11-06T13:16:22,710247181+00:00 verified equal selector=fi2
+2026-11-06T13:16:22,766565434+00:00 one target unreachable through both paths
+2026-11-06T13:16:24,990212854+00:00 verified shared selector=fi2
+2026-11-06T13:16:25,054171191+00:00 partial loss both targets FI2
+2026-11-06T13:16:26,212922474+00:00 verified restored selector=fi1

@@ -1,0 +1,9 @@
+a59e9ae9848f197273441699a1dcd645a3aa21d6dae61cebebacfa83e92cd208  /opt/hestia-dev/releases/66bb2fa/hestia
+a59e9ae9848f197273441699a1dcd645a3aa21d6dae61cebebacfa83e92cd208  /usr/local/bin/hestia
+ded7f2c46d3938c2d769330bba886b8095d7d81d60fdb88391aca74971546239  /opt/hestia-dev/releases/66bb2fa/repo/tests/lab/awg-multi/lab.sh
+96d2eda2cbc2ca7ced5332479c7beb78c9d95aebb17b07a426c18a1e48045521  /opt/hestia-dev/releases/66bb2fa/repo/tests/lab/wg-underlay/lab.sh
+6a859e100b8276121544e41f6469dbbf6dba1750c96d75a8c467d7bcbac6bef3  /opt/hestia-dev/releases/66bb2fa/repo/tests/lab/hysteria2/lab.sh
+26c254c6cc71478a3e0ce503ebe53be92a62bdaf4dfa2c48484840a435f83b1e  /opt/hestia-dev/releases/66bb2fa/repo/tests/lab/controller-routing/lab.sh
+2ed26e7bd0d88681f20f3d3b2c6d4d506e308cd0b2709bc99210777fa017c30b  /opt/hestia-dev/releases/66bb2fa/repo/tests/lab/group-quality/lab.sh
+fc015c0b1e2fcc6384497997390ee5dd3a51fd4d6e1c5c4a99f7d2ab14c2d407  /opt/hestia-dev/releases/66bb2fa/repo/tests/lab/partial-loss/lab.sh
+7c3d7996e0caa368251dfc1271ab1cbf449ddfaf2100249f2d4d31c204c2b26f  /opt/hestia-dev/releases/66bb2fa/repo/tests/lab/physical-connections/inventory.sh

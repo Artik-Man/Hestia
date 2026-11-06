@@ -1,0 +1,4 @@
+After final command exit 0, before subsequent deployment:
+hestia: active
+hestia-panel: active
+hestia-sing-box: active

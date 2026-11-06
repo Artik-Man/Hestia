@@ -1,0 +1,1 @@
+{"name":"prod","transport":"lima","instance":"hestia-prod","lima_home":"/private/tmp/hestia-vm-run/lima-state","expected_hostname":"lima-hestia-prod","platform":"linux-arm64","fixture":false,"panel_url":"http://192.168.1.133:8080"}

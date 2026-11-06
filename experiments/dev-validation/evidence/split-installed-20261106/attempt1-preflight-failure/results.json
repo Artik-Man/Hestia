@@ -1,0 +1,56 @@
+[
+  {
+    "name": "installed-snapshot",
+    "status": "FAIL",
+    "exit": 1,
+    "seconds": 0.13,
+    "command": [
+      "/private/tmp/hestia-vm-run/bin/limactl",
+      "shell",
+      "hestia-dev",
+      "--",
+      "sudo",
+      "-n",
+      "systemd-run",
+      "--unit=hestia-validation-20261106-164704-51644",
+      "--collect",
+      "--wait",
+      "--pipe",
+      "--property=RuntimeMaxSec=1800",
+      "--property=TimeoutStopSec=30",
+      "--property=KillMode=control-group",
+      "bash",
+      "/var/tmp/hestia-validation-20261106-164704-51644/repo/scripts/test/guest.sh",
+      "/var/tmp/hestia-validation-20261106-164704-51644",
+      "prepare",
+      "lima-hestia-dev",
+      "http://127.0.0.1:8080"
+    ],
+    "log": "/tmp/hestia-split-installed-20261106-final/installed-snapshot.log"
+  },
+  {
+    "name": "installed-runtime-tests",
+    "status": "SKIP",
+    "reason": "snapshot or dependency preflight failed"
+  },
+  {
+    "name": "guest-logs",
+    "status": "PASS",
+    "exit": 0,
+    "seconds": 0.07,
+    "command": [
+      "/private/tmp/hestia-vm-run/bin/limactl",
+      "shell",
+      "hestia-dev",
+      "--",
+      "sudo",
+      "-n",
+      "bash",
+      "-ec",
+      "for f in \"$1\"/*.log; do test ! -f \"$f\" || { printf \"LOG %s\\n\" \"${f##*/}\"; cat \"$f\"; }; done",
+      "_",
+      "/var/tmp/hestia-validation-20261106-164704-51644"
+    ],
+    "log": "/tmp/hestia-split-installed-20261106-final/guest-logs.log"
+  }
+]

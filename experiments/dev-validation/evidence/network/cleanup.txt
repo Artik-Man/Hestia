@@ -1,0 +1,9 @@
+Main IPv4/IPv6 routes, rules and named namespace list: before==after
+sha256=f8cfcfb77005d87b9f888210aad3574a77198e27de4bb90c59fe614a371769ef
+Named namespaces: empty before and after
+Installed config hashes unchanged:
+3da7b38c64ece94e490a5d5e8c5448203789ceab767564683f635f9750c9c5c4  /etc/hestia/profile.json
+4e8e43ad0ffc41e4d16f73fff39cdf7fa506ebcef98f65ba064694c34fccfa79  /etc/hestia/snapshot.json
+e5a204e7d60d011825e029fc527bf2bda1f326a46f682aec9885f6b2ae64fd15  /etc/hestia/sing-box.json
+Services hestia/hestia-sing-box/hestia-panel: active
+No VM power operation, prod/client/router access, or external test targets used.

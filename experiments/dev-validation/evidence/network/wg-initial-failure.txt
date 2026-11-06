@@ -1,0 +1,10 @@
+case=wg-default
+source=66bb2fa
+a59e9ae9848f197273441699a1dcd645a3aa21d6dae61cebebacfa83e92cd208  /opt/hestia-dev/releases/66bb2fa/hestia
+7fe87a8d2031e75273c562be43993ae14b352f7de9150edaf79afca340932e1a  /opt/hestia-dev/releases/66bb2fa/amneziawg-go
+7b5d8177fba2ebe1454390c069f7385401f95449c6f680e03090d368d7f16a56  /opt/hestia-dev/releases/66bb2fa/awg
+d953af885f11d6b547c21a3c0ffe70796963afc802fab959d548311002b4908a  /opt/hestia-dev/releases/66bb2fa/sing-box-1.14.4-linux-arm64/sing-box
+kernel=6.1.0-54-cloud-arm64; unmarked route to peer: 198.19.10.10 via 198.18.2.2 dev forbidden src 198.18.2.1 uid 0 
+hestia sha256=a59e9ae9848f197273441699a1dcd645a3aa21d6dae61cebebacfa83e92cd208
+guarded startup: child service running with IPv4 and IPv6 guards; readiness withheld before backend
+Invalid deployment profile: check fields, addresses, file references and keys

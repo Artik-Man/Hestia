@@ -18,12 +18,12 @@ jobs:
           "$RUNNER_TEMP/hestia-shellcheck/bin/pip" install shellcheck-py==0.11.0.1
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
           echo "$RUNNER_TEMP/hestia-shellcheck/bin" >> "$GITHUB_PATH"
-      - name: Install experiment test dependencies
+      - name: Install lab test dependencies
         run: |
-          python3 -m venv "$RUNNER_TEMP/hestia-experiment-tests"
-          "$RUNNER_TEMP/hestia-experiment-tests/bin/python" -m pip install --require-hashes --only-binary=:all: -r experiments/requirements-test.txt
-          echo "$RUNNER_TEMP/hestia-experiment-tests/bin" >> "$GITHUB_PATH"
-      - run: make build
+          python3 -m venv "$RUNNER_TEMP/hestia-lab-tests"
+          "$RUNNER_TEMP/hestia-lab-tests/bin/python" -m pip install --require-hashes --only-binary=:all: -r tests/lab/requirements-test.txt
+          echo "$RUNNER_TEMP/hestia-lab-tests/bin" >> "$GITHUB_PATH"
+      - run: make build-go
       - name: Verify that other platforms have no gateway commands
         run: |
           for target in darwin/arm64 linux/amd64 linux/arm android/arm64; do

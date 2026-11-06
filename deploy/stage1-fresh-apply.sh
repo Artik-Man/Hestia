@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Replace Hestia application data with the repository profile on the named stage1 gateway.
+# Replace Hestia application data with the repository profile on the named hestia-prod gateway.
 set -euo pipefail
 umask 077
-[[ $# == 1 && $EUID == 0 && $1 =~ ^/tmp/hestia-stage1-awg\.[a-zA-Z0-9]+$ ]]
+[[ $# == 1 && $EUID == 0 && $1 =~ ^/tmp/hestia-prod-awg\.[a-zA-Z0-9]+$ ]]
 [[ $(stat -c '%u:%a' "$1") == 0:700 ]]
 cd "$1"
-[[ $(hostname -s) == lima-hestia-stage1 ]]
+[[ $(hostname -s) == lima-hestia-prod ]]
 ip -4 -o addr show dev lima0 scope global | grep -Eq " inet 192\.168\.1\.133/"
 exec 8>/run/hestia-stage1-fresh.lock
 flock -n 8 || {

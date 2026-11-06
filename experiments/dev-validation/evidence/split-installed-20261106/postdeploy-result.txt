@@ -1,0 +1,4 @@
+PASS: all 3 installed application binaries and entire frontend tree (including 3rdpartylicenses.txt) exactly match final linux-arm64 bundle.
+PASS: services active; 11 read-only API endpoints; managed profile valid.
+PASS: config, routes4/6, rules4/6, netns unchanged versus predeployment successful suite.
+Expected inventory delta: new 3rdpartylicenses.txt only. Reusing predeployment full inventory assertion reported mismatch; explicit bundle comparison confirms authorized addition.

@@ -1,5 +1,7 @@
 # Выдача старого A при временном отказе DNS
 
+Исходники проверки: [tests/lab/dns-stale](../../tests/lab/dns-stale/). Отчёт и свидетельства остаются здесь. Перед повторным запуском применяйте [правила выбора стенда](../../docs/virtual-machines.md); исторические имена ВМ не являются указанием создать или запустить их.
+
 Две серии на Debian ARM64 используют одни и те же имена, реальные UDP DNS-пакеты и один экземпляр sing-box в каждой серии. Строгий режим включается по умолчанию. Во второй серии предел аварийной выдачи задан равным 24 с после окончания исходного TTL в 2 с. Для каждого имени клиент сохранил FakeIP и продолжил открывать новые TCP- и UDP-потоки к нему. Во всех фазах дополнительно проверялся отдельный DNS-запрос LAN-клиента. [Критерии](ACCEPTANCE.md), [строгая серия](evidence/strict/verification.txt), [аварийная серия](evidence/stale/verification.txt).
 
 | Условие после окончания положительного A | Строгий режим | Аварийное окно 24 с |
@@ -17,11 +19,11 @@
 
 Проверены по 32 новых потока в каждой серии, IPv4, класс IN, одиночные A-ответы синтетических DNS-серверов зоны `lab.test`. Условия подтверждены по реальным запросам и ответам, включая QR/RCODE, SOA, TTL и отсутствие ответа при сетевом тайм-ауте. Контрольные суммы компонентов совпадают между сериями. [SHA-256](evidence/stale/code.sha256). Прогрев в этом испытании выключен. DNSSEC, браузерное кэширование, возможность использования прежнего адреса публичного сервиса и длительность уже открытых соединений находятся за границами опыта.
 
-Для повторения перенесите каталоги `experiments/dns-stale`, `experiments/dns-rotation` и `experiments/dns-geo` в отдельную Debian ARM64-ВМ с TUN, sing-box 1.14.4, iproute2, tcpdump, Python 3 и python3-dnspython. Из корня проекта выполните в гостевой системе:
+Для повторения перенесите каталоги `tests/lab/dns-stale`, `tests/lab/dns-rotation` и `tests/lab/dns-geo` в отдельную Debian ARM64-ВМ с TUN, sing-box 1.14.4, iproute2, tcpdump, Python 3 и python3-dnspython. Из корня проекта выполните в гостевой системе:
 
 ```sh
-sudo bash experiments/dns-stale/lab.sh strict /var/tmp/strict-dns
-sudo bash experiments/dns-stale/lab.sh stale /var/tmp/stale-dns
+sudo bash tests/lab/dns-stale/lab.sh strict /var/tmp/strict-dns
+sudo bash tests/lab/dns-stale/lab.sh stale /var/tmp/stale-dns
 ```
 
-Каталоги результатов должны быть пустыми. Для независимого разбора положительной записи используйте `python3 experiments/dns-stale/verify.py stale experiments/dns-stale/evidence/stale`. Из того же набора общих исходников повторно проверены [ротация A](evidence/regression-rotation.txt) и [прогрев популярных имён](evidence/regression-warm.txt).
+Каталоги результатов должны быть пустыми. Для независимого разбора положительной записи используйте `python3 tests/lab/dns-stale/verify.py stale experiments/dns-stale/evidence/stale`. Из того же набора общих исходников повторно проверены [ротация A](evidence/regression-rotation.txt) и [прогрев популярных имён](evidence/regression-warm.txt).
