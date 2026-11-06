@@ -1,0 +1,32 @@
+{
+  "time_utc": "2026-11-06T17:02:05.594683+00:00",
+  "scope": "read-only counts; raw topology not retained",
+  "ipv4": {
+    "rule_exit": 0,
+    "route_exit": 0,
+    "rules": 19,
+    "fwmark_rules": 13,
+    "lookup_rules": 19,
+    "routes": 898,
+    "blackhole_routes": 0,
+    "unreachable_routes": 0,
+    "prohibit_routes": 0,
+    "distinct_explicit_route_tables": 12,
+    "rules_sha256": "52a656ed73f1a2c72f79a91fcd6f7cbe5bc59a1b33d5a89fb4e64cfac61c5b9c",
+    "routes_sha256": "d980f9b05b97eae098407214e104b6a23a3a823ad1aa5ba3aaa5419a3a60c619"
+  },
+  "ipv6": {
+    "rule_exit": 0,
+    "route_exit": 0,
+    "rules": 10,
+    "fwmark_rules": 8,
+    "lookup_rules": 10,
+    "routes": 106,
+    "blackhole_routes": 0,
+    "unreachable_routes": 7,
+    "prohibit_routes": 0,
+    "distinct_explicit_route_tables": 4,
+    "rules_sha256": "77570d3b73b6f8265509d05ee2d03df846fd2f2d9f537a0dc58e0cb0739b1aaf",
+    "routes_sha256": "208c4cc100e02e620c4114c9062d7102ecc09d30e48bac2552e326f6db5de910"
+  }
+}

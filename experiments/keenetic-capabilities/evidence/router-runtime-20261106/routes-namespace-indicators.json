@@ -1,0 +1,27 @@
+{
+  "time_utc": "2026-11-06T17:01:22.833484+00:00",
+  "command": [
+    "ssh",
+    "-p",
+    "222",
+    "-i",
+    "/Users/artikman/.ssh/hestia_keenetic",
+    "-o",
+    "BatchMode=yes",
+    "-o",
+    "IdentitiesOnly=yes",
+    "-o",
+    "StrictHostKeyChecking=yes",
+    "-o",
+    "ConnectTimeout=10",
+    "-o",
+    "ServerAliveInterval=5",
+    "-o",
+    "ServerAliveCountMax=2",
+    "root@192.168.1.1",
+    "printf 'NS_DIRECTORY\n'; ls -ld /proc/self/ns /proc/self/ns/net /proc/1/ns/net 2>&1\nprintf '\nNAMESPACE_APPLETS\n'; /opt/bin/busybox --list | /opt/bin/busybox grep -E '^(unshare|nsenter|timeout|readlink|ip)$'\nprintf '\nKERNEL_CONFIG\n'; if [ -r /proc/config.gz ]; then /opt/bin/busybox zcat /proc/config.gz | /opt/bin/busybox grep -E '^(CONFIG_(NAMESPACES|NET_NS|USER_NS|UTS_NS|IPC_NS|PID_NS|VETH|TUN|IP_MULTIPLE_TABLES|IP_ROUTE_MULTIPATH|NETFILTER|NETFILTER_XT_TARGET_TPROXY|NETFILTER_XT_MATCH_MARK|NETFILTER_XT_TARGET_MARK|NF_TPROXY_IPV4|NF_TABLES)=|# CONFIG_(NET_NS|NAMESPACES|VETH|TUN) is not set)'; else printf 'config_unavailable\n'; fi\n"
+  ],
+  "exit_code": 0,
+  "stdout": "NS_DIRECTORY\nls: /proc/self/ns/net: No such file or directory\nls: /proc/1/ns/net: No such file or directory\ndr-x--x--x    2 root     root             0 Nov  6 20:01 /proc/self/ns\n\nNAMESPACE_APPLETS\nip\nreadlink\n\nKERNEL_CONFIG\nconfig_unavailable\n",
+  "stderr": ""
+}

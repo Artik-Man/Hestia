@@ -1,0 +1,29 @@
+{
+  "started_utc": "2026-11-06T17:04:29.262160+00:00",
+  "finished_utc": "2026-11-06T17:05:01.722655+00:00",
+  "command": [
+    "ssh",
+    "-p",
+    "222",
+    "-i",
+    "/Users/artikman/.ssh/hestia_keenetic",
+    "-o",
+    "BatchMode=yes",
+    "-o",
+    "IdentitiesOnly=yes",
+    "-o",
+    "StrictHostKeyChecking=yes",
+    "-o",
+    "ConnectTimeout=10",
+    "-o",
+    "ServerAliveInterval=5",
+    "-o",
+    "ServerAliveCountMax=2",
+    "root@192.168.1.1",
+    "set -eu; umask 077; work=$(mktemp -d /opt/tmp/hestia-runtime.XXXXXX); printf \"WORKDIR=%s\\n\" \"$work\"; cat > \"$work/runtime-probe.tar\"; cd \"$work\"; printf \"2837d9c7aa6ae610a2a5a9dac531df8ea1299388332191b43ae2bdaaba59f520  runtime-probe.tar\\n\" | sha256sum -c -; tar -xf runtime-probe.tar; sha256sum -c SHA256SUMS; tar -xzf sing.tgz; sha256sum sing-box-1.14.4-linux-arm64/sing-box"
+  ],
+  "stdin_archive_sha256": "2837d9c7aa6ae610a2a5a9dac531df8ea1299388332191b43ae2bdaaba59f520",
+  "exit_code": 0,
+  "stdout": "WORKDIR=/opt/tmp/hestia-runtime.uNDPeH\nruntime-probe.tar: OK\namneziawg-go: OK\nawg: OK\nsing.tgz: OK\nd953af885f11d6b547c21a3c0ffe70796963afc802fab959d548311002b4908a  sing-box-1.14.4-linux-arm64/sing-box\n",
+  "stderr": ""
+}

@@ -1,0 +1,28 @@
+{
+  "started_utc": "2026-11-06T17:05:28.673645+00:00",
+  "finished_utc": "2026-11-06T17:05:30.966298+00:00",
+  "command": [
+    "ssh",
+    "-p",
+    "222",
+    "-i",
+    "/Users/artikman/.ssh/hestia_keenetic",
+    "-o",
+    "BatchMode=yes",
+    "-o",
+    "IdentitiesOnly=yes",
+    "-o",
+    "StrictHostKeyChecking=yes",
+    "-o",
+    "ConnectTimeout=10",
+    "-o",
+    "ServerAliveInterval=5",
+    "-o",
+    "ServerAliveCountMax=2",
+    "root@192.168.1.1",
+    "GOMAXPROCS=1 GOMEMLIMIT=32MiB /opt/tmp/hestia-runtime.uNDPeH/amneziawg-go --version"
+  ],
+  "exit_code": 0,
+  "stdout": "amneziawg-go v3.1.20260828\n\nUserspace AmneziaWG daemon for linux-arm64.\nInformation available at https://amnezia.org\n",
+  "stderr": ""
+}

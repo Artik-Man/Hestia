@@ -1,0 +1,10 @@
+{
+  "time_utc": "2026-11-06T17:07:00.526115+00:00",
+  "command": "ip -4 route list table all",
+  "exit_code": 0,
+  "stdout_sha256": "d980f9b05b97eae098407214e104b6a23a3a823ad1aa5ba3aaa5419a3a60c619",
+  "stdout_bytes": 52554,
+  "line_count": 898,
+  "stderr": "",
+  "matches_baseline": true
+}

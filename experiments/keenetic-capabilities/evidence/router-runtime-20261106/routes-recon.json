@@ -1,0 +1,27 @@
+{
+  "time_utc": "2026-11-06T17:00:48.429486+00:00",
+  "command": [
+    "ssh",
+    "-p",
+    "222",
+    "-i",
+    "/Users/artikman/.ssh/hestia_keenetic",
+    "-o",
+    "BatchMode=yes",
+    "-o",
+    "IdentitiesOnly=yes",
+    "-o",
+    "StrictHostKeyChecking=yes",
+    "-o",
+    "ConnectTimeout=10",
+    "-o",
+    "ServerAliveInterval=5",
+    "-o",
+    "ServerAliveCountMax=2",
+    "root@192.168.1.1",
+    "for name in ip unshare nsenter iptables ip6tables nft ndmq timeout busybox; do for base in /opt/bin /opt/sbin /opt/usr/bin /opt/usr/sbin /usr/bin /usr/sbin /bin /sbin; do if [ -x \"$base/$name\" ]; then printf '%s\n' \"$base/$name\"; fi; done; done\nprintf 'NS_NET='; readlink /proc/self/ns/net\nprintf 'PROC_IPTABLES='; test -r /proc/net/ip_tables_names && cat /proc/net/ip_tables_names\nprintf '\nIP_VERSION\n'; ip -V\nprintf '\nIP_HELP\n'; ip help 2>&1\nprintf '\nUNSHARE_HELP\n'; if command -v unshare >/dev/null 2>&1; then unshare --help 2>&1; fi\n"
+  ],
+  "exit_code": 0,
+  "stdout": "/opt/sbin/ip\n/opt/bin/busybox\n/opt/usr/bin/busybox\nNS_NET=PROC_IPTABLES=nat\nmangle\nfilter\n\nIP_VERSION\n\nIP_HELP\nBusyBox v1.37.0 (2026-02-13 14:22:43 UTC) multi-call binary.\n\nUsage: ip [OPTIONS] address|route|link|tunnel|neigh|rule [ARGS]\n\nOPTIONS := -f[amily] inet|inet6|link | -o[neline]\n\nip addr add|del IFADDR dev IFACE | show|flush [dev IFACE] [to PREFIX]\nip route list|flush|add|del|change|append|replace|test ROUTE\nip link set IFACE [up|down] [arp on|off] [multicast on|off]\n\t[promisc on|off] [mtu NUM] [name NAME] [qlen NUM] [address MAC]\n\t[master IFACE | nomaster] [netns PID]\nip tunnel add|change|del|show [NAME]\n\t[mode ipip|gre|sit] [remote ADDR] [local ADDR] [ttl TTL]\nip neigh show|flush [to PREFIX] [dev DEV] [nud STATE]\nip rule [list] | add|del SELECTOR ACTION\n\nUNSHARE_HELP\n",
+  "stderr": "BusyBox v1.37.0 (2026-02-13 14:22:43 UTC) multi-call binary.\n\nUsage: ip [OPTIONS] address|route|link|tunnel|neigh|rule [ARGS]\n\nOPTIONS := -f[amily] inet|inet6|link | -o[neline]\n\nip addr add|del IFADDR dev IFACE | show|flush [dev IFACE] [to PREFIX]\nip route list|flush|add|del|change|append|replace|test ROUTE\nip link set IFACE [up|down] [arp on|off] [multicast on|off]\n\t[promisc on|off] [mtu NUM] [name NAME] [qlen NUM] [address MAC]\n\t[master IFACE | nomaster] [netns PID]\nip tunnel add|change|del|show [NAME]\n\t[mode ipip|gre|sit] [remote ADDR] [local ADDR] [ttl TTL]\nip neigh show|flush [to PREFIX] [dev DEV] [nud STATE]\nip rule [list] | add|del SELECTOR ACTION\n"
+}

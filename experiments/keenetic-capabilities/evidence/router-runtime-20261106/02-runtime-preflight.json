@@ -1,0 +1,28 @@
+{
+  "started_utc": "2026-11-06T17:04:01.534605+00:00",
+  "finished_utc": "2026-11-06T17:04:04.098453+00:00",
+  "command": [
+    "ssh",
+    "-p",
+    "222",
+    "-i",
+    "/Users/artikman/.ssh/hestia_keenetic",
+    "-o",
+    "BatchMode=yes",
+    "-o",
+    "IdentitiesOnly=yes",
+    "-o",
+    "StrictHostKeyChecking=yes",
+    "-o",
+    "ConnectTimeout=10",
+    "-o",
+    "ServerAliveInterval=5",
+    "-o",
+    "ServerAliveCountMax=2",
+    "root@192.168.1.1",
+    "df -Pk /opt/tmp; for p in /lib/ld-linux-aarch64.so.1 /opt/lib/ld-linux-aarch64.so.1; do if [ -e \"$p\" ]; then ls -l \"$p\"; else printf \"ABSENT %s\\n\" \"$p\"; fi; done"
+  ],
+  "exit_code": 0,
+  "stdout": "Filesystem           1024-blocks    Used Available Capacity Mounted on\n/dev/sda1              7687876     21536   7254336   0% /tmp/mnt/af0122bd-4cc5-7047-b671-5235ac798004\nABSENT /lib/ld-linux-aarch64.so.1\nlrwxr-xr-x    1 root     root            10 Nov  6 14:13 /opt/lib/ld-linux-aarch64.so.1 -> ld-2.27.so\n",
+  "stderr": ""
+}

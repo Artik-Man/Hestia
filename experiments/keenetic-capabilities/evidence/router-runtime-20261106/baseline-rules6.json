@@ -1,0 +1,9 @@
+{
+  "time_utc": "2026-11-06T17:01:23.586574+00:00",
+  "command": "ip -6 rule list",
+  "exit_code": 0,
+  "stdout_sha256": "77570d3b73b6f8265509d05ee2d03df846fd2f2d9f537a0dc58e0cb0739b1aaf",
+  "stdout_bytes": 457,
+  "line_count": 10,
+  "stderr": ""
+}

@@ -1,0 +1,10 @@
+{
+  "time_utc": "2026-11-06T17:07:00.714172+00:00",
+  "command": "ip -4 rule list",
+  "exit_code": 0,
+  "stdout_sha256": "52a656ed73f1a2c72f79a91fcd6f7cbe5bc59a1b33d5a89fb4e64cfac61c5b9c",
+  "stdout_bytes": 840,
+  "line_count": 19,
+  "stderr": "",
+  "matches_baseline": true
+}

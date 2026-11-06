@@ -1,0 +1,29 @@
+{
+  "started_utc": "2026-11-06T17:06:59.805268+00:00",
+  "finished_utc": "2026-11-06T17:07:00.286205+00:00",
+  "command": [
+    "ssh",
+    "-p",
+    "222",
+    "-i",
+    "/Users/artikman/.ssh/hestia_keenetic",
+    "-o",
+    "BatchMode=yes",
+    "-o",
+    "IdentitiesOnly=yes",
+    "-o",
+    "StrictHostKeyChecking=yes",
+    "-o",
+    "ConnectTimeout=10",
+    "-o",
+    "ServerAliveInterval=5",
+    "-o",
+    "ServerAliveCountMax=2",
+    "root@192.168.1.1",
+    "set -eu; umask 077; work=$(mktemp -d /opt/tmp/hestia-netns.XXXXXX); printf \"WORKDIR=%s\\n\" \"$work\"; cat > \"$work/netns-probe\"; cd \"$work\"; printf \"e712097967fe5b4beb9911e9a0d8123decabcc07ac488d97f23db08b0bfa3595  netns-probe\\n\" | sha256sum -c -; chmod 700 netns-probe; ./netns-probe --probe-netns"
+  ],
+  "stdin_sha256": "e712097967fe5b4beb9911e9a0d8123decabcc07ac488d97f23db08b0bfa3595",
+  "exit_code": 0,
+  "stdout": "WORKDIR=/opt/tmp/hestia-netns.cFQ3Qb\nnetns-probe: OK\n{\"schema_version\":1,\"operation\":\"unshare(CLONE_NEWNET)\",\"status\":\"rejected\",\"errno\":22,\"error\":\"invalid argument\",\"host_network_changes\":false}\n",
+  "stderr": ""
+}

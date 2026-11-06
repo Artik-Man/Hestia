@@ -1,0 +1,16 @@
+{
+  "time_utc": "2026-11-06T17:04:05.357501+00:00",
+  "source": "tests/lab/keenetic-capabilities/netns-probe.go",
+  "source_sha256": "7e335bcf1e5e5be363a86aee126363e186b30ee71750d944d5e71ce9598fdb0c",
+  "binary_sha256": "e712097967fe5b4beb9911e9a0d8123decabcc07ac488d97f23db08b0bfa3595",
+  "binary_size": 3801552,
+  "file": "/private/tmp/hestia-netns-probe: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, Go BuildID=K5QHlL8MU05L1veRm6PD/mFtbj8Q8F8JoWqb4RGGu/-OAYpuOXMzjTYbrNydKz/4KufZH31zbtTCDW4ocfw, BuildID[sha1]=f5f38efbd7fd15699ef1f7ec66e04bbd62a75789, with debug_info, not stripped",
+  "go_version": "go version go1.27.3 darwin/arm64",
+  "checks": {
+    "gofmt": "pass",
+    "cross_build_linux_arm64": "pass",
+    "cross_vet_linux_arm64": "pass"
+  },
+  "runtime_execution": "not_yet_performed",
+  "build_command": "CGO_ENABLED=0 GOOS=linux GOARCH=arm64 GOTOOLCHAIN=local GOPROXY=off GOCACHE=/private/tmp/hestia-diag-go-cache go build -trimpath -buildvcs=false -o /private/tmp/hestia-netns-probe tests/lab/keenetic-capabilities/netns-probe.go"
+}

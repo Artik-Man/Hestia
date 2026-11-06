@@ -1,0 +1,25 @@
+{
+  "archive_path": "/tmp/hestia-keenetic-runtime-inspect/runtime-probe.tar",
+  "archive_sha256": "2837d9c7aa6ae610a2a5a9dac531df8ea1299388332191b43ae2bdaaba59f520",
+  "archive_bytes": 34129920,
+  "runtime_inputs": {
+    "sing.tgz": "436441f76ee2f7fe21b5b2d426d3cb261a480455a704865789ad533e4273ec26",
+    "amneziawg-go": "7fe87a8d2031e75273c562be43993ae14b352f7de9150edaf79afca340932e1a",
+    "awg": "7b5d8177fba2ebe1454390c069f7385401f95449c6f680e03090d368d7f16a56"
+  },
+  "elf_interpreters": {
+    "sing-box": "/lib/ld-linux-aarch64.so.1",
+    "awg": "/lib/ld-linux-aarch64.so.1",
+    "amneziawg-go": null
+  },
+  "source_revisions": {
+    "amneziawg-go": "b5928efb6ca19f0153958460c3d141f04abc5c2e",
+    "awg-tools": "ee0f0a9aa34ff0a0da4b3433b9512781cfe02843"
+  },
+  "upstream_sources": [
+    "https://raw.githubusercontent.com/SagerNet/sing-box/v1.14.4/cmd/sing-box/cmd_version.go",
+    "https://raw.githubusercontent.com/SagerNet/sing-box/v1.14.4/cmd/sing-box/cmd_check.go",
+    "https://raw.githubusercontent.com/SagerNet/sing-box/v1.14.4/cmd/sing-box/cmd_run.go"
+  ],
+  "scope": "Transfer pinned runtimes; versions only. No sing-box check/run, no AWG interface creation. Loader absent => record failure, no workaround."
+}
