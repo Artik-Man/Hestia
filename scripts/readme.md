@@ -5,6 +5,7 @@
 | Операция | Команда | Инструкция |
 |---|---|---|
 | Сборка Linux и экспериментального Keenetic | `make build` | [build](build/readme.md) |
+| Диагностический комплект Keenetic без подключения к роутеру | `python3 scripts/build-keenetic-diagnostics/run.py` | [build-keenetic-diagnostics](build-keenetic-diagnostics/readme.md) |
 | Проверка исходников без стенда | `make test-source` | [test-source](test-source/readme.md) |
 | Установка/обновление готового Linux-комплекта | `make deploy-dev BUNDLE=/path/linux-arm64` | [deploy](deploy/readme.md) |
 | Проверка установленного dev | `make test-dev` | [test](test/readme.md) |

@@ -1,5 +1,6 @@
 /dist/
 /stand.local/
 /private/
+/.agent-memory/
 __pycache__/
 .ruff_cache/

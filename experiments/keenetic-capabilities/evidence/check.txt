@@ -1,0 +1,141 @@
+find deploy tests/lab scripts -type f -name '*.sh' -exec shfmt -i 4 -ci -d {} +
+go -C backend vet ./cmd/... ./internal/... ./tools/...
+go: warning: "./cmd/..." matched no packages
+find deploy tests/lab scripts -type f -name '*.sh' -exec shellcheck -x -P SCRIPTDIR -s bash {} +
+go -C backend test ./cmd/... ./internal/... ./tools/...
+go: warning: "./cmd/..." matched no packages
+ok  	github.com/Artik-Man/Hestia/internal/awg	0.702s
+ok  	github.com/Artik-Man/Hestia/internal/awgruntime	0.215s
+ok  	github.com/Artik-Man/Hestia/internal/binding	17.843s
+?   	github.com/Artik-Man/Hestia/internal/connectionid	[no test files]
+--- FAIL: TestApply (0.00s)
+    --- FAIL: TestApply/reserve (0.00s)
+panic: httptest: failed to listen on a port: listen tcp6 [::1]:0: bind: operation not permitted [recovered, repanicked]
+
+goroutine 5 [running]:
+testing.tRunner.func1.2({0x1009d5fd8, 0x6623a8a68330})
+	/opt/homebrew/Cellar/go/1.27.3/libexec/src/testing/testing.go:2125 +0x1a0
+testing.tRunner.func1()
+	/opt/homebrew/Cellar/go/1.27.3/libexec/src/testing/testing.go:2128 +0x2c8
+panic({0x1009d5fd8?, 0x6623a8a68330?})
+	/opt/homebrew/Cellar/go/1.27.3/libexec/src/runtime/panic.go:859 +0x120
+net/http/httptest.newLocalListener()
+	/opt/homebrew/Cellar/go/1.27.3/libexec/src/net/http/httptest/server.go:226 +0xd4
+net/http/httptest.NewUnstartedServer(...)
+	/opt/homebrew/Cellar/go/1.27.3/libexec/src/net/http/httptest/server.go:284
+net/http/httptest.NewServer({0x100a2f080, 0x6623a8984b20})
+	/opt/homebrew/Cellar/go/1.27.3/libexec/src/net/http/httptest/server.go:267 +0x28
+github.com/Artik-Man/Hestia/internal/controller.TestApply.func1(0x6623a89b6908)
+	/Users/artikman/Documents/projects/hestia/backend/internal/controller/apply_test.go:31 +0x1f4
+testing.tRunner(0x6623a89b6908, 0x6623a881b200)
+	/opt/homebrew/Cellar/go/1.27.3/libexec/src/testing/testing.go:2195 +0xc4
+created by testing.(*T).Run in goroutine 4
+	/opt/homebrew/Cellar/go/1.27.3/libexec/src/testing/testing.go:2260 +0x3b8
+FAIL	github.com/Artik-Man/Hestia/internal/controller	0.216s
+ok  	github.com/Artik-Man/Hestia/internal/dnspolicy	0.415s
+--- FAIL: TestUDPFixture (0.00s)
+    loopback_test.go:16: listen udp4 127.0.0.1:0: bind: operation not permitted
+2026/11/06 17:36:33 DNS stale name=old.example type=1 exit=ru resolver=resolver age=1m10s expired=2026-11-06T14:36:23Z reason=all-authorized-resolvers-failed
+2026/11/06 17:36:33 DNS warm name=manual.example type=1 exit=ru resolver=resolver positive=true ttl=10m0s
+2026/11/06 17:36:33 DNS warm name=manual.example type=28 exit=ru resolver=resolver positive=true ttl=10m0s
+2026/11/06 17:36:33 DNS stale name=cross.example type=1 exit=ru resolver=resolver1 age=30s expired=2026-11-06T14:36:13Z reason=all-authorized-resolvers-failed
+2000/01/01 03:11:00 DNS warm name=automatic.example type=1 exit=test-exit resolver=test-resolver positive=true ttl=2h0m0s
+2000/01/01 03:40:00 DNS warm name=automatic.example type=1 exit=test-exit resolver=test-resolver positive=true ttl=2h0m0s
+2000/01/01 03:50:00 DNS warm name=automatic.example type=1 exit=test-exit resolver=test-resolver positive=true ttl=2h0m0s
+2000/01/01 03:01:00 DNS warm name=rotation.example type=1 exit=test-exit resolver=test-resolver positive=true ttl=10m0s
+2000/01/01 03:00:18 DNS warm name=rotation.example type=1 exit=test-exit resolver=test-resolver positive=true ttl=20s
+2000/01/01 03:00:18 DNS warm name=cdn.example type=1 exit=ru resolver=ru-resolver positive=true ttl=20s
+2000/01/01 03:00:36 DNS warm name=cdn.example type=1 exit=ru resolver=ru-resolver positive=true ttl=20s
+2000/01/01 03:01:30 DNS warm name=cdn.example type=1 exit=ru resolver=ru-resolver positive=true ttl=20s
+FAIL
+FAIL	github.com/Artik-Man/Hestia/internal/dnsresolver	1.101s
+--- FAIL: TestDNSWorkerIntegration (0.01s)
+    integration_test.go:248: listen udp4 127.0.0.1:0: bind: operation not permitted
+--- FAIL: TestUDPClientRetry (0.06s)
+    integration_test.go:318: listen udp4 127.0.0.1:0: bind: operation not permitted
+--- FAIL: TestDNSListenerTransports (0.00s)
+    --- FAIL: TestDNSListenerTransports/udp4/allowed (0.00s)
+        serve_test.go:79: listen udp4 127.0.0.1:0: bind: operation not permitted
+    --- FAIL: TestDNSListenerTransports/udp4/denied (0.00s)
+        serve_test.go:79: listen udp4 127.0.0.1:0: bind: operation not permitted
+    --- FAIL: TestDNSListenerTransports/tcp4/allowed (0.00s)
+        serve_test.go:86: listen tcp4 127.0.0.1:0: bind: operation not permitted
+    --- FAIL: TestDNSListenerTransports/tcp4/denied (0.00s)
+        serve_test.go:86: listen tcp4 127.0.0.1:0: bind: operation not permitted
+FAIL
+FAIL	github.com/Artik-Man/Hestia/internal/dnsservice	0.359s
+--- FAIL: TestProviderWorker (4.18s)
+panic: httptest: failed to listen on a port: listen tcp6 [::1]:0: bind: operation not permitted [recovered, repanicked]
+
+goroutine 6 [running]:
+testing.tRunner.func1.2({0x100d24c10, 0x4fdf4e12060})
+	/opt/homebrew/Cellar/go/1.27.3/libexec/src/testing/testing.go:2125 +0x1a0
+testing.tRunner.func1()
+	/opt/homebrew/Cellar/go/1.27.3/libexec/src/testing/testing.go:2128 +0x2c8
+panic({0x100d24c10?, 0x4fdf4e12060?})
+	/opt/homebrew/Cellar/go/1.27.3/libexec/src/runtime/panic.go:859 +0x120
+net/http/httptest.newLocalListener()
+	/opt/homebrew/Cellar/go/1.27.3/libexec/src/net/http/httptest/server.go:226 +0xd4
+net/http/httptest.NewUnstartedServer(...)
+	/opt/homebrew/Cellar/go/1.27.3/libexec/src/net/http/httptest/server.go:284
+net/http/httptest.NewServer({0x100d763d0, 0x4fdf4e12020})
+	/opt/homebrew/Cellar/go/1.27.3/libexec/src/net/http/httptest/server.go:267 +0x28
+github.com/Artik-Man/Hestia/internal/geoip.TestProviderWorker(0x4fdf4eb2488)
+	/Users/artikman/Documents/projects/hestia/backend/internal/geoip/enrichment_test.go:43 +0x438
+testing.tRunner(0x4fdf4eb2488, 0x100d7a6f8)
+	/opt/homebrew/Cellar/go/1.27.3/libexec/src/testing/testing.go:2195 +0xc4
+created by testing.(*T).Run in goroutine 1
+	/opt/homebrew/Cellar/go/1.27.3/libexec/src/testing/testing.go:2260 +0x3b8
+FAIL	github.com/Artik-Man/Hestia/internal/geoip	4.401s
+ok  	github.com/Artik-Man/Hestia/internal/keeneticdiagnostics	(cached)
+?   	github.com/Artik-Man/Hestia/internal/netaddress	[no test files]
+?   	github.com/Artik-Man/Hestia/internal/network	[no test files]
+ok  	github.com/Artik-Man/Hestia/internal/network/linuxphysical	0.930s
+ok  	github.com/Artik-Man/Hestia/internal/network/linuxroute	0.224s
+ok  	github.com/Artik-Man/Hestia/internal/network/socket	0.173s
+ok  	github.com/Artik-Man/Hestia/internal/observer	0.405s
+2026/11/06 17:36:35 cannot load snapshot: open /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/TestPanelSnapshot1689786502/001/config.json: no such file or directory
+2026/11/06 17:36:35 cannot load snapshot: invalid routing configuration
+--- FAIL: TestTCPQualitySaveWire (0.00s)
+    quality_tcp_wire_test.go:131: listen udp4 127.0.0.1:0: bind: operation not permitted
+FAIL
+FAIL	github.com/Artik-Man/Hestia/internal/panel	1.112s
+ok  	github.com/Artik-Man/Hestia/internal/panelmodel	0.534s
+?   	github.com/Artik-Man/Hestia/internal/physical	[no test files]
+ok  	github.com/Artik-Man/Hestia/internal/platformhelper	0.528s
+ok  	github.com/Artik-Man/Hestia/internal/profileexec	0.522s
+--- FAIL: TestHTTP3PinnedExchange (0.00s)
+panic: httptest: failed to listen on a port: listen tcp6 [::1]:0: bind: operation not permitted [recovered, repanicked]
+
+goroutine 49 [running]:
+testing.tRunner.func1.2({0x10157e7f8, 0x13cfa1e2c080})
+	/opt/homebrew/Cellar/go/1.27.3/libexec/src/testing/testing.go:2125 +0x1a0
+testing.tRunner.func1()
+	/opt/homebrew/Cellar/go/1.27.3/libexec/src/testing/testing.go:2128 +0x2c8
+panic({0x10157e7f8?, 0x13cfa1e2c080?})
+	/opt/homebrew/Cellar/go/1.27.3/libexec/src/runtime/panic.go:859 +0x120
+net/http/httptest.newLocalListener()
+	/opt/homebrew/Cellar/go/1.27.3/libexec/src/net/http/httptest/server.go:226 +0xd4
+net/http/httptest.NewUnstartedServer(...)
+	/opt/homebrew/Cellar/go/1.27.3/libexec/src/net/http/httptest/server.go:284
+net/http/httptest.NewTLSServer({0x1015f3478, 0x1015f9ca8})
+	/opt/homebrew/Cellar/go/1.27.3/libexec/src/net/http/httptest/server.go:459 +0x28
+github.com/Artik-Man/Hestia/internal/quality.verifyHTTP3Path(0x13cfa1e38008, {{0x0, 0x0}, {0x0, 0x0}, 0x0, {0x0, 0x0}, {0x0, 0x0}, ...})
+	/Users/artikman/Documents/projects/hestia/backend/internal/quality/http3_test.go:24 +0x88
+github.com/Artik-Man/Hestia/internal/quality.TestHTTP3PinnedExchange(0x13cfa1e38008)
+	/Users/artikman/Documents/projects/hestia/backend/internal/quality/http3_test.go:18 +0xcc
+testing.tRunner(0x13cfa1e38008, 0x1015f9b80)
+	/opt/homebrew/Cellar/go/1.27.3/libexec/src/testing/testing.go:2195 +0xc4
+created by testing.(*T).Run in goroutine 1
+	/opt/homebrew/Cellar/go/1.27.3/libexec/src/testing/testing.go:2260 +0x3b8
+FAIL	github.com/Artik-Man/Hestia/internal/quality	0.685s
+ok  	github.com/Artik-Man/Hestia/internal/routing	0.528s
+?   	github.com/Artik-Man/Hestia/internal/services	[no test files]
+ok  	github.com/Artik-Man/Hestia/internal/services/systemd	0.555s
+ok  	github.com/Artik-Man/Hestia/internal/storage	0.515s
+ok  	github.com/Artik-Man/Hestia/internal/traffic	1.114s
+ok  	github.com/Artik-Man/Hestia/internal/trafficcapture	0.362s
+?   	github.com/Artik-Man/Hestia/tools/doccheck	[no test files]
+?   	github.com/Artik-Man/Hestia/tools/openapi	[no test files]
+FAIL
+make: *** [test] Error 1

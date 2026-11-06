@@ -1,0 +1,14 @@
+[
+  {
+    "archive": "dist/keenetic-diagnostics/20261106-keenetic-inventory-1.tar.gz",
+    "sha256": "42ce762c8ca3716ca906b9f23e54c404c64d981ddf58031fd771ec3e68c65767",
+    "bytes": 2313360,
+    "payload_verified": true
+  },
+  {
+    "archive": "dist/artifacts/20261106-173656-ca2bb3a7d36c/keenetic-arm64-experimental.tar.gz",
+    "sha256": "943d064689fd0f9c7d90aff818f93779c0c8e977e6b19416b752ec42521c86fa",
+    "bytes": 58340247,
+    "payload_verified": true
+  }
+]

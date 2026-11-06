@@ -39,6 +39,7 @@
 
 ## Спецификации функций
 
+- [Диагностическая сборка Keenetic](features/keenetic-diagnostics.md)
 - [Платформенный модуль управления службами](features/platform-services.md)
 - [Модули системных операций, хранения и сети](features/platform-modules.md)
 - [Настройки пользователя](features/admin-password.md)

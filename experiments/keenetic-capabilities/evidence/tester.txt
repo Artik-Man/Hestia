@@ -1,0 +1,68 @@
+Independent offline test, 2026-11-06. No router or VM access.
+
+COMMAND ['go', 'test', '-v', './...']
+CWD /private/tmp/hestia-independent-inventory-tests
+=== RUN   TestIndependentCLI
+--- PASS: TestIndependentCLI (0.00s)
+=== RUN   TestIndependentMalformedInput
+--- PASS: TestIndependentMalformedInput (0.00s)
+PASS
+ok  	independent-inventory-tests	(cached)
+EXIT 0
+
+COMMAND ['go', '-C', 'backend', 'test', '-v', './internal/keeneticdiagnostics']
+CWD /Users/artikman/Documents/projects/hestia
+=== RUN   TestCLIRequiresInventory
+--- PASS: TestCLIRequiresInventory (0.00s)
+=== RUN   TestInventoryMinimizesData
+--- PASS: TestInventoryMinimizesData (0.00s)
+=== RUN   TestMissingAndUnreadableSources
+--- PASS: TestMissingAndUnreadableSources (0.00s)
+=== RUN   TestBoundedReads
+--- PASS: TestBoundedReads (0.00s)
+=== RUN   TestUnsupportedOSDoesNotReadSources
+--- PASS: TestUnsupportedOSDoesNotReadSources (0.00s)
+PASS
+ok  	github.com/Artik-Man/Hestia/internal/keeneticdiagnostics	0.082s
+EXIT 0
+
+COMMAND ['python3', '-B', '-m', 'unittest', 'discover', '-v', '-s', 'scripts/build-keenetic-diagnostics']
+CWD /Users/artikman/Documents/projects/hestia
+test_compile_failure_does_not_publish (test_build.BuildTests.test_compile_failure_does_not_publish)
+Compiler errors leave no final version and release the version lock. ... ok
+test_compiler_is_offline_and_static_arm64 (test_build.BuildTests.test_compiler_is_offline_and_static_arm64)
+Compiler arguments pin the intended target and disable automatic downloads. ... ok
+test_complete_manifest_covers_untracked_sources_and_payload (test_build.BuildTests.test_complete_manifest_covers_untracked_sources_and_payload)
+New source bytes, binary and shipped documents all receive matching hashes. ... ok
+test_existing_version_is_never_overwritten (test_build.BuildTests.test_existing_version_is_never_overwritten)
+An existing directory survives a repeated build request byte for byte. ... ok
+test_invalid_version_cannot_escape_output (test_build.BuildTests.test_invalid_version_cannot_escape_output)
+User-provided versions cannot become paths outside the artifact directory. ... ok
+test_source_drift_blocks_publication (test_build.BuildTests.test_source_drift_blocks_publication)
+Editing an input during compilation fails instead of claiming old provenance. ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.051s
+
+OK
+EXIT 0
+
+COMMAND ['file', 'bin/hestia-keenetic-diagnostics']
+CWD /private/tmp/hestia-diagnostic-independent/tester-offline-20261106
+bin/hestia-keenetic-diagnostics: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, Go BuildID=2nVkaPhuhaxMG97-SKdC/kkDkC2YE8f0NF0Fx3Jmh/Iwt2X-HgXf3EEhmYFO1p/ViImYsdmfbUiVnvU2I5r, BuildID[sha1]=2644cb77ae096adfe318883f7b1ac5123a67d23d, with debug_info, not stripped
+EXIT 0
+
+COMMAND ['shasum', '-a', '256', '-c', 'SHA256SUMS']
+CWD /private/tmp/hestia-diagnostic-independent/tester-offline-20261106
+README.md: OK
+SPECIFICATION.md: OK
+bin/hestia-keenetic-diagnostics: OK
+manifest.json: OK
+EXIT 0
+Gateway command platform exclusion PASS: darwin/arm64
+Gateway command platform exclusion PASS: linux/amd64
+Gateway command platform exclusion PASS: linux/arm
+Gateway command platform exclusion PASS: android/arm64
+PASS: all artifact/source hashes match current bytes; ELF e_machine=183 (AArch64); manifest marks hardware untested and not installed.
+PASS: actual repeated build rejects existing artifact without overwrite.
+LIMIT: No Linux ARM64 execution, hardware connectivity, runtime VPN or network capability tests were performed.
