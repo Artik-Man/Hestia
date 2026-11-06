@@ -1,0 +1,20 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/rci/show/version",
+    "host": "127.0.0.1",
+    "port": 79,
+    "auth_header": "X-NDMA-TKN",
+    "token_value": "redacted",
+    "transport": "SSH tunnel to router loopback"
+  },
+  "response": {
+    "http_status": 200,
+    "content_type": "application/json",
+    "release": "5.02.B.3.0-2",
+    "title": "5.2 Beta 3",
+    "architecture": "aarch64",
+    "model": "Giga (KN-1012)"
+  },
+  "side_effects": "none; read-only GET"
+}

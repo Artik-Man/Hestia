@@ -1,0 +1,1 @@
+Current Ruff-formatted local lifecycle runner source snapshot after both cycles. The executed local runner remains the immutable runner-source-03 snapshot; this later formatting snapshot was not executed. Remote source SHA remains the prototype-source-05 value.

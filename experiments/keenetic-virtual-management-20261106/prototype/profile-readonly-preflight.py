@@ -131,10 +131,34 @@ def classify_stderr(raw: bytes) -> str:
     return "other_suppressed" if raw else "empty"
 
 
+def sanitize_handshake_age(value: str) -> int | None:
+    """Convert a relative handshake age to seconds without retaining timestamps."""
+    match = re.fullmatch(
+        r"(\d+)\s*(seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d)(?:\s+ago)?",
+        value.strip(),
+        re.IGNORECASE,
+    )
+    if not match:
+        return None
+    amount = int(match.group(1))
+    unit = match.group(2).lower()
+    scale = (
+        1
+        if unit.startswith("s")
+        else 60
+        if unit.startswith("m")
+        else 3600
+        if unit.startswith(("h", "hr"))
+        else 86400
+    )
+    return amount * scale
+
+
 def sanitize_profile(raw: bytes, label: str) -> dict[str, object]:
-    """Keep only exact profile identity and normalized state/link fields."""
+    """Keep exact profile identity, normalized state, and numeric relative handshake age."""
     expected = PROFILES[label]
     values: dict[str, str] = {}
+    handshake_ages: list[int] = []
     duplicates: list[str] = []
     for original_line in raw.decode("utf-8", errors="replace").splitlines():
         match = re.fullmatch(
@@ -143,9 +167,14 @@ def sanitize_profile(raw: bytes, label: str) -> dict[str, object]:
         if not match:
             continue
         key = re.sub(r"\s+", " ", match.group(1).strip().lower()).replace(" ", "_")
+        value = match.group(2).strip().strip("\"'")
+        if key in {"latest_handshake", "last_handshake", "handshake_age"}:
+            age = sanitize_handshake_age(value)
+            if age is not None:
+                handshake_ages.append(age)
+            continue
         if key not in ALLOWED_FIELDS:
             continue
-        value = match.group(2).strip().strip("\"'")
         lowered = value.lower()
         if key in {"state", "link", "status", "connected"}:
             if lowered not in SAFE_STATES:
@@ -183,6 +212,10 @@ def sanitize_profile(raw: bytes, label: str) -> dict[str, object]:
         "link": values.get("link"),
         "status": values.get("status"),
         "connected": values.get("connected"),
+        "handshake_age_seconds": handshake_ages[0]
+        if len(set(handshake_ages)) == 1
+        else None,
+        "handshake_age_ambiguous": len(set(handshake_ages)) > 1,
         "duplicate_conflict": sorted(set(duplicates)),
         "identity_verified": identity_ok,
         "readback_complete": identity_ok and "state" in values and "link" in values,

@@ -1,0 +1,126 @@
+{
+  "started_utc": "2026-11-06T20:54:03.570288+00:00",
+  "finished_utc": "2026-11-06T20:54:04.075478+00:00",
+  "query_target": "WifiMaster1/WifiStation0",
+  "target_is_candidate_derived_from_documented_naming": true,
+  "hash_command": [
+    "ssh",
+    "-p",
+    "222",
+    "-i",
+    "/Users/artikman/.ssh/hestia_keenetic",
+    "-o",
+    "BatchMode=yes",
+    "-o",
+    "IdentitiesOnly=yes",
+    "-o",
+    "StrictHostKeyChecking=yes",
+    "-o",
+    "UserKnownHostsFile=/Users/artikman/.ssh/known_hosts",
+    "-o",
+    "ConnectTimeout=7",
+    "-o",
+    "ServerAliveInterval=5",
+    "-o",
+    "ServerAliveCountMax=2",
+    "root@192.168.1.1",
+    "sha256sum /bin/ndmc"
+  ],
+  "hash_exit_code": 0,
+  "ndmc_sha256": "6e6b0bee69e1270160a16711b6a64f4e036b9b984d8eb80acdf76403c243121e",
+  "query_command": [
+    "ssh",
+    "-p",
+    "222",
+    "-i",
+    "/Users/artikman/.ssh/hestia_keenetic",
+    "-o",
+    "BatchMode=yes",
+    "-o",
+    "IdentitiesOnly=yes",
+    "-o",
+    "StrictHostKeyChecking=yes",
+    "-o",
+    "UserKnownHostsFile=/Users/artikman/.ssh/known_hosts",
+    "-o",
+    "ConnectTimeout=7",
+    "-o",
+    "ServerAliveInterval=5",
+    "-o",
+    "ServerAliveCountMax=2",
+    "root@192.168.1.1",
+    "/bin/ndmc -c 'show interface WifiMaster1/WifiStation0'"
+  ],
+  "query_exit_code": 0,
+  "raw_stdout_bytes": 1638,
+  "raw_stdout_sha256": "7bcb1a71f2836d3f3cb4cb765bfb6e39b741cfe876f1e2850552ffc1b55d2d45",
+  "raw_stderr_bytes": 0,
+  "raw_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "sanitized_fields": [
+    {
+      "key": "id",
+      "indent": 15,
+      "value": "WifiMaster1/WifiStation0"
+    },
+    {
+      "key": "index",
+      "indent": 12,
+      "value": 0
+    },
+    {
+      "key": "interface-name",
+      "indent": 3,
+      "value": "WifiMaster1/WifiStation0"
+    },
+    {
+      "key": "type",
+      "indent": 13,
+      "value": "wifistation"
+    },
+    {
+      "key": "description",
+      "indent": 6,
+      "value": {
+        "matches_iphone": true
+      }
+    },
+    {
+      "key": "link",
+      "indent": 13,
+      "value": "up"
+    },
+    {
+      "key": "connected",
+      "indent": 8,
+      "value": true
+    },
+    {
+      "key": "state",
+      "indent": 12,
+      "value": "up"
+    },
+    {
+      "key": "defaultgw",
+      "indent": 8,
+      "value": false
+    },
+    {
+      "key": "priority",
+      "indent": 9,
+      "value": 65531
+    },
+    {
+      "key": "defaultgw",
+      "indent": 12,
+      "value": false
+    },
+    {
+      "key": "ssid",
+      "indent": 13,
+      "value": {
+        "matches_white_paper": true
+      }
+    }
+  ],
+  "raw_stdout_and_stderr_persisted": false
+}

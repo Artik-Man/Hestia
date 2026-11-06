@@ -1,0 +1,1 @@
+Current formatted preflight runner source snapshot, captured before fresh remote status/route verification. It validates the known-host pin, hashes ndmc before profile queries, reads only the two named native interfaces, and returns only safe state enums plus a boolean for whether the router's reply route uses a candidate VPN. No raw output is persisted.

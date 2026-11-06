@@ -14,7 +14,7 @@ from pathlib import Path
 
 KNOWN_HOST_FINGERPRINT = "SHA256:u5mFSUOHtvmfjURyMmAe8N2BVONvSiTAoV7OLn2Czoo"
 EXPECTED_SCRIPT_SHA256 = (
-    "ef5771e9cb7392146fdc98551d18d560cc6f3cd102e0b8c5dd257e32704c1e22"
+    "bf87ed021ccfa59b6fb6f62e5af779f9d1ccf5a8c0e7f89fb0b3e411547a670a"
 )
 SSH_BASE = [
     "ssh",

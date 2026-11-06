@@ -1,0 +1,1 @@
+Updated profile-specific read-only preflight snapshot, captured before its next use. It keeps status fields and, if present, only a numeric relative handshake age converted to seconds. Timestamp strings, peer keys, endpoints, and all unrecognized output remain unpersisted. Local AST parsing succeeded.

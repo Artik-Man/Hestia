@@ -1,0 +1,1 @@
+Current Ruff-formatted preflight helper source snapshot after the completed lifecycle checks. The executed version remains the immutable preflight-source-07 snapshot; this later snapshot was not remotely run. It optionally stores relative handshake ages only as integer seconds.

@@ -1,0 +1,1 @@
+Current formatted local lifecycle runner snapshot, captured before upload/execution. It verifies the current remote lifecycle script SHA-256, checks the pinned host key, uploads to private staging, verifies the staged hash, runs one profile only, persists allowlisted output, and cleans its own staging. The expected script hash matches prototype-source-05.

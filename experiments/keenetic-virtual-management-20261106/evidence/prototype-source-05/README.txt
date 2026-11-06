@@ -1,0 +1,1 @@
+Fresh current remote lifecycle source snapshot for the resumed VPN-only task, captured before upload/execution. This is the formatted version present at the current commit. SHA-256 is recorded in sha256.txt. No remote upload or state change has occurred at this point.

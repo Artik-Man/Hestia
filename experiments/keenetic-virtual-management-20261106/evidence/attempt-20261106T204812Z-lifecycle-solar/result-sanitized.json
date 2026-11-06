@@ -1,0 +1,71 @@
+{
+  "time_utc": "20261106T204812Z",
+  "runner_sha256": "f4951bbe36a3c23106e287171051ff4077753f21823cbda8f6a7ef145a37e788",
+  "script_sha256_expected": "bf87ed021ccfa59b6fb6f62e5af779f9d1ccf5a8c0e7f89fb0b3e411547a670a",
+  "host_key_fingerprint_expected_sha256": "SHA256:u5mFSUOHtvmfjURyMmAe8N2BVONvSiTAoV7OLn2Czoo",
+  "host_key_pin_verified_before_ssh": true,
+  "label": "Solar (Moscow)",
+  "profile_id": "Wireguard2",
+  "commands": [
+    {
+      "phase": "upload",
+      "command": "umask 077; mkdir -m 700 '/tmp/hestia-vpn-lifecycle-solar-20261106T204812Z' && cat > '/tmp/hestia-vpn-lifecycle-solar-20261106T204812Z/profile-lifecycle-remote.sh'",
+      "exit_code": 0,
+      "timed_out": false,
+      "stdout_bytes": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_reason": "empty"
+    },
+    {
+      "phase": "remote_source_hash",
+      "command": "sha256sum '/tmp/hestia-vpn-lifecycle-solar-20261106T204812Z/profile-lifecycle-remote.sh'",
+      "exit_code": 0,
+      "timed_out": false,
+      "sha256": "bf87ed021ccfa59b6fb6f62e5af779f9d1ccf5a8c0e7f89fb0b3e411547a670a",
+      "matches_local_source": true,
+      "stdout_bytes": 143,
+      "stdout_sha256": "d5406fc3d81fa374680919c4b016e12b63a7cae9a9c12cd653fc098d20ebede9",
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_reason": "empty"
+    },
+    {
+      "phase": "lifecycle",
+      "command": "/bin/sh '/tmp/hestia-vpn-lifecycle-solar-20261106T204812Z/profile-lifecycle-remote.sh' 'Solar (Moscow)' down no",
+      "exit_code": 0,
+      "timed_out": false,
+      "stdout_allowlisted_lines": [
+        "transition_command=accepted target=up",
+        "admin_state=up",
+        "connection_state=yes",
+        "link_status=up connected=yes status=up",
+        "restore_command=accepted",
+        "admin_state=down",
+        "connection_state=no",
+        "link_status=down connected=no status=up",
+        "result=completed label=Solar (Moscow) id=Wireguard2 type=wireguard initial_admin=down initial_connected=no"
+      ],
+      "stdout_all_lines_allowlisted": true,
+      "stdout_bytes": 322,
+      "stdout_sha256": "48bf8f67459b3704abe6b18992e6a1c42f96200de1548ac2e49c78e189464b3e",
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_reason": "empty"
+    },
+    {
+      "phase": "staging_cleanup",
+      "command": "rm -f '/tmp/hestia-vpn-lifecycle-solar-20261106T204812Z/profile-lifecycle-remote.sh' && rmdir '/tmp/hestia-vpn-lifecycle-solar-20261106T204812Z'",
+      "exit_code": 0,
+      "timed_out": false,
+      "stdout_bytes": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_reason": "empty"
+    }
+  ],
+  "result": "completed",
+  "raw_stdout_or_stderr_persisted": false
+}
