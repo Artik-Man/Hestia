@@ -42,3 +42,41 @@ stop_existing_units() {
         systemctl stop "$unit" || return 1
     done
 }
+
+# route_snapshot retains one-line main-table records and canonicalizes independent destinations; capture or normalization errors fail the caller.
+route_snapshot() {
+    local family=$1 output=$2
+    [[ $family == 4 || $family == 6 ]] || return 1
+    ip -o "-$family" route show table main >"$output" || return 1
+    python3 -I - "$output" <<'PY'
+import ipaddress
+from pathlib import Path
+import sys
+
+
+def route_key(row: str) -> tuple[str, str]:
+    """Order independent destinations, preserving competing routes and nexthops."""
+    tokens = row.split()
+    if not tokens:
+        raise ValueError('Empty route record')
+    kinds = {'unicast', 'local', 'broadcast', 'multicast', 'throw',
+             'unreachable', 'prohibit', 'blackhole', 'nat', 'anycast'}
+    destination = tokens[1] if tokens[0] in kinds else tokens[0]
+    if destination == 'default':
+        return destination, ''
+    network = ipaddress.ip_network(destination, strict=False)
+    # IPv6 link-local direct routes apply independently on each device.
+    # Other equal destinations retain their original order conservatively.
+    device = ''
+    if network.version == 6 and network.is_link_local and 'via' not in tokens and 'nexthop' not in tokens:
+        device = tokens[tokens.index('dev') + 1]
+    return str(network), device
+
+
+source = Path(sys.argv[1])
+rows = source.read_text().splitlines(keepends=True)
+if any(not row.endswith('\n') for row in rows):
+    raise ValueError('Incomplete route record')
+source.with_name(source.name + '.canonical').write_text(''.join(sorted(rows, key=route_key)))
+PY
+}

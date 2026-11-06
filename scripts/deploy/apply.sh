@@ -30,7 +30,7 @@ for directory in /etc/hestia /usr/local/lib/hestia /usr/local/share/hestia-panel
 for file in /usr/local/bin/hestia /usr/local/bin/hestia-panel /usr/local/bin/hestia-observe /usr/local/lib/hestia/profile.py /usr/local/lib/hestia/smoke.py; do
     die_if_untrusted_file "$file"
     die_if_untrusted_file "$file.next"
-    [[ -f $file ]]
+    [[ -f $file || $file == /usr/local/bin/hestia-observe ]] || exit 1
 done
 [[ -d /usr/local/share/hestia-panel/current ]]
 if [[ -L /usr/local/share/hestia-panel/current ]]; then
@@ -50,6 +50,8 @@ for unit in "${units[@]}"; do active[$unit]=$(systemctl is-active "$unit" || :);
 mapfile -t awg_units < <(systemctl list-units 'hestia-awg@*.service' --state=active --no-legend | awk '{print $1}')
 for unit in "${awg_units[@]}"; do [[ $unit =~ ^hestia-awg@[a-zA-Z0-9-]+\.service$ ]]; done
 paths=(usr/local/bin/hestia usr/local/bin/hestia-panel usr/local/bin/hestia-observe usr/local/lib/hestia/profile.py usr/local/lib/hestia/smoke.py usr/local/share/hestia-panel/current)
+absent_paths=()
+existing_paths=()
 ready=0
 published=0
 released=0
@@ -126,6 +128,12 @@ rollback() {
                     echo "Rollback restoration failed; backup $backup" >&2
                     exit 1
                 }
+                if ((${#absent_paths[@]})); then
+                    rm -f -- "${absent_paths[@]}" || {
+                        echo "Rollback could not restore absent paths; backup $backup" >&2
+                        exit 1
+                    }
+                fi
             fi
         fi
         resume || {
@@ -146,9 +154,20 @@ exec 9<>/run/hestia-install.lock
 flock -x -w 30 9
 [[ ! -e /etc/hestia/.binding-pending && ! -L /etc/hestia/.binding-pending ]]
 config_digest >"$backup/config.sha256"
-tar -C / -cpf "$backup/files.tar" "${paths[@]}"
-ip -4 route show table main >"$backup/routes4"
-ip -6 route show table main >"$backup/routes6"
+for path in "${paths[@]}"; do
+    if [[ -e /$path || -L /$path ]]; then
+        existing_paths+=("$path")
+    else
+        [[ $path == usr/local/bin/hestia-observe ]]
+        absent_paths+=("/$path")
+    fi
+done
+printf '%s\n' "${existing_paths[@]}" >"$backup/present.txt"
+: >"$backup/absent.txt"
+if ((${#absent_paths[@]})); then printf '%s\n' "${absent_paths[@]}" >"$backup/absent.txt"; fi
+tar -C / -cpf "$backup/files.tar" "${existing_paths[@]}"
+route_snapshot 4 "$backup/routes4"
+route_snapshot 6 "$backup/routes6"
 ready=1
 stop_existing_units hestia.service hestia-sing-box.service hestia-dns.service "${awg_units[@]}"
 # Publication occurs while all application writers and runtimes are stopped under the install lock.
@@ -183,8 +202,8 @@ systemctl start hestia-smoke@current.service
 for unit in "${units[@]}"; do
     [[ ${active[$unit]} != active || $unit == hestia-binding-watch.service ]] || systemctl is-active --quiet "$unit"
 done
-ip -4 route show table main >"$backup/routes4.after"
-ip -6 route show table main >"$backup/routes6.after"
-cmp "$backup/routes4" "$backup/routes4.after"
-cmp "$backup/routes6" "$backup/routes6.after"
+route_snapshot 4 "$backup/routes4.after"
+route_snapshot 6 "$backup/routes6.after"
+cmp "$backup/routes4.canonical" "$backup/routes4.after.canonical"
+cmp "$backup/routes6.canonical" "$backup/routes6.after.canonical"
 printf 'Update verified; preserved configuration and main routes. Backup: %s\n' "$backup"
