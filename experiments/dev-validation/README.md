@@ -164,6 +164,18 @@ GOCACHE=/tmp/hestia-go-cache make test-dev
 
 **Воспроизведение.** Из корня репозитория на ветке с коммитом `0a84238` выполнить `LIMA_HOME=/private/tmp/hestia-vm-run/lima-state LIMACTL=/private/tmp/hestia-vm-run/bin/limactl bash deploy/stage1-awg-update.sh`. Скрипт сам проверяет имя и IP целевой ВМ, состояние служб, контрольные суммы конфигурации и маршруты, затем проверяет HTTP панели. Хеши повторной сборки сравнивались командами `GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -trimpath -buildvcs=false` и, для Keenetic-варианта, теми же параметрами с `-tags keenetic`.
 
+## Поставка VPN API на prod — 7 ноября 2026 года
+
+**Вопрос.** Product Owner запросил установить текущую поддержку VPN-профилей на prod и Keenetic. Проверялись Linux-prod поставка и готовность Keenetic IPK из одного коммита.
+
+**Среда и версия.** `codex/panel-platform-version`, коммит `2bf46144bcb4b06bc65eed809839cfad0ce282f3`; clean build `20261107-225942-2bf46144bcb4`. Linux target — `hestia-prod` ARM64, `192.168.1.133:8080`; router target — KN-1012 `192.168.1.1`.
+
+**Результат.** `bash deploy/stage1-awg-update.sh` завершился с кодом 0; резервная копия создана в `/var/backups/hestia-stage1-awg-20261107T200054Z`. Хеши установленных `hestia` и `hestia-panel` совпали с clean Linux bundle. Все три systemd-службы активны; панельный unit слушает частный адрес и включает `-enable-hysteria2`. `/api/groups-and-rules`, `/api/awg`, `/api/hysteria2` и `/api/physical-connections` вернули HTTP 200. Штатный сценарий подтвердил неизменность managed-конфигурации и default routes.
+
+Keenetic IPK собран: `hestia_20261107-225942-2bf46144bcb4_aarch64-3.10.ipk`, SHA-256 `185712644fd6d7910f65452dfb3190e6d69a11941f500e1885628aab4dfd9b00`. Установка не выполнялась: SSH на KN-1012 доступен только с password authentication, пароля в сессии нет, авторизованной браузерной сессии не найдено. Настройки роутера не менялись. Для повтора требуется поддерживаемый SSH-доступ или авторизованный вход на роутер.
+
+**Границы.** Проверены Linux-службы, API, бинарные хеши, конфигурация и default routes. Интернет-путь клиентского трафика и VPN dataplane не испытывались; текущий IPK и VPN-операции на Keenetic не приняты. [Хеши, ответы и команды](evidence/prod-deploy-20261107-225942/check.txt).
+
 ## Поставка проверенного комплекта на prod 7 ноября 2026 года
 
 По прямому поручению владельца версия `20261107-100738-5dd5889e639b` (`linux-arm64`) поставлена на существующую `hestia-prod`. Этот же комплект до поставки прошёл полный `test-source`, был установлен на `hestia-dev` и прошёл там все 13 сетевых сценариев и финальную проверку сохранности. Manifest содержит `dirty=true`; хеши комплекта описывают фактическое рабочее дерево.
