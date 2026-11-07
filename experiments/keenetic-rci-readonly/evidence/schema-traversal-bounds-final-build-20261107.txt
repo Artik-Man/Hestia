@@ -1,0 +1,37 @@
+Final schema traversal bounds build on Linux and Keenetic ARM64
+===============================================================
+
+Question
+--------
+Does the final nil-budget guard and bounded schema traversal compile into current Linux and Keenetic product builds and retain source provenance in the IPK manifest?
+
+Final implementation
+--------------------
+
+`describeJSONValue` rejects a nil budget before decrementing it; every node consumes one shared traversal budget. Oversized array/object branches fail before iterating their children or allocating and sorting object keys. Nested `status: "error"` is checked during that same traversal. Error output remains redacted.
+
+Checks
+------
+
+- `gofmt -w pkg/keeneticrci/schema.go` — passed.
+- `GOCACHE=/private/tmp/hestia-go-cache go vet ./...` — passed.
+- `GOCACHE=/private/tmp/hestia-go-cache GOOS=linux GOARCH=arm64 go vet -tags keenetic ./...` — passed.
+- `GOCACHE=/private/tmp/hestia-go-cache python3 scripts/build/run.py --check-go --output /private/tmp/hestia-schema-bounds-check-final` — passed.
+- `SHFMT=/private/tmp/hestia-tools/shfmt make docs-check` — passed.
+- `git diff --check` — passed.
+- Full Linux ARM64, Keenetic ARM64 and frontend/IPK build — exit code 0.
+- Tests were not run.
+
+Artifact and provenance
+----------------------
+
+- Bundle: `/private/tmp/hestia-schema-bounds-build-final/20261107-065135-5dd5889e639b/keenetic-arm64-experimental`
+- Manifest: 552 source inputs, 145 bundle files
+- `backend/pkg/keeneticrci/schema.go` SHA-256 in manifest: `575311e9f780f81b56f0f406520738cc2bebdb39c2f6bcd0b92bc47c4d8bc55b`
+- IPK: `hestia_20261107-065135-5dd5889e639b_aarch64-3.10.ipk`
+- IPK SHA-256: `02e1de8e7fb3024ffd8e80a877ee224d432a27b77f3ef9227698d549fa7f7ce9`
+
+Limits
+------
+
+No router request, device access, opkg lifecycle, installation, or network mutation was performed. This build does not establish the KN-1012 Wi-Fi/WISP response contract or end-to-end Hestia traffic path.

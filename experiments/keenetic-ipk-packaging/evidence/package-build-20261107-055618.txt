@@ -1,0 +1,20 @@
+Question: does the Keenetic IPK build with the shared typed RCI version reader, and does the generated source manifest include every new Go source file used by that reader?
+
+Environment: macOS ARM64, Go 1.27.3, installed frontend dependencies, and pinned runtime inputs from dist/runtime. No router, VM, or network stand was accessed.
+
+Command:
+GOCACHE=/private/tmp/hestia-go-build-cache python3 scripts/build/run.py --runtime-dir dist/runtime --output /private/tmp/hestia-typed-version-final
+
+Result: exit 0. The Linux/Keenetic bundles and frontend were built. The generated Keenetic source manifest now includes `backend/pkg/keeneticrci/version.go`, the preflight source, and `scripts/build/run.py` with these hashes:
+- backend/pkg/keeneticrci/version.go: b75a80c4402f21d9955e8fdb7ac26ca6e13de9baa11a53b85ff92b7f86fcb590
+- backend/cmd/keenetic-preflight/main.go: 75b7b276cf65145d5ef0e54fa00166357ce67ddad8e9f58addbf603c2b61c841
+- scripts/build/run.py: e72a383cbcc0e41936f8c43779479c31ac03109f9c250e63a50da8377b69a5bb
+
+Artifact directory:
+/private/tmp/hestia-typed-version-final/20261107-055618-5dd5889e639b/keenetic-arm64-experimental
+
+IPK:
+hestia_20261107-055618-5dd5889e639b_aarch64-3.10.ipk
+SHA-256: 4c290bf15a635e5c2ec5d1861711e08fe86b1678274c84b364d7c09a025d71ac
+
+Keenetic ARM64 `go vet`, documentation check with pinned shfmt, and `git diff --check` passed. No tests were run. This establishes compilation, package generation, and source-manifest inclusion only; it does not verify preinst on Entware or any router behavior.

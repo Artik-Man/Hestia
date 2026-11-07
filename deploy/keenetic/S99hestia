@@ -1,0 +1,271 @@
+#!/bin/sh
+# Entware init entry for the Hestia supervisor and its fixed managed services.
+
+set -eu
+umask 077
+
+PATH=/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export PATH
+
+BUSYBOX=/opt/bin/busybox
+DAEMON=/opt/bin/hestia
+RUNDIR=/opt/var/run/hestia
+PIDFILE=$RUNDIR/supervisor.pid
+READY=$RUNDIR/supervisor.ready
+CONFIG=/opt/etc/hestia
+LOADER=/opt/lib/ld-linux-aarch64.so.1
+SING_BOX=/opt/lib/hestia/sing-box
+PYTHON=/opt/bin/python3
+LOCKFILE=$RUNDIR/lifecycle.lock
+MAINTENANCE=$RUNDIR/package-maintenance
+
+# acquire_lifecycle_lock serializes init and opkg lifecycle actions through an atomic owner symlink.
+acquire_lifecycle_lock() {
+    if [ -L "$RUNDIR" ] || [ -L /opt/var/run ]; then
+        printf '%s\n' 'Hestia Entware runtime path must not be a symbolic link' >&2
+        return 1
+    fi
+    mkdir -p "$RUNDIR" && chmod 0700 "$RUNDIR" || return 1
+    if [ "${HESTIA_LIFECYCLE_LOCKED:-}" = "$LOCKFILE" ]; then
+        if [ ! -L "$LOCKFILE" ]; then
+            printf '%s\n' 'Hestia lifecycle lock path is unsafe' >&2
+            return 1
+        fi
+        OWNER=$(readlink "$LOCKFILE" 2>/dev/null || true)
+        if [ "$OWNER" = "${HESTIA_LIFECYCLE_LOCK_PID:-}" ] && [ -n "$OWNER" ] && kill -0 "$OWNER" 2>/dev/null; then
+            return 0
+        fi
+        printf '%s\n' 'Hestia lifecycle lock inheritance is invalid' >&2
+        return 1
+    fi
+    attempt=0
+    while [ "$attempt" -lt 100 ]; do
+        if [ -L "$LOCKFILE" ]; then
+            OWNER=$(readlink "$LOCKFILE" 2>/dev/null || true)
+            case "$OWNER" in
+                '' | *[!0-9]* | 0)
+                    printf '%s\n' 'Hestia lifecycle lock owner is invalid; manual recovery is required' >&2
+                    return 1
+                    ;;
+                *)
+                    if ! kill -0 "$OWNER" 2>/dev/null; then
+                        printf '%s\n' 'Hestia lifecycle lock is stale; verify services are stopped before manual recovery' >&2
+                        return 1
+                    fi
+                    ;;
+            esac
+        elif [ -e "$LOCKFILE" ]; then
+            printf '%s\n' 'Hestia lifecycle lock path is unsafe' >&2
+            return 1
+        elif ln -s "$$" "$LOCKFILE" 2>/dev/null; then
+            HESTIA_LIFECYCLE_LOCKED=$LOCKFILE
+            HESTIA_LIFECYCLE_LOCK_PID=$$
+            export HESTIA_LIFECYCLE_LOCKED HESTIA_LIFECYCLE_LOCK_PID
+            trap release_lifecycle_lock EXIT
+            trap 'exit 1' HUP INT TERM
+            return 0
+        fi
+        "$BUSYBOX" usleep 100000
+        attempt=$((attempt + 1))
+    done
+    printf '%s\n' 'Hestia lifecycle lock is busy' >&2
+    return 1
+}
+
+# release_lifecycle_lock removes only the atomic owner symlink created by this init process.
+release_lifecycle_lock() {
+    if [ -L "$LOCKFILE" ] && [ "$(readlink "$LOCKFILE" 2>/dev/null || true)" = "$$" ]; then
+        rm -f "$LOCKFILE"
+    fi
+}
+
+if [ ! -x "$BUSYBOX" ] || [ ! -x "$DAEMON" ]; then
+    printf '%s\n' 'Hestia Entware runtime is not installed' >&2
+    exit 1
+fi
+
+case "${1:-}" in
+    start)
+        acquire_lifecycle_lock || exit 1
+        if { [ -e "$MAINTENANCE" ] || [ -L "$MAINTENANCE" ]; } && [ "${HESTIA_CONFIGURE_TRANSACTION:-}" != 1 ]; then
+            printf '%s\n' 'Hestia package transaction is in progress; refusing to start' >&2
+            exit 1
+        fi
+        if [ ! -x "$PYTHON" ] || [ ! -x "$LOADER" ] || [ ! -x "$SING_BOX" ]; then
+            printf '%s\n' 'Hestia Entware runtime is incomplete' >&2
+            exit 1
+        fi
+        if ! "$PYTHON" -I /opt/lib/hestia/profile.py --validate-managed "$CONFIG" >/dev/null 2>&1; then
+            printf '%s\n' 'Hestia profile is missing or invalid; refusing to start services' >&2
+            exit 1
+        fi
+        if ! "$DAEMON" -check -config "$CONFIG/snapshot.json" >/dev/null 2>&1; then
+            printf '%s\n' 'Hestia controller snapshot is invalid' >&2
+            exit 1
+        fi
+        if ! "$LOADER" --library-path /opt/lib:/opt/lib/hestia "$SING_BOX" check -c "$CONFIG/sing-box.json" >/dev/null 2>&1; then
+            printf '%s\n' 'Hestia router configuration is invalid' >&2
+            exit 1
+        fi
+        HELP=$("$BUSYBOX" start-stop-daemon --help 2>&1 || true)
+        case "$HELP" in
+            *start-stop-daemon*) ;;
+            *)
+                printf '%s\n' 'BusyBox start-stop-daemon applet is unavailable' >&2
+                exit 1
+                ;;
+        esac
+        for option in -S -K -b -m -p -x -s; do
+            case "$HELP" in
+                *"$option"*) ;;
+                *)
+                    printf 'BusyBox start-stop-daemon lacks required option %s\n' "$option" >&2
+                    exit 1
+                    ;;
+            esac
+        done
+        if ! "$BUSYBOX" usleep 1 >/dev/null 2>&1; then
+            printf '%s\n' 'BusyBox usleep applet is unavailable' >&2
+            exit 1
+        fi
+        if [ -L "$RUNDIR" ] || [ -L /opt/var/run ]; then
+            printf '%s\n' 'Hestia Entware runtime path must not be a symbolic link' >&2
+            exit 1
+        fi
+        mkdir -p "$RUNDIR" && chmod 0700 "$RUNDIR" || exit 1
+        if [ -L "$PIDFILE" ] || { [ -e "$PIDFILE" ] && [ ! -f "$PIDFILE" ]; }; then
+            printf '%s\n' 'Hestia supervisor PID path is unsafe' >&2
+            exit 1
+        fi
+        if [ -e "$PIDFILE" ]; then
+            PID=$(cat "$PIDFILE")
+            case "$PID" in
+                '' | *[!0-9]* | 0)
+                    printf '%s\n' 'Hestia supervisor PID file is invalid' >&2
+                    exit 1
+                    ;;
+            esac
+            if "$DAEMON" -service-check-pid "$PID" >/dev/null 2>&1; then
+                if [ -f "$READY" ] && [ ! -L "$READY" ] && "$DAEMON" -service-supervisor-ready >/dev/null 2>&1; then
+                    exit 0
+                fi
+                printf '%s\n' 'Hestia supervisor exists but is not ready' >&2
+                exit 1
+            fi
+            if ! "$DAEMON" -service-check-idle >/dev/null 2>&1; then
+                printf '%s\n' 'Hestia has an orphan process; refusing to start another supervisor' >&2
+                exit 1
+            fi
+            rm -f "$PIDFILE"
+        fi
+        if ! "$DAEMON" -service-check-idle >/dev/null 2>&1; then
+            printf '%s\n' 'Hestia managed process state is not idle' >&2
+            exit 1
+        fi
+        if [ -L "$READY" ] || { [ -e "$READY" ] && [ ! -f "$READY" ]; }; then
+            printf '%s\n' 'Hestia readiness path is unsafe' >&2
+            exit 1
+        fi
+        rm -f "$READY"
+        if ! "$BUSYBOX" start-stop-daemon -S -b -m -p "$PIDFILE" -x "$DAEMON" -- -service-supervisor; then
+            "$0" stop || printf '%s\n' 'Hestia startup failed and cleanup could not confirm shutdown' >&2
+            exit 1
+        fi
+        attempt=0
+        while [ "$attempt" -lt 100 ]; do
+            if [ -f "$PIDFILE" ] && [ ! -L "$PIDFILE" ]; then
+                PID=$(cat "$PIDFILE")
+                if "$DAEMON" -service-check-pid "$PID" >/dev/null 2>&1 &&
+                    [ -f "$READY" ] && [ ! -L "$READY" ] &&
+                    "$DAEMON" -service-supervisor-ready >/dev/null 2>&1; then
+                    exit 0
+                fi
+            fi
+            "$BUSYBOX" usleep 100000
+            attempt=$((attempt + 1))
+        done
+        "$0" stop || printf '%s\n' 'Hestia startup failed and cleanup could not confirm shutdown' >&2
+        printf '%s\n' 'Hestia supervisor did not become ready' >&2
+        exit 1
+        ;;
+    stop)
+        acquire_lifecycle_lock || exit 1
+        if [ -L "$RUNDIR" ] || [ -L /opt/var/run ]; then
+            printf '%s\n' 'Hestia Entware runtime path must not be a symbolic link' >&2
+            exit 1
+        fi
+        if [ -L "$PIDFILE" ] || { [ -e "$PIDFILE" ] && [ ! -f "$PIDFILE" ]; }; then
+            printf '%s\n' 'Hestia supervisor PID path is unsafe' >&2
+            exit 1
+        fi
+        if [ -e "$PIDFILE" ]; then
+            PID=$(cat "$PIDFILE")
+            case "$PID" in
+                '' | *[!0-9]* | 0)
+                    printf '%s\n' 'Hestia supervisor PID file is invalid' >&2
+                    exit 1
+                    ;;
+            esac
+            "$BUSYBOX" start-stop-daemon -K -p "$PIDFILE" -x "$DAEMON" -s TERM || :
+        fi
+        attempt=0
+        while [ "$attempt" -lt 10 ]; do
+            if "$DAEMON" -service-check-idle >/dev/null 2>&1; then
+                rm -f "$PIDFILE" "$READY"
+                exit 0
+            fi
+            sleep 1
+            attempt=$((attempt + 1))
+        done
+        if [ -f "$PIDFILE" ]; then
+            "$BUSYBOX" start-stop-daemon -K -p "$PIDFILE" -x "$DAEMON" -s KILL || :
+        fi
+        attempt=0
+        while [ "$attempt" -lt 20 ]; do
+            if "$DAEMON" -service-check-idle >/dev/null 2>&1; then
+                rm -f "$PIDFILE" "$READY"
+                exit 0
+            fi
+            sleep 1
+            attempt=$((attempt + 1))
+        done
+        printf '%s\n' 'Hestia shutdown is unconfirmed; preserving PID and package files' >&2
+        exit 1
+        ;;
+    restart)
+        acquire_lifecycle_lock || exit 1
+        if [ -e "$MAINTENANCE" ] || [ -L "$MAINTENANCE" ]; then
+            printf '%s\n' 'Hestia package transaction is in progress; refusing to restart' >&2
+            exit 1
+        fi
+        "$0" stop || exit 1
+        "$0" start
+        ;;
+    prepare-package)
+        acquire_lifecycle_lock || exit 1
+        if [ -L "$MAINTENANCE" ] || { [ -e "$MAINTENANCE" ] && [ ! -f "$MAINTENANCE" ]; }; then
+            printf '%s\n' 'Hestia package transaction marker is unsafe' >&2
+            exit 1
+        fi
+        : >"$MAINTENANCE" && chmod 0600 "$MAINTENANCE" || exit 1
+        if ! "$0" stop; then
+            rm -f "$MAINTENANCE"
+            exit 1
+        fi
+        ;;
+    configure-package)
+        acquire_lifecycle_lock || exit 1
+        if [ -L "$MAINTENANCE" ] || { [ -e "$MAINTENANCE" ] && [ ! -f "$MAINTENANCE" ]; }; then
+            printf '%s\n' 'Hestia package transaction marker is unsafe' >&2
+            exit 1
+        fi
+        HESTIA_CONFIGURE_TRANSACTION=1
+        export HESTIA_CONFIGURE_TRANSACTION
+        "$0" start || exit 1
+        rm -f "$MAINTENANCE"
+        ;;
+    *)
+        printf 'Usage: %s {start|stop|restart|prepare-package|configure-package}\n' "$0" >&2
+        exit 2
+        ;;
+esac

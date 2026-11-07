@@ -1,0 +1,18 @@
+Running as unit: hestia-validation-20261107-100824-78943.service
+PASS read-only GET /api/navigation
+PASS read-only GET /api/groups-and-rules
+PASS read-only GET /api/awg
+PASS read-only GET /api/awg-underlays
+PASS read-only GET /api/hysteria2
+PASS read-only GET /api/physical-connections
+PASS read-only GET /api/quality
+PASS read-only GET /api/traffic
+PASS read-only GET /api/traffic/settings
+PASS read-only GET /api/country-map
+PASS read-only GET /api/dns/policy
+PASS copied installed runtime: quality/carrier failover (source measurement fixture)
+PASS copied installed runtime: isolated panel/DNS CRUD and deny
+Finished with result: success
+Main processes terminated with: code=exited/status=0
+Service runtime: 23.482s
+CPU time consumed: 1.746s

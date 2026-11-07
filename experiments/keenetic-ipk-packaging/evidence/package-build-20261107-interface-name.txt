@@ -1,0 +1,21 @@
+Дата: 2026-11-07
+Вопрос: совпадает ли ранняя валидация имён интерфейсов в профильном компиляторе с ограничениями Go socket binder?
+
+В `deploy/profile.py` для TUN `interface_name` и прямого интерфейса `bind_interface` применяется общий ASCII шаблон: первый символ — буква, цифра или `_`; всего 1–15 символов; далее разрешены буквы, цифры, `_`, `.` и `-`. Это соответствует проверке Go binder до вызова системных socket options. Невалидные имена отклоняются при компиляции профиля.
+
+Проверки и сборка:
+
+- `make fmt-check SHFMT=/private/tmp/hestia-tools/shfmt` — успешно.
+- `make docs-check SHFMT=/private/tmp/hestia-tools/shfmt` — успешно.
+- `git diff --check` — успешно.
+- `GOCACHE=/private/tmp/hestia-go-cache bash scripts/build/run.sh --output /private/tmp/hestia-interface-name` — успешно; созданы Linux ARM64 и Keenetic ARM64 комплекты и frontend.
+- Manifest: 552 source inputs, 145 packaged files.
+
+IPK: `/private/tmp/hestia-interface-name/20261107-081223-5dd5889e639b/keenetic-arm64-experimental/hestia_20261107-081223-5dd5889e639b_aarch64-3.10.ipk`.
+
+- Размер: 58 990 066 байт.
+- SHA-256: `fd0a7c9a2c34dcfd021147ce776bfe7b77fc2042ab0adb6123ed367f38bee289`.
+- `deploy/profile.py`: `a612bd43e8490283b4717ba4a4da649f8c48704a1ab02ed9ed9242a601f55a5c`.
+- `backend/internal/network/socket/socket.go`: `281bdeb41a6a1bee0ec3c9f39e7d788f5081c63e51cb10fc2444b762670082c7`.
+
+Ограничения: тесты не запускались. Пакет не устанавливался, Keenetic и ВМ не использовались. Проверка согласованности валидаторов не подтверждает поддержку или фактический результат `SO_BINDTODEVICE`/`SO_MARK` на KN-1012.

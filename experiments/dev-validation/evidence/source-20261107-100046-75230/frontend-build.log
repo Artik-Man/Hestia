@@ -1,0 +1,29 @@
+npm notice run hestia-panel@0.1.1 build
+npm notice run ng build
+❯ Building...
+✔ Building...
+Initial chunk files | Names             |  Raw size | Estimated transfer size
+main-BZYA73KA.js    | main              | 572.69 kB |               116.03 kB
+chunk-K22EAMT3.js   | -                 | 467.89 kB |               106.55 kB
+chunk-5MSZTQ7Q.js   | -                 | 189.02 kB |                38.13 kB
+styles-DJGCNOAD.css | styles            |   9.31 kB |                 2.39 kB
+chunk-CYSNB7A5.js   | -                 |   7.50 kB |                 2.12 kB
+chunk-MCCUZTQ3.js   | -                 |   5.82 kB |                 1.57 kB
+chunk-2FDZ44VM.js   | -                 |   1.71 kB |               690 bytes
+
+                    | Initial total     |   1.25 MB |               267.47 kB
+
+Lazy chunk files    | Names             |  Raw size | Estimated transfer size
+chunk-FTU343RP.js   | -                 | 280.04 kB |                49.09 kB
+chunk-HNZMTI5O.js   | -                 |  38.68 kB |                 8.51 kB
+chunk-GD6VUJIQ.js   | dns-component     |  38.55 kB |                 7.38 kB
+chunk-IVZXVWD7.js   | traffic-component |  32.87 kB |                 8.05 kB
+chunk-NVGVRYDB.js   | quality-component |  32.62 kB |                 7.74 kB
+chunk-6UWR6QSZ.js   | geo-component     |  15.05 kB |                 4.01 kB
+chunk-Y5IQ6IW4.js   | -                 |   9.90 kB |                 2.46 kB
+chunk-MWES4UV5.js   | -                 |   8.89 kB |                 2.27 kB
+
+Application bundle generation complete. [5.054 seconds] - 2026-11-07T07:01:26.666Z
+
+Output location: /Users/artikman/Documents/projects/hestia/frontend/dist/hestia
+

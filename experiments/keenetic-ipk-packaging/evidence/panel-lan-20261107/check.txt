@@ -1,0 +1,13 @@
+router=Keenetic Giga KN-1012
+lan-interface=br0
+lan-address=192.168.1.1/24
+panel-listen-config=/opt/etc/hestia/panel-listen
+panel-listen=192.168.1.1:8080
+panel-listen-owner=root:root
+panel-listen-mode=0600
+socket-listener=192.168.1.1:8080
+supervisor-readiness=ready
+managed-profile=valid
+client-http-url=http://192.168.1.1:8080/
+client-http-status=200
+client-probe=curl --noproxy '*' --connect-timeout 5 --max-time 10 http://192.168.1.1:8080/

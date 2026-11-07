@@ -50,6 +50,10 @@ func unit(service services.Service) (string, error) {
 		return "hestia-smoke@current.service", nil
 	case services.BindingWatch:
 		return "hestia-binding-watch.path", nil
+	case services.Panel:
+		return "hestia-panel.service", nil
+	case services.DNS:
+		return "hestia-dns.service", nil
 	default:
 		return "", ErrInvalid
 	}

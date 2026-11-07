@@ -1,0 +1,27 @@
+Дата: 2026-11-07
+Вопрос: сохраняют ли watcher и Keenetic smoke различие между link down и невозможностью прочитать carrier?
+Изменение: network.Carrier.State возвращает panelmodel.CarrierState (`up`, `down`, `unknown`); watcher выбирает выход только при `up` и дедуплицирует предупреждения для `unknown`; Keenetic smoke проверяет то же условие.
+
+Проверки:
+- gofmt затронутых Go-файлов
+- GOCACHE=/private/tmp/hestia-go-cache go -C backend vet ./...
+- GOCACHE=/private/tmp/hestia-go-cache GOOS=linux GOARCH=arm64 go -C backend vet -tags keenetic ./...
+- GOCACHE=/private/tmp/hestia-go-cache SHFMT=/private/tmp/hestia-tools/shfmt make fmt-check
+- SHFMT=/private/tmp/hestia-tools/shfmt make docs-check
+- git diff --check
+- GOCACHE=/private/tmp/hestia-go-cache python3 scripts/build/run.py --output /private/tmp/hestia-carrier-state-integration
+
+Все проверки завершились кодом 0; тесты не запускались.
+
+Артефакт: /private/tmp/hestia-carrier-state-integration/20261107-072823-5dd5889e639b/keenetic-arm64-experimental/hestia_20261107-072823-5dd5889e639b_aarch64-3.10.ipk
+Размер: 58,971,864 байта
+SHA-256: ad82a38d56b774ed66d7f336aa01bba47092a98d99a63580ffb2645a12eba4e7
+Manifest: 552 source inputs; 145 packaged files.
+Source hashes:
+- network.go: `25662c6bb2bbee46bc6ca55abb3179e151bc44e0977b57509b097410ba3cdb1c`
+- linuxphysical: `33363572780bc264b49c76fdcb78df8d197d7df1220575c862d6a19b982a705f`
+- Keenetic carrier: `8358b641c295b084ccb67865f7e20e5c0bb1661e6a8eba29a444abd33d2966bb`
+- controller watcher: `41f500be9d00664133bb3a69ad872707b66e0399c19ae8ca90a3c5e79beeea03`
+- Keenetic smoke: `e8c6628ead42ce9e0391f4b40d179c4c4b803c4aeaf59e79b58327120dc51b8b`
+
+Границы: подтверждены локальная компиляция и упаковка. Наблюдения sysfs, services, RCI, opkg и клиентский трафик на KN-1012 не проверялись.

@@ -30,6 +30,9 @@ var (
 
 // ServeReadyConnector keeps the requested ready userspace connector active until its service context ends.
 func (InstalledRuntime) ServeReadyConnector(ctx context.Context, id string) (returnErr error) {
+	if err := awgruntime.RequireSupported(runtimeDriver); err != nil {
+		return err
+	}
 	store := &Store{directory: installedStorePath}
 	var ids []string
 	if id != "" {
@@ -39,7 +42,7 @@ func (InstalledRuntime) ServeReadyConnector(ctx context.Context, id string) (ret
 	if err != nil {
 		return err
 	}
-	policy, err := newSlotRoutePolicy(ExecRouteRunner{}, metadata.Slot)
+	policy, err := newSlotRoutePolicy(routeRunner, metadata.Slot)
 	if err != nil {
 		return err
 	}
@@ -333,7 +336,7 @@ func RetireStoppedConnector(ctx context.Context, id string, slot int, legacy boo
 	if !ValidConnectionID(id) {
 		return errors.New("invalid AWG runtime identity")
 	}
-	policy, err := newSlotRoutePolicy(ExecRouteRunner{}, slot)
+	policy, err := newSlotRoutePolicy(routeRunner, slot)
 	if err != nil {
 		return err
 	}
@@ -374,7 +377,7 @@ func ConfirmConnectorGuards(ctx context.Context, id string, slot int) error {
 	if !ValidConnectionID(id) {
 		return errors.New("invalid AWG runtime identity")
 	}
-	policy, err := newSlotRoutePolicy(ExecRouteRunner{}, slot)
+	policy, err := newSlotRoutePolicy(routeRunner, slot)
 	if err != nil {
 		return err
 	}

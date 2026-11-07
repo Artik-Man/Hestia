@@ -6,7 +6,7 @@
         <tr>
           <th>Название подключения</th>
           <th>Интерфейс</th>
-          <th>Состояние кабеля</th>
+          <th>Состояние линка</th>
           <th>Редактировать</th>
         </tr>
       </thead>
@@ -24,9 +24,11 @@
               {{
                 !row.adapter.present
                   ? "Адаптер отсутствует"
-                  : row.adapter.online
-                    ? "Кабель подключён"
-                    : "Кабель отключён"
+                  : row.adapter.carrierState === "up"
+                    ? "Линк поднят"
+                    : row.adapter.carrierState === "down"
+                      ? "Линк не поднят"
+                      : "Состояние линка недоступно"
               }}
             </td>
             <td>
@@ -56,7 +58,9 @@
             <td colspan="4">
               {{
                 inventory()
-                  ? "Ethernet-адаптеры не обнаружены"
+                  ? inventory()?.nativeEthernetPorts?.length
+                    ? "Нативные порты показаны ниже"
+                    : "Ethernet-адаптеры не обнаружены"
                   : failed()
                     ? "Нет данных"
                     : "Загрузка…"
@@ -68,6 +72,42 @@
     </table>
   </div>
 </section>
+@if (inventory()?.nativeEthernetPorts?.length) {
+  <section>
+    <h2>Физические Ethernet-порты</h2>
+    <div class="list-wrap">
+      <table aria-label="Физические Ethernet-порты">
+        <thead>
+          <tr>
+            <th>Идентификатор Keenetic</th>
+            <th>Состояние линка</th>
+            <th>Скорость и дуплекс</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (port of inventory()?.nativeEthernetPorts ?? []; track port.id) {
+            <tr>
+              <th scope="row">{{ port.id }}</th>
+              <td>
+                {{ port.link === "up" ? "Линк поднят" : "Линк не поднят" }}
+              </td>
+              <td>
+                @if (port.speedMbps; as speed) {
+                  {{ speed }} Мбит/с
+                  @if (port.duplex) {
+                    / {{ port.duplex === "full" ? "полный" : "полудуплекс" }}
+                  }
+                } @else {
+                  —
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+}
 <section>
   <div class="section-heading">
     <h2>Wi-Fi</h2>

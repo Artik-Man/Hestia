@@ -16,25 +16,26 @@ type orderWriter func(context.Context, panelmodel.GroupOrderChange) error
 
 // panelWrites holds independently enabled privileged operations.
 type panelWrites struct {
-	countryMap       countryMapAccess
-	enrichment       *geoip.Enrichment
-	trafficCountries *geoip.Index
-	traffic          *traffic.Store
-	dnsPolicyPath    string
-	dnsReportPath    string
-	quality          qualityFiles
-	physical         physicalHelper
-	deleteDomainList domainListDeleter
-	createDomainList domainListCreator
-	updateDomainList domainListUpdater
-	binding          bindingWriter
-	order            orderWriter
-	createGroup      groupCreator
-	renameDirect     groupRenamer
-	renameGroup      groupRenamer
-	deleteGroup      groupDeleter
-	moveExit         exitMover
-	awg              awgWriter
+	countryMap        countryMapAccess
+	enrichment        *geoip.Enrichment
+	trafficCountries  *geoip.Index
+	traffic           *traffic.Store
+	dnsPolicyPath     string
+	dnsReportPath     string
+	quality           qualityFiles
+	physicalInventory physicalHelper
+	physical          physicalHelper
+	deleteDomainList  domainListDeleter
+	createDomainList  domainListCreator
+	updateDomainList  domainListUpdater
+	binding           bindingWriter
+	order             orderWriter
+	createGroup       groupCreator
+	renameDirect      groupRenamer
+	renameGroup       groupRenamer
+	deleteGroup       groupDeleter
+	moveExit          exitMover
+	awg               awgWriter
 }
 
 type orderInput struct{ Body panelmodel.GroupOrderChange }

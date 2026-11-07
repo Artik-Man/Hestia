@@ -22,9 +22,9 @@ type wifiDeleteInput struct {
 }
 type physicalHelper func(context.Context, string, any, any) error
 
-// registerPhysical publishes read-only hardware inventory and bounded client Wi-Fi changes through fixed root helper modes.
-func registerPhysical(api huma.API, helper physicalHelper) {
-	call := func(ctx context.Context, mode string, in, out any) error {
+// registerPhysical publishes read-only hardware inventory and bounded client Wi-Fi changes through separate helper gates.
+func registerPhysical(api huma.API, inventoryHelper, mutationHelper physicalHelper) {
+	call := func(helper physicalHelper, ctx context.Context, mode string, in, out any) error {
 		if helper == nil {
 			return huma.Error503ServiceUnavailable("Управление интерфейсами недоступно")
 		}
@@ -55,18 +55,18 @@ func registerPhysical(api huma.API, helper physicalHelper) {
 	}
 	huma.Register(api, huma.Operation{OperationID: "listPhysicalConnections", Tags: []string{"Panel"}, Method: http.MethodGet, Path: "/api/physical-connections", Summary: "Получить физические интерфейсы и сохранённые Wi-Fi сети", Errors: []int{409, 503}}, func(ctx context.Context, _ *struct{}) (*physicalOutput, error) {
 		var out physicalOutput
-		if err := call(ctx, "-physical-list", struct{}{}, &out.Body); err != nil {
+		if err := call(inventoryHelper, ctx, "-physical-list", struct{}{}, &out.Body); err != nil {
 			return nil, err
 		}
 		return &out, nil
 	})
 	huma.Register(api, huma.Operation{OperationID: "createWifiConnection", Tags: []string{"Panel"}, Method: http.MethodPost, Path: "/api/wifi-connections", Summary: "Подключиться к Wi-Fi сети", MaxBodyBytes: 2048, DefaultStatus: 204, Errors: []int{409, 422, 503}}, func(ctx context.Context, in *wifiCreateInput) (*struct{}, error) {
-		return nil, call(ctx, "-wifi-create", in.Body, nil)
+		return nil, call(mutationHelper, ctx, "-wifi-create", in.Body, nil)
 	})
 	huma.Register(api, huma.Operation{OperationID: "saveWifiConnection", Tags: []string{"Panel"}, Method: http.MethodPut, Path: "/api/wifi-connections/{id}", Summary: "Изменить сохранённый профиль Wi-Fi", MaxBodyBytes: 2048, DefaultStatus: 204, Errors: []int{404, 409, 422, 503}}, func(ctx context.Context, in *wifiUpdateInput) (*struct{}, error) {
-		return nil, call(ctx, "-wifi-save", panelmodel.WifiSaveCommand{ID: in.ID, WifiConnectionSettings: in.Body}, nil)
+		return nil, call(mutationHelper, ctx, "-wifi-save", panelmodel.WifiSaveCommand{ID: in.ID, WifiConnectionSettings: in.Body}, nil)
 	})
 	huma.Register(api, huma.Operation{OperationID: "deleteWifiConnection", Tags: []string{"Panel"}, Method: http.MethodDelete, Path: "/api/wifi-connections/{id}", Summary: "Удалить сохранённый профиль Wi-Fi", DefaultStatus: 204, Errors: []int{404, 409, 422, 503}}, func(ctx context.Context, in *wifiDeleteInput) (*struct{}, error) {
-		return nil, call(ctx, "-wifi-delete", panelmodel.AWGIDRequest{ID: in.ID}, nil)
+		return nil, call(mutationHelper, ctx, "-wifi-delete", panelmodel.AWGIDRequest{ID: in.ID}, nil)
 	})
 }

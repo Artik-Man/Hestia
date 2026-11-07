@@ -1,0 +1,22 @@
+Дата: 2026-11-07
+Вопрос: собирается ли Go Entware service manager с управляемой DNS-ролью?
+
+Изменения включают DNS в закрытый набор service roles Linux systemd/Entware, задают Keenetic-конфигурацию `/opt/etc/hestia/dns.json` и требуют перед запуском root-owned regular config file. Supervisor не стартует DNS автоматически; штатные DNS настройки Keenetic не меняются.
+
+Проверки исходников:
+
+- `GOCACHE=/private/tmp/hestia-go-cache go vet ./...` — успешно.
+- `GOCACHE=/private/tmp/hestia-go-cache GOOS=linux GOARCH=arm64 go vet -tags keenetic ./...` — успешно.
+- `GOCACHE=/private/tmp/hestia-go-cache GOOS=linux GOARCH=arm64 go build -tags keenetic ./cmd/hestia ./cmd/hestia-panel` — успешно.
+- `make docs-check SHFMT=/private/tmp/hestia-tools/shfmt` — успешно.
+- `git diff --check` — успешно.
+- Полная команда `GOCACHE=/private/tmp/hestia-go-cache bash scripts/build/run.sh --output /private/tmp/hestia-dns-role` — успешно; Go, frontend и IPK собраны.
+
+Артефакт: `/private/tmp/hestia-dns-role-final2/20261107-074045-5dd5889e639b/keenetic-arm64-experimental/hestia_20261107-074045-5dd5889e639b_aarch64-3.10.ipk`.
+
+- SHA-256: `0dc92ce9635975999f71599debfc8dbf5414b271155377c080b3ffc7e223f40e`.
+- Размер: 58,977,071 байт.
+- Manifest: 552 source inputs, 145 packaged files.
+- DNS source hashes: services.go `5ba4aa093d16405cc786472bfd831eee1d6a55132f8ec96059b7f254af122f1d`; Entware process.go `57d8b30314998b0ff1d16d311bf40878936202be0f2b0e33e307106643d57428`; Entware manager.go `545d12173c78c8a3c90cae707ecd27b1e10325b293b91c614a6d0188cae1f10d`; Entware ipc.go `b7d9c8899e1755ae58bd0d272d039ae27e976755f57d1b418da9a4e1121c0018`; storage layout.go `2212ed3ee01220e7660e50f55a6d9c01513aaed709ee9af59d2e0dc0fdaf47a7`; systemd.go `aafffb7b1a08e2dd9f735e42c977d3f479de459e6f6f92f98322da65bff3017c`.
+
+Границы вывода: тесты не запускались. IPK не устанавливался; Entware IPC/lifecycle, DNS listener и маршруты на KN-1012 не проверялись. Сборка доказывает компиляцию и состав локального пакета, но не готовность DNS-пути.

@@ -9,17 +9,52 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
 	"github.com/Artik-Man/Hestia/internal/controller"
 	"github.com/Artik-Man/Hestia/internal/dnsservice"
 	"github.com/Artik-Man/Hestia/internal/observer"
+	"github.com/Artik-Man/Hestia/internal/platform"
 )
 
 // main selects snapshot validation, one-shot application, or continuous reconciliation.
 // In watch mode SIGTERM and SIGINT cancel the polling loop.
 func main() {
+	if len(os.Args) == 2 && os.Args[1] == "-service-supervisor" {
+		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		defer stop()
+		if err := platform.RunSupervisor(ctx); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
+	}
+	if len(os.Args) == 2 && os.Args[1] == "-service-check-idle" {
+		if err := platform.CheckManagedProcessesStopped(); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
+	}
+	if len(os.Args) == 3 && os.Args[1] == "-service-check-pid" {
+		pid, err := strconv.Atoi(os.Args[2])
+		if err != nil || platform.CheckSupervisorProcess(pid) != nil {
+			fmt.Fprintln(os.Stderr, "Hestia supervisor PID is not verified")
+			os.Exit(1)
+		}
+		return
+	}
+	if len(os.Args) == 2 && os.Args[1] == "-service-supervisor-ready" {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		if err := platform.SupervisorReady(ctx); err != nil {
+			fmt.Fprintln(os.Stderr, "Hestia supervisor is not ready")
+			os.Exit(1)
+		}
+		return
+	}
 	if len(os.Args) == 3 && os.Args[1] == "dns" {
 		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 		defer stop()

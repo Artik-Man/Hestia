@@ -123,3 +123,35 @@ LIMA_HOME="$HOME/.lima" /private/tmp/hestia-vm-run/bin/limactl shell hestia-dev 
 Воспроизведение локальной регрессии: `python3 -B -m unittest discover -s scripts/deploy`; общие проверки — `make fmt && make check` с закреплёнными инструментами. Сборка — `make build`; повторное обновление требует отдельного разрешения владельца и выполняется `make deploy-prod BUNDLE=/абсолютный/путь/linux-arm64`. Полный нагрузочный или сетевой прогон на prod не проводился; результат не подтверждает работу физических портов или внешнюю доставку клиентского трафика.
 
 Независимая приёмка установленной версии прошла: хеши трёх бинарников, двух вспомогательных файлов и полного состава панели совпали с комплектом; контроллер, панель и sing-box активны. Исходное отсутствие наблюдателя записано в резервной копии, полный хеш конфигурации не изменился, снимки маршрутов до/после и текущее состояние совпали с учётом допустимого порядка. Панель вернула HTTP 200 с HTML, все 11 GET-проверок API прошли. [Свидетельство независимой проверки](evidence/deploy-prod-20261106-2033/independent-verification.txt).
+
+## Linux-сборка и тестирование на dev 7 ноября 2026 года
+
+Вопрос: собирается ли текущее рабочее дерево для Linux ARM64, проходит ли полный `test-source` и можно ли поставить и проверить комплект на dev? Среда — macOS с Go 1.27.3, Node.js 26.8.2 и закреплёнными `shfmt` 3.11.0 / ShellCheck 0.11.0, существующая Debian ARM64 `hestia-dev` для установки и Linux-проверок. Сборка и установка используют ветку `codex/keenetic-rci-client`, revision `5dd5889e639ba7d923f1ea9545a4ff95f464efa7`; manifest отмечает `dirty=true`, поэтому результаты относятся к фактическим хешам рабочего дерева. Prod, client, Keenetic и управление питанием ВМ не использовались.
+
+`make test-source` завершился с кодом 0. Прошли `make check`, API reproducibility, frontend format/lint, unit и browser-тесты, frontend build и Go race. Browser suite запускается последовательно, чтобы не превышать тайм-аут ожидания ответов при параллельном запуске Chromium. [Полный отчёт test-source](evidence/source-20261107-100515-77493/summary.txt).
+
+Исправлены причины прежних отказов. `physical-inventory` сравнивал ответ без обязательного `carrierState`, хотя поле входит в [согласованный контракт Ethernet-инвентаря](../../docs/features/physical-connections.md); fixture теперь формирует и проверяет состояния `up`, `down` и `unknown`. Browser fixtures также получили это обязательное поле и ожидают текущую подпись UI «Линк не поднят». Временная API-копия теперь включает неигнорируемые untracked-файлы backend, необходимые для компиляции dirty worktree, при этом по-прежнему отклоняет symlink. Для browser suite убран флаки от параллельной нагрузки.
+
+`make build` завершился с кодом 0. Собраны Linux и экспериментальный Keenetic комплекты версии `20261107-100738-5dd5889e639b`; Angular production bundle включён. Linux-комплект установлен на `hestia-dev`, `make deploy-dev` завершился PASS. [Манифест Linux-комплекта](../../dist/artifacts/20261107-100738-5dd5889e639b/linux-arm64/manifest.json), [журнал поставки](evidence/deploy-20261107-100809/deploy-existing.log).
+
+Полный `make test-dev` завершился кодом 0. Прошли начальный снимок, read-only/isolated acceptance, все 13 сетевых сценариев, финальная проверка и сбор журналов. В частности, `physical-inventory` теперь PASS. После теста хеши установленных файлов совпали с комплектом; конфигурация, основные маршруты, policy rules и namespaces сохранены. Сетевые сценарии выполнены только в приватных лабораторных пространствах имён; физические интерфейсы проверялись на виртуальном `eth0`. [Полный отчёт test-dev](evidence/installed-20261107-100824-78943/summary.txt), [сводка всех сценариев](evidence/installed-20261107-100824-78943/installed-isolated-network.log), [финальная проверка](evidence/installed-20261107-100824-78943/installed-final-invariants.log).
+
+Воспроизведение на этой машине:
+
+```sh
+PATH=/tmp/hestia-tools/bin:/tmp/hestia-lab-tests/bin:$PATH \
+GOCACHE=/tmp/hestia-go-cache \
+SHFMT=/tmp/hestia-tools/bin/shfmt \
+SHELLCHECK=/tmp/hestia-tools/bin/shellcheck \
+python3 scripts/test-source/run.py
+GOCACHE=/tmp/hestia-go-cache make build
+GOCACHE=/tmp/hestia-go-cache make deploy-dev \
+  BUNDLE=/Users/artikman/Documents/projects/hestia/dist/artifacts/20261107-100738-5dd5889e639b/linux-arm64
+GOCACHE=/tmp/hestia-go-cache make test-dev
+```
+
+## Поставка проверенного комплекта на prod 7 ноября 2026 года
+
+По прямому поручению владельца версия `20261107-100738-5dd5889e639b` (`linux-arm64`) поставлена на существующую `hestia-prod`. Этот же комплект до поставки прошёл полный `test-source`, был установлен на `hestia-dev` и прошёл там все 13 сетевых сценариев и финальную проверку сохранности. Manifest содержит `dirty=true`; хеши комплекта описывают фактическое рабочее дерево.
+
+`make deploy-prod BUNDLE=dist/artifacts/20261107-100738-5dd5889e639b/linux-arm64` завершился PASS. Штатная проверка обновления подтвердила `sing-box 1.14.4`, сохранение конфигурации и основных маршрутов. Резервная копия: `/var/backups/hestia-deploy.S7lFNT57`. Управление питанием, Keenetic и отдельный полный `test-prod` в рамках поставки не выполнялись. [Журнал обновления](evidence/deploy-20261107-102358/deploy-existing.log), [сводка операции](evidence/deploy-20261107-102358/summary.txt).

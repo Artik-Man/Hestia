@@ -9,10 +9,12 @@
  */
 import { PhysicalInterface } from './physicalInterface';
 import { WifiConnection } from './wifiConnection';
+import { NativeEthernetPort } from './nativeEthernetPort';
 
 
 export interface PhysicalInventory { 
     interfaces: Array<PhysicalInterface>;
+    nativeEthernetPorts?: Array<NativeEthernetPort>;
     wifiAvailable: boolean;
     wifiProfiles: Array<WifiConnection>;
 }

@@ -33,6 +33,7 @@ export * from './groupOrderChange';
 export * from './hysteria2Connection';
 export * from './hysteria2ConnectionProfile';
 export * from './hysteria2WriteRequest';
+export * from './nativeEthernetPort';
 export * from './navigation';
 export * from './orderedGroup';
 export * from './physicalInterface';

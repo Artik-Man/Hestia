@@ -1,0 +1,38 @@
+Keenetic package rebuild after adding shared RCI schema tooling
+==============================================================
+
+Question
+--------
+Does the current tree still produce the Linux ARM64 and experimental Keenetic bundles/IPK after adding shared `DescribeSchema` and the Go interface-schema research command, and are both sources recorded in provenance?
+
+Environment
+-----------
+Date: 2026-11-07
+Host: macOS ARM64; Go 1.27.3; frontend dependencies installed
+Revision: 5dd5889e639ba7d923f1ea9545a4ff95f464efa7
+Working tree: dirty
+Runtime inputs: `dist/runtime`, checked against `scripts/build/runtime-lock.json`
+
+Command
+-------
+    GOCACHE=/private/tmp/hestia-go-cache python3 scripts/build/run.py \
+      --runtime-dir dist/runtime \
+      --output /private/tmp/hestia-full-build
+
+Result: exit code 0. Go bundles and Angular frontend built; builder manifest verification completed.
+
+Artifacts and checks
+--------------------
+Bundle root: `/private/tmp/hestia-full-build/20261107-062611-5dd5889e639b`
+Source inputs: 552
+Bundle files: 145
+Manifest hash for `backend/pkg/keeneticrci/schema.go`: `e3aaa6e23c7e83175a87e6b8b12a67be2f164f9a6ae834ea22e645ef4e3994f3`
+Manifest hash for `backend/cmd/keenetic-rci-interface-schema/main.go`: `f33825e61989b5cfe0ba53d25806f977f1f25189e30f492346b21ac672b2e731`
+IPK: `hestia_20261107-062611-5dd5889e639b_aarch64-3.10.ipk`
+IPK size: 58,972,116 bytes
+IPK SHA-256: `bb3e22d79418a711fa59bc87d5fd810b55c192bd168e61130368d246ebf9e056`
+Independent archive inspection found 47 payload members, all under `./opt`.
+
+Limits
+------
+The new research command is compiled into the separate research build output and is not included in the product IPK. No RCI request, `opkg` script, installation, router process, or network mutation was executed. The IPK does not verify a KN-1012 install or client dataplane. Tests were not run.

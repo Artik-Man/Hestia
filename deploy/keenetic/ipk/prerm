@@ -1,0 +1,12 @@
+#!/bin/sh
+# Stop Hestia before opkg removes or replaces its executable files.
+
+set -eu
+
+case "${1:-remove}" in
+	remove | upgrade)
+		/opt/etc/init.d/S99hestia prepare-package
+		;;
+esac
+
+exit 0

@@ -28,9 +28,12 @@ def checked(command, cwd=ROOT, env=None):
 
 
 def source_files():
-    """Select tracked backend sources for disposable API regeneration, rejecting symlinks."""
-    tracked = subprocess.check_output(['git', 'ls-files', '-z', 'backend'], cwd=ROOT).decode().split('\0')
-    names = [name for name in tracked if name and (ROOT / name).is_file()]
+    """Select tracked and non-ignored untracked backend sources, rejecting symlinks."""
+    sources = subprocess.check_output(
+        ['git', 'ls-files', '--cached', '--others', '--exclude-standard', '-z', '--', 'backend'],
+        cwd=ROOT,
+    ).decode().split('\0')
+    names = [name for name in sources if name and (ROOT / name).is_file()]
     for name in names:
         path = ROOT / name
         if path.is_symlink() or any(parent.is_symlink() for parent in path.parents if parent != ROOT and parent.is_relative_to(ROOT)):

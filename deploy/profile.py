@@ -226,7 +226,7 @@ def compile_inbound(item: dict) -> dict:
         identifier(item["tag"])
         require(
             isinstance(item["interface_name"], str)
-            and re.fullmatch(r"[A-Za-z0-9_.-]{1,15}", item["interface_name"]),
+            and re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_.-]{0,14}", item["interface_name"]),
             "invalid TUN interface name",
         )
         require(
@@ -700,7 +700,7 @@ def compile_profile(profile: dict, directory: Path, committed: dict | None = Non
             tag = identifier(interface["id"])
             require(
                 isinstance(interface["bind_interface"], str)
-                and re.fullmatch(r"[A-Za-z0-9_.-]{1,15}", interface["bind_interface"]),
+                and re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_.-]{0,14}", interface["bind_interface"]),
                 "invalid direct interface binding",
             )
             endpoint, server = None, None

@@ -763,6 +763,36 @@ components:
         - server
         - port
       type: object
+    NativeEthernetPort:
+      additionalProperties: false
+      properties:
+        duplex:
+          enum:
+            - half
+            - full
+          type: string
+        exitIds:
+          items:
+            type: string
+          type: array
+        id:
+          maxLength: 64
+          minLength: 1
+          type: string
+        link:
+          enum:
+            - up
+            - down
+          type: string
+        speedMbps:
+          format: int32
+          minimum: 0
+          type: integer
+      required:
+        - id
+        - link
+        - exitIds
+      type: object
     Navigation:
       additionalProperties: false
       properties:
@@ -789,6 +819,12 @@ components:
     PhysicalInterface:
       additionalProperties: false
       properties:
+        carrierState:
+          enum:
+            - up
+            - down
+            - unknown
+          type: string
         exitIds:
           items:
             type: string
@@ -810,6 +846,7 @@ components:
         - interfaceName
         - kind
         - present
+        - carrierState
         - online
         - exitIds
       type: object
@@ -819,6 +856,10 @@ components:
         interfaces:
           items:
             $ref: "#/components/schemas/PhysicalInterface"
+          type: array
+        nativeEthernetPorts:
+          items:
+            $ref: "#/components/schemas/NativeEthernetPort"
           type: array
         wifiAvailable:
           type: boolean

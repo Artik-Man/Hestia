@@ -1,0 +1,374 @@
+find deploy tests/lab scripts -type f -name '*.sh' -exec /tmp/hestia-tools/bin/shfmt -i 4 -ci -d {} +
+go -C backend vet ./cmd/... ./internal/... ./pkg/... ./tools/...
+find deploy tests/lab scripts -type f -name '*.sh' -exec /tmp/hestia-tools/bin/shellcheck -x -P SCRIPTDIR -s bash {} +
+go -C backend test ./cmd/... ./internal/... ./pkg/... ./tools/...
+?   	github.com/Artik-Man/Hestia/cmd/keenetic-preflight	[no test files]
+?   	github.com/Artik-Man/Hestia/cmd/keenetic-rci-ethernet	[no test files]
+?   	github.com/Artik-Man/Hestia/cmd/keenetic-rci-interface-schema	[no test files]
+?   	github.com/Artik-Man/Hestia/cmd/keenetic-rci-survey-schema	[no test files]
+?   	github.com/Artik-Man/Hestia/cmd/keenetic-rci-wisp-status	[no test files]
+ok  	github.com/Artik-Man/Hestia/internal/awg	(cached)
+ok  	github.com/Artik-Man/Hestia/internal/awgruntime	(cached)
+ok  	github.com/Artik-Man/Hestia/internal/binding	14.988s
+?   	github.com/Artik-Man/Hestia/internal/connectionid	[no test files]
+ok  	github.com/Artik-Man/Hestia/internal/controller	(cached)
+ok  	github.com/Artik-Man/Hestia/internal/dnspolicy	(cached)
+ok  	github.com/Artik-Man/Hestia/internal/dnsresolver	(cached)
+ok  	github.com/Artik-Man/Hestia/internal/dnsservice	(cached)
+ok  	github.com/Artik-Man/Hestia/internal/geoip	(cached)
+ok  	github.com/Artik-Man/Hestia/internal/keeneticdiagnostics	(cached)
+?   	github.com/Artik-Man/Hestia/internal/netaddress	[no test files]
+?   	github.com/Artik-Man/Hestia/internal/network	[no test files]
+?   	github.com/Artik-Man/Hestia/internal/network/keeneticphysical	[no test files]
+ok  	github.com/Artik-Man/Hestia/internal/network/linuxphysical	(cached)
+ok  	github.com/Artik-Man/Hestia/internal/network/linuxroute	(cached)
+ok  	github.com/Artik-Man/Hestia/internal/network/socket	(cached)
+ok  	github.com/Artik-Man/Hestia/internal/observer	(cached)
+ok  	github.com/Artik-Man/Hestia/internal/panel	(cached)
+ok  	github.com/Artik-Man/Hestia/internal/panelmodel	(cached)
+?   	github.com/Artik-Man/Hestia/internal/physical	[no test files]
+?   	github.com/Artik-Man/Hestia/internal/platform	[no test files]
+ok  	github.com/Artik-Man/Hestia/internal/platformhelper	(cached)
+ok  	github.com/Artik-Man/Hestia/internal/profileexec	(cached)
+ok  	github.com/Artik-Man/Hestia/internal/quality	(cached)
+ok  	github.com/Artik-Man/Hestia/internal/routing	(cached)
+?   	github.com/Artik-Man/Hestia/internal/services	[no test files]
+?   	github.com/Artik-Man/Hestia/internal/services/entware	[no test files]
+ok  	github.com/Artik-Man/Hestia/internal/services/systemd	0.163s
+ok  	github.com/Artik-Man/Hestia/internal/storage	(cached)
+ok  	github.com/Artik-Man/Hestia/internal/traffic	(cached)
+ok  	github.com/Artik-Man/Hestia/internal/trafficcapture	(cached)
+?   	github.com/Artik-Man/Hestia/pkg/keeneticrci	[no test files]
+?   	github.com/Artik-Man/Hestia/tools/doccheck	[no test files]
+?   	github.com/Artik-Man/Hestia/tools/openapi	[no test files]
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s deploy
+...sssssss...............................
+----------------------------------------------------------------------
+Ran 41 tests in 0.342s
+
+OK (skipped=7)
+bash -n deploy/install.sh
+bash -n deploy/build-installer.sh
+python3 -B -m unittest discover -s tools -p 'test_*.py'
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.243s
+
+OK
+python3 -B tools/run_lab_tests.py
+Running tests/lab/dev-validation/test_acceptance.py
+...PASS GET /api/navigation
+PASS GET /api/groups-and-rules
+PASS GET /api/awg
+PASS GET /api/awg-underlays
+PASS GET /api/hysteria2
+PASS GET /api/physical-connections
+PASS GET /api/quality
+PASS GET /api/traffic
+PASS GET /api/traffic/settings
+PASS GET /api/country-map
+PASS GET /api/dns/policy
+.PASS GET /api/navigation
+PASS GET /api/groups-and-rules
+PASS GET /api/awg
+PASS GET /api/awg-underlays
+PASS GET /api/hysteria2
+PASS GET /api/physical-connections
+PASS GET /api/quality
+PASS GET /api/traffic
+PASS GET /api/traffic/settings
+PASS GET /api/country-map
+PASS GET /api/dns/policy
+..
+----------------------------------------------------------------------
+Ran 6 tests in 0.004s
+
+OK
+Running tests/lab/dns-restart/test_verify.py
+..
+----------------------------------------------------------------------
+Ran 2 tests in 0.001s
+
+OK
+Running tests/lab/dns-rotation/test_cache.py
+{"event": "start", "ns": 251882483732583, "domain": "example.lab.test", "group": "ru"}
+{"event": "start", "ns": 251882483850500, "domain": "example.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882485120750, "domain": "example.lab.test", "group": "ru", "code": 0, "ip": "203.0.113.11", "ttl": 0}
+{"event": "finish", "ns": 251882485260958, "domain": "example.lab.test", "group": "fi", "code": 0, "ip": "203.0.113.11", "ttl": 0}
+{"event": "selected", "ns": 251882485438208, "domain": "example.lab.test", "group": "ru", "ip": "203.0.113.11"}
+{"event": "start", "ns": 251882486333708, "domain": "example.lab.test", "group": "ru"}
+{"event": "finish", "ns": 251882486401250, "domain": "example.lab.test", "group": "ru", "code": 0, "ip": "203.0.113.11", "ttl": 0}
+{"event": "start", "ns": 251882486488291, "domain": "example.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882486539833, "domain": "example.lab.test", "group": "fi", "code": 0, "ip": "203.0.113.11", "ttl": 0}
+{"event": "selected", "ns": 251882486672583, "domain": "example.lab.test", "group": "ru", "ip": "203.0.113.11"}
+.{"event": "blocked-before-send", "ns": 251882488416583, "domain": "only-fi.lab.test", "group": "fi"}
+.{"event": "start", "ns": 251882490017458, "domain": "example.lab.test", "group": "ru"}
+{"event": "start", "ns": 251882490109625, "domain": "example.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882490176666, "domain": "example.lab.test", "group": "fi", "code": 0, "ip": "203.0.113.11", "ttl": 2}
+{"event": "selected", "ns": 251882490313666, "domain": "example.lab.test", "group": "fi", "ip": "203.0.113.11"}
+{"event": "hit", "ns": 251882490483375, "domain": "example.lab.test", "group": "fi", "ip": "203.0.113.11"}
+{"event": "start", "ns": 251882491242958, "domain": "example.lab.test", "group": "ru"}
+{"event": "finish", "ns": 251882491297666, "domain": "example.lab.test", "group": "ru", "code": 0, "ip": "203.0.113.22", "ttl": 10}
+{"event": "start", "ns": 251882491379916, "domain": "example.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882491417000, "domain": "example.lab.test", "group": "fi", "code": 3, "ip": null}
+{"event": "selected", "ns": 251882491566500, "domain": "example.lab.test", "group": "ru", "ip": "203.0.113.22"}
+{"event": "finish", "ns": 251882492116000, "domain": "example.lab.test", "group": "ru", "code": 0, "ip": "203.0.113.33", "ttl": 45}
+{"event": "hit", "ns": 251882492283625, "domain": "example.lab.test", "group": "ru", "ip": "203.0.113.22"}
+.{"event": "start", "ns": 251882494097041, "domain": "only-fi.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882494404625, "domain": "only-fi.lab.test", "group": "fi", "code": 0, "ip": "203.0.113.11", "ttl": 30}
+{"event": "start", "ns": 251882495086625, "domain": "only-fi.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882495138500, "domain": "only-fi.lab.test", "group": "fi", "code": 0, "ip": "203.0.113.11", "ttl": 30}
+{"event": "selected", "ns": 251882495267208, "domain": "only-fi.lab.test", "group": "fi", "ip": "203.0.113.11"}
+{"event": "blocked", "ns": 251882495501083, "domain": "only-fi.lab.test"}
+..
+----------------------------------------------------------------------
+Ran 5 tests in 0.020s
+
+OK
+Running tests/lab/dns-stale/test_stale.py
+{"event": "start", "ns": 251882623447500, "domain": "only-fi.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882624284166, "domain": "only-fi.lab.test", "group": "fi", "kind": "positive", "code": 0, "ip": "203.0.113.11", "ttl": 2}
+{"event": "selected", "ns": 251882624329125, "domain": "only-fi.lab.test", "group": "fi", "ip": "203.0.113.11"}
+{"event": "start", "ns": 251882624946583, "domain": "only-fi.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882625079583, "domain": "only-fi.lab.test", "group": "fi", "kind": "timeout", "code": null, "ip": null, "ttl": 0}
+{"event": "start", "ns": 251882625682250, "domain": "only-fi.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882625814833, "domain": "only-fi.lab.test", "group": "fi", "kind": "timeout", "code": null, "ip": null, "ttl": 0}
+{"event": "stale-denied", "ns": 251882626007041, "domain": "only-fi.lab.test", "group": "fi", "reason": "recheck_failed"}
+{"event": "start", "ns": 251882626481208, "domain": "only-fi.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882626644333, "domain": "only-fi.lab.test", "group": "fi", "kind": "timeout", "code": null, "ip": null, "ttl": 0}
+{"event": "stale-denied", "ns": 251882626687416, "domain": "only-fi.lab.test", "reason": "outside_window"}
+{"event": "start", "ns": 251882627314708, "domain": "only-fi.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882627568125, "domain": "only-fi.lab.test", "group": "fi", "kind": "positive", "code": 0, "ip": "203.0.113.22", "ttl": 2}
+{"event": "selected", "ns": 251882627599250, "domain": "only-fi.lab.test", "group": "fi", "ip": "203.0.113.22"}
+.{"event": "start", "ns": 251882629578708, "domain": "only-fi.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882629781375, "domain": "only-fi.lab.test", "group": "fi", "kind": "positive", "code": 0, "ip": "203.0.113.11", "ttl": 2}
+{"event": "selected", "ns": 251882629808000, "domain": "only-fi.lab.test", "group": "fi", "ip": "203.0.113.11"}
+{"event": "start", "ns": 251882630365750, "domain": "only-fi.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882630545791, "domain": "only-fi.lab.test", "group": "fi", "kind": "negative", "code": 3, "ip": null, "ttl": 0}
+{"event": "stale-denied", "ns": 251882630572583, "domain": "only-fi.lab.test", "reason": "negative_answer"}
+{"event": "start", "ns": 251882631134750, "domain": "only-fi.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882631295416, "domain": "only-fi.lab.test", "group": "fi", "kind": "servfail", "code": null, "ip": null, "ttl": 0}
+{"event": "stale-denied", "ns": 251882631321666, "domain": "only-fi.lab.test", "reason": "no_candidate"}
+{"event": "start", "ns": 251882631892541, "domain": "only-fi.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882632113625, "domain": "only-fi.lab.test", "group": "fi", "kind": "positive", "code": 0, "ip": "203.0.113.11", "ttl": 2}
+{"event": "selected", "ns": 251882632144750, "domain": "only-fi.lab.test", "group": "fi", "ip": "203.0.113.11"}
+{"event": "start", "ns": 251882632743791, "domain": "only-fi.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882632905958, "domain": "only-fi.lab.test", "group": "fi", "kind": "negative", "code": 0, "ip": null, "ttl": 0}
+{"event": "stale-denied", "ns": 251882632930375, "domain": "only-fi.lab.test", "reason": "negative_answer"}
+{"event": "start", "ns": 251882633474083, "domain": "only-fi.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882633627708, "domain": "only-fi.lab.test", "group": "fi", "kind": "servfail", "code": null, "ip": null, "ttl": 0}
+{"event": "stale-denied", "ns": 251882633650833, "domain": "only-fi.lab.test", "reason": "no_candidate"}
+.{"event": "start", "ns": 251882635416666, "domain": "only-fi.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882635677750, "domain": "only-fi.lab.test", "group": "fi", "kind": "positive", "code": 0, "ip": "203.0.113.11", "ttl": 2}
+{"event": "selected", "ns": 251882635725083, "domain": "only-fi.lab.test", "group": "fi", "ip": "203.0.113.11"}
+{"event": "start", "ns": 251882636938500, "domain": "only-fi.lab.test", "group": "fi"}
+{"event": "stale-denied", "ns": 251882637676375, "domain": "only-fi.lab.test", "reason": "unsigned_lab_only"}
+{"event": "stale-denied", "ns": 251882637703583, "domain": "only-fi.lab.test", "reason": "unsigned_lab_only"}
+{"event": "finish", "ns": 251882637877083, "domain": "only-fi.lab.test", "group": "fi", "kind": "timeout", "code": null, "ip": null, "ttl": 0}
+.{"event": "start", "ns": 251882639610083, "domain": "only-fi.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882639810333, "domain": "only-fi.lab.test", "group": "fi", "kind": "positive", "code": 0, "ip": "203.0.113.11", "ttl": 2}
+{"event": "selected", "ns": 251882639835333, "domain": "only-fi.lab.test", "group": "fi", "ip": "203.0.113.11"}
+{"event": "start", "ns": 251882640385458, "domain": "only-fi.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882640510916, "domain": "only-fi.lab.test", "group": "fi", "kind": "timeout", "code": null, "ip": null, "ttl": 0}
+{"event": "start", "ns": 251882642005458, "domain": "only-fi.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882642191958, "domain": "only-fi.lab.test", "group": "fi", "kind": "negative", "code": 0, "ip": null, "ttl": 0}
+{"event": "stale-denied", "ns": 251882642219250, "domain": "only-fi.lab.test", "reason": "negative_answer"}
+{"event": "stale-denied", "ns": 251882642598041, "domain": "only-fi.lab.test", "group": "fi", "reason": "recheck_failed"}
+.{"event": "start", "ns": 251882644249458, "domain": "mixed.lab.test", "group": "ru"}
+{"event": "start", "ns": 251882644373541, "domain": "mixed.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882644561916, "domain": "mixed.lab.test", "group": "ru", "kind": "negative", "code": 3, "ip": null, "ttl": 0}
+{"event": "finish", "ns": 251882644578750, "domain": "mixed.lab.test", "group": "fi", "kind": "positive", "code": 0, "ip": "203.0.113.11", "ttl": 2}
+{"event": "selected", "ns": 251882644600750, "domain": "mixed.lab.test", "group": "fi", "ip": "203.0.113.11"}
+{"event": "start", "ns": 251882645208875, "domain": "mixed.lab.test", "group": "ru"}
+{"event": "start", "ns": 251882645314833, "domain": "mixed.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882645453500, "domain": "mixed.lab.test", "group": "ru", "kind": "negative", "code": 3, "ip": null, "ttl": 0}
+{"event": "finish", "ns": 251882645474250, "domain": "mixed.lab.test", "group": "fi", "kind": "servfail", "code": null, "ip": null, "ttl": 0}
+{"event": "stale-denied", "ns": 251882645495750, "domain": "mixed.lab.test", "reason": "negative_answer"}
+{"event": "start", "ns": 251882646124958, "domain": "mixed.lab.test", "group": "ru"}
+{"event": "start", "ns": 251882646205416, "domain": "mixed.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882646349458, "domain": "mixed.lab.test", "group": "ru", "kind": "timeout", "code": null, "ip": null, "ttl": 0}
+{"event": "finish", "ns": 251882646364041, "domain": "mixed.lab.test", "group": "fi", "kind": "servfail", "code": null, "ip": null, "ttl": 0}
+{"event": "start", "ns": 251882646977833, "domain": "mixed.lab.test", "group": "ru"}
+{"event": "start", "ns": 251882647055916, "domain": "mixed.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882647198500, "domain": "mixed.lab.test", "group": "ru", "kind": "timeout", "code": null, "ip": null, "ttl": 0}
+{"event": "finish", "ns": 251882647212666, "domain": "mixed.lab.test", "group": "fi", "kind": "invalid", "code": null, "ip": null, "ttl": 0}
+{"event": "stale-denied", "ns": 251882647232500, "domain": "mixed.lab.test", "reason": "not_temporary"}
+{"event": "start", "ns": 251882647821083, "domain": "mixed.lab.test", "group": "ru"}
+{"event": "start", "ns": 251882647900416, "domain": "mixed.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882648017958, "domain": "mixed.lab.test", "group": "ru", "kind": "timeout", "code": null, "ip": null, "ttl": 0}
+{"event": "finish", "ns": 251882648031166, "domain": "mixed.lab.test", "group": "fi", "kind": "timeout", "code": null, "ip": null, "ttl": 0}
+{"event": "start", "ns": 251882648726916, "domain": "mixed.lab.test", "group": "ru"}
+{"event": "start", "ns": 251882648865791, "domain": "mixed.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882649045916, "domain": "mixed.lab.test", "group": "ru", "kind": "negative", "code": 3, "ip": null, "ttl": 0}
+{"event": "finish", "ns": 251882649063458, "domain": "mixed.lab.test", "group": "fi", "kind": "negative", "code": 3, "ip": null, "ttl": 0}
+{"event": "stale-denied", "ns": 251882649087500, "domain": "mixed.lab.test", "reason": "negative_answer"}
+.{"event": "start", "ns": 251882650665166, "domain": "only-fi.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882650855166, "domain": "only-fi.lab.test", "group": "fi", "kind": "positive", "code": 0, "ip": "203.0.113.11", "ttl": 2}
+{"event": "selected", "ns": 251882650892375, "domain": "only-fi.lab.test", "group": "fi", "ip": "203.0.113.11"}
+{"event": "start", "ns": 251882652979291, "domain": "only-fi.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882653175625, "domain": "only-fi.lab.test", "group": "fi", "kind": "invalid", "code": null, "ip": null, "ttl": 0}
+{"event": "stale-denied", "ns": 251882653201833, "domain": "only-fi.lab.test", "reason": "not_temporary"}
+{"event": "start", "ns": 251882653900458, "domain": "only-fi.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882654084958, "domain": "only-fi.lab.test", "group": "fi", "kind": "invalid", "code": null, "ip": null, "ttl": 0}
+{"event": "stale-denied", "ns": 251882654115458, "domain": "only-fi.lab.test", "reason": "not_temporary"}
+{"event": "start", "ns": 251882654820250, "domain": "only-fi.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882654982041, "domain": "only-fi.lab.test", "group": "fi", "kind": "invalid", "code": null, "ip": null, "ttl": 0}
+{"event": "stale-denied", "ns": 251882655008333, "domain": "only-fi.lab.test", "reason": "not_temporary"}
+{"event": "start", "ns": 251882655662666, "domain": "only-fi.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882655823250, "domain": "only-fi.lab.test", "group": "fi", "kind": "invalid", "code": null, "ip": null, "ttl": 0}
+{"event": "stale-denied", "ns": 251882655848083, "domain": "only-fi.lab.test", "reason": "not_temporary"}
+{"event": "start", "ns": 251882656489708, "domain": "only-fi.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882656646333, "domain": "only-fi.lab.test", "group": "fi", "kind": "invalid", "code": null, "ip": null, "ttl": 0}
+{"event": "stale-denied", "ns": 251882656669333, "domain": "only-fi.lab.test", "reason": "not_temporary"}
+{"event": "start", "ns": 251882657220250, "domain": "only-fi.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882657345125, "domain": "only-fi.lab.test", "group": "fi", "kind": "timeout", "code": null, "ip": null, "ttl": 0}
+{"event": "stale-served", "ns": 251882657541958, "domain": "only-fi.lab.test", "group": "fi", "ip": "203.0.113.11", "age": 0.0, "original_expiry_ns": 12000000000, "stale_seconds": 5, "ttl": 0, "reason": "all_temporary"}
+{"event": "stale-denied", "ns": 251882657725375, "domain": "only-fi.lab.test", "group": "fi", "reason": "recheck_failed"}
+.{"event": "start", "ns": 251882659681000, "domain": "only-fi.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882660238166, "domain": "only-fi.lab.test", "group": "fi", "kind": "positive", "code": 0, "ip": "203.0.113.11", "ttl": 0}
+{"event": "selected", "ns": 251882660269750, "domain": "only-fi.lab.test", "group": "fi", "ip": "203.0.113.11"}
+{"event": "start", "ns": 251882660820416, "domain": "only-fi.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882660971625, "domain": "only-fi.lab.test", "group": "fi", "kind": "servfail", "code": null, "ip": null, "ttl": 0}
+{"event": "stale-denied", "ns": 251882660996333, "domain": "only-fi.lab.test", "reason": "no_candidate"}
+{"event": "start", "ns": 251882661519000, "domain": "only-fi.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882661699250, "domain": "only-fi.lab.test", "group": "fi", "kind": "positive", "code": 0, "ip": "203.0.113.11", "ttl": 2}
+{"event": "selected", "ns": 251882661722500, "domain": "only-fi.lab.test", "group": "fi", "ip": "203.0.113.11"}
+{"event": "start", "ns": 251882662247416, "domain": "only-fi.lab.test", "group": "fi"}
+{"event": "finish", "ns": 251882662386750, "domain": "only-fi.lab.test", "group": "fi", "kind": "invalid", "code": null, "ip": null, "ttl": 0}
+{"event": "stale-denied", "ns": 251882662410416, "domain": "only-fi.lab.test", "reason": "not_temporary"}
+{"event": "stale-denied", "ns": 251882662663000, "domain": "only-fi.lab.test", "reason": "ineligible"}
+.
+----------------------------------------------------------------------
+Ran 7 tests in 0.044s
+
+OK
+Running tests/lab/dns-warm/test_warm.py
+{"event": "visit", "ns": 251882789222500, "domain": "0", "count": 1, "counted": true}
+{"event": "visit", "ns": 251882789293125, "domain": "1", "count": 1, "counted": true}
+{"event": "visit", "ns": 251882789315166, "domain": "2", "count": 1, "counted": true}
+{"event": "visit", "ns": 251882789329208, "domain": "3", "count": 1, "counted": true}
+{"event": "visit", "ns": 251882789340416, "domain": "4", "count": 1, "counted": true}
+{"event": "visit", "ns": 251882789351375, "domain": "5", "count": 1, "counted": true}
+{"event": "visit", "ns": 251882790146750, "domain": "6", "count": 1, "counted": true}
+{"event": "visit", "ns": 251882790181458, "domain": "7", "count": 1, "counted": true}
+{"event": "visit", "ns": 251882790193916, "domain": "8", "count": 1, "counted": true}
+{"event": "visit", "ns": 251882790205541, "domain": "9", "count": 1, "counted": true}
+{"event": "visit", "ns": 251882790216458, "domain": "10", "count": 1, "counted": true}
+{"event": "visit", "ns": 251882790227041, "domain": "11", "count": 1, "counted": true}
+{"event": "visit", "ns": 251882790236750, "domain": "12", "count": 1, "counted": true}
+{"event": "visit", "ns": 251882790245916, "domain": "13", "count": 1, "counted": true}
+{"event": "visit", "ns": 251882790254833, "domain": "14", "count": 1, "counted": true}
+{"event": "visit", "ns": 251882790263041, "domain": "15", "count": 1, "counted": true}
+{"event": "visit", "ns": 251882790272250, "domain": "16", "count": 1, "counted": true}
+{"event": "visit", "ns": 251882790279916, "domain": "17", "count": 1, "counted": true}
+{"event": "visit", "ns": 251882790290250, "domain": "18", "count": 1, "counted": true}
+{"event": "visit", "ns": 251882790299625, "domain": "19", "count": 1, "counted": true}
+{"event": "visit", "ns": 251882790310333, "domain": "0", "count": 1, "counted": true}
+.{"event": "visit", "ns": 251882790386416, "domain": "site.test", "count": 1, "counted": true}
+{"event": "visit", "ns": 251882790397500, "domain": "site.test", "count": 1, "counted": false}
+{"event": "visit", "ns": 251882790407125, "domain": "site.test", "count": 2, "counted": true}
+{"event": "visit", "ns": 251882790415625, "domain": "site.test", "count": 3, "counted": true}
+{"event": "warm-expired", "ns": 251882790427541, "domain": "site.test", "count": 0}
+{"event": "visit", "ns": 251882790438791, "domain": "site.test", "count": 1, "counted": true}
+.{"event": "visit", "ns": 251882795662708, "domain": "only-fi.lab.test", "count": 1, "counted": true}
+{"event": "visit", "ns": 251882795685666, "domain": "only-fi.lab.test", "count": 2, "counted": true}
+{"event": "warm-finish", "ns": 251882797105166, "domain": "only-fi.lab.test", "group": "fi", "ip": null, "applied": false, "count": 1}
+{"event": "selected", "ns": 251882798421666, "domain": "only-fi.lab.test", "group": "fi", "ip": "203.0.113.22"}
+.{"event": "visit", "ns": 251882799831333, "domain": "hot.lab.test", "count": 1, "counted": true}
+{"event": "hit", "ns": 251882800061083, "domain": "hot.lab.test", "group": "fi", "ip": "203.0.113.11"}
+{"event": "reuse-candidate", "ns": 251882800237500, "domain": "hot.lab.test", "group": "ru", "ip": "203.0.113.22"}
+{"event": "hit", "ns": 251882800281750, "domain": "hot.lab.test", "group": "ru", "ip": "203.0.113.22"}
+.{"event": "visit", "ns": 251882803317875, "domain": "only-fi.lab.test", "count": 1, "counted": true}
+{"event": "selected", "ns": 251882804479625, "domain": "only-fi.lab.test", "group": "fi", "ip": "203.0.113.11"}
+{"event": "visit", "ns": 251882804717208, "domain": "only-fi.lab.test", "count": 2, "counted": true}
+{"event": "hit", "ns": 251882804781291, "domain": "only-fi.lab.test", "group": "fi", "ip": "203.0.113.11"}
+{"event": "warm-start", "ns": 251882805349875, "domain": "only-fi.lab.test", "group": "fi", "count": 2}
+{"event": "warm-finish", "ns": 251882805597416, "domain": "only-fi.lab.test", "group": "fi", "ip": null, "applied": false, "count": 2}
+{"event": "hit", "ns": 251882805778750, "domain": "only-fi.lab.test", "group": "fi", "ip": "203.0.113.11"}
+{"event": "warm-expired", "ns": 251882805796125, "domain": "only-fi.lab.test", "count": 1}
+.{"event": "visit", "ns": 251882808227875, "domain": "only-fi.lab.test", "count": 1, "counted": true}
+{"event": "visit", "ns": 251882808253125, "domain": "only-fi.lab.test", "count": 2, "counted": true}
+{"event": "warm-start", "ns": 251882809221583, "domain": "only-fi.lab.test", "group": "fi", "count": 2}
+{"event": "warm-finish", "ns": 251882810759000, "domain": "only-fi.lab.test", "group": "fi", "ip": "203.0.113.22", "applied": false, "count": 2}
+.{"event": "ready", "ns": 251882812603708}
+.{"event": "visit", "ns": 251882814176541, "domain": "split.lab.test", "count": 1, "counted": true}
+{"event": "visit", "ns": 251882814191833, "domain": "split.lab.test", "count": 2, "counted": true}
+{"event": "warm-start", "ns": 251882814588125, "domain": "split.lab.test", "group": "ru", "count": 2}
+{"event": "warm-finish", "ns": 251882814802333, "domain": "split.lab.test", "group": "ru", "ip": "203.0.113.33", "applied": false, "count": 2}
+{"event": "hit", "ns": 251882814848500, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "hit", "ns": 251882814972750, "domain": "split.lab.test", "group": "ru", "ip": "203.0.113.33"}
+.{"event": "visit", "ns": 251882817415541, "domain": "split.lab.test", "count": 1, "counted": true}
+{"event": "ready", "ns": 251882817987958}
+{"event": "visit", "ns": 251882818143083, "domain": "split.lab.test", "count": 2, "counted": true}
+{"event": "hit", "ns": 251882818207375, "domain": "split.lab.test", "group": "fi", "ip": "203.0.113.22"}
+{"event": "reuse-candidate", "ns": 251882818942791, "domain": "split.lab.test", "group": "ru", "ip": "203.0.113.11"}
+{"event": "hit", "ns": 251882818973166, "domain": "split.lab.test", "group": "ru", "ip": "203.0.113.11"}
+{"event": "real", "ns": 251882818997291, "domain": "split.lab.test", "group": "ru", "ip": "203.0.113.11"}
+.{"event": "visit", "ns": 251882820461541, "domain": "only-fi.lab.test", "count": 1, "counted": true}
+{"event": "visit", "ns": 251882820482416, "domain": "only-fi.lab.test", "count": 2, "counted": true}
+.
+----------------------------------------------------------------------
+Ran 10 tests in 0.032s
+
+OK
+Running tests/lab/partial-loss/test_policy.py
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.001s
+
+OK
+Passed 6 lab test modules.
+python3 -B tools/run_lab_tests.py --tree scripts
+Running scripts/build/test_build.py
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.005s
+
+OK
+Running scripts/build-keenetic-diagnostics/test_build.py
+......
+----------------------------------------------------------------------
+Ran 6 tests in 0.050s
+
+OK
+Running scripts/deploy/test_deploy.py
+.........
+----------------------------------------------------------------------
+Ran 9 tests in 0.102s
+
+OK
+Running scripts/deploy/test_update_compatibility.py
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 0.550s
+
+OK
+Running scripts/shared/test_common.py
+..RUN negative log=/var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/tmp03ocv_di/output/negative.log
+FAIL negative 0.03s /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/tmp03ocv_di/output/negative.log
+...
+----------------------------------------------------------------------
+Ran 5 tests in 0.031s
+
+OK
+Running scripts/test/test_read_only.py
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.001s
+
+OK
+Running scripts/test/test_run.py
+......
+----------------------------------------------------------------------
+Ran 6 tests in 0.145s
+
+OK
+Running scripts/test-source/test_run.py
+.Source validation failed: missing tool
+..
+----------------------------------------------------------------------
+Ran 3 tests in 0.003s
+
+OK
+Passed 8 lab test modules.
+SHFMT=/tmp/hestia-tools/bin/shfmt python3 tools/check_docs.py

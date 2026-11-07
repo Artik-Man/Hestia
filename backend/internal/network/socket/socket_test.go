@@ -16,13 +16,13 @@ func TestBindingOptionOrder(t *testing.T) {
 		want               []string
 		wantError          bool
 	}{
-		{"device", Path{Mode: DeviceOnly}, nil, nil, []string{"device"}, false},
-		{"quality", Path{Mode: DeviceThenMark, Mark: 514}, nil, nil, []string{"device", "mark"}, false},
-		{"quality zero mark", Path{Mode: DeviceThenMark}, nil, nil, []string{"device"}, false},
-		{"quality device rejected", Path{Mode: DeviceThenMark, Mark: 514}, failure, nil, []string{"device"}, true},
-		{"quality mark rejected", Path{Mode: DeviceThenMark, Mark: 514}, nil, failure, []string{"device", "mark"}, true},
-		{"runtime mark rejected", Path{Mode: MarkAndDevice, Mark: 514}, nil, failure, []string{"mark", "device"}, true},
-		{"unknown mode", Path{Mode: 99}, nil, nil, nil, true},
+		{"device", Path{Device: "eth0", Mode: DeviceOnly}, nil, nil, []string{"device"}, false},
+		{"quality", Path{Device: "eth0", Mode: DeviceThenMark, Mark: 514}, nil, nil, []string{"device", "mark"}, false},
+		{"quality zero mark", Path{Device: "eth0", Mode: DeviceThenMark}, nil, nil, []string{"device"}, false},
+		{"quality device rejected", Path{Device: "eth0", Mode: DeviceThenMark, Mark: 514}, failure, nil, []string{"device"}, true},
+		{"quality mark rejected", Path{Device: "eth0", Mode: DeviceThenMark, Mark: 514}, nil, failure, []string{"device", "mark"}, true},
+		{"runtime mark rejected", Path{Device: "awg0", Mode: MarkAndDevice, Mark: 514}, nil, failure, []string{"mark", "device"}, true},
+		{"unknown mode", Path{Device: "eth0", Mode: 99}, nil, nil, nil, true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			var calls []string

@@ -5,7 +5,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/Artik-Man/Hestia/internal/services/systemd"
+	"github.com/Artik-Man/Hestia/internal/platform"
 	"os"
 	"os/signal"
 	"strconv"
@@ -39,7 +39,7 @@ func runAWGRetireCommand(id, number string, legacy bool) int {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
-	if err := (systemd.OfflineVerifier{}).RetirementOffline(ctx, id, legacy); err != nil {
+	if err := platform.OfflineVerifier().RetirementOffline(ctx, id, legacy); err != nil {
 		fmt.Fprintln(os.Stderr, "cannot confirm AWG retirement is offline")
 		return 1
 	}

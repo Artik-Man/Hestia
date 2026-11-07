@@ -9,7 +9,7 @@ import (
 
 // outerPolicy derives a terminal rule for the daemon's outer mark; local loopback routing precedes it and no tunnel table follows it.
 func outerPolicy(slot int) (RoutePolicy, error) {
-	policy, err := linuxroute.NewOuterPolicy(ExecRouteRunner{}, slot)
+	policy, err := linuxroute.NewOuterPolicy(routeRunner, slot)
 	if err != nil {
 		return RoutePolicy{}, err
 	}

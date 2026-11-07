@@ -1,0 +1,43 @@
+Дата: 2026-11-07
+Вопрос: собираются ли API-контракт carrierState=up|down|unknown, linuxphysical и панель в Keenetic-пакет?
+Версия исходников: 5dd5889e639ba7d923f1ea9545a4ff95f464efa7, рабочее дерево dirty.
+
+Команды:
+- GOCACHE=/private/tmp/hestia-go-cache make generate-api
+- GOCACHE=/private/tmp/hestia-go-cache SHFMT=/private/tmp/hestia-tools/shfmt make fmt
+- (frontend) npm run format && npm run lint
+- GOCACHE=/private/tmp/hestia-go-cache go -C backend vet ./...
+- GOCACHE=/private/tmp/hestia-go-cache GOOS=linux GOARCH=arm64 go -C backend vet -tags keenetic ./...
+- SHFMT=/private/tmp/hestia-tools/shfmt make docs-check
+- git diff --check
+- GOCACHE=/private/tmp/hestia-go-cache python3 scripts/build/run.py --output /private/tmp/hestia-physical-carrier-build
+
+Ожидаемый результат: API и Angular-модель содержат enum carrierState; неизвестное значение carrier не отображается как физически отключённый линк; watcher остаётся fail-closed; Linux/Keenetic ARM64, frontend и IPK собираются.
+Фактический результат: генерация API, форматирование, frontend lint, оба go vet, docs-check, diff-check и полная сборка завершились с кодом 0. Тесты не запускались.
+
+Артефакт: /private/tmp/hestia-physical-carrier-build/20261107-070308-5dd5889e639b/keenetic-arm64-experimental/hestia_20261107-070308-5dd5889e639b_aarch64-3.10.ipk
+Размер: 58,971,408 байт
+SHA-256: 1d8736e96e6185e509ab149258fad71bba20e89d5884e64cfa059924a8714909
+Manifest: 552 source inputs; 145 packaged files.
+Source hashes:
+- backend/internal/network/linuxphysical/physical.go: 129800893801657f5725d1ad57ea78f09f768279d9a01f04180c65428348a298
+- backend/internal/panelmodel/physical.go: 8eb4a153d1f6c77247911740c64fc71d25a2a13860eea4e4b4102d5d6c9d237e
+- backend/internal/binding/physical.go: c92ec3cdc9c3260ebea30d6e7a32e66f43bec0c6f3af0073994ba20076478d65
+
+Границы вывода: подтверждена локальная компиляция и упаковка. Keenetic, ВМ, `opkg`, установка, carrier sysfs и реальное состояние интерфейсов не проверялись. Это не подтверждает запуск полного сетевого dataplane.
+
+Уточнение после перевода carrier состояния в Go enum `panelmodel.CarrierState`:
+- Сборка повторена: `GOCACHE=/private/tmp/hestia-go-cache python3 scripts/build/run.py --output /private/tmp/hestia-physical-carrier-final`.
+- Новое поколение: `20261107-070535-5dd5889e639b`; manifest содержит 552 source inputs и 145 файлов.
+- Новый IPK: `/private/tmp/hestia-physical-carrier-final/20261107-070535-5dd5889e639b/keenetic-arm64-experimental/hestia_20261107-070535-5dd5889e639b_aarch64-3.10.ipk`, 58,971,819 байт.
+- SHA-256 IPK: `b3002480f8597bb0fce7407f626d362a52d38bf5607fd72dce25795af4c65b31`.
+- Source hashes: linuxphysical `7c90872fdb5be2326d697ba46ad0d4ac6aba39798f39263a1ca8794060875909`; panelmodel `bcc898193e1150031e4e40afe56cf91497c7158ecfb6e98893cae7ebe5523e0e`; binding `3a56cfc13ae6d025115bfc8560c0cb5ff338224aabe8a3f5ed5a3064d980c3e2`.
+- Native/Keenetic ARM64 `go vet`, format check, docs check, frontend lint and `git diff --check` passed after this refinement. Tests were not run.
+
+Уточнение контракта `network.Carrier` и GoDoc:
+- Проверка: обе реализации `Online` возвращают `true` только при явном sysfs `carrier=1`; неизвестное чтение даёт `false`, а значит watcher и smoke считают выход недоступным.
+- Пересборка: `GOCACHE=/private/tmp/hestia-go-cache python3 scripts/build/run.py --output /private/tmp/hestia-carrier-contract-final` завершилась кодом 0.
+- Поколение `20261107-071002-5dd5889e639b`, manifest: 552 source inputs, 145 packaged files.
+- IPK: `/private/tmp/hestia-carrier-contract-final/20261107-071002-5dd5889e639b/keenetic-arm64-experimental/hestia_20261107-071002-5dd5889e639b_aarch64-3.10.ipk`, 58,971,291 байт; SHA-256 `716839f2fc4b2a4a9ee762a0425e0b09bba2b8d8227fdd182e4a5361377e8c28`.
+- Source hashes: network.go `0e3da6157b10658a7687ab22c5ad73dbffbb0db9f0f29a7c9f6086d01f2e7930`; linuxphysical `4ee7338bff8da508ae1fdf89019c7f760e0b3dcf12cac789780f5c533d12c5ef`; Keenetic carrier `88c11ca1bb16423a15b64c5d63d773d52d2ec05080a38de8449190ac3db5e7c7`; panelmodel `9f36e18cd40be5d2311f9c350f2f0cf67fe66156f922d8642aab0c058e80dc49`.
+- Native/Keenetic ARM64 `go vet`, `docs-check`, `git diff --check` passed. Tests were not run.

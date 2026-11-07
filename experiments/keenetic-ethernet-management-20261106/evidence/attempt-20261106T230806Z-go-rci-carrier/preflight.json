@@ -1,0 +1,12 @@
+{
+  "target": "KN-1012",
+  "ssh_host_key_fingerprint": "SHA256:u5mFSUOHtvmfjURyMmAe8N2BVONvSiTAoV7OLn2Czoo",
+  "ssh_host_key_matches_expected": true,
+  "remote_ndmc_sha256_command": "sha256sum /bin/ndmc",
+  "remote_ndmc_sha256": "6e6b0bee69e1270160a16711b6a64f4e036b9b984d8eb80acdf76403c243121e",
+  "remote_ndmc_sha256_matches_expected": true,
+  "ssh_host_key_check": "StrictHostKeyChecking=yes",
+  "local_token_file_mode": "0600",
+  "local_token_file_owner_uid_matches_process": true,
+  "token_value_recorded": false
+}

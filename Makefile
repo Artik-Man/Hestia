@@ -1,6 +1,6 @@
 SHFMT ?= shfmt
 SHELLCHECK ?= shellcheck
-GO_PACKAGES := ./cmd/... ./internal/... ./tools/...
+GO_PACKAGES := ./cmd/... ./internal/... ./pkg/... ./tools/...
 SHFMT_FLAGS := -i 4 -ci
 
 .PHONY: build build-go fmt fmt-check lint test check

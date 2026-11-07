@@ -10,7 +10,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/Artik-Man/Hestia/internal/network/linuxphysical"
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
 	"github.com/Artik-Man/Hestia/internal/quality"
 	"github.com/Artik-Man/Hestia/internal/routing"
@@ -20,7 +19,7 @@ type watcher struct {
 	relayProbes chan struct{}
 	relayReady  map[string]*atomic.Bool
 	devices     map[string]string
-	carrier     func(string) bool
+	carrier     func(string) panelmodel.CarrierState
 	quality     *quality.Engine
 	client      *http.Client
 	base        string
@@ -30,9 +29,9 @@ type watcher struct {
 	healthyAWG  func(string) bool
 }
 
-// newWatcher starts reconciliation with no desired snapshot or confirmed targets.
+// newWatcher starts reconciliation with no desired snapshot or confirmed targets and selected platform link observation.
 func newWatcher(client *http.Client, base string) *watcher {
-	return &watcher{client: client, base: base, confirmed: make(map[string]string), healthyAWG: AWGHeartbeatHealthy, carrier: linuxphysical.Manager{}.Online}
+	return &watcher{client: client, base: base, confirmed: make(map[string]string), healthyAWG: AWGHeartbeatHealthy, carrier: installedCarrier()}
 }
 
 // CheckSnapshot validates a candidate without connecting to sing-box.
@@ -84,7 +83,15 @@ func (w *watcher) sync(ctx context.Context) ([]Result, error) {
 	health := make(map[string]bool, len(w.desired.Healthy))
 	for id, available := range w.desired.Healthy {
 		device, mapped := w.devices[id]
-		health[id] = available && (w.devices == nil || mapped) && (device == "" || w.carrier(device))
+		state := panelmodel.CarrierUp
+		if device != "" {
+			state = w.carrier(device)
+		}
+		mappedOK := w.devices == nil || mapped
+		health[id] = available && mappedOK && state == panelmodel.CarrierUp
+		if available && mappedOK && device != "" && state == panelmodel.CarrierUnknown {
+			failures = append(failures, fmt.Errorf("carrier state is unknown for exit %s on interface %s", id, device))
+		}
 	}
 	for id, kind := range w.desired.ConnectorKinds {
 		if kind == "hysteria2" {

@@ -1,0 +1,17 @@
+{
+  "time_utc": "2026-11-06T22:06:42Z",
+  "operation": "read-only RCI interface inventory attempt",
+  "helper_exit_code": 1,
+  "failed_stage": "remote ndmc binary hash preflight",
+  "preflight_diagnostic": {
+    "exit_code": 127,
+    "expected_hash_match": false,
+    "stderr_bytes": 30,
+    "stderr_saved": false,
+    "likely_cause": "helper used /bin/sha256sum instead of the previously verified sha256sum command"
+  },
+  "rci_request_sent": false,
+  "token_loaded": false,
+  "ssh_tunnel_opened": false,
+  "router_state_change": "none observed"
+}

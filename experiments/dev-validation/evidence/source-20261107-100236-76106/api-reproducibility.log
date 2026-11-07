@@ -1,0 +1,92 @@
+[main] INFO  o.o.codegen.DefaultGenerator - Generating with dryRun=false
+[main] INFO  o.o.c.ignore.CodegenIgnoreProcessor - No .openapi-generator-ignore file found.
+[main] INFO  o.o.codegen.DefaultGenerator - OpenAPI Generator: typescript-angular (client)
+[main] INFO  o.o.codegen.DefaultGenerator - Generator 'typescript-angular' is considered stable.
+[main] INFO  o.o.c.l.AbstractTypeScriptClientCodegen - Hint: Environment variable 'TS_POST_PROCESS_FILE' (optional) not defined. E.g. to format the source code, please try 'export TS_POST_PROCESS_FILE="/usr/local/bin/prettier --write"' (Linux/Mac)
+[main] INFO  o.o.c.l.AbstractTypeScriptClientCodegen - Note: To enable file post-processing, 'enablePostProcessFile' must be set to `true` (--enable-post-process-file for CLI).
+[main] INFO  o.o.codegen.utils.URLPathUtils - 'host' (OAS 2.0) or 'servers' (OAS 3.0) not defined in the spec. Default to [http://localhost] for server URL [http://localhost/]
+[main] INFO  o.o.codegen.utils.URLPathUtils - 'host' (OAS 2.0) or 'servers' (OAS 3.0) not defined in the spec. Default to [http://localhost] for server URL [http://localhost/]
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./aWGCheckRequest.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./aWGCheckResult.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./aWGConnection.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./aWGConnectionProfile.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./aWGCreateRequest.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./aWGUnderlayCandidate.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./aWGUpdateRequest.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./appliedBinding.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./appliedOrder.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./bindingChange.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./checkResult.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./countryMap.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./dNSClientUDP.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./dNSGeoIPSettings.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./dNSGeoIPUpdate.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./dNSPolicySnapshot.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./dNSPolicyUpdate.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./dNSSettings.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./dNSWarmName.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./dNSWarmReport.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./domainListUpdate.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./domainListValues.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./errorDetail.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./errorModel.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./exit.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./exitGroupAssignment.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./exitGroupChange.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./group.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./groupCreateRequest.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./groupIdentifier.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./groupName.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./groupOrderChange.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./hysteria2Connection.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./hysteria2ConnectionProfile.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./hysteria2WriteRequest.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./nativeEthernetPort.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./navigation.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./orderedGroup.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./physicalInterface.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./physicalInventory.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./policy.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./qualityCheck.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./qualityConnection.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./qualityGroup.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./qualityReport.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./qualitySettings.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./qualityWindow.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./result.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./ruleList.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./snapshot.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./targetResult.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./trafficEvent.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./trafficPage.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./trafficSettings.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./trafficSettingsChange.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./wifiConnection.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/./wifiConnectionSettings.ts
+[main] WARN  o.o.codegen.utils.ExamplesUtils - No application/json content media type found in response. Response examples can currently only be generated for application/json media type.
+[main] INFO  o.o.codegen.utils.URLPathUtils - 'host' (OAS 2.0) or 'servers' (OAS 3.0) not defined in the spec. Default to [http://localhost] for server URL [http://localhost/]
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/api/panel.service.ts
+[main] INFO  o.o.codegen.DefaultGenerator - Skipping generation of Webhooks.
+[main] INFO  o.o.codegen.utils.URLPathUtils - 'host' (OAS 2.0) or 'servers' (OAS 3.0) not defined in the spec. Default to [http://localhost] for server URL [http://localhost/]
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/model/models.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/api/api.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/index.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/api.module.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/provide-api.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/configuration.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/api.base.service.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/variables.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/encoder.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/param.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/.gitignore
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/git_push.sh
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/query.params.ts
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/README.md
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/.openapi-generator-ignore
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/.openapi-generator/VERSION
+[main] INFO  o.o.codegen.TemplateManager - writing file /var/folders/mb/fmjszwj53ljdkt71rnjsszcr0000gn/T/hestia-angular-api-A9K4Gp/.openapi-generator/FILES
+############################################################################################
+# Thanks for using OpenAPI Generator.                                                      #
+# We appreciate your support! Please consider donation to help us maintain this project.   #
+# https://opencollective.com/openapi_generator/donate                                      #
+############################################################################################
