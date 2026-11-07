@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/Artik-Man/Hestia/internal/binding"
-	"github.com/Artik-Man/Hestia/internal/network/linuxphysical"
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
 	"github.com/Artik-Man/Hestia/internal/physical"
+	"github.com/Artik-Man/Hestia/internal/platform"
 )
 
 // runPhysicalCommand accepts exact privilege-separated operations and exposes only public inventory or stable exit codes.
@@ -24,7 +24,7 @@ func runPhysicalCommand(mode string, input io.Reader, output io.Writer) int {
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
 	engine := binding.Installed()
-	manager := linuxphysical.Manager{}
+	manager := platform.Physical()
 	var err error
 	switch mode {
 	case "-physical-list":

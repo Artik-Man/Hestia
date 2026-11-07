@@ -1,0 +1,22 @@
+Дата: 2026-11-07
+Вопрос: применяет ли Keenetic AWG runtime driver-кандидат тот же строгий allowlist Linux interface names, что профильный compiler и socket binder?
+
+`backend/internal/awgruntime/entware_linux.go` обновлён: имя ограничено 1–15 ASCII символами; первый символ может быть только буквой, цифрой или `_`, последующие — буквой, цифрой, `_`, `.` или `-`. Все операции кандидата (`EnsureAbsent`, `Start`, `Configure`, `Activate`, `Address`, `Keepalive`, `Endpoint`, `Observe`, `Delete`) проходят через эту общую regexp-проверку до доступа к interface или запуску процесса. AWG composition и service manager по-прежнему выбирают `Unsupported`; это изменение не включает AWG.
+
+Проверки:
+
+- `GOCACHE=/private/tmp/hestia-go-cache go vet ./...` — успешно.
+- `GOOS=linux GOARCH=arm64 GOCACHE=/private/tmp/hestia-go-cache go vet -tags keenetic ./...` — успешно.
+- `make fmt-check SHFMT=/private/tmp/hestia-tools/shfmt` — успешно.
+- `make docs-check SHFMT=/private/tmp/hestia-tools/shfmt` — успешно.
+- `git diff --check` — успешно.
+- `GOCACHE=/private/tmp/hestia-go-cache bash scripts/build/run.sh --output /private/tmp/hestia-platform-connectors` — успешно для Linux ARM64, Keenetic ARM64, frontend и IPK.
+- Manifest содержит 553 source inputs, включая `backend/internal/awgruntime/entware_linux.go` и `backend/pkg/keeneticrci/wireless.go`, и 145 packaged files.
+
+IPK: `/private/tmp/hestia-platform-connectors/20261107-082645-5dd5889e639b/keenetic-arm64-experimental/hestia_20261107-082645-5dd5889e639b_aarch64-3.10.ipk`.
+
+- Размер: 58 991 841 байт.
+- SHA-256: `a051152cc33adcf0996cd91e2608058b3045894f545fad9484abed923cf60f46`.
+- `backend/internal/awgruntime/entware_linux.go`: `8b1ea6c66f6fc82debe697c53ab9bdc2f9a7124460e4b1622875c2faedb6d63e`.
+
+Ограничения: тесты не запускались, AWG runtime не включён и на KN-1012 не запускался. IPK не устанавливался; изменений маршрутов/интерфейсов не выполнялось. Статические проверки не подтверждают интерфейсные имена, права, UAPI, AWG runtime или RoutePolicy на устройстве.

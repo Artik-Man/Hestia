@@ -1,0 +1,36 @@
+Go RCI schema tooling build evidence
+====================================
+
+Question
+--------
+Can the shared privacy-preserving JSON schema describer and both RCI schema research commands compile for Linux ARM64 with the Keenetic build tag?
+
+Environment and commands
+------------------------
+Date: 2026-11-07
+Host Go: go1.27.3 darwin/arm64
+Target: linux/arm64, CGO_ENABLED=0, Keenetic build tag
+Go cache: /private/tmp/hestia-go-cache
+
+    GOCACHE=/private/tmp/hestia-go-cache python3 scripts/build/run.py \
+      --check-go --output /private/tmp/hestia-go-check
+
+Result: exit code 0. The builder compiled Linux and Keenetic application commands plus three research commands: `keenetic-rci-ethernet`, `keenetic-rci-interface-schema`, and `keenetic-rci-survey-schema`.
+
+    GOCACHE=/private/tmp/hestia-go-cache GOOS=linux GOARCH=arm64 \
+      CGO_ENABLED=0 go vet -tags keenetic ./...
+    GOCACHE=/private/tmp/hestia-go-cache GOOS=linux GOARCH=arm64 \
+      CGO_ENABLED=0 go vet ./...
+
+Both vet commands completed with exit code 0. `SHFMT=/private/tmp/hestia-tools/shfmt make docs-check` and `git diff --check` also completed with exit code 0. Tests were not run.
+
+Source SHA-256
+--------------
+`backend/pkg/keeneticrci/schema.go`: `e3aaa6e23c7e83175a87e6b8b12a67be2f164f9a6ae834ea22e645ef4e3994f3`
+`backend/cmd/keenetic-rci-interface-schema/main.go`: `f33825e61989b5cfe0ba53d25806f977f1f25189e30f492346b21ac672b2e731`
+`backend/cmd/keenetic-rci-survey-schema/main.go`: `fe5b0746dc8443ec6856c16182b0211e0a38c9e2690fc7c2267b149a847a3abb`
+`scripts/build/run.py`: `1a47576577b55c8b59b8a630d09062cd125ffd07d12455911a9032b9acb15ea6`
+
+Limits
+------
+No RCI request was sent to the router. The interface schema output has not been compared with KN-1012, and this build does not establish Wi-Fi/WISP state or mutation contracts.

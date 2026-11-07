@@ -11,12 +11,6 @@ import (
 	"time"
 )
 
-const (
-	Python   = "/usr/bin/python3"
-	Compiler = "/usr/local/lib/hestia/profile.py"
-	Backend  = "/usr/local/lib/hestia/sing-box"
-)
-
 // Operation selects one supported profile transformation.
 type Operation uint8
 
@@ -59,7 +53,7 @@ func RunCommand(ctx context.Context, name string, args ...string) error {
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, name, args...)
-	cmd.Env = []string{"PATH=/usr/sbin:/usr/bin:/sbin:/bin", "LANG=C"}
+	cmd.Env = []string{"PATH=" + CommandPath, "LANG=C"}
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("%s failed: %w", filepath.Base(name), err)
 	}

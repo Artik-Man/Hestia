@@ -1,0 +1,35 @@
+Go interface-schema probe blocked before RCI request
+===================================================
+
+Question
+--------
+Can the existing sanitized Go schema command read `GET /rci/show/interface` through the previously used host-key-pinned SSH local forward to inspect safe field shapes for Wi-Fi/WISP connector planning?
+
+Scope and preparation
+--------------------
+
+- The command would issue only the previously used read-only RCI `GET /rci/show/interface` to router loopback port 79.
+- It would emit bounded schema metadata and an allowlist of field names; scalar values and arbitrary object keys are omitted. Raw response data is not saved.
+- The local token file was confirmed present and mode `0600`; its contents were not read into command output or evidence.
+- The Go CLI source SHA-256 was `a0a57d1533af051156750f0d52456386a852073e4a221215865edea36ca5b2a3`.
+
+Attempt and result
+-----------------
+
+The first harness launch under the default zsh shell emitted `nice(5) failed: operation not permitted` and did not open the forward. A corrected Bash harness used SSH batch mode, the existing host identity, `StrictHostKeyChecking=yes`, the established `known_hosts` file, and `-L 127.0.0.1:17979:127.0.0.1:79`. Its SSH process failed before opening the forward with `connect to host 192.168.1.1 port 222: Operation not permitted`. The Go command did not run and no RCI request was sent.
+
+The exact SSH operation was then submitted for sandbox escalation with the request described as one read-only schema probe. Automatic approval review rejected it because project instructions require separate owner permission for router access and the reviewer determined that permission for this exact request was absent. No alternate transport or indirect execution was attempted.
+
+Checks on the local code
+-----------------------
+
+- The interface schema command's safe field-name allowlist was extended with `name`, `ssid`, `essid`, `band`, `frequency`, and `channel`. These are field names only; their values remain redacted by the shared schema formatter.
+- `python3 scripts/build/run.py --check-go --output /private/tmp/hestia-go-check-schema` — passed.
+- `GOOS=linux GOARCH=arm64 go vet -tags keenetic ./...` — passed.
+- `go vet ./...` — passed.
+- No tests were run.
+
+Limits and next step
+--------------------
+
+No request reached the router, no router data was observed, and no device state changed. The Wi-Fi/WISP response schema remains unknown. A new explicit owner authorization for this exact read-only `GET /rci/show/interface` schema probe is required before retrying it.

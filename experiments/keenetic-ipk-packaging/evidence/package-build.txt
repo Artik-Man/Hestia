@@ -1,0 +1,148 @@
+Package build evidence — 2026-11-07
+
+Question: build the current Keenetic rootfs and a local Entware IPK without contacting any stand.
+
+Command:
+GOCACHE=/private/tmp/hestia-go-cache-final python3 scripts/build/run.py --output /private/tmp/hestia-keenetic-awg-payload-final --runtime-dir dist/runtime
+
+Build result: exit 0. Frontend Angular production build completed. Both Linux ARM64 and Keenetic ARM64 artifact directories were emitted.
+
+Artifact directory:
+/private/tmp/hestia-keenetic-awg-payload-final/20261107-043649-5dd5889e639b/keenetic-arm64-experimental
+
+IPK:
+hestia_20261107-043649-5dd5889e639b_aarch64-3.10.ipk
+SHA-256: da54dfafa69c52ce7c27ee639cfc57f5e8573a1f55aa13607e6b1190c69c3ed6
+
+Observed package metadata:
+Package: hestia
+Version: 20261107-043649-5dd5889e639b
+Depends: python3-light, busybox, libc
+Architecture: aarch64-3.10
+
+Observed archive members:
+- outer: ./debian-binary, ./control.tar.gz, ./data.tar.gz
+- control: ./control, ./conffiles, ./preinst, ./postinst, ./prerm, ./postrm
+- data: 47 entries, every path under ./opt; uid/gid root; no links or special files
+- managed config directory and sing-box config have private permissions
+- AWG candidates are staged as `/opt/bin/amneziawg-go` and `/opt/bin/awg`; the daemon hash is `de208c103ee5295b22ee85b8745d7a8a80285165d8bdd62787e28d20545493a1` and the tools hash is `7b5d8177fba2ebe1454390c069f7385401f95449c6f680e03090d368d7f16a56`
+- required payload present: `/opt/bin/hestia`, `/opt/etc/init.d/S99hestia`, managed profile/snapshot/sing-box config
+- manifest inventory/hash verification: passed during build; 144 files
+
+Checks: `make fmt`, `git diff --check`, Linux ARM64 Keenetic `go vet`, `scripts/build/run.py --check-go`, docs checks, Python bytecode compilation for build scripts, and ShellCheck 0.11.0 for all Keenetic maintainer scripts passed. No tests were run.
+
+Independent code and security reviews confirmed lifecycle and `/proc` process checks at source level. BusyBox/opkg runtime compatibility remains unverified. The Keenetic route runner uses `/opt/sbin/ip`, but route semantics and mutations are not enabled or target-tested. AWG remains fail-closed; the packaged daemon's UAPI directory is `/opt/tmp/hestia-awg-uapi-26b84f/runtime` and was not created or exercised by this build. No IPK maintainer script was executed; no opkg install/upgrade/remove, router connection, network mutation or device test was run.
+
+## Rebuild after adding the unselected AWG driver candidate
+
+Command:
+GOCACHE=/private/tmp/hestia-go-cache-final python3 scripts/build/run.py --output /private/tmp/hestia-awg-final --runtime-dir dist/runtime
+
+Build result: exit 0. The frontend production bundle, Linux ARM64 artifact, Keenetic ARM64 artifact and IPK were regenerated. The manifest includes the source hash for `backend/internal/awgruntime/entware_linux.go`; this driver remains unselected and `awgruntime.Unsupported{}` remains in the Keenetic composition.
+
+Artifact directory:
+/private/tmp/hestia-awg-final/20261107-044415-5dd5889e639b/keenetic-arm64-experimental
+
+IPK:
+hestia_20261107-044415-5dd5889e639b_aarch64-3.10.ipk
+SHA-256: 20fd9efc2f0b3f2b157b2952553b93e58c4bc5e97572c769051f98b0046a0451
+
+Observed: manifest verifies 144 files. The outer archive contains `debian-binary`, `control.tar.gz` and `data.tar.gz`; its payload contains 47 entries, all under `./opt`. Both `/opt/bin/amneziawg-go` and `/opt/bin/awg` are present. No device or VM was contacted, and no test suite or maintainer script was run. Keenetic ARM64 `go vet`, `--check-go`, `make fmt` and `git diff --check` passed in this continuation.
+
+## Rebuild after driver input validation hardening
+
+Command:
+GOCACHE=/private/tmp/hestia-go-cache-final python3 scripts/build/run.py --output /private/tmp/hestia-awg-final-reviewed --runtime-dir dist/runtime
+
+Build result: exit 0. Keenetic ARM64 `go vet`, the Linux/Keenetic Go compilation check, `make fmt`, `git diff --check`, and `SHFMT=/private/tmp/hestia-tools/shfmt python3 tools/check_docs.py` passed.
+
+Artifact directory:
+/private/tmp/hestia-awg-final-reviewed/20261107-044741-5dd5889e639b/keenetic-arm64-experimental
+
+IPK:
+hestia_20261107-044741-5dd5889e639b_aarch64-3.10.ipk
+SHA-256: 8e93c92546e6b1a4850be45295c7aed0398cc875368f1a5e11de519e9e68a56c
+
+The manifest verifies 144 files and the updated driver source hash `7a669ae6b7089c02bf09416510b43cf1cf6ea10c64ba404ff5c54e42423fe585`. Package structure remains 47 payload entries under `./opt`. The driver validates root-owned non-writable runtime path components and strict endpoint host/port syntax; this is source-level validation only. It remains unselected, with no AWG process or interface started.
+
+## Rebuild with separate kernel and RCI inventory
+
+Command:
+GOCACHE=/private/tmp/hestia-go-cache-final python3 scripts/build/run.py --output /private/tmp/hestia-kernel-inventory-build --runtime-dir dist/runtime
+
+Build result: exit 0. Before the build, `make fmt`, Keenetic ARM64 `go vet`, `scripts/build/run.py --check-go`, `tools/check_docs.py` with the pinned shfmt path, and `git diff --check` passed. No tests ran.
+
+Artifact directory:
+/private/tmp/hestia-kernel-inventory-build/20261107-045636-5dd5889e639b/keenetic-arm64-experimental
+
+IPK:
+hestia_20261107-045636-5dd5889e639b_aarch64-3.10.ipk
+SHA-256: 3fb4cfc33e50d5e1b84a4b8da89ccf611a9647c840a71e0f0b6dae13ec2aa801
+
+The package manifest verifies 144 files. Its data archive contains 47 entries and every entry is under `./opt`. The code now exposes kernel network devices from sysfs separately from native RCI physical-port IDs; controller and smoke carrier checks use kernel device names via sysfs. This only fixes local type/namespace integration. Neither sysfs observations nor link behavior were checked on KN-1012, and no router or VM was contacted.
+
+## Rebuild with device and storage preflight
+
+Command:
+GOCACHE=/private/tmp/hestia-go-cache-final python3 scripts/build/run.py --output /private/tmp/hestia-keenetic-preflight-final --runtime-dir dist/runtime
+
+Build result: exit 0. The generated IPK contains a preinst gate that reads the root-owned RCI token from `/opt/etc/hestia/keenetic-rci-token`, verifies the exact KN-1012 / KeeneticOS 5.2 Beta 3 release using read-only `GET /rci/show/version`, confirms opkg advertises `aarch64-3.10`, rejects writable/symlinked `/opt`, and requires 512 MiB available. No RCI or opkg command was executed on a device.
+
+Artifact directory:
+/private/tmp/hestia-keenetic-preflight-final/20261107-050844-5dd5889e639b/keenetic-arm64-experimental
+
+IPK:
+hestia_20261107-050844-5dd5889e639b_aarch64-3.10.ipk
+SHA-256: 912dcc84149dccaf073d0d134269d4a241cd1f92048779483ed4965957e18c8d
+
+Manifest verification: 144 files. Control archive: metadata, conffiles and four lifecycle scripts. Data archive: 47 entries, all under `./opt`, 135,432,922 uncompressed bytes. The preinst source hash in the manifest is `3fbe2ac0cba570d117dd0f3ed88950ebafbdb974f5efeaec6824d457bc47c235`.
+
+Static checks: `make fmt`, `sh -n deploy/keenetic/ipk/preinst`, ShellCheck 0.11.0, Python syntax compilation of the embedded preflight, docs check with pinned shfmt, and `git diff --check` passed. No tests were run. No IPK script, router, or VM was used.
+
+## Shared-Go-client preflight rebuild — 2026-11-07
+
+Question: can the pre-extraction KN-1012 gate use the same Go RCI client as experiments and the connector?
+
+Command:
+`PYTHONDONTWRITEBYTECODE=1 GOCACHE=/private/tmp/hestia-go-cache python3 scripts/build/run.py --output /private/tmp/hestia-preflight-final --runtime-dir dist/runtime`
+
+Build result: exit 0. Both ARM64 artifacts and the Keenetic IPK were emitted. The package manifest validates 145 files.
+
+Artifact directory:
+`/private/tmp/hestia-preflight-final/20261107-052129-5dd5889e639b/keenetic-arm64-experimental`
+
+IPK:
+`hestia_20261107-052129-5dd5889e639b_aarch64-3.10.ipk`
+SHA-256: `e50e8acb508db3f08de6d2e6b0e4a6a9923bc2672c81524b4527d4790689028d`
+
+Observed structure: control archive contains metadata, conffiles, four lifecycle scripts, and `keenetic-preflight` (9,463,811 bytes, mode 0755). `preinst` invokes the Go helper in the same temporary control directory. Data archive has 47 entries, every path under `./opt`, with 135,432,922 uncompressed bytes. The Go helper uses `keeneticrci.Client` for fixed read-only `GET /rci/show/version`; it then verifies model/release/title/architecture, Entware architecture, root ownership/permissions and 512 MiB free space. The token is not packaged.
+
+Checks: Keenetic/Linux Go compilation passed through the full build; `go vet ./cmd/... ./internal/... ./pkg/... ./tools/...`, `make fmt-check` with pinned shfmt, docs check with pinned shfmt, `bash -n deploy/keenetic/ipk/preinst`, and `git diff --check` passed. `make fmt` ran; Go files required direct `gofmt` for two import/spacing changes after that command. `shellcheck` is unavailable in this environment. No tests were run. No IPK script, router, VM, or network stand was used.
+
+Limit: upstream opkg source runs `preinst` from its temporary control unpack directory (`pkg_run_script`, https://lxr.openwrt.org/source/opkg-lede/libopkg/pkg.c#L1355). The corresponding Entware `opkg` behavior and launching an ARM64 Go helper from that directory remain unverified on KN-1012. This package build does not prove installation or runtime readiness.
+
+Final rebuild after replacing external `dirname` with shell parameter expansion in `preinst` completed successfully at the artifact path above. The final preinst is 768 bytes; the control helper size and `/opt` payload inventory are unchanged. Manifest validates 145 files. Shell formatting, docs, shell syntax, Go vet/cross-build and `git diff --check` passed. ShellCheck remains unavailable; no tests or target commands were run.
+
+## RCI read-only POST support and Go Wi-Fi schema probe — 2026-11-07
+
+Question: can the shared Go client support parameterized RCI show actions without opening generic POST writes, and can the next Wi-Fi survey be prepared in Go with sanitized output?
+
+Evidence basis: the official KN-1012 KeeneticOS 4.3 command reference documents `/rci/show` POST actions as commands that do not modify settings, permits JSON parameters, and shows `show site-survey <interface>` as read-only. The installed target's token-auth POST path has not been exercised.
+
+Code changes: the common client permits only a valid JSON, explicitly read-only `POST /rci/show` with `ChangesState=false`; other state-changing POST calls still require `ChangesState=true` plus `AllowWrites`. A Go survey schema probe restricts the requested interface to `WifiMaster0` or `WifiMaster1`, emits only response metadata/digest and a bounded allowlisted schema, and never emits raw values or arbitrary object keys. The preflight's version struct reads the RCI `arch` key.
+
+Build command:
+`PYTHONDONTWRITEBYTECODE=1 GOCACHE=/private/tmp/hestia-go-cache python3 scripts/build/run.py --output /private/tmp/hestia-rci-final --runtime-dir dist/runtime`
+
+Build result: exit 0. Full Go `vet`, build-go cross-compilation, formatting check, documentation check and `git diff --check` passed. No tests were run.
+
+Artifact directory:
+`/private/tmp/hestia-rci-final/20261107-053817-5dd5889e639b/keenetic-arm64-experimental`
+
+IPK:
+`hestia_20261107-053817-5dd5889e639b_aarch64-3.10.ipk`
+SHA-256: `a358fd7e78fc684ff32e8a562a5ed7c83f6a96aa39ec0c2a8f03ff704524cc32`
+
+Manifest verifies 145 files. Control archive contains the 9,463,779-byte Go preflight helper (mode 0755), conffiles and four lifecycle scripts. Data archive contains 47 entries, all under `./opt`, totaling 135,432,882 uncompressed bytes. Research command sources are recorded in the package manifest but the research binaries are not shipped in the IPK.
+
+Limits: no RCI POST, site-survey, IPK maintainer script, router, VM or network stand was contacted or executed. ShellCheck is unavailable. The Wi-Fi schema probe is compiled/prepared only; its request envelope and response schema still need a separately authorized read-only target run. Package installation, runtime, routes, AWG, DNS, Wi-Fi/WISP, and client dataplane remain unverified.

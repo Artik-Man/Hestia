@@ -17,6 +17,6 @@
 
 ## Платформы и состояние поставки
 
-Рабочая целевая платформа — Linux ARM64 (AArch64). Команда `make build` собирает комплекты в `dist/artifacts/<версия>/`: `linux-arm64` и `keenetic-arm64-experimental`. Linux-комплект предназначен для установки на Linux ARM64. Экспериментальный комплект Keenetic пока содержит универсальные ARM64-бинарники: платформенные адаптеры и пакет `.ipk` ещё не реализованы, поэтому его установка отклоняется.
+Рабочая целевая платформа — Linux ARM64 (AArch64). Команда `make build` собирает комплекты в `dist/artifacts/<версия>/`: `linux-arm64` и `keenetic-arm64-experimental`. Linux-комплект предназначен для установки на Linux ARM64. Экспериментальный комплект Keenetic собирается отдельным Go-вариантом с Entware-путями `/opt` и включает `.ipk` с default deny-профилем и opkg lifecycle hooks. RCI Ethernet link подключён к watcher-композиции, а список нативных портов с link/speed отдаётся через REST; эти port ID не считаются Linux device name. Пакет и службы не проверены на KN-1012, автоматический rollback обновления отсутствует. RoutePolicy/dataplane, DNS, Wi-Fi/WISP и полноценный путь клиентского трафика ещё не готовы. Неподдерживаемые physical/service/AWG операции отказывают явно.
 
 Детали сборки и фактические результаты испытаний описаны в документации проекта; обзор документов дан в [DOCUMENTATION.md](DOCUMENTATION.md).

@@ -1,0 +1,6 @@
+#!/bin/sh
+# Keep configuration and runtime evidence after removal so a reinstall can recover them.
+
+set -eu
+
+exit 0

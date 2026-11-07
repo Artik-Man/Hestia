@@ -1,0 +1,25 @@
+Дата: 2026-11-07
+Вопрос: включены ли ограниченный WISP status reader и его исходный код в воспроизводимый локальный Keenetic IPK?
+
+В `backend/pkg/keeneticrci/wireless.go` добавлен `WISPConnector.Read`: он использует общий токенизированный RCI transport для `GET /rci/show/interface`, выбирает только записи `type=wifistation` с ID `WifiMasterN/WifiStationN` и возвращает только ID, link/state, connected, default gateway и priority. Секретные и идентифицирующие профиль поля не копируются в тип результата. Коннектор пока не подключён к REST/API или сетевой маршрутизации.
+
+Первая полная сборка показала, что новый untracked источник не попадал в явный список provenance inputs сборщика. В `scripts/build/run.py` источник добавлен; следующая полная сборка успешно завершилась и manifest содержит 553 source inputs, включая точный hash `wireless.go`, и 145 packaged files.
+
+Проверки:
+
+- `GOCACHE=/private/tmp/hestia-go-cache go vet ./pkg/keeneticrci` — успешно.
+- `GOOS=linux GOARCH=arm64 GOCACHE=/private/tmp/hestia-go-cache go vet -tags keenetic ./pkg/keeneticrci` — успешно.
+- `GOCACHE=/private/tmp/hestia-go-cache make build-go` — успешно.
+- `make fmt-check SHFMT=/private/tmp/hestia-tools/shfmt` — успешно.
+- `make docs-check SHFMT=/private/tmp/hestia-tools/shfmt` — успешно.
+- `git diff --check` — успешно.
+- `GOCACHE=/private/tmp/hestia-go-cache bash scripts/build/run.sh --output /private/tmp/hestia-wisp-reader` — успешно для Linux ARM64, Keenetic ARM64, frontend и IPK.
+
+IPK: `/private/tmp/hestia-wisp-reader/20261107-082119-5dd5889e639b/keenetic-arm64-experimental/hestia_20261107-082119-5dd5889e639b_aarch64-3.10.ipk`.
+
+- Размер: 58 992 318 байт.
+- SHA-256: `879310428d0dfba59e5e7692fe76afe62fd3005b193662629e6cf0517a146bc8`.
+- `backend/pkg/keeneticrci/wireless.go`: `4bfd8d427688b46a6ba25a7bfcd0a1c93eca06e750e89c54b4c41b9605d5e8ee`.
+- `scripts/build/run.py`: `49c5510d8a9b5f65306792300b611ce00c0918a6046b0298d223e34b1e57572e`.
+
+Ограничения: тесты не запускались; HTTP JSON схема WISP не проверялась на KN-1012. IPK не устанавливался, Wi-Fi scan и любые конфигурационные изменения не выполнялись. Сборка не подтверждает site-survey, управление WISP, связь RCI ID с kernel interface, VPN/dataplane или работоспособность Hestia на Keenetic.

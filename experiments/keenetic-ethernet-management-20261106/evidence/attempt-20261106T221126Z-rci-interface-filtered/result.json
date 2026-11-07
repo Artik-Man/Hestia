@@ -1,0 +1,34 @@
+{
+  "time_utc": "2026-11-06T22:12:02Z",
+  "operation": "GET /rci/show/interface",
+  "http_status": 200,
+  "content_type": "application/json",
+  "response_bytes": 34929,
+  "response_sha256": "2bb8d963ba346f2e58303804c547f3b38267eb2539f6df2afa87db1e6f4f96b3",
+  "host_key_fingerprint_sha256": "SHA256:u5mFSUOHtvmfjURyMmAe8N2BVONvSiTAoV7OLn2Czoo",
+  "ndmc_binary_sha256": "6e6b0bee69e1270160a16711b6a64f4e036b9b984d8eb80acdf76403c243121e",
+  "token_value": "redacted",
+  "request": {
+    "method": "GET",
+    "path": "/rci/show/interface",
+    "host": "127.0.0.1",
+    "port": 79,
+    "transport": "temporary SSH local-forward"
+  },
+  "physical_ethernet_ports": [
+    {"id": "GigabitEthernet0/0", "type": "Port", "link": "down"},
+    {"id": "GigabitEthernet0/1", "type": "Port", "link": "up", "speed": "100", "duplex": "full"},
+    {"id": "GigabitEthernet0/2", "type": "Port", "link": "up", "speed": "100", "duplex": "full"},
+    {"id": "GigabitEthernet0/3", "type": "Port", "link": "down"},
+    {"id": "GigabitEthernet1/0", "type": "Port", "link": "up", "speed": "1000", "duplex": "full"}
+  ],
+  "raw_response_saved": false,
+  "other_interface_data_saved": false,
+  "router_state_change": "none observed",
+  "limits": [
+    "Link and speed are a single current snapshot.",
+    "Previously observed LAN1 mapping to GigabitEthernet0/0 is not being inferred for other IDs.",
+    "Link down does not establish that a physical jack is unused.",
+    "No RCI write operations or packet forwarding were tested."
+  ]
+}

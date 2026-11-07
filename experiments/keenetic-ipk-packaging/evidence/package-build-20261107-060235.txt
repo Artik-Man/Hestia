@@ -1,0 +1,20 @@
+Question: does the package build with a physical-port UI that no longer implies an unsupported mapping from Keenetic RCI IDs to Hestia exits?
+
+Changes: the native port table now shows only the confirmed Keenetic ID, link, speed and duplex. Physical port IDs remain separate from kernel interface names until a mapping is evidenced. The feature document records this boundary.
+
+Environment: macOS ARM64, Go 1.27.3, frontend dependencies installed, runtime inputs from dist/runtime. No router, VM, or network stand was accessed.
+
+Commands:
+cd frontend && npm run format && npm run lint
+GOCACHE=/private/tmp/hestia-go-build-cache python3 scripts/build/run.py --runtime-dir dist/runtime --output /private/tmp/hestia-port-inventory-ui
+
+Results: formatter and ESLint completed successfully. Full Linux/Keenetic ARM64 and frontend build completed with exit 0. The generated source manifest includes the updated `physical-connections.component.html` with SHA-256 `e4d184bfccea6e57a8f2250afd32d5abb160863a8580ce119c69c213139eb1b9`. Documentation check and `git diff --check` passed. No tests ran.
+
+Artifact directory:
+/private/tmp/hestia-port-inventory-ui/20261107-060235-5dd5889e639b/keenetic-arm64-experimental
+
+IPK:
+hestia_20261107-060235-5dd5889e639b_aarch64-3.10.ipk
+SHA-256: fbadef8a6c7ca87ff892223ad80f5d472a95251cf33e75341a4b3a4110b3e276
+
+This is compile/package evidence only. The IPK was not installed and no device-affecting behavior was exercised.

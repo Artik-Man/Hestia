@@ -1,0 +1,47 @@
+npm notice run hestia-panel@0.1.1 test:browser
+npm notice run node --test tests/browser/geo.mjs tests/browser/profile-import.mjs tests/browser/group-create.mjs tests/browser/connection-move.mjs tests/browser/domain-list-save.mjs tests/browser/quality.mjs tests/browser/traffic.mjs tests/browser/dns.mjs && npm run test:browser:dns-api:built
+✔ dragging an exit into an empty group stages a cancellable change until Save (2174.356ms)
+✔ DNS edits independent lists, rejects stale writes and preserves draft settings (3500.546791ms)
+✔ domain lists persist after reload and compare edits against their original snapshot (5928.739209ms)
+✔ country matrix keeps explicit choices when the default changes (5692.18525ms)
+✔ groups preserve names, show modal and page Toasts, and require confirmation before deletion (2921.402542ms)
+✔ the keyboard menu imports editable WireGuard fields and an ambiguous save cleans up only its own ID (2536.001417ms)
+✖ one dialog creates manually, reopens all stored keys, retains drafts on failure, and confirms deletion (381.904416ms)
+✔ ordered transports persist and the automatic mode clears all explicit choices (1082.414458ms)
+✔ connections retain profiles absent from the snapshot and native exits absent from storage (335.679292ms)
+✔ a legacy direct-connection link opens the Ethernet table (320.830625ms)
+✔ renaming an Ethernet connection updates its row and survives a reload (539.489791ms)
+✔ selecting a named Ethernet transport saves its routing ID in the VPN profile (604.777291ms)
+✔ manual Wi-Fi setup uses the selected radio, band, SSID and password, and lists only public fields (728.96875ms)
+✔ Wi-Fi setup cannot be submitted when a gateway has no radio (286.492125ms)
+✔ a failed physical inventory read appears in a PrimeNG error toast (295.447958ms)
+✔ Hysteria 2 imports a YAML and PEM pair, preserves the secret on rename and deletes the profile (1387.299917ms)
+✔ quality page displays all ranked groups, keeps a measured zero, and persists each individual modal action (14627.816583ms)
+✔ traffic journal reaches rows past 500 and refresh preserves its filters (5654.797041ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 17
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 14900.972541
+
+✖ failing tests:
+
+test at tests/browser/profile-import.mjs:301:1
+✖ one dialog creates manually, reopens all stored keys, retains drafts on failure, and confirms deletion (381.904416ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///Users/artikman/Documents/projects/hestia/frontend/tests/browser/profile-import.mjs:319:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

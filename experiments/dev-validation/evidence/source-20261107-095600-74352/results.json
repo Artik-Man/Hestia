@@ -1,0 +1,105 @@
+[
+  {
+    "name": "source-check",
+    "status": "FAIL",
+    "exit": 2,
+    "seconds": 24.65,
+    "command": [
+      "make",
+      "check"
+    ],
+    "log": "/Users/artikman/Documents/projects/hestia/experiments/dev-validation/evidence/source-20261107-095600-74352/source-check.log"
+  },
+  {
+    "name": "api-reproducibility",
+    "status": "PASS",
+    "exit": 0,
+    "seconds": 3.19,
+    "command": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "/Users/artikman/Documents/projects/hestia/scripts/test-source/run.py",
+      "--internal",
+      "api"
+    ],
+    "log": "/Users/artikman/Documents/projects/hestia/experiments/dev-validation/evidence/source-20261107-095600-74352/api-reproducibility.log"
+  },
+  {
+    "name": "frontend-format",
+    "status": "PASS",
+    "exit": 0,
+    "seconds": 1.19,
+    "command": [
+      "npm",
+      "run",
+      "format:check"
+    ],
+    "log": "/Users/artikman/Documents/projects/hestia/experiments/dev-validation/evidence/source-20261107-095600-74352/frontend-format.log"
+  },
+  {
+    "name": "frontend-lint",
+    "status": "PASS",
+    "exit": 0,
+    "seconds": 1.41,
+    "command": [
+      "npm",
+      "run",
+      "lint"
+    ],
+    "log": "/Users/artikman/Documents/projects/hestia/experiments/dev-validation/evidence/source-20261107-095600-74352/frontend-lint.log"
+  },
+  {
+    "name": "frontend-unit",
+    "status": "PASS",
+    "exit": 0,
+    "seconds": 0.35,
+    "command": [
+      "npm",
+      "test"
+    ],
+    "log": "/Users/artikman/Documents/projects/hestia/experiments/dev-validation/evidence/source-20261107-095600-74352/frontend-unit.log"
+  },
+  {
+    "name": "frontend-build",
+    "status": "PASS",
+    "exit": 0,
+    "seconds": 6.11,
+    "command": [
+      "npm",
+      "run",
+      "build"
+    ],
+    "log": "/Users/artikman/Documents/projects/hestia/experiments/dev-validation/evidence/source-20261107-095600-74352/frontend-build.log"
+  },
+  {
+    "name": "frontend-browser",
+    "status": "FAIL",
+    "exit": 1,
+    "seconds": 162.93,
+    "command": [
+      "npm",
+      "run",
+      "test:browser"
+    ],
+    "log": "/Users/artikman/Documents/projects/hestia/experiments/dev-validation/evidence/source-20261107-095600-74352/frontend-browser.log"
+  },
+  {
+    "name": "source-race",
+    "status": "PASS",
+    "exit": 0,
+    "seconds": 19.58,
+    "command": [
+      "go",
+      "test",
+      "-race",
+      "-count=1",
+      "./internal/binding",
+      "./internal/controller",
+      "./internal/dnsresolver",
+      "./internal/dnsservice",
+      "./internal/quality",
+      "./internal/storage",
+      "./internal/network/..."
+    ],
+    "log": "/Users/artikman/Documents/projects/hestia/experiments/dev-validation/evidence/source-20261107-095600-74352/source-race.log"
+  }
+]

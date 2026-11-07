@@ -1,0 +1,21 @@
+Дата: 2026-11-07
+Вопрос: отвергает ли общий RCI-клиент неканонические пути до формирования HTTP-запроса?
+Изменение: validateOperation принимает только абсолютные `/rci/...` пути с непустыми ASCII-командными сегментами; path traversal, duplicate slash, dot segments, query/fragment, percent-encoding, backslash и управляющие символы отклоняются.
+
+Проверки:
+- gofmt backend/pkg/keeneticrci/client.go
+- GOCACHE=/private/tmp/hestia-go-cache go -C backend vet ./...
+- GOCACHE=/private/tmp/hestia-go-cache GOOS=linux GOARCH=arm64 go -C backend vet -tags keenetic ./...
+- SHFMT=/private/tmp/hestia-tools/shfmt make docs-check
+- git diff --check
+- GOCACHE=/private/tmp/hestia-go-cache python3 scripts/build/run.py --output /private/tmp/hestia-rci-path-final
+
+Все команды завершились кодом 0; тесты не запускались.
+
+Артефакт: /private/tmp/hestia-rci-path-final/20261107-072254-5dd5889e639b/keenetic-arm64-experimental/hestia_20261107-072254-5dd5889e639b_aarch64-3.10.ipk
+Размер: 58,972,694 байта
+SHA-256: b9af7585ede4a015bc795b52ff89de998dc16694c90bad3bf23998383c656d64
+Manifest: 552 source inputs; 145 packaged files.
+Source hash `backend/pkg/keeneticrci/client.go`: `f70fe8629d91d74b6a4511521d90b140c9ea95ed579e0a9d692485b4e4c6ecfc`.
+
+Границы: локальная сборка подтверждена; запросы к KN-1012, токену, opkg и сетевым интерфейсам не выполнялись.

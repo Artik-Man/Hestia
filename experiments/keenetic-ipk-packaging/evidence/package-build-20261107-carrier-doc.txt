@@ -1,0 +1,37 @@
+Keenetic rebuild after correcting the carrier adapter GoDoc
+===========================================================
+
+Question
+--------
+Does the Linux and experimental Keenetic package still build after correcting the comment that described the Keenetic carrier observer as RCI-backed even though it reads sysfs?
+
+Change
+------
+
+The Keenetic controller's `installedCarrier` comment now states that it observes Linux kernel device names through sysfs and does not accept native RCI port IDs as kernel device names. Runtime behavior did not change.
+
+Build
+-----
+
+Command:
+
+```sh
+GOCACHE=/private/tmp/hestia-go-cache python3 scripts/build/run.py \
+  --output /private/tmp/hestia-carrier-doc-build
+```
+
+Result: exit code 0; Linux ARM64 and Keenetic ARM64 Go bundles, frontend, manifest verification, and IPK generation completed.
+
+Artifact and provenance
+----------------------
+
+- Bundle: `/private/tmp/hestia-carrier-doc-build/20261107-065702-5dd5889e639b/keenetic-arm64-experimental`
+- Manifest: 552 source inputs, 145 bundle files
+- `backend/internal/controller/carrier_keenetic.go` source SHA-256: `54ed50014407b109e1541d6d58c76a8a0f23264e09c655b9305aa0aa898e3e5c`
+- IPK: `hestia_20261107-065702-5dd5889e639b_aarch64-3.10.ipk`
+- IPK SHA-256: `5b183335ced8bc08fe4d346865ef90cc6dc14aca48fef5be3326f97db359c156`
+
+Limits
+------
+
+This was a build and source-provenance check only. No tests, RCI request, device, opkg lifecycle, or network mutation was run. It does not verify carrier readings on KN-1012.

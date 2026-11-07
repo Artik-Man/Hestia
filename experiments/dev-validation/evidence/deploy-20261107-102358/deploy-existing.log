@@ -1,0 +1,7 @@
+Running as unit: hestia-deploy-20261107-102358-79887.service
+sing-box version 1.14.4
+Update verified; preserved configuration and main routes. Backup: /var/backups/hestia-deploy.S7lFNT57
+Finished with result: success
+Main processes terminated with: code=exited/status=0
+Service runtime: 4.563s
+CPU time consumed: 547ms

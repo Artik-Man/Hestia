@@ -12,6 +12,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/Artik-Man/Hestia/internal/panelmodel"
 )
 
 // TestWatcherReconcilesOnlyDivergentSelectors checks that retries repair FI
@@ -164,7 +166,12 @@ func TestWatcherCarrierFailover(t *testing.T) {
 	w := newWatcher(&http.Client{Transport: tr}, "http://gateway.test")
 	w.devices = map[string]string{"direct-test": "eth0", "awg-test": "awg0"}
 	links := map[string]bool{"eth0": true, "awg0": true}
-	w.carrier = func(name string) bool { return links[name] }
+	w.carrier = func(name string) panelmodel.CarrierState {
+		if links[name] {
+			return panelmodel.CarrierUp
+		}
+		return panelmodel.CarrierDown
+	}
 	w.healthyAWG = func(string) bool { return true }
 	snapshot := []byte(`{"groups":[{"id":"default","exits":["direct-test","awg-test"]}],"lists":[],"healthy":{"direct-test":true,"awg-test":true},"connectorKinds":{"awg-test":"awg"}}`)
 	for _, phase := range []struct {

@@ -35,7 +35,25 @@ function validInventory(value: unknown): value is Inventory {
     !("interfaces" in value) ||
     !Array.isArray(value.interfaces) ||
     !("wifiProfiles" in value) ||
-    !Array.isArray(value.wifiProfiles)
+    !Array.isArray(value.wifiProfiles) ||
+    ("nativeEthernetPorts" in value &&
+      (!Array.isArray(value.nativeEthernetPorts) ||
+        !value.nativeEthernetPorts.every(
+          (port: unknown) =>
+            port !== null &&
+            typeof port === "object" &&
+            "id" in port &&
+            typeof port.id === "string" &&
+            "link" in port &&
+            (port.link === "up" || port.link === "down") &&
+            "exitIds" in port &&
+            Array.isArray(port.exitIds) &&
+            port.exitIds.every((id: unknown) => typeof id === "string") &&
+            (!("speedMbps" in port) || typeof port.speedMbps === "number") &&
+            (!("duplex" in port) ||
+              port.duplex === "half" ||
+              port.duplex === "full"),
+        )))
   )
     return false;
   return (
@@ -47,8 +65,13 @@ function validInventory(value: unknown): value is Inventory {
         typeof a.interfaceName === "string" &&
         "kind" in a &&
         (a.kind === "ethernet" || a.kind === "wifi") &&
+        "carrierState" in a &&
+        (a.carrierState === "up" ||
+          a.carrierState === "down" ||
+          a.carrierState === "unknown") &&
         "online" in a &&
         typeof a.online === "boolean" &&
+        a.online === (a.carrierState === "up") &&
         "present" in a &&
         typeof a.present === "boolean" &&
         "exitIds" in a &&

@@ -1,0 +1,12 @@
+#!/bin/sh
+# Validate the installed managed profile and start Hestia after opkg configures the package.
+
+set -eu
+
+case "${1:-configure}" in
+	configure)
+		/opt/etc/init.d/S99hestia configure-package
+		;;
+esac
+
+exit 0

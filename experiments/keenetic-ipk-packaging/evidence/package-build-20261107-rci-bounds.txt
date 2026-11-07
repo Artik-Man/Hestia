@@ -1,0 +1,46 @@
+Keenetic rebuild after hardening RCI request and response bounds
+================================================================
+
+Question
+--------
+Does the current product still build for Linux ARM64 and experimental Keenetic ARM64 after the shared RCI client gained a hard response-size ceiling and a request payload limit?
+
+Environment
+-----------
+Date: 2026-11-07
+Revision: `5dd5889e639ba7d923f1ea9545a4ff95f464efa7`
+Working tree: dirty
+Host: macOS ARM64; Go 1.27.3; frontend dependencies installed
+Runtime input: repository `dist/runtime`, checked against `scripts/build/runtime-lock.json`
+
+Changes included
+----------------
+
+- Default RCI response limit remains 2 MiB; configured limit is rejected above the 16 MiB hard ceiling.
+- RCI request JSON is rejected above 1 MiB with the redacted `request_too_large` error kind.
+- Source formatting was applied with `gofmt`.
+
+Checks
+------
+
+- `GOCACHE=/private/tmp/hestia-go-cache go vet ./...` — passed.
+- `GOCACHE=/private/tmp/hestia-go-cache GOOS=linux GOARCH=arm64 go vet -tags keenetic ./...` — passed.
+- `GOCACHE=/private/tmp/hestia-go-cache python3 scripts/build/run.py --check-go --output /private/tmp/hestia-go-check-current` — passed.
+- `SHFMT=/private/tmp/hestia-tools/shfmt make docs-check` — passed.
+- `git diff --check` — passed.
+- Full Linux ARM64, Keenetic ARM64 and frontend/IPK build — exit code 0.
+
+Artifacts and provenance
+------------------------
+
+- Bundle: `/private/tmp/hestia-rci-bounds-build/20261107-063835-5dd5889e639b/keenetic-arm64-experimental`
+- Manifest source inputs: 552
+- Manifest bundle files: 145
+- `backend/pkg/keeneticrci/client.go` SHA-256 in manifest: `ecff8b89c089d135bc07923b13cc723459c9db941758718954d20d3c471b50a7`
+- IPK: `hestia_20261107-063835-5dd5889e639b_aarch64-3.10.ipk`
+- IPK SHA-256: `1d631468cdfe90c5f9bad4f7f8c543f0e100690793b4bc827031affbf4c7ce30`
+
+Limits
+------
+
+No tests were run. No RCI request, `opkg` lifecycle script, installation, router process, or network mutation was executed. This proves the changes compile and are included in package provenance, not that KN-1012 accepts them or that the whole Hestia data plane is operational.

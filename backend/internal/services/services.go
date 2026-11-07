@@ -13,6 +13,8 @@ const (
 	SmokeCurrent
 	BindingWatch
 	AWG
+	Panel
+	DNS
 )
 
 // Service identifies a role and, for AWG only, its validated connection instance.

@@ -1,0 +1,2 @@
+npm notice run hestia-panel@0.1.1 lint
+npm notice run eslint src --max-warnings 0

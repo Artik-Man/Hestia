@@ -83,6 +83,7 @@ async function fixture(
         interfaceName: "eth0",
         kind: "ethernet",
         present: true,
+        carrierState: "down",
         online: false,
         exitIds: ["wan-a"],
       },
@@ -90,6 +91,7 @@ async function fixture(
         interfaceName: "eth1",
         kind: "ethernet",
         present: false,
+        carrierState: "unknown",
         online: false,
         exitIds: ["wan-b"],
       },
@@ -97,6 +99,7 @@ async function fixture(
         interfaceName: "wlan0",
         kind: "wifi",
         present: true,
+        carrierState: "down",
         online: false,
         exitIds: [],
       },
@@ -104,6 +107,7 @@ async function fixture(
         interfaceName: "wlan1",
         kind: "wifi",
         present: true,
+        carrierState: "down",
         online: false,
         exitIds: [],
       },
@@ -313,7 +317,7 @@ test("one dialog creates manually, reopens all stored keys, retains drafts on fa
     const native = savedRow(page, "wan-a");
     await native.waitFor();
     assert.equal(
-      await native.getByText("Кабель отключён", { exact: true }).count(),
+      await native.getByText("Линк не поднят", { exact: true }).count(),
       1,
     );
     assert.deepEqual(

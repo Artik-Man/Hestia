@@ -3,8 +3,8 @@ package binding
 import (
 	"context"
 
+	"github.com/Artik-Man/Hestia/internal/platform"
 	"github.com/Artik-Man/Hestia/internal/services"
-	"github.com/Artik-Man/Hestia/internal/services/systemd"
 )
 
 // serviceManager returns the installed platform adapter or a command-backed adapter for isolated engines.
@@ -12,7 +12,7 @@ func (e Engine) serviceManager() services.Manager {
 	if e.services != nil {
 		return e.services
 	}
-	return systemd.Manager{Run: e.run}
+	return platform.Services(e.run)
 }
 
 // serviceActive permits preserving a shared process only when the platform confirms it is active.

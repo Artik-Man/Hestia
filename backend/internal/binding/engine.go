@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/Artik-Man/Hestia/internal/platform"
 	"github.com/Artik-Man/Hestia/internal/profileexec"
 	"github.com/Artik-Man/Hestia/internal/storage"
 	"os"
@@ -15,7 +16,6 @@ import (
 
 	"github.com/Artik-Man/Hestia/internal/controller"
 	"github.com/Artik-Man/Hestia/internal/services"
-	"github.com/Artik-Man/Hestia/internal/services/systemd"
 )
 
 var (
@@ -47,7 +47,7 @@ type Engine struct {
 	guardCheck     func(context.Context, string, int) error
 }
 
-// Installed returns the engine for the installer-managed Debian gateway.
+// Installed returns the engine with storage and service adapters selected for the current platform build.
 func Installed() Engine {
 	gid := -1
 	if group, err := user.LookupGroup("hestia-snapshot"); err == nil {
@@ -55,7 +55,7 @@ func Installed() Engine {
 			gid = value
 		}
 	}
-	return Engine{countryMapPath: storage.Installed().CountryPolicy, dir: storage.Installed().Config, lock: storage.Installed().InstallLock, snapshotGID: gid, run: runCommand, services: systemd.Manager{}, compiler: profileexec.Installed{}}
+	return Engine{countryMapPath: storage.Installed().CountryPolicy, dir: storage.Installed().Config, lock: storage.Installed().InstallLock, snapshotGID: gid, run: runCommand, services: platform.Services(nil), compiler: profileexec.Installed{}}
 }
 
 // runCommand executes one bounded local command and keeps private command output out of errors.

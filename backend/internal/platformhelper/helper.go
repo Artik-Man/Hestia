@@ -2,11 +2,9 @@
 package platformhelper
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"io"
-	"os"
 	"os/exec"
 )
 
@@ -26,7 +24,7 @@ type Transport interface {
 	Execute(context.Context, Mode, []byte, io.Writer, Cancellation) error
 }
 
-// Installed uses sudo's existing noninteractive privilege boundary and fixed Hestia executable.
+// Installed uses the selected platform's fixed helper boundary and executable.
 type Installed struct{}
 
 // validMode rejects unknown operations before starting a privileged process.
@@ -47,19 +45,7 @@ func (Installed) Execute(ctx context.Context, mode Mode, data []byte, output io.
 	if !validMode(mode) || (policy != Caller && policy != Transaction) {
 		return errors.New("unsupported privileged helper operation")
 	}
-	var cmd *exec.Cmd
-	if policy == Transaction {
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-		cmd = exec.Command("/usr/bin/sudo", "-n", "--", "/usr/local/bin/hestia", string(mode))
-	} else {
-		cmd = exec.CommandContext(ctx, "/usr/bin/sudo", "-n", "--", "/usr/local/bin/hestia", string(mode))
-	}
-	cmd.Stdin = bytes.NewReader(data)
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = output
-	return cmd.Run()
+	return runInstalledHelper(ctx, mode, data, output, policy)
 }
 
 // ExitCode returns the helper's status, or -1 when no child exit status is available.

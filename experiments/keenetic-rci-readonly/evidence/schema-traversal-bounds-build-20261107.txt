@@ -1,0 +1,37 @@
+Bounded traversal review and Keenetic rebuild of the RCI schema helper
+=====================================================================
+
+Question
+--------
+Does the shared schema formatter reject oversized JSON branches before constructing and sorting their child-key lists, while retaining redaction and nested RCI error detection?
+
+Change
+------
+
+`DescribeSchema` now detects nested `status: "error"` during its single bounded traversal. Before iterating an array or allocating/sorting object keys, it checks that the number of immediate children fits the remaining 256-node budget. Excessive branches fail with the existing redacted schema error. Values and arbitrary field names remain omitted by the allowlist formatter.
+
+Checks
+------
+
+- `gofmt -w pkg/keeneticrci/schema.go` — passed.
+- `GOCACHE=/private/tmp/hestia-go-cache go vet ./...` — passed.
+- `GOCACHE=/private/tmp/hestia-go-cache GOOS=linux GOARCH=arm64 go vet -tags keenetic ./...` — passed.
+- `GOCACHE=/private/tmp/hestia-go-cache python3 scripts/build/run.py --check-go --output /private/tmp/hestia-schema-bounds-check` — passed.
+- `SHFMT=/private/tmp/hestia-tools/shfmt make docs-check` — passed.
+- `git diff --check` — passed.
+- Full Linux ARM64, Keenetic ARM64 and frontend/IPK build — exit code 0.
+- Tests were not run.
+
+Artifact and provenance
+----------------------
+
+- Bundle: `/private/tmp/hestia-schema-bounds-build/20261107-064928-5dd5889e639b/keenetic-arm64-experimental`
+- Manifest: 552 source inputs, 145 bundle files
+- `backend/pkg/keeneticrci/schema.go` SHA-256 in manifest: `e3816b1c12184aa9dca98e8b99a334589b7a9b562e62550adb4156f84de3b3e0`
+- IPK: `hestia_20261107-064928-5dd5889e639b_aarch64-3.10.ipk`
+- IPK SHA-256: `122e0dcb97773969983368c5d472b3628b59d1e42b4ed57a11ecf4318c4bbcaa`
+
+Limits
+------
+
+This is source and build evidence only. No RCI query, device access, opkg lifecycle, installation, or network mutation was performed. The Wi-Fi/WISP schema remains unconfirmed until an authorized read-only probe reaches KN-1012.
