@@ -125,11 +125,13 @@ func TestAWGCreateKeepsProfileAfterOtherActivationRollback(t *testing.T) {
 	e := managedConnectorTestEngine(t)
 	request := panelmodel.AWGSaveRequest{Name: "Отложенная активация", ID: "12345678-1234-4abc-8123-456789abcdef", Group: "default", Priority: 1, Profile: connectorTestConfig}
 	baseRun := e.run
-	failed := false
+	controllerStarts := 0
 	e.run = func(ctx context.Context, name string, args ...string) error {
-		if name == systemctl && len(args) > 2 && args[0] == "start" && slices.Contains(args, "hestia.service") && !failed {
-			failed = true
-			return errors.New("simulated controller activation failure")
+		if name == systemctl && len(args) > 2 && args[0] == "start" && slices.Contains(args, "hestia.service") {
+			controllerStarts++
+			if controllerStarts == 2 {
+				return errors.New("simulated controller activation failure")
+			}
 		}
 		return baseRun(ctx, name, args...)
 	}

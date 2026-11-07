@@ -77,10 +77,12 @@ func (e Engine) ApplyAWG(ctx context.Context, request panelmodel.AWGSaveRequest,
 	if err != nil {
 		return ErrInvalidConnector
 	}
-	check := func(data []byte, staged bool) error {
-		return checkConnectorSnapshot(data, request.ID, request.Group, update, staged)
+	check := func(isUpdate bool) func([]byte, bool) error {
+		return func(data []byte, staged bool) error {
+			return checkConnectorSnapshot(data, request.ID, request.Group, isUpdate, staged)
+		}
 	}
-	prepare := func(status connectorStatus) func(string) error {
+	prepare := func(status connectorStatus, isUpdate bool) func(string) error {
 		return func(stage string) error {
 			if installed, err := e.awgUnitInstalled(); err != nil || !installed {
 				return ErrUnavailable
@@ -88,16 +90,23 @@ func (e Engine) ApplyAWG(ctx context.Context, request panelmodel.AWGSaveRequest,
 			if err := e.profileCompiler().Apply(ctx, profileexec.Request{Operation: profileexec.Validate, Source: e.dir}); err != nil {
 				return fmt.Errorf("managed profile validation failed: %w", ErrUnavailable)
 			}
-			if err := stageAWGChange(ctx, e, stage, request, parsed, update, status); err != nil {
+			if err := stageAWGChange(ctx, e, stage, request, parsed, isUpdate, status); err != nil {
 				return fmt.Errorf("AWG profile staging failed: %w", err)
 			}
 			return nil
 		}
 	}
-	err = e.apply(ctx, prepare(connectorReady), check, false)
+	if update {
+		return e.apply(ctx, prepare(connectorReady, true), check(true), false)
+	}
+	if err := e.apply(ctx, prepare(connectorConfigured, false), check(false), false); err != nil {
+		return err
+	}
+	// A saved inactive generation survives an unsuccessful activation attempt.
+	err = e.apply(ctx, prepare(connectorReady, true), check(true), false)
 	var rolledBack rolledBackActivationError
-	if !update && errors.As(err, &rolledBack) {
-		return e.apply(ctx, prepare(connectorConfigured), check, false)
+	if errors.As(err, &rolledBack) {
+		return nil
 	}
 	return err
 }
