@@ -103,7 +103,12 @@ func runAWGCommand(mode string, input io.Reader, output io.Writer) int {
 			}
 		}
 		if err := binding.Installed().ApplyAWG(ctx, request, update); err != nil {
-			fmt.Fprintln(os.Stderr, "AWG connection transaction was not committed")
+			stage := binding.TransactionFailureStage(err)
+			if stage == "" {
+				fmt.Fprintln(os.Stderr, "AWG connection transaction was not committed")
+			} else {
+				fmt.Fprintf(os.Stderr, "AWG connection transaction was not committed at %s\n", stage)
+			}
 			if errors.Is(err, binding.ErrNotFound) {
 				return 44
 			}

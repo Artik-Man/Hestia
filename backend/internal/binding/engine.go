@@ -34,6 +34,26 @@ func (e rolledBackActivationError) Error() string { return e.cause.Error() }
 // Unwrap preserves the activation cause for typed recovery decisions after confirmed rollback.
 func (e rolledBackActivationError) Unwrap() error { return e.cause }
 
+type transactionStageError struct {
+	stage string
+	cause error
+}
+
+// Error returns the underlying transaction error without exposing the diagnostic stage as an error message.
+func (e transactionStageError) Error() string { return e.cause.Error() }
+
+// Unwrap preserves error classification for callers that handle a transaction failure.
+func (e transactionStageError) Unwrap() error { return e.cause }
+
+// TransactionFailureStage reports a fixed, non-sensitive transaction stage for operational diagnostics.
+func TransactionFailureStage(err error) string {
+	var failure transactionStageError
+	if errors.As(err, &failure) {
+		return failure.stage
+	}
+	return ""
+}
+
 const (
 	pending = ".binding-pending"
 )
@@ -128,63 +148,63 @@ func (e Engine) apply(ctx context.Context, prepare func(string) error, check fun
 	}
 	defer lock.Close()
 	if err := e.validateInstallation(); err != nil {
-		return err
+		return transactionStageError{stage: "installation-validation", cause: err}
 	}
 	if err := e.recoverIfPending(ctx, true); err != nil {
-		return err
+		return transactionStageError{stage: "pending-recovery", cause: err}
 	}
 	snapshot, err := os.ReadFile(filepath.Join(e.dir, "snapshot.json"))
 	if err != nil {
-		return ErrUnavailable
+		return transactionStageError{stage: "snapshot-read", cause: ErrUnavailable}
 	}
 	if err := check(snapshot, false); err != nil {
-		return err
+		return transactionStageError{stage: "current-snapshot-check", cause: err}
 	}
 	if err := e.validateGeneration(e.dir, true); err != nil {
-		return err
+		return transactionStageError{stage: "current-generation-validation", cause: err}
 	}
 	stage, err := os.MkdirTemp(e.dir, ".binding-stage-")
 	if err != nil {
-		return err
+		return transactionStageError{stage: "stage-directory", cause: err}
 	}
 	defer os.RemoveAll(stage)
 	if err := e.stageAWGTree(stage); err != nil {
-		return err
+		return transactionStageError{stage: "connector-tree-copy", cause: err}
 	}
 	if err := prepare(stage); err != nil {
-		return fmt.Errorf("candidate preparation failed: %w", err)
+		return transactionStageError{stage: "candidate-preparation", cause: fmt.Errorf("candidate preparation failed: %w", err)}
 	}
 	next, err := os.ReadFile(filepath.Join(stage, "snapshot.json"))
 	if err != nil {
-		return ErrUnavailable
+		return transactionStageError{stage: "candidate-snapshot-read", cause: ErrUnavailable}
 	}
 	if err := check(next, true); err != nil {
-		return fmt.Errorf("candidate snapshot is invalid: %w", err)
+		return transactionStageError{stage: "candidate-snapshot-check", cause: fmt.Errorf("candidate snapshot is invalid: %w", err)}
 	}
 	if err := e.profileCompiler().CheckBackend(ctx, filepath.Join(stage, "sing-box.json")); err != nil {
-		return err
+		return transactionStageError{stage: "candidate-backend-check", cause: err}
 	}
 	// The current watcher may have been running longer than its retained journal.
 	if err := e.serviceManager().Start(ctx, services.Service{Kind: services.SmokeCurrent}); err != nil {
-		return err
+		return transactionStageError{stage: "current-generation-smoke", cause: err}
 	}
 	if noChange {
 		return nil
 	}
 	if err := e.requireServiceActive(ctx, services.BindingWatch); err != nil {
-		return err
+		return transactionStageError{stage: "binding-watch-check", cause: err}
 	}
 	if err := e.publishJournal(stage); err != nil {
-		return err
+		return transactionStageError{stage: "journal-publish", cause: err}
 	}
 	if err := e.activate(ctx); err != nil {
 		// A disconnected client cannot cancel rollback of a transaction already visible on disk.
 		rollback, cancel := context.WithTimeout(context.Background(), AWGActivationLimit)
 		defer cancel()
 		if recoveryErr := e.recoverIfPending(rollback, true); recoveryErr != nil {
-			return errors.Join(err, recoveryErr)
+			return transactionStageError{stage: "activation-and-rollback", cause: errors.Join(err, recoveryErr)}
 		}
-		return rolledBackActivationError{cause: err}
+		return transactionStageError{stage: "activation", cause: rolledBackActivationError{cause: err}}
 	}
 	return nil
 }
