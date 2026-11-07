@@ -1,0 +1,19 @@
+KN-1012 update after startup-timeout fix — 7 November 2026
+
+Target: Keenetic Giga KN-1012, KeeneticOS 5.02.B.3.0-2, Entware aarch64-3.10.
+Previous package: 20261107-123735-f9fea441ebfd.
+Installed package: 20261107-165338-bb7c3856ca40.
+IPK: hestia_20261107-165338-bb7c3856ca40_aarch64-3.10.ipk.
+IPK SHA-256: 869808d2e9466b938a31c2c6c72f1dd6dcb4e47e473e9f084f10600d525f25b4.
+Manifest revision: bb7c3856ca4007d062a134eb67d6e952c632fb8e; dirty=true; 151 files.
+
+Changes for this retry: Entware init now allows up to 60 seconds for supervisor readiness instead of 10 seconds. The Go supervisor appends startup/runtime diagnostics to `/opt/var/run/hestia/supervisor.log`, mode 0600.
+
+Before update: the previous package was installed and supervisor readiness passed. A root-only config backup, including the RCI token and LAN listener, and opkg status were saved under `/opt/tmp/hestia-upgrade-20261107-165338-bb7c3856ca40/`. The staged new IPK SHA-256 matched the local artifact.
+
+Install command: `/opt/bin/opkg install /opt/tmp/hestia-upgrade-20261107-165338-bb7c3856ca40/hestia_20261107-165338-bb7c3856ca40_aarch64-3.10.ipk`.
+Observed: preflight passed; the old supervisor stopped; `opkg` upgraded and configured Hestia successfully (exit 0). Startup exceeded the previous 10-second limit but completed within 60 seconds. Readiness marker and IPC readiness passed. `opkg status hestia` reports `Version: 20261107-165338-bb7c3856ca40`, `Status: install user installed`, `Architecture: aarch64-3.10`. No package-maintenance marker remains. Supervisor diagnostics file is root-owned mode 0600 and empty, consistent with a successful start.
+
+LAN verification from the deployment host: `GET /` returned HTTP 200; `GET /api/groups-and-rules` returned HTTP 200; `GET /api/physical-connections` returned HTTP 200. Supervisor, router, controller, and panel processes were present. RCI token and `panel-listen` remained root-owned mode 0600.
+
+Boundary: no RCI writes, Wi-Fi/WISP operation, client route/dataplane probe, reboot trial, or full client internet-path check was performed. Hestia route, DNS, and VPN dataplane behavior are not validated by this package install.

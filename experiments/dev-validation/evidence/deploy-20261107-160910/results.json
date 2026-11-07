@@ -1,0 +1,7 @@
+[
+  {
+    "name": "deploy",
+    "status": "FAIL",
+    "error": "Selected Lima guest must already be Running"
+  }
+]

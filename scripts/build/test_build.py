@@ -105,7 +105,7 @@ class BuildTests(unittest.TestCase):
         self.assertIn('writes.physicalInventory = runAWGHelper', inventory_block)
         self.assertNotIn('writes.physical =', inventory_block)
         self.assertIn('registerPhysical(api, writes.physicalInventory, writes.physical)', panel)
-        self.assertIn('registerHysteria2(api, writes.physical)', panel)
+        self.assertIn('registerHysteria2(api, writes.hysteria2)', panel)
 
 
 if __name__ == '__main__':

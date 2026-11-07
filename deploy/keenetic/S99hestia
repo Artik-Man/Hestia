@@ -172,7 +172,7 @@ case "${1:-}" in
             exit 1
         fi
         attempt=0
-        while [ "$attempt" -lt 100 ]; do
+        while [ "$attempt" -lt 600 ]; do
             if [ -f "$PIDFILE" ] && [ ! -L "$PIDFILE" ]; then
                 PID=$(cat "$PIDFILE")
                 if "$DAEMON" -service-check-pid "$PID" >/dev/null 2>&1 &&

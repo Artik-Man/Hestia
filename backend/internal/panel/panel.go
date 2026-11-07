@@ -201,7 +201,7 @@ func registerPanelAPI(mux *http.ServeMux, snapshot, grafanaURL string, writes pa
 	registerGroupDelete(api, writes.deleteGroup)
 	registerMoveExit(api, writes.moveExit)
 	registerAWG(api, writes.awg)
-	registerHysteria2(api, writes.physical)
+	registerHysteria2(api, writes.hysteria2)
 	registerQuality(api, snapshot, writes.quality)
 	registerTraffic(api, writes.traffic, writes.trafficCountries, writes.enrichment)
 	registerGeoIP(api, writes.enrichment)
@@ -314,6 +314,7 @@ func runPanel() error {
 	enableBindings := flag.Bool("enable-bindings", false, "enable confirmed list binding changes on the installed gateway")
 	enablePhysical := flag.Bool("enable-physical", false, "enable read-only physical interface inventory through the installed helper")
 	enableAWG := flag.Bool("enable-awg", false, "enable privileged AmneziaWG profile management on the installed gateway")
+	enableHysteria2 := flag.Bool("enable-hysteria2", false, "enable Hysteria 2 profile management through the installed sing-box runtime")
 	dnsReport := flag.String("dns-report", storage.Installed().DNSReport, "path to the DNS worker heartbeat and automatic membership report")
 	dnsPolicy := flag.String("dns-policy", "", "path to the panel-owned durable DNS policy; setting this path enables policy management")
 	countryMap := flag.String("country-map", "", "durable country assignments file for a custom snapshot")
@@ -399,7 +400,7 @@ func runPanel() error {
 			writes.quality.report = storage.Installed().QualityReport
 		}
 	}
-	if (*enableDomainLists || *enableGroupDelete || *enableExitMove || *enableBindings || *enableOrder || *enableGroupCreate || *enablePhysical || *enableAWG) && *snapshot != installedSnapshot {
+	if (*enableDomainLists || *enableGroupDelete || *enableExitMove || *enableBindings || *enableOrder || *enableGroupCreate || *enablePhysical || *enableAWG || *enableHysteria2) && *snapshot != installedSnapshot {
 		return errors.New("routing changes require /etc/hestia/snapshot.json")
 	}
 	if *enableDomainLists {
@@ -427,9 +428,11 @@ func runPanel() error {
 		writes.physicalInventory = runAWGHelper
 	}
 	if *enableAWG {
-		writes.physical = runAWGHelper
 		writes.awg = installedAWGWriter{}
 		writes.renameDirect = renameInstalledDirect
+	}
+	if *enableHysteria2 {
+		writes.hysteria2 = runAWGHelper
 	}
 	h, err := localHandler(*listen, panelHandler(*snapshot, *grafanaURL, bundle, writes))
 	if err != nil {

@@ -9,9 +9,9 @@ import (
 	"github.com/Artik-Man/Hestia/internal/services"
 )
 
-// Installed platform composition disables unverified AWG operations on Keenetic builds.
+// Installed platform composition selects the pinned Entware AWG runtime and Keenetic route adapter.
 var (
-	runtimeDriver   awgruntime.Driver = awgruntime.Unsupported{}
+	runtimeDriver   awgruntime.Driver = awgruntime.Entware{}
 	offlineVerifier services.Offline  = platform.OfflineVerifier()
 	routeRunner     RouteRunner       = keeneticroute.ExecRouteRunner{}
 )

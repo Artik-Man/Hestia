@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"strconv"
@@ -23,6 +24,12 @@ import (
 // In watch mode SIGTERM and SIGINT cancel the polling loop.
 func main() {
 	if len(os.Args) == 2 && os.Args[1] == "-service-supervisor" {
+		diagnostics, err := openSupervisorDiagnostics()
+		if err == nil {
+			defer diagnostics.Close()
+			os.Stderr = diagnostics
+			log.SetOutput(diagnostics)
+		}
 		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 		defer stop()
 		if err := platform.RunSupervisor(ctx); err != nil {
@@ -148,6 +155,25 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+}
+
+// openSupervisorDiagnostics appends supervisor startup and runtime errors to a root-only regular file.
+func openSupervisorDiagnostics() (*os.File, error) {
+	path := "/opt/var/run/hestia/supervisor.log"
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY|syscall.O_NOFOLLOW, 0600)
+	if err != nil {
+		return nil, err
+	}
+	info, err := file.Stat()
+	if err != nil || !info.Mode().IsRegular() {
+		_ = file.Close()
+		return nil, fmt.Errorf("supervisor diagnostics path is not a regular file")
+	}
+	if err := file.Chmod(0600); err != nil {
+		_ = file.Close()
+		return nil, fmt.Errorf("cannot secure supervisor diagnostics file")
+	}
+	return file, nil
 }
 
 // run applies the decision for domain from the snapshot at path. It writes the

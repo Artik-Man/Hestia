@@ -55,10 +55,14 @@ type processSpec struct {
 func serviceSpec(service services.Service) (processSpec, error) {
 	layout := storage.Installed()
 	if service.Kind == services.AWG {
-		if !connectionid.ValidConnectionID(service.Instance) {
+		if service.Instance != "" && !connectionid.ValidConnectionID(service.Instance) {
 			return processSpec{}, ErrInvalid
 		}
-		return processSpec{}, ErrUnavailable
+		args := []string{"-awg-runtime"}
+		if service.Instance != "" {
+			args = append(args, service.Instance)
+		}
+		return processSpec{path: "/opt/bin/hestia", args: args}, nil
 	}
 	if service.Instance != "" {
 		return processSpec{}, ErrInvalid
@@ -80,8 +84,8 @@ func serviceSpec(service services.Service) (processSpec, error) {
 			"-dns-report", layout.DNSReport,
 			"-geoip-index", layout.GeoIPIndex, "-quality-settings", layout.QualitySettings,
 			"-quality-report", layout.QualityReport,
-			"-enable-bindings", "-enable-group-order", "-enable-domain-lists",
-			"-enable-group-create", "-enable-group-delete", "-enable-exit-move", "-enable-physical",
+			"-enable-bindings", "-enable-group-order", "-enable-domain-lists", "-enable-awg",
+			"-enable-group-create", "-enable-group-delete", "-enable-exit-move", "-enable-physical", "-enable-hysteria2",
 		}}, nil
 	case services.DNS:
 		return processSpec{path: "/opt/bin/hestia", args: []string{"dns", layout.DNSConfig}}, nil
@@ -316,6 +320,8 @@ func managedServiceRole(kind services.Kind) string {
 		return "router"
 	case services.BindingWatch:
 		return "binding-watch"
+	case services.AWG:
+		return "awg"
 	case services.Panel:
 		return "panel"
 	case services.DNS:

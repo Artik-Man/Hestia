@@ -25,6 +25,7 @@ type panelWrites struct {
 	quality           qualityFiles
 	physicalInventory physicalHelper
 	physical          physicalHelper
+	hysteria2         physicalHelper
 	deleteDomainList  domainListDeleter
 	createDomainList  domainListCreator
 	updateDomainList  domainListUpdater
