@@ -96,7 +96,7 @@ func (e Engine) ApplyAWG(ctx context.Context, request panelmodel.AWGSaveRequest,
 	}
 	err = e.apply(ctx, prepare(connectorReady), check, false)
 	var rolledBack rolledBackActivationError
-	if !update && errors.As(err, &rolledBack) && errors.Is(err, ErrAWGRuntimeUnconfirmed) {
+	if !update && errors.As(err, &rolledBack) {
 		return e.apply(ctx, prepare(connectorConfigured), check, false)
 	}
 	return err

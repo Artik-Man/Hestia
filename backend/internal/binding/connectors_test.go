@@ -120,6 +120,28 @@ func TestAWGCreateKeepsUnconfirmedProfileInactive(t *testing.T) {
 	}
 }
 
+// TestAWGCreateKeepsProfileAfterOtherActivationRollback saves an inactive profile when another activation step fails.
+func TestAWGCreateKeepsProfileAfterOtherActivationRollback(t *testing.T) {
+	e := managedConnectorTestEngine(t)
+	request := panelmodel.AWGSaveRequest{Name: "Отложенная активация", ID: "12345678-1234-4abc-8123-456789abcdef", Group: "default", Priority: 1, Profile: connectorTestConfig}
+	baseRun := e.run
+	failed := false
+	e.run = func(ctx context.Context, name string, args ...string) error {
+		if name == systemctl && len(args) > 2 && args[0] == "start" && slices.Contains(args, "hestia.service") && !failed {
+			failed = true
+			return errors.New("simulated controller activation failure")
+		}
+		return baseRun(ctx, name, args...)
+	}
+	if err := e.ApplyAWG(context.Background(), request, false); err != nil {
+		t.Fatalf("save profile after confirmed activation rollback: %v", err)
+	}
+	profile, err := readStoredProfile(e.dir)
+	if err != nil || len(profile.Connectors) != 1 || profile.Connectors[0].Status != "configured" || profile.Healthy[request.ID] {
+		t.Fatalf("profile was not committed inactive after activation rollback: %#v, %v", profile, err)
+	}
+}
+
 // TestAWGOmittedPosition reads the latest order under the transaction lock and appends new members.
 func TestAWGOmittedPosition(t *testing.T) {
 	e := connectorTestEngine(t)
