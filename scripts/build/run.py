@@ -191,7 +191,12 @@ def build(output, runtime):
     with tempfile.TemporaryDirectory(prefix='hestia-build-') as directory:
         work = Path(directory)
         compile_go(work / 'bin')
-        subprocess.run(['npm', 'run', 'build', '--', '--output-path', str(work / 'frontend')], cwd=ROOT / 'frontend', check=True)
+        frontends = {}
+        for platform, configuration in (('linux-arm64', 'vm'), ('keenetic-arm64-experimental', 'keenetic')):
+            frontend = work / 'frontend' / platform
+            subprocess.run(['npm', 'run', 'build', '--', '--configuration', configuration,
+                            '--output-path', str(frontend)], cwd=ROOT / 'frontend', check=True)
+            frontends[platform] = frontend
         if any(not (ROOT / name).is_file() or file_hash(ROOT / name) != digest for name, digest in inputs.items()):
             raise RuntimeError('Build inputs changed during compilation; refusing misleading artifact provenance')
         target.mkdir(parents=True)
@@ -204,7 +209,7 @@ def build(output, runtime):
                 shutil.copyfile(runtime / name, bundle / 'bin' / name)
                 (bundle / 'bin' / name).chmod(0o755)
             shutil.copyfile(runtime / 'sing.tgz', bundle / 'sing.tgz')
-            copy_frontend(work / 'frontend', bundle / 'browser')
+            copy_frontend(frontends[platform], bundle / 'browser')
             (bundle / 'helpers').mkdir()
             for name in ('profile.py', 'smoke.py', 'awg-upgrade.sh'):
                 shutil.copyfile(ROOT / 'deploy' / name, bundle / 'helpers' / name)
