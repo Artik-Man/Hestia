@@ -140,6 +140,19 @@ func testEngine(t *testing.T) Engine {
 	return e
 }
 
+// TestManagedInfoAcceptsPrivateSnapshotWithoutSnapshotGroup checks the root-only snapshot layout used by Keenetic.
+func TestManagedInfoAcceptsPrivateSnapshotWithoutSnapshotGroup(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "snapshot.json")
+	if err := os.WriteFile(path, []byte(`{"groups":[],"lists":[],"healthy":{}}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	e := Engine{dir: dir, snapshotGID: -1}
+	if _, err := e.managedInfo(dir, "snapshot.json", true); err != nil {
+		t.Fatalf("root-only installed snapshot was rejected: %v", err)
+	}
+}
+
 // TestInterruptedBinding checks that candidate files stay hidden until offline restoration succeeds.
 func TestInterruptedBinding(t *testing.T) {
 	e := testEngine(t)

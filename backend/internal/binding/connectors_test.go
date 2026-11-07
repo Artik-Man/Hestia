@@ -144,6 +144,23 @@ func TestAWGCreateKeepsProfileAfterOtherActivationRollback(t *testing.T) {
 	}
 }
 
+// TestAWGCreateSupportsRootPrivateSnapshot verifies Keenetic's root-only snapshot layout through a complete create.
+func TestAWGCreateSupportsRootPrivateSnapshot(t *testing.T) {
+	e := connectorTestEngine(t)
+	e.snapshotGID = -1
+	if err := os.Chmod(filepath.Join(e.dir, "snapshot.json"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	request := panelmodel.AWGSaveRequest{Name: "Keenetic snapshot", ID: "12345678-1234-4abc-8123-456789abcdef", Group: "fi", Priority: 1, Profile: connectorTestConfig}
+	if err := e.ApplyAWG(context.Background(), request, false); err != nil {
+		t.Fatalf("create with root-only snapshot: %v", err)
+	}
+	profile, err := readStoredProfile(e.dir)
+	if err != nil || len(profile.Connectors) != 1 || profile.Connectors[0].Status != "ready" {
+		t.Fatalf("root-only snapshot create did not become ready: %#v, %v", profile, err)
+	}
+}
+
 // TestAWGOmittedPosition reads the latest order under the transaction lock and appends new members.
 func TestAWGOmittedPosition(t *testing.T) {
 	e := connectorTestEngine(t)
