@@ -1,0 +1,33 @@
+Keenetic Hestia API repair — 2026-11-07
+Device: Keenetic Giga KN-1012, KeeneticOS 5.02.B.3.0-2, Entware aarch64-3.10
+Installed package: 20261107-123735-f9fea441ebfd
+IPK SHA-256: 413a0d7dc7ad599d4ad98da34fc80e4ff29a4649b4539919df5981f60684b932
+
+Router state after opkg upgrade:
+- opkg status: install user installed
+- /opt/var/lock/hestia-install.lock: root:root, mode 0600, empty regular file
+- supervisor readiness: ready
+- panel listener: 192.168.1.1:8080
+- panel HTTP from LAN: 200
+
+API checks from LAN:
+- GET /api/groups-and-rules: HTTP 200
+  {"groups":[{"id":"default","isDefault":true,"exits":[]}],"lists":[]}
+- GET /api/physical-connections: HTTP 200
+  Kernel interfaces: eth2 and eth3, carrier up.
+  Native RCI ports: GigabitEthernet0/0, 0/1, 0/2, 0/3, 1/0.
+  Three ports reported link up and two link down; active 1/0 reported 1000/full,
+  active 0/1 and 0/2 reported 100/full.
+  wifiAvailable=false; wifiProfiles=[].
+- GET /api/hysteria2: HTTP 503 (expected; integration remains disabled without AWG).
+
+The original 503 was caused by missing installed-snapshot marker required by the
+snapshot reader. The physical inventory command was also not registered in the
+panel unless AWG was enabled. The package now seeds the root-only install lock
+marker and wires a read-only physical inventory helper independently; Wi-Fi
+mutation and Hysteria routes remain unavailable.
+
+Scope: verifies package upgrade, local readiness, panel access and read-only
+configuration/physical inventory APIs only. No client dataplane, route policy,
+DNS interception, AWG, Wi-Fi mutation, WISP, reboot recovery, or upgrade rollback
+was tested. The default deny group intentionally has no configured exits.

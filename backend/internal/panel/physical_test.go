@@ -14,13 +14,14 @@ import (
 // TestPhysicalAPI verifies the HTTP methods, credential-free responses, redaction of parse errors and fixed gateway commands.
 func TestPhysicalAPI(t *testing.T) {
 	mode := ""
-	h := panelHandler("", "", nil, panelWrites{physical: func(_ context.Context, op string, in, out any) error {
+	helper := func(_ context.Context, op string, in, out any) error {
 		mode = op
 		if op == "-physical-list" {
 			*(out.(*panelmodel.PhysicalInventory)) = panelmodel.PhysicalInventory{Interfaces: []panelmodel.PhysicalInterface{}, WifiProfiles: []panelmodel.WifiConnection{}}
 		}
 		return nil
-	}})
+	}
+	h := panelHandler("", "", nil, panelWrites{physicalInventory: helper, physical: helper})
 	id := "ea071db0-34e9-4e3c-931e-46465a754691"
 	body := `{"interfaceName":"wlan0","ssid":"Lab","band":"5","security":"wpa-psk","password":"private-pass"}`
 	for _, tc := range []struct {
@@ -43,6 +44,27 @@ func TestPhysicalAPI(t *testing.T) {
 	}
 }
 
+// TestPhysicalInventoryIsIndependent verifies read-only inventory stays available when Wi-Fi mutation is disabled.
+func TestPhysicalInventoryIsIndependent(t *testing.T) {
+	called := false
+	h := panelHandler("", "", nil, panelWrites{physicalInventory: func(_ context.Context, mode string, _ any, output any) error {
+		called = mode == "-physical-list"
+		*(output.(*panelmodel.PhysicalInventory)) = panelmodel.PhysicalInventory{Interfaces: []panelmodel.PhysicalInterface{}, WifiProfiles: []panelmodel.WifiConnection{}}
+		return nil
+	}})
+	list := httptest.NewRecorder()
+	h.ServeHTTP(list, httptest.NewRequest(http.MethodGet, "/api/physical-connections", nil))
+	if list.Code != http.StatusOK || !called {
+		t.Fatalf("inventory status %d helper called %t", list.Code, called)
+	}
+	called = false
+	wifi := httptest.NewRecorder()
+	h.ServeHTTP(wifi, httptest.NewRequest(http.MethodPost, "/api/wifi-connections", strings.NewReader(`{"interfaceName":"wlan0","ssid":"Lab","band":"5","security":"open"}`)))
+	if wifi.Code != http.StatusServiceUnavailable || called {
+		t.Fatalf("Wi-Fi mutation status %d helper called %t", wifi.Code, called)
+	}
+}
+
 // TestWifiDisconnect lets started writes finish within a bounded recovery window while cancelling an outstanding inventory read.
 func TestWifiDisconnect(t *testing.T) {
 	const path = "/api/wifi-connections"
@@ -53,7 +75,7 @@ func TestWifiDisconnect(t *testing.T) {
 	} {
 		request, cancel := context.WithCancel(context.Background())
 		called := false
-		h := panelHandler("", "", nil, panelWrites{physical: func(ctx context.Context, _ string, _ any, _ any) error {
+		helper := func(ctx context.Context, _ string, _ any, _ any) error {
 			called = true
 			cancel()
 			if tc.method == "GET" {
@@ -68,7 +90,8 @@ func TestWifiDisconnect(t *testing.T) {
 				t.Fatalf("%s helper cannot complete bounded rollback", tc.method)
 			}
 			return nil
-		}})
+		}
+		h := panelHandler("", "", nil, panelWrites{physicalInventory: helper, physical: helper})
 		h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(tc.method, tc.url, strings.NewReader(tc.body)).WithContext(request))
 		cancel()
 		if !called {

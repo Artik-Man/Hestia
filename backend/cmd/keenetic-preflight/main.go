@@ -48,15 +48,12 @@ func verify() error {
 	if version.Model != "Giga (KN-1012)" || version.Title != "5.2 Beta 3" || version.Release != "5.02.B.3.0-2" || version.Architecture != "aarch64" {
 		return errors.New("unsupported router version")
 	}
-	if err := verifyOpkgArchitecture(); err != nil {
-		return err
-	}
 	return verifyOptCapacity(512 * 1024 * 1024)
 }
 
 // verifyArchitecture requires the AArch64 Linux userspace declared by this package.
 func verifyArchitecture() error {
-	if strings.TrimSpace(string(mustOutput("/bin/uname", "-m"))) != "aarch64" {
+	if strings.TrimSpace(string(mustOutput("/opt/bin/busybox", "uname", "-m"))) != "aarch64" {
 		return errors.New("unsupported architecture")
 	}
 	return nil
@@ -73,21 +70,6 @@ func mustOutput(path string, arguments ...string) []byte {
 		return nil
 	}
 	return output
-}
-
-// verifyOpkgArchitecture requires Entware to advertise the package's pinned architecture.
-func verifyOpkgArchitecture() error {
-	output := mustOutput("/opt/bin/opkg", "print-architecture")
-	if output == nil {
-		return errors.New("opkg architecture unavailable")
-	}
-	for _, line := range strings.Split(string(output), "\n") {
-		fields := strings.Fields(line)
-		if len(fields) == 3 && fields[0] == "arch" && fields[1] == "aarch64-3.10" {
-			return nil
-		}
-	}
-	return errors.New("unsupported opkg architecture")
 }
 
 // verifyOptCapacity requires protected root-owned /opt and the install reserve to be available.

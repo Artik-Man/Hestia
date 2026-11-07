@@ -77,11 +77,11 @@ func serviceSpec(service services.Service) (processSpec, error) {
 		}
 		return processSpec{path: "/opt/bin/hestia-panel", args: []string{
 			"-listen", listen, "-assets", layout.PanelAssets, "-snapshot", layout.Snapshot,
-			"-dns-report", layout.DNSReport, "-country-map", layout.CountryPolicy,
+			"-dns-report", layout.DNSReport,
 			"-geoip-index", layout.GeoIPIndex, "-quality-settings", layout.QualitySettings,
 			"-quality-report", layout.QualityReport,
 			"-enable-bindings", "-enable-group-order", "-enable-domain-lists",
-			"-enable-group-create", "-enable-group-delete", "-enable-exit-move",
+			"-enable-group-create", "-enable-group-delete", "-enable-exit-move", "-enable-physical",
 		}}, nil
 	case services.DNS:
 		return processSpec{path: "/opt/bin/hestia", args: []string{"dns", layout.DNSConfig}}, nil

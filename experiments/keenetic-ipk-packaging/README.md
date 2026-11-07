@@ -168,3 +168,49 @@ Socket binder проверяет имя интерфейса, диапазон m
 ## Linux и Keenetic комплекты для проверки Product Owner — 7 ноября 2026 года
 
 Подготовлены оба ARM64 приложения и полный Keenetic IPK версии `20261107-083541-5dd5889e639b`. `make build-go` и production сборка завершились успешно. Отдельно собраны WISP status и route preflight research binaries в `dist/go/keenetic-arm64-experimental/research/`; они не включаются в runtime IPK. [Пути, хеши и границы сборки](evidence/package-build-20261107-review-build.txt). Целевая установка и поведение приложения не проверялись.
+
+## Первая установка на KN-1012 — 7 ноября 2026 года
+
+**Вопрос.** Устанавливается ли собранный Hestia IPK средствами Entware на Keenetic Giga KN-1012 и поднимаются ли после `postinst configure` базовые роли до состояния readiness?
+
+**Среда и версия.** Keenetic Giga KN-1012, KeeneticOS `5.02.B.3.0-2` (5.2 Beta 3), AArch64, Entware architecture `aarch64-3.10`. Установлен пакет `20261107-112912-f9fea441ebfd`, собранный из ревизии `f9fea441ebfd`. SHA-256: `70585c8811f775d455a67ec6c8bd69518cb9e851b6c5f8b10d66ea55170af53d`.
+
+**Условия и ожидание.** Владелец разрешил доступ к физическому роутеру и установку. До установки root-only RCI token был размещён отдельно от IPK. Ожидалось, что preflight проверит модель/прошивку и Entware, `opkg` установит зависимости и файлы, а init поднимет supervisor и роли с подтверждаемой готовностью. Сетевые настройки и клиентский трафик в критерий этого прогона не входили.
+
+**Фактический результат.** После исправлений пакет установлен со статусом `install user installed`; architecture — `aarch64-3.10`. Профиль валиден, конфигурация controller проходит проверку, модуль Python `unicodedata` доступен, supervisor IPC сообщает `ready`, панель на loopback возвращает HTTP 200. На устройстве запущены supervisor, router, controller и panel. Сводка проверок и хеши: [post-install evidence](evidence/install-20261107-112912/postinstall-check.txt), [локальный хеш IPK](evidence/install-20261107-112912/package.sha256), [хеш staging-копии на роутере](evidence/install-20261107-112912/router-package.sha256).
+
+Во время установки обнаружены и исправлены три несовместимости окружения: BusyBox `start-stop-daemon` на устройстве поддерживает короткие параметры вместо используемых ранее GNU-style длинных; `/bin/uname` отсутствует, архитектуру нужно читать через `/opt/bin/busybox uname -m`; BusyBox `sleep` не принимает дробный интервал, поэтому lifecycle использует `usleep`. Первый postinst также выявил отсутствующий для профильного валидатора Python-модуль `unicodedata`; в зависимости пакета добавлен `python3-codecs`. После успешного запуска панель сообщила предупреждение об отсутствующем GeoIP индексе `/opt/share/hestia/geoip/country.bin`; HTTP доступность панели сохранилась.
+
+**Границы вывода.** Подтверждены установка и запуск базовых локальных ролей, Entware preflight, supervisor IPC и loopback panel. Это не проверка клиентского dataplane: не проверялись изменение маршрутов, перенаправление клиентского DNS, AWG, Wi-Fi/WISP, NAT/netfilter, реальный TCP/UDP путь или поведение после перезагрузки. Default deny остаётся активным. До/после снимок таблиц маршрутизации не сохранялся, поэтому опыт не делает вывода об их неизменности. У обновления нет транзакционного rollback; удаление пакета и восстановление предыдущей версии этим прогоном не проверены.
+
+**Воспроизведение.** При наличии закреплённых runtime inputs и подготовленного root-only token сначала собрать комплект (`GOCACHE=/tmp/hestia-go-cache make build`), сверить полученный IPK SHA-256 с evidence, передать его на KN-1012 и выполнить `opkg install <package.ipk>`. Затем проверить `opkg status hestia`, managed profile validator, controller config check, supervisor root-only IPC readiness и `curl -fsS -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/`. В этом опыте сборка и установка выполнялись 7 ноября 2026 года; временный staging-каталог на роутере после проверки удалён.
+
+## Доступ к панели из LAN — 7 ноября 2026 года
+
+**Требование.** Владелец запросил прямой доступ к Hestia panel по `http://<IP-роутера>:<PORT>/`, без SSH-туннеля.
+
+**Среда и условия.** Keenetic Giga KN-1012, KeeneticOS 5.2 Beta 3. На `br0` обнаружен LAN IPv4 `192.168.1.1/24`; до изменения panel слушала только `127.0.0.1:8080`, файл настройки `/opt/etc/hestia/panel-listen` отсутствовал. Существующая реализация принимает только конкретный loopback/private IP и проверяет совпадение HTTP Host, поэтому wildcard bind не использовался.
+
+**Изменение и ожидаемый результат.** В root-only config установлен конкретный listener `192.168.1.1:8080`; после `/opt/etc/init.d/S99hestia restart` ожидались готовность supervisor и HTTP 200 при обращении из LAN по указанному URL.
+
+**Фактический результат.** Конфигурационный файл создан с владельцем `root:root` и режимом `0600`. После рестарта `netstat` показал `192.168.1.1:8080` в LISTEN, readiness supervisor и managed profile прошли. HTTP-запрос с компьютера в LAN к `http://192.168.1.1:8080/` вернул `200`. [Свидетельство проверки](evidence/panel-lan-20261107/check.txt).
+
+**Границы и риск.** Проверен HTTP доступ из текущей LAN и точная привязка к адресу `br0`. Публичный/WAN доступ не тестировался и не разрешён. У панели нет аутентификации, поэтому клиенты, имеющие доступ к LAN-порту, получают доступ к доступным функциям панели; не публиковать этот порт за пределы доверенной LAN. Обновление Hestia не должно заменять пользовательский файл `panel-listen`; после обновления следует проверить конфигурацию и слушатель.
+
+**Воспроизведение.** Установить root-only `/opt/etc/hestia/panel-listen` со строкой `192.168.1.1:8080`, выполнить `/opt/etc/init.d/S99hestia restart`, убедиться в readiness и `netstat -lnt`, затем выполнить с LAN-клиента `curl --noproxy '*' --connect-timeout 5 --max-time 10 -sS -o /dev/null -w 'HTTP %{http_code}\\n' http://192.168.1.1:8080/`.
+
+## Исправление загрузки конфигурации и инвентаря подключений
+
+**Вопрос.** После открытия панели из LAN загружались ли группы и физические подключения, и требовал ли этот сбой изменения RCI-адаптера?
+
+**Среда и версия.** Keenetic Giga KN-1012, KeeneticOS `5.02.B.3.0-2`, Entware `aarch64-3.10`; пакет `20261107-123735-f9fea441ebfd`, собранный из ревизии `f9fea441ebfd`. SHA-256 IPK: `413a0d7dc7ad599d4ad98da34fc80e4ff29a4649b4539919df5981f60684b932`. Проверки выполнены после обновления пакета через `opkg` и с LAN-клиента.
+
+**Условия и ожидание.** Веб-панель слушала `192.168.1.1:8080`, supervisor был готов, однако `GET /api/groups-and-rules` и `GET /api/physical-connections` отвечали HTTP 503. Ожидалось, что установленная managed-конфигурация и read-only инвентарь Keenetic будут доступны из панели без включения AWG или разрешения сетевых изменений.
+
+**Фактический результат и исправления.** Первопричина чтения конфигурации — отсутствие `/opt/var/lock/hestia-install.lock`, который `binding.ReadSnapshot()` использует как признак установленного пакета. Сборщик теперь создаёт пустой root-owned файл режима `0600`. Физический список отдельно блокировался композицией панели: helper был назначен только вместе с `-enable-awg`. Добавлен отдельный read-only helper для `/api/physical-connections`, не включающий Wi-Fi mutation или Hysteria2 API. Новый IPK успешно установлен поверх предыдущего; `opkg` показывает `install user installed`, lock-файл имеет владельца root и режим `0600`, supervisor сообщает `ready`, панель слушает `192.168.1.1:8080`.
+
+С LAN-клиента оба запроса теперь возвращают HTTP 200. `/api/groups-and-rules` отдаёт группу `default` с пустым `exits` и пустой список доменов. `/api/physical-connections` возвращает kernel-интерфейсы `eth2`/`eth3` и пять нативных портов RCI (`GigabitEthernet0/0`–`0/3` и `GigabitEthernet1/0`), включая link/speed. `wifiAvailable=false`. `/api/hysteria2` по-прежнему возвращает 503, как и задумано при выключенном AWG. Сводные свидетельства и точные ответы: [проверка API после установки](evidence/api-repair-20261107-123735/check.txt).
+
+**Вывод и границы.** Наблюдавшийся сбой не означал поломку RCI Ethernet-адаптера: у него отсутствовала установленная marker-конфигурация, а read-only физический helper не был подключён к панели независимо от AWG. Чтение портов адаптером на KN-1012 теперь подтверждено. Пустой `exits` ожидаем для начального default deny профиля и означает, что Hestia VPN-выходы ещё не настроены; физические гнёзда сами по себе не являются VPN-подключениями. Wi-Fi/WISP, изменение портов, маршрутизация клиентов, DNS, AWG и восстановление после перезагрузки не проверялись. Сетевые настройки роутера не менялись.
+
+**Воспроизведение.** Локально: `GOCACHE=/private/tmp/hestia-go-cache-final make build`, затем проверить IPK и SHA-256 из свидетельства. На KN-1012 с ранее настроенным root-only RCI token: `opkg install <package.ipk>`, затем проверить `opkg status hestia`, `/opt/var/lock/hestia-install.lock`, supervisor readiness и listener. С LAN-клиента запросить `GET http://192.168.1.1:8080/api/groups-and-rules` и `GET http://192.168.1.1:8080/api/physical-connections`. Для воспроизведения прогонов Go/panel и скриптов сборки использованы `go test ./internal/panel ./internal/services/entware ./internal/platformhelper`, `python3 -m unittest discover -s scripts/build`, `go vet` и полная `make check`; последняя остановилась только на четырёх DNS lab-модулях, которым не установлен `dnspython`. Полная запись проверки находится в [evidence](evidence/api-repair-20261107-123735/check.txt).

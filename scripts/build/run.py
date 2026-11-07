@@ -84,6 +84,15 @@ def stage_keenetic_rootfs(bundle, runtime):
     (library / 'profile.py').chmod(0o644)
     assets = bundle / 'opt/share/hestia-panel/current'
     shutil.copytree(bundle / 'browser', assets)
+    stage_keenetic_install_lock(bundle)
+
+
+def stage_keenetic_install_lock(bundle):
+    """Create the stable owner-only flock file required by installed managed readers and writers."""
+    lock = bundle / 'opt/var/lock/hestia-install.lock'
+    lock.parent.mkdir(parents=True, exist_ok=True)
+    lock.write_bytes(b'')
+    lock.chmod(0o600)
 
 
 def prepare_keenetic_config(bundle, work):
@@ -210,7 +219,7 @@ def build(output, runtime):
                 shutil.copyfile(ROOT / 'deploy/keenetic/S99hestia', init_script)
                 init_script.chmod(0o755)
                 package = bundle / ('hestia_' + version + '_aarch64-3.10.ipk')
-                create_ipk(bundle, package, version, ['python3-light', 'busybox', 'libc'],
+                create_ipk(bundle, package, version, ['python3-light', 'python3-codecs', 'busybox', 'libc'],
                            work / 'bin/keenetic-arm64-experimental/bin/keenetic-preflight')
             for name in subprocess.check_output(['git', 'ls-files', 'deploy'], cwd=ROOT, text=True).splitlines():
                 source = ROOT / name
@@ -229,7 +238,7 @@ def build(output, runtime):
                         'go_build_tags': ['keenetic'] if platform.startswith('keenetic') else [],
                         'experimental': platform.startswith('keenetic'),
                         'runtime_prerequisites': {'sing-box': '1.14.4', 'amneziawg-go': '3.1.20260828', 'awg-tools': '3.1.20260812'},
-                        'entware_dependencies': ['python3-light', 'busybox', 'libc'] if platform.startswith('keenetic') else [],
+                        'entware_dependencies': ['python3-light', 'python3-codecs', 'busybox', 'libc'] if platform.startswith('keenetic') else [],
                         'runtime_inputs': locks, 'deployment': 'initial-or-managed-update' if platform == 'linux-arm64' else 'experimental-ipk-and-rootfs',
                         'limitations': ['Linux ARM64 systemd and Debian-compatible runtime required'] if platform == 'linux-arm64' else ['The IPK and preinst/postinst/prerm lifecycle hooks are generated but not validated with target opkg on KN-1012', 'Entware supervisor, Go smoke, panel, controller and router have not been run on KN-1012', 'AWG, route policy, DNS, Wi-Fi/WISP and mapping native Ethernet IDs to kernel devices remain unavailable or unverified', 'The Entware init applet and declared dependencies are not validated on the target', 'opkg upgrade is not transactionally rolled back if postinst fails; restore requires reinstalling a prior IPK and preserving conffiles'],
                         'files': {str(p.relative_to(bundle)): file_hash(p) for p in sorted(bundle.rglob('*')) if p.is_file()}}

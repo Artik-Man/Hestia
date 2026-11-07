@@ -13,99 +13,155 @@
   </button>
 }
 @if (snapshot(); as current) {
-  <form class="dns-settings" [formGroup]="form" (ngSubmit)="saveSettings()">
-    <fieldset [disabled]="saving() || reading() || needsReload()">
-      <legend>Долговременный кэш</legend>
-      <label for="dns-retention">Хранить ответ после TTL, с</label>
-      <p-inputnumber
-        inputId="dns-retention"
-        formControlName="retentionSeconds"
-        [useGrouping]="false"
-        [min]="0"
-        [max]="31536000"
-      />
-      <p class="hint">
-        В обычном режиме после TTL шлюз запрашивает свежий адрес.
-      </p>
-      <div class="dns-toggle">
-        <p-toggleswitch
-          inputId="dns-stale"
-          formControlName="serveStale"
-        /><label for="dns-stale"
-          >Разрешить истёкший ответ при временном сбое DNS</label
-        >
-      </div>
-      @if (form.controls.serveStale.value) {
-        <label for="dns-stale-window">Окно выдачи после TTL, с</label
-        ><p-inputnumber
-          inputId="dns-stale-window"
-          formControlName="staleWindowSeconds"
-          [min]="0"
-          [max]="31536000"
-          [useGrouping]="false"
-        />
-        <p class="hint">
-          Только при сбое на всех разрешённых путях и наличии доступного выхода.
-        </p>
-      }
-    </fieldset>
-    <fieldset [disabled]="saving() || reading() || needsReload()">
-      <legend>Фоновое обновление</legend>
-      <div class="dns-toggle">
-        <p-toggleswitch
-          inputId="dns-auto-on"
-          formControlName="automaticEnabled"
-        /><label for="dns-auto-on">Автоматически добавлять частые домены</label>
-      </div>
-      <div class="dns-fields">
-        <div>
-          <label for="dns-threshold">Порог запросов (N)</label
-          ><p-inputnumber
-            inputId="dns-threshold"
-            formControlName="threshold"
-            [useGrouping]="false"
-            [min]="1"
-            [max]="1000000"
+  <div class="dns-settings" [formGroup]="form">
+    <p-tabs value="warm">
+      <p-tablist>
+        <p-tab value="warm">Настройки автопрогрева</p-tab>
+        <p-tab value="cache">Настройки кэширования DNS</p-tab>
+        <p-tab value="geoip">Настройки Geo IP</p-tab>
+      </p-tablist>
+      <p-tabpanels>
+        <p-tabpanel value="warm">
+          <fieldset [disabled]="saving() || reading() || needsReload()">
+            <legend>Автоматически добавлять частые домены</legend>
+            <div class="dns-toggle">
+              <p-toggleswitch
+                inputId="dns-auto-on"
+                formControlName="automaticEnabled"
+              /><label for="dns-auto-on"
+                >Автоматически добавлять частые домены</label
+              >
+            </div>
+            <p class="hint" id="dns-auto-on-hint">
+              Служба автоматически прогревает имена по числу реальных запросов
+              клиентов. Фоновые запросы сами не повышают частоту; исключённые
+              имена не отбираются автоматически.
+            </p>
+            <div class="dns-fields">
+              <div>
+                <label for="dns-threshold">Порог запросов (N)</label
+                ><p-inputnumber
+                  inputId="dns-threshold"
+                  formControlName="threshold"
+                  [useGrouping]="false"
+                  [min]="1"
+                  [max]="1000000"
+                />
+                <p class="hint" id="dns-threshold-hint">
+                  Минимум клиентских запросов к имени за последние X часов,
+                  чтобы оно оставалось в автоматическом прогреве.
+                </p>
+              </div>
+              <div>
+                <label for="dns-window">Окно учёта (X), ч</label
+                ><p-inputnumber
+                  inputId="dns-window"
+                  formControlName="windowHours"
+                  [useGrouping]="false"
+                  [min]="1"
+                  [max]="8760"
+                />
+                <p class="hint" id="dns-window-hint">
+                  Скользящий период, за который служба считает запросы клиентов
+                  для сравнения с порогом N. Если запросов станет меньше, имя
+                  выбудет из автоматического прогрева.
+                </p>
+              </div>
+              <div>
+                <label for="dns-interval">Интервал обновления (Y), мин</label
+                ><p-inputnumber
+                  inputId="dns-interval"
+                  formControlName="intervalMinutes"
+                  [useGrouping]="false"
+                  [min]="1"
+                  [max]="525600"
+                />
+                <p class="hint" id="dns-interval-hint">
+                  Как часто планировать фоновое обновление. Срок TTL тоже
+                  учитывается: обновление может понадобиться раньше этого
+                  интервала.
+                </p>
+              </div>
+            </div>
+          </fieldset>
+          <button
+            pButton
+            type="button"
+            [disabled]="saving() || reading() || needsReload() || !form.dirty"
+            (click)="saveSettings()"
+          >
+            Сохранить настройки
+          </button>
+          <hestia-dns-names
+            [snapshot]="current"
+            [report]="report()"
+            [observationState]="observationState()"
+            [disabled]="saving() || reading() || needsReload()"
+            (changeList)="changeList($event)"
           />
-        </div>
-        <div>
-          <label for="dns-window">Окно учёта (X), ч</label
-          ><p-inputnumber
-            inputId="dns-window"
-            formControlName="windowHours"
-            [useGrouping]="false"
-            [min]="1"
-            [max]="8760"
-          />
-        </div>
-        <div>
-          <label for="dns-interval">Интервал обновления (Y), мин</label
-          ><p-inputnumber
-            inputId="dns-interval"
-            formControlName="intervalMinutes"
-            [useGrouping]="false"
-            [min]="1"
-            [max]="525600"
-          />
-        </div>
-      </div>
-    </fieldset>
-    <button
-      pButton
-      type="submit"
-      [disabled]="saving() || reading() || needsReload() || !form.dirty"
-    >
-      Сохранить настройки
-    </button>
-  </form>
-  <hestia-geoip-settings />
-  <hestia-dns-names
-    [snapshot]="current"
-    [report]="report()"
-    [observationState]="observationState()"
-    [disabled]="saving() || reading() || needsReload()"
-    (changeList)="changeList($event)"
-  />
+        </p-tabpanel>
+        <p-tabpanel value="cache">
+          <fieldset [disabled]="saving() || reading() || needsReload()">
+            <legend>Долговременный кэш</legend>
+            <label for="dns-retention">Хранить ответ после TTL, с</label>
+            <p-inputnumber
+              inputId="dns-retention"
+              formControlName="retentionSeconds"
+              [useGrouping]="false"
+              [min]="0"
+              [max]="31536000"
+            />
+            <p class="hint" id="dns-retention-hint">
+              Сколько секунд хранить положительный ответ после истечения TTL.
+              Это не продлевает его свежесть: при новом запросе шлюз обычно
+              получает ответ заново. Значение 0 отключает дополнительное
+              хранение.
+            </p>
+            <div class="dns-toggle">
+              <p-toggleswitch
+                inputId="dns-stale"
+                formControlName="serveStale"
+              /><label for="dns-stale"
+                >Разрешить истёкший ответ при временном сбое DNS</label
+              >
+            </div>
+            <p class="hint" id="dns-stale-hint">
+              Если включено, старый адрес можно вернуть только при временном
+              сбое на всех разрешённых DNS-путях и при доступном разрешённом
+              маршруте, пока не истекли срок хранения и заданное ниже окно
+              выдачи. Ответ возвращается с TTL 0; свежий отрицательный ответ
+              имеет приоритет.
+            </p>
+            @if (form.controls.serveStale.value) {
+              <label for="dns-stale-window">Окно выдачи после TTL, с</label
+              ><p-inputnumber
+                inputId="dns-stale-window"
+                formControlName="staleWindowSeconds"
+                [min]="0"
+                [max]="31536000"
+                [useGrouping]="false"
+              />
+              <p class="hint" id="dns-stale-window-hint">
+                Максимальное время после TTL, в течение которого разрешена
+                аварийная выдача. Оно не может превышать срок хранения ответа.
+              </p>
+            }
+          </fieldset>
+          <button
+            pButton
+            type="button"
+            [disabled]="saving() || reading() || needsReload() || !form.dirty"
+            (click)="saveSettings()"
+          >
+            Сохранить настройки
+          </button>
+        </p-tabpanel>
+        <p-tabpanel value="geoip">
+          <hestia-geoip-settings />
+        </p-tabpanel>
+      </p-tabpanels>
+    </p-tabs>
+  </div>
 } @else if (reading()) {
   <p role="status">Загрузка настроек DNS…</p>
 }

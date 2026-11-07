@@ -54,6 +54,59 @@ class BuildTests(unittest.TestCase):
             BUILD.copy_frontend(root / 'frontend', root / 'bundle/browser')
             self.assertEqual((root / 'bundle/browser/3rdpartylicenses.txt').read_text(), 'dependency notices')
 
+    def test_keenetic_init_uses_busybox_short_options(self):
+        """Keenetic lifecycle uses the short start-stop-daemon flags supported by target BusyBox."""
+        source = (BUILD.ROOT / 'deploy/keenetic/S99hestia').read_text()
+        preflight = (BUILD.ROOT / 'backend/cmd/keenetic-preflight/main.go').read_text()
+        self.assertIn('for option in -S -K -b -m -p -x -s;', source)
+        self.assertIn('start-stop-daemon -S -b -m -p "$PIDFILE" -x "$DAEMON"', source)
+        self.assertIn('start-stop-daemon -K -p "$PIDFILE" -x "$DAEMON" -s TERM', source)
+        self.assertIn('start-stop-daemon -K -p "$PIDFILE" -x "$DAEMON" -s KILL', source)
+        self.assertIn('"$BUSYBOX" usleep 100000', source)
+        self.assertNotIn('sleep 0.1', source)
+        for unsupported in ('--make-pidfile', '--pidfile', '--exec', '--background', '--retry'):
+            self.assertNotIn(unsupported, source)
+        self.assertIn('mustOutput("/opt/bin/busybox", "uname", "-m")', preflight)
+        self.assertNotIn('mustOutput("/bin/uname", "-m")', preflight)
+        self.assertNotIn('print-architecture', preflight)
+        self.assertNotIn('verifyOpkgArchitecture', preflight)
+
+    def test_keenetic_package_declares_profile_unicode_dependency(self):
+        """The IPK and its manifest include Entware's Python Unicode module package."""
+        source = (BUILD.ROOT / 'scripts/build/run.py').read_text()
+        self.assertIn("['python3-light', 'python3-codecs', 'busybox', 'libc']", source)
+        self.assertIn("'entware_dependencies': ['python3-light', 'python3-codecs', 'busybox', 'libc']", source)
+
+    def test_keenetic_managed_panel_uses_installed_country_map(self):
+        """The managed panel does not receive a custom country-map override it rejects."""
+        source = (BUILD.ROOT / 'backend/internal/services/entware/process.go').read_text()
+        panel = source.split('case services.Panel:', 1)[1].split('case services.DNS:', 1)[0]
+        self.assertNotIn('"-country-map"', panel)
+
+    def test_keenetic_package_seeds_install_lock(self):
+        """A fresh Entware package contains the stable root-only lock used by managed readers."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            BUILD.stage_keenetic_install_lock(root)
+            lock = root / 'opt/var/lock/hestia-install.lock'
+            self.assertTrue(lock.is_file())
+            self.assertEqual(lock.read_bytes(), b'')
+            self.assertEqual(lock.stat().st_mode & 0o777, 0o600)
+
+    def test_keenetic_panel_registers_physical_helper_without_awg(self):
+        """The read-only physical inventory helper is wired independently from AWG features."""
+        process = (BUILD.ROOT / 'backend/internal/services/entware/process.go').read_text()
+        panel = (BUILD.ROOT / 'backend/internal/panel/panel.go').read_text()
+        spec = process.split('case services.Panel:', 1)[1].split('case services.DNS:', 1)[0]
+        self.assertIn('"-enable-physical"', spec)
+        self.assertIn('enablePhysical := flag.Bool("enable-physical"', panel)
+        self.assertIn('if *enablePhysical {', panel)
+        inventory_block = panel.split('if *enablePhysical {', 1)[1].split('if *enableAWG {', 1)[0]
+        self.assertIn('writes.physicalInventory = runAWGHelper', inventory_block)
+        self.assertNotIn('writes.physical =', inventory_block)
+        self.assertIn('registerPhysical(api, writes.physicalInventory, writes.physical)', panel)
+        self.assertIn('registerHysteria2(api, writes.physical)', panel)
+
 
 if __name__ == '__main__':
     unittest.main()
