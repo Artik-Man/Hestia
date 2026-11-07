@@ -1,5 +1,6 @@
 """Check publication rejects runtime or source drift without invoking a compiler."""
 import importlib.util
+import hashlib
 from pathlib import Path
 import tempfile
 import unittest
@@ -24,6 +25,21 @@ class BuildTests(unittest.TestCase):
             runtime.write_bytes(b'mutated during build')
             with self.assertRaisesRegex(RuntimeError, 'Packaged runtime'):
                 BUILD.verify_packaged_inputs(root, {'awg': expected}, {})
+
+    def test_keenetic_awg_uses_static_runtime(self):
+        """Keenetic bundles pin both AWG tool copies to the known static ARM64 runtime."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / 'keenetic-arm64-experimental'
+            (root / 'bin').mkdir(parents=True)
+            (root / 'opt/bin').mkdir(parents=True)
+            expected_binary = b'static awg runtime'
+            expected_hash = hashlib.sha256(expected_binary).hexdigest()
+            for target in (root / 'bin/awg', root / 'opt/bin/awg'):
+                target.write_bytes(expected_binary)
+            BUILD.verify_packaged_inputs(root, {'awg-keenetic-static': expected_hash}, {})
+            (root / 'opt/bin/awg').write_bytes(b'wrong dynamic runtime')
+            with self.assertRaisesRegex(RuntimeError, 'awg-keenetic-static'):
+                BUILD.verify_packaged_inputs(root, {'awg-keenetic-static': expected_hash}, {})
 
     def test_source_mutation_during_packaging(self):
         """A source edit after compilation fails the final packaging provenance guard."""

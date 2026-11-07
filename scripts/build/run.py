@@ -59,7 +59,8 @@ def stage_keenetic_rootfs(bundle, runtime):
     for name in ('hestia', 'hestia-panel', 'hestia-observe'):
         shutil.copyfile(bundle / 'bin' / name, opt_bin / name)
         (opt_bin / name).chmod(0o755)
-    for name, source_name in (('amneziawg-go', 'amneziawg-go-keenetic'), ('awg', 'awg')):
+    for name, source_name in (('amneziawg-go', 'amneziawg-go-keenetic'),
+                              ('awg', 'awg-keenetic-static')):
         shutil.copyfile(runtime / source_name, opt_bin / name)
         (opt_bin / name).chmod(0o755)
     library = bundle / 'opt/lib/hestia'
@@ -122,6 +123,17 @@ def verify_packaged_inputs(bundle, locks, inputs):
             if not bundle.name.startswith('keenetic-'):
                 continue
             target = bundle / 'opt/bin/amneziawg-go'
+        elif name == 'awg-keenetic-static':
+            if not bundle.name.startswith('keenetic-'):
+                continue
+            for target in (bundle / 'bin/awg', bundle / 'opt/bin/awg'):
+                if file_hash(target) != expected:
+                    raise RuntimeError('Packaged runtime differs from pinned input: ' + name)
+            continue
+        elif name == 'awg':
+            if bundle.name.startswith('keenetic-'):
+                continue
+            target = bundle / 'bin/awg'
         else:
             target = bundle / name if name == 'sing.tgz' else bundle / 'bin' / name
         if file_hash(target) != expected:
@@ -205,8 +217,9 @@ def build(output, runtime):
             bundle.mkdir()
             compiled_platform = work / 'bin' / platform / 'bin'
             shutil.copytree(compiled_platform, bundle / 'bin')
-            for name in ('amneziawg-go', 'awg'):
-                shutil.copyfile(runtime / name, bundle / 'bin' / name)
+            awg_runtime = 'awg-keenetic-static' if platform.startswith('keenetic') else 'awg'
+            for name, runtime_name in (('amneziawg-go', 'amneziawg-go'), ('awg', awg_runtime)):
+                shutil.copyfile(runtime / runtime_name, bundle / 'bin' / name)
                 (bundle / 'bin' / name).chmod(0o755)
             shutil.copyfile(runtime / 'sing.tgz', bundle / 'sing.tgz')
             copy_frontend(frontends[platform], bundle / 'browser')
