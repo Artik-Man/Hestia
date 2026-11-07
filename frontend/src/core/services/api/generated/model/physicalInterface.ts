@@ -16,6 +16,7 @@ export interface PhysicalInterface {
     kind: PhysicalInterface.KindEnum;
     online: boolean;
     present: boolean;
+    providerName?: string;
 }
 export namespace PhysicalInterface {
     export const CarrierStateEnum = {

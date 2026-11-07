@@ -17,35 +17,33 @@ const (
 	requestTimeout = 1500 * time.Millisecond
 )
 
-// Manager exposes read-only native Ethernet inventory and rejects unsupported Wi-Fi mutations.
+// Manager exposes Linux interface inventory, optional Keenetic provider labels and unsupported Wi-Fi mutations.
 type Manager struct {
-	connector *keeneticrci.EthernetConnector
-	initErr   error
+	client *keeneticrci.Client
 }
 
 // NewManager creates the Keenetic physical inventory adapter over the shared RCI client.
 func NewManager(client *keeneticrci.Client) (*Manager, error) {
-	connector, err := keeneticrci.NewEthernetConnector(client)
-	if err != nil {
-		return nil, err
+	if client == nil {
+		return nil, &keeneticrci.Error{Kind: keeneticrci.ErrorInvalidConfig}
 	}
-	return &Manager{connector: connector}, nil
+	return &Manager{client: client}, nil
 }
 
 // InstalledManager selects the local RCI endpoint and token under the current Keenetic storage layout.
 func InstalledManager() *Manager {
 	client, err := installedClient()
 	if err != nil {
-		return &Manager{initErr: err}
+		return &Manager{}
 	}
 	manager, err := NewManager(client)
 	if err != nil {
-		return &Manager{initErr: err}
+		return &Manager{}
 	}
 	return manager
 }
 
-// Inventory reads typed native Ethernet ports without mapping their IDs to kernel interface names.
+// Inventory reads Linux kernel interfaces and adds a Keenetic provider label only for a verified default-route match.
 func (m *Manager) Inventory(ctx context.Context) (panelmodel.PhysicalInventory, error) {
 	result := panelmodel.PhysicalInventory{
 		Interfaces:   []panelmodel.PhysicalInterface{},
@@ -56,21 +54,24 @@ func (m *Manager) Inventory(ctx context.Context) (panelmodel.PhysicalInventory, 
 		return result, err
 	}
 	result.Interfaces = devices
-	if m.initErr != nil {
-		return result, m.initErr
+	if m.client == nil {
+		return result, nil
 	}
-	inventory, err := m.connector.Read(ctx)
-	if err != nil {
-		return result, err
+	device, err := linuxphysical.MainDefaultRouteDevice()
+	if err != nil || device == "" {
+		return result, nil
 	}
-	result.NativeEthernetPorts = make([]panelmodel.NativeEthernetPort, 0, len(inventory.Ports))
-	for _, port := range inventory.Ports {
-		item := panelmodel.NativeEthernetPort{ID: port.ID, Link: string(port.Link), SpeedMbps: port.SpeedMbps, ExitIDs: []string{}}
-		if port.Duplex != nil {
-			duplex := string(*port.Duplex)
-			item.Duplex = &duplex
+	probeCtx, cancel := context.WithTimeout(ctx, requestTimeout*2)
+	defer cancel()
+	provider, err := defaultProviderName(probeCtx, m.client)
+	if err != nil || provider == "" {
+		return result, nil
+	}
+	for i := range result.Interfaces {
+		if result.Interfaces[i].Kind == "ethernet" && result.Interfaces[i].InterfaceName == device {
+			result.Interfaces[i].ProviderName = provider
+			break
 		}
-		result.NativeEthernetPorts = append(result.NativeEthernetPorts, item)
 	}
 	return result, nil
 }

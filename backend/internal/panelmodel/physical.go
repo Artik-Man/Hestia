@@ -29,9 +29,10 @@ const (
 	CarrierUnknown CarrierState = "unknown"
 )
 
-// PhysicalInterface identifies a device, its carrier and any configured direct exits bound to it.
+// PhysicalInterface identifies a device, its carrier, optional provider label and configured direct exits.
 type PhysicalInterface struct {
 	InterfaceName string       `json:"interfaceName" minLength:"1" maxLength:"15"`
+	ProviderName  string       `json:"providerName,omitempty" minLength:"1" maxLength:"80"`
 	Kind          string       `json:"kind" enum:"ethernet,wifi"`
 	Present       bool         `json:"present"`
 	CarrierState  CarrierState `json:"carrierState" enum:"up,down,unknown"`

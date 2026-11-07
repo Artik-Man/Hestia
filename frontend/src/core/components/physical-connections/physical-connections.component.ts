@@ -35,25 +35,7 @@ function validInventory(value: unknown): value is Inventory {
     !("interfaces" in value) ||
     !Array.isArray(value.interfaces) ||
     !("wifiProfiles" in value) ||
-    !Array.isArray(value.wifiProfiles) ||
-    ("nativeEthernetPorts" in value &&
-      (!Array.isArray(value.nativeEthernetPorts) ||
-        !value.nativeEthernetPorts.every(
-          (port: unknown) =>
-            port !== null &&
-            typeof port === "object" &&
-            "id" in port &&
-            typeof port.id === "string" &&
-            "link" in port &&
-            (port.link === "up" || port.link === "down") &&
-            "exitIds" in port &&
-            Array.isArray(port.exitIds) &&
-            port.exitIds.every((id: unknown) => typeof id === "string") &&
-            (!("speedMbps" in port) || typeof port.speedMbps === "number") &&
-            (!("duplex" in port) ||
-              port.duplex === "half" ||
-              port.duplex === "full"),
-        )))
+    !Array.isArray(value.wifiProfiles)
   )
     return false;
   return (
@@ -63,6 +45,11 @@ function validInventory(value: unknown): value is Inventory {
         typeof a === "object" &&
         "interfaceName" in a &&
         typeof a.interfaceName === "string" &&
+        (!("providerName" in a) ||
+          (typeof a.providerName === "string" &&
+            a.providerName.trim().length > 0 &&
+            a.providerName.length <= 80 &&
+            !/\p{Cc}/u.test(a.providerName))) &&
         "kind" in a &&
         (a.kind === "ethernet" || a.kind === "wifi") &&
         "carrierState" in a &&
@@ -98,7 +85,7 @@ function validInventory(value: unknown): value is Inventory {
   );
 }
 
-/** PhysicalConnections discovers Ethernet ports and manages explicitly configured wireless client profiles. */
+/** PhysicalConnections displays kernel Ethernet interfaces and manages Hestia wireless client profiles. */
 @Component({
   selector: "hestia-physical-connections",
   imports: [Tooltip, Toast, FormsModule, ButtonDirective, InputText],
@@ -122,10 +109,17 @@ export class PhysicalConnections {
       this.inventory()
         ?.interfaces.filter((a) => a.kind === "ethernet")
         .flatMap((a) =>
-          (a.exitIds.length ? a.exitIds : [""]).map((id) => ({
-            adapter: a,
-            id,
-          })),
+          (a.exitIds.length ? a.exitIds : [""]).map((id) => {
+            const directName = id ? this.catalog.name(id) : "";
+            return {
+              adapter: a,
+              id,
+              name:
+                directName && directName !== "Название недоступно"
+                  ? directName
+                  : (a.providerName ?? a.interfaceName),
+            };
+          }),
         ) ?? [],
   );
   protected readonly radios = computed(

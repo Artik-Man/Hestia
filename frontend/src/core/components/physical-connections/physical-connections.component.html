@@ -4,8 +4,7 @@
     <table aria-label="Ethernet">
       <thead>
         <tr>
-          <th>Название подключения</th>
-          <th>Интерфейс</th>
+          <th>Подключение</th>
           <th>Состояние линка</th>
           <th>Редактировать</th>
         </tr>
@@ -17,9 +16,8 @@
         ) {
           <tr>
             <th scope="row">
-              {{ row.id ? catalog.name(row.id) : row.adapter.interfaceName }}
+              {{ row.name }}
             </th>
-            <td>{{ row.adapter.interfaceName }}</td>
             <td>
               {{
                 !row.adapter.present
@@ -55,12 +53,10 @@
           </tr>
         } @empty {
           <tr>
-            <td colspan="4">
+            <td colspan="3">
               {{
                 inventory()
-                  ? inventory()?.nativeEthernetPorts?.length
-                    ? "Нативные порты показаны ниже"
-                    : "Ethernet-адаптеры не обнаружены"
+                  ? "Ethernet-подключения не обнаружены"
                   : failed()
                     ? "Нет данных"
                     : "Загрузка…"
@@ -72,42 +68,6 @@
     </table>
   </div>
 </section>
-@if (inventory()?.nativeEthernetPorts?.length) {
-  <section>
-    <h2>Физические Ethernet-порты</h2>
-    <div class="list-wrap">
-      <table aria-label="Физические Ethernet-порты">
-        <thead>
-          <tr>
-            <th>Идентификатор Keenetic</th>
-            <th>Состояние линка</th>
-            <th>Скорость и дуплекс</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (port of inventory()?.nativeEthernetPorts ?? []; track port.id) {
-            <tr>
-              <th scope="row">{{ port.id }}</th>
-              <td>
-                {{ port.link === "up" ? "Линк поднят" : "Линк не поднят" }}
-              </td>
-              <td>
-                @if (port.speedMbps; as speed) {
-                  {{ speed }} Мбит/с
-                  @if (port.duplex) {
-                    / {{ port.duplex === "full" ? "полный" : "полудуплекс" }}
-                  }
-                } @else {
-                  —
-                }
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  </section>
-}
 <section>
   <div class="section-heading">
     <h2>Wi-Fi</h2>

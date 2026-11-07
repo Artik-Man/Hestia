@@ -1,0 +1,40 @@
+[
+  {
+    "path": "/rci/show/interface",
+    "status": 200,
+    "bytes": 34941,
+    "sha256": "ad35a2f55927188c34ff4dc30d22aedbee2414034e5d793ef18c50b3b165e6bd",
+    "matches": [
+      {
+        "connected": "yes",
+        "defaultgw": true,
+        "description": "ПАКТ",
+        "id": "GigabitEthernet1",
+        "interface-name": "ISP",
+        "link": "up",
+        "priority": 65532,
+        "state": "up",
+        "type": "GigabitEthernet"
+      },
+      {
+        "id": "GigabitEthernet1/0",
+        "interface-name": "0",
+        "link": "up",
+        "type": "Port"
+      }
+    ]
+  },
+  {
+    "path": "/rci/show/ip/route",
+    "status": 200,
+    "bytes": 23386,
+    "sha256": "af243aa5318e5022f2451d158abc5511860d4d0ae381847727c6b6b0a37d4f42",
+    "matches": [
+      {
+        "destination": "0.0.0.0/0",
+        "interface": "GigabitEthernet1",
+        "metric": 1000
+      }
+    ]
+  }
+]

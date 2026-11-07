@@ -1,0 +1,9 @@
+Observed at 2026-11-07T18:19Z on the KN-1012:
+eth2_vlan1_in_br0=yes
+default_route_table=4096 dev=eth3 metric=1000
+default_route_table=16385 dev=eth3 metric=1000
+default_route_table=4103 dev=eth3 metric=1000
+default_route_table=4105 dev=eth3 metric=1000
+default_route_table=main dev=eth3 metric=1000
+
+The remote commands output only the bridge membership boolean and default-route table/device/metric fields; gateway and address data were discarded.
