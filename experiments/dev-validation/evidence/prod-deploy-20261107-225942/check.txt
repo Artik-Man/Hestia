@@ -12,10 +12,12 @@ f8aaba13e7eff6fa9667a2b205ff3a794417055a2590cd03189c9a1a407d7dcb  /usr/local/bin
 
 These match the clean Linux bundle binaries. hestia.service, hestia-sing-box.service, and hestia-panel.service are active. The installed panel unit has the private listener 192.168.1.133:8080 and -enable-hysteria2. HTTP 200: /api/groups-and-rules, /api/awg, /api/hysteria2, /api/physical-connections. The updater completed its default-route and managed-configuration comparisons.
 
-Keenetic package prepared from the same commit:
+Keenetic package prepared and installed from the same commit:
 hestia_20261107-225942-2bf46144bcb4_aarch64-3.10.ipk
 SHA-256: 185712644fd6d7910f65452dfb3190e6d69a11941f500e1885628aab4dfd9b00
 
-The package was not installed. Strict-host-key SSH to 192.168.1.1 reached the KN-1012, but admin and root both required password authentication and no authorized browser session was available. No router configuration or service was changed in this attempt. Retry after providing a supported SSH key or completing an authenticated router session.
+Strict-host-key SSH to port 22 required password authentication. The documented Entware SSH endpoint was then used: root@192.168.1.1 port 222, key ~/.ssh/hestia_keenetic, pinned known_hosts. The local RCI token file was present with mode 0600; the package preflight authenticated to RCI from the router without exposing the token.
 
-Boundary: Linux services, route/config invariants, binary hashes, and panel API reachability were checked. End-to-end client internet traffic and VPN dataplane were not tested. The Keenetic install and its VPN dataplane remain unverified for this revision.
+KN-1012 opkg reports the new package as `install user installed`; supervisor readiness passed and LAN API endpoints returned HTTP 200. IPv4 and IPv6 default route hashes matched before and after. A root-only backup and previous package remain on the router under `/opt/tmp/hestia-upgrade-20261107-225942-2bf46144bcb4/`. Detailed installation evidence: [Keenetic install check](../../keenetic-ipk-packaging/evidence/install-20261107-225942/check.txt).
+
+Boundary: Linux services, route/config invariants, binary hashes and panel API reachability were checked. On KN-1012, package lifecycle, preflight, readiness, GET API availability and default route preservation were checked. No VPN profile was created or exercised; end-to-end client internet traffic and VPN dataplane were not tested.
