@@ -18,6 +18,14 @@ import (
 
 var ErrInvalidConnector = errors.New("invalid WireGuard connector change")
 
+// connectorStatus limits staged profiles to either inactive configured state or confirmed ready state.
+type connectorStatus string
+
+const (
+	connectorConfigured connectorStatus = "configured"
+	connectorReady      connectorStatus = "ready"
+)
+
 type connectorProfile struct {
 	Name        string   `json:"name,omitempty"`
 	Underlays   []string `json:"underlays,omitempty"`
@@ -60,7 +68,7 @@ type storedProfile struct {
 	SocksPort int             `json:"socks_port,omitempty"`
 }
 
-// ApplyAWG stages profile metadata and secret files in the binding journal, then activates only after the runtime probe.
+// ApplyAWG stages profile metadata and secrets, committing an unconfirmed new runtime only as unavailable after rollback.
 func (e Engine) ApplyAWG(ctx context.Context, request panelmodel.AWGSaveRequest, update bool) error {
 	if !awg.ValidConnectionID(request.ID) || (request.Name != "" && ValidateGroupName(request.Name) != nil) || !awg.ValidUnderlays(request.ID, request.Underlays) || ((!update || request.Group != "") && !awgID(request.Group)) || request.Priority < 0 {
 		return ErrInvalidConnector
@@ -72,19 +80,26 @@ func (e Engine) ApplyAWG(ctx context.Context, request panelmodel.AWGSaveRequest,
 	check := func(data []byte, staged bool) error {
 		return checkConnectorSnapshot(data, request.ID, request.Group, update, staged)
 	}
-	prepare := func(stage string) error {
-		if installed, err := e.awgUnitInstalled(); err != nil || !installed {
-			return ErrUnavailable
+	prepare := func(status connectorStatus) func(string) error {
+		return func(stage string) error {
+			if installed, err := e.awgUnitInstalled(); err != nil || !installed {
+				return ErrUnavailable
+			}
+			if err := e.profileCompiler().Apply(ctx, profileexec.Request{Operation: profileexec.Validate, Source: e.dir}); err != nil {
+				return fmt.Errorf("managed profile validation failed: %w", ErrUnavailable)
+			}
+			if err := stageAWGChange(ctx, e, stage, request, parsed, update, status); err != nil {
+				return fmt.Errorf("AWG profile staging failed: %w", err)
+			}
+			return nil
 		}
-		if err := e.profileCompiler().Apply(ctx, profileexec.Request{Operation: profileexec.Validate, Source: e.dir}); err != nil {
-			return fmt.Errorf("managed profile validation failed: %w", ErrUnavailable)
-		}
-		if err := stageAWGChange(ctx, e, stage, request, parsed, update); err != nil {
-			return fmt.Errorf("AWG profile staging failed: %w", err)
-		}
-		return nil
 	}
-	return e.apply(ctx, prepare, check, false)
+	err = e.apply(ctx, prepare(connectorReady), check, false)
+	var rolledBack rolledBackActivationError
+	if !update && errors.As(err, &rolledBack) && errors.Is(err, ErrAWGRuntimeUnconfirmed) {
+		return e.apply(ctx, prepare(connectorConfigured), check, false)
+	}
+	return err
 }
 
 // DeleteAWG removes one connector and its group membership through the same service-and-route journal as profile changes.
@@ -154,8 +169,8 @@ func (e Engine) DeleteAWG(ctx context.Context, id string) error {
 	return e.apply(ctx, prepare, check, false)
 }
 
-// stageAWGChange replaces one staged connector, preserves neighboring runtime assignments, and builds the candidate profile generation.
-func stageAWGChange(ctx context.Context, engine Engine, stage string, request panelmodel.AWGSaveRequest, parsed awg.Profile, update bool) error {
+// stageAWGChange replaces one staged connector, preserves neighboring assignments, and builds a ready or inactive generation.
+func stageAWGChange(ctx context.Context, engine Engine, stage string, request panelmodel.AWGSaveRequest, parsed awg.Profile, update bool, status connectorStatus) error {
 	current, err := readStoredProfile(engine.dir)
 	if err != nil {
 		return ErrUnavailable
@@ -213,7 +228,7 @@ func stageAWGChange(ctx context.Context, engine Engine, stage string, request pa
 			return ErrInvalidConnector
 		}
 		group.Exits = insertExit(group.Exits, priority-1, request.ID)
-		if current.Inbounds != nil && (request.Priority != 0 || len(group.Exits) == 1) {
+		if status == connectorReady && current.Inbounds != nil && (request.Priority != 0 || len(group.Exits) == 1) {
 			group.DefaultExit = request.ID
 		}
 	}
@@ -224,8 +239,8 @@ func stageAWGChange(ctx context.Context, engine Engine, stage string, request pa
 			return err
 		}
 	}
-	connector := connectorProfile{Name: request.Name, Underlays: request.Underlays, Slot: slot, ID: request.ID, Type: parsed.Protocol, Group: request.Group, Priority: priority, IPv6Blocked: parsed.IPv6Blocked, Status: "ready"}
-	current.Healthy[request.ID] = true
+	connector := connectorProfile{Name: request.Name, Underlays: request.Underlays, Slot: slot, ID: request.ID, Type: parsed.Protocol, Group: request.Group, Priority: priority, IPv6Blocked: parsed.IPv6Blocked, Status: string(status)}
+	current.Healthy[request.ID] = status == connectorReady
 	if index >= 0 {
 		current.Connectors[index] = connector
 	} else {
@@ -234,7 +249,7 @@ func stageAWGChange(ctx context.Context, engine Engine, stage string, request pa
 	if !validUnderlayGraph(current) {
 		return ErrInvalidConnector
 	}
-	metadata := awg.Metadata{Name: request.Name, Underlays: request.Underlays, Slot: slot, ID: request.ID, Group: request.Group, Priority: priority, Status: "ready", IPv6Blocked: parsed.IPv6Blocked, Protocol: parsed.Protocol, IPv4Address: parsed.IPv4Address, DNSIPv4: parsed.DNSIPv4}
+	metadata := awg.Metadata{Name: request.Name, Underlays: request.Underlays, Slot: slot, ID: request.ID, Group: request.Group, Priority: priority, Status: string(status), IPv6Blocked: parsed.IPv6Blocked, Protocol: parsed.Protocol, IPv4Address: parsed.IPv4Address, DNSIPv4: parsed.DNSIPv4}
 	if err := os.MkdirAll(filepath.Join(stage, awgTreeName), 0700); err != nil {
 		return ErrUnavailable
 	}

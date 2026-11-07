@@ -18,6 +18,9 @@ import (
 	"github.com/Artik-Man/Hestia/internal/services"
 )
 
+// ErrAWGRuntimeUnconfirmed identifies a candidate tunnel that could not prove readiness before it became a routing exit.
+var ErrAWGRuntimeUnconfirmed = errors.New("AWG runtime readiness was not confirmed")
+
 // AWGActivationLimit bounds a save with up to 64 serial transport candidates plus gateway activation.
 const AWGActivationLimit = 15 * time.Minute
 
@@ -198,15 +201,15 @@ func (e Engine) startVerified(ctx context.Context, plan runtimePlan) error {
 			continue
 		}
 		if err := e.startInstance(ctx, change.id, true); err != nil {
-			return err
+			return errors.Join(ErrAWGRuntimeUnconfirmed, err)
 		}
 		if runtime.underlays != "" && !plan.sameTopology {
 			if err := e.waitInstanceGuards(ctx, change); err != nil {
-				return err
+				return errors.Join(ErrAWGRuntimeUnconfirmed, err)
 			}
 			awaiting = append(awaiting, change)
 		} else if err := e.waitForAWGReady(ctx, change.id, ready[change.id]); err != nil {
-			return err
+			return errors.Join(ErrAWGRuntimeUnconfirmed, err)
 		}
 	}
 	if len(awaiting) > 0 {
@@ -215,7 +218,7 @@ func (e Engine) startVerified(ctx context.Context, plan runtimePlan) error {
 		}
 		for _, change := range awaiting {
 			if err := e.waitForAWGReady(ctx, change.id, ready[change.id]); err != nil {
-				return err
+				return errors.Join(ErrAWGRuntimeUnconfirmed, err)
 			}
 		}
 	}

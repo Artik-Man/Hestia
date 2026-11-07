@@ -24,6 +24,16 @@ var (
 	ErrUnavailable = errors.New("managed routing configuration unavailable")
 )
 
+type rolledBackActivationError struct {
+	cause error
+}
+
+// Error returns the original activation failure after the transaction has restored its previous generation.
+func (e rolledBackActivationError) Error() string { return e.cause.Error() }
+
+// Unwrap preserves the activation cause for typed recovery decisions after confirmed rollback.
+func (e rolledBackActivationError) Unwrap() error { return e.cause }
+
 const (
 	pending = ".binding-pending"
 )
@@ -171,7 +181,10 @@ func (e Engine) apply(ctx context.Context, prepare func(string) error, check fun
 		// A disconnected client cannot cancel rollback of a transaction already visible on disk.
 		rollback, cancel := context.WithTimeout(context.Background(), AWGActivationLimit)
 		defer cancel()
-		return errors.Join(err, e.recoverIfPending(rollback, true))
+		if recoveryErr := e.recoverIfPending(rollback, true); recoveryErr != nil {
+			return errors.Join(err, recoveryErr)
+		}
+		return rolledBackActivationError{cause: err}
 	}
 	return nil
 }
