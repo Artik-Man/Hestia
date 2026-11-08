@@ -12,6 +12,8 @@ from pathlib import Path
 from profile import (
     compile_profile,
     export_paths,
+    keenetic_default_route_device,
+    keenetic_interface_extension,
     managed_profile,
     pinned_paths,
     semantically_equal_backend,
@@ -44,6 +46,75 @@ class ProfileTests(unittest.TestCase):
     def compile(self):
         """Compile the current test profile using only its temporary directory for secrets."""
         return compile_profile(self.profile, self.base)
+
+    def test_keenetic_interface_extension_is_narrowly_scoped(self):
+        """Permit only the reserved Keenetic underlay bound to the discovered uplink device."""
+        base = [{"id": "existing", "type": "direct", "bind_interface": "eth2"}]
+        expected = base + [{"id": "keenetic-uplink", "type": "direct", "bind_interface": "wan9"}]
+        self.assertTrue(keenetic_interface_extension(base, expected, "wan9"))
+        self.assertTrue(keenetic_interface_extension(expected, expected, "wan9"))
+        self.assertFalse(keenetic_interface_extension(base, expected[:-1] + [dict(expected[-1], bind_interface="eth2")], "wan9"))
+        self.assertFalse(keenetic_interface_extension(base, base + [dict(expected[-1]), dict(expected[-1], id="other")], "wan9"))
+
+    def test_keenetic_default_route_device_selects_unique_best_metric(self):
+        """Resolve the provider transport from the uniquely preferred default-route device."""
+        output = "default via 10.0.0.1 dev wan9 metric 1000\n"
+        with patch("profile.subprocess.run", return_value=subprocess.CompletedProcess([], 0, output, "")):
+            self.assertEqual(keenetic_default_route_device(), "wan9")
+        output = "default via 10.0.0.1 dev eth2 metric 200\ndefault via 10.0.0.2 dev wan9 metric 100\n"
+        with patch("profile.subprocess.run", return_value=subprocess.CompletedProcess([], 0, output, "")):
+            self.assertEqual(keenetic_default_route_device(), "wan9")
+        output = "default via 10.0.0.1 dev eth2 metric 100\ndefault via 10.0.0.2 dev wan9 metric 100\n"
+        with patch("profile.subprocess.run", return_value=subprocess.CompletedProcess([], 0, output, "")):
+            with self.assertRaisesRegex(ValueError, "one Keenetic default route"):
+                keenetic_default_route_device()
+
+    def test_group_order_adds_keenetic_uplink_without_changing_default_exit(self):
+        """Add the discovered provider to a group while retaining its existing default and VPN inputs."""
+        self.profile["version"] = 2
+        self.profile.pop("socks_port")
+        self.profile["connectors"] = []
+        self.profile["inbounds"] = [
+            {"type": "socks", "tag": "local", "listen": "127.0.0.1", "listen_port": 1080}
+        ]
+        for group in self.profile["groups"]:
+            group["defaultExit"] = "deny"
+        snapshot, backend = self.compile()
+        profile_raw = json.dumps(self.profile).encode()
+        backend_raw = json.dumps(backend).encode()
+        snapshot_raw = json.dumps(snapshot).encode()
+        (self.base / "profile.json").write_bytes(profile_raw)
+        (self.base / "profile-source.sha256").write_text(hashlib.sha256(profile_raw).hexdigest())
+        (self.base / "sing-box.json").write_bytes(backend_raw)
+        (self.base / "profile-backend.sha256").write_text(hashlib.sha256(backend_raw).hexdigest())
+        (self.base / "snapshot.json").write_bytes(snapshot_raw)
+        stage = self.base / "stage"
+        stage.mkdir()
+        groups = [
+            {"id": group["id"], "exits": [*group["exits"]]}
+            for group in self.profile["groups"]
+        ]
+        groups[0]["exits"].append("keenetic-uplink")
+
+        with patch("profile.keenetic_default_route_device", return_value="wan9"):
+            stage_order(self.base, stage, groups, "wan9", keenetic=True)
+
+        staged_profile = json.loads((stage / "profile.json").read_bytes())
+        staged_snapshot = json.loads((stage / "snapshot.json").read_bytes())
+        staged_backend = json.loads((stage / "sing-box.json").read_bytes())
+        self.assertEqual(staged_profile["interfaces"][-1], {
+            "id": "keenetic-uplink", "type": "direct", "bind_interface": "wan9"
+        })
+        self.assertEqual(staged_profile["groups"][0]["exits"], ["ru-wg", "keenetic-uplink"])
+        self.assertEqual(staged_snapshot["groups"][0]["exits"], ["ru-wg", "keenetic-uplink"])
+        self.assertEqual(
+            next(item for item in staged_backend["outbounds"] if item.get("tag") == "russia")["default"],
+            next(item for item in backend["outbounds"] if item.get("tag") == "russia")["default"],
+        )
+        self.assertEqual(
+            next(item for item in staged_backend["outbounds"] if item.get("tag") == "keenetic-uplink")["bind_interface"],
+            "wan9",
+        )
 
     def test_country_route_and_domain_precedence(self):
         """Recompile the same client policy after a group reorder without changing fixed listener routes."""
@@ -302,6 +373,23 @@ class ProfileTests(unittest.TestCase):
             {"type": "udp", "tag": "dns-" + connector, "server": "1.1.1.1", "detour": connector},
         )
         self.assertNotIn("secret-marker", json.dumps(engine))
+
+        provider = {"id": "keenetic-uplink", "type": "direct", "bind_interface": "wan9"}
+        self.profile["interfaces"].append(provider)
+        self.profile["groups"][1]["exits"].append(provider["id"])
+        self.profile["connectors"][0].update(status="ready", slot=0, underlays=[provider["id"]])
+        self.profile["healthy"].update({provider["id"]: True, connector: True})
+        metadata.update(status="ready", underlays=[provider["id"]], slot=0)
+        (directory / "metadata.json").write_text(json.dumps(metadata))
+        (directory / "profile.conf").write_text(
+            "[Interface]\nAddress = 10.66.66.2/32\nDNS = 1.1.1.1\nPrivateKey = secret-marker\n"
+            "[Peer]\nPublicKey = cHVi\nEndpoint = 203.0.113.10:51820\nAllowedIPs = 0.0.0.0/0\n"
+        )
+        _, routed = self.compile()
+        direct = next(item for item in routed["outbounds"] if item["tag"] == provider["id"])
+        self.assertEqual(direct["bind_interface"], "wan9")
+        transport = next(rule for rule in routed["route"]["rules"] if rule.get("inbound") == ["_wg-transport-0-0"])
+        self.assertEqual(transport["outbound"], provider["id"])
 
     def test_two_ready_connectors_use_distinct_interfaces_and_dns(self):
         """Keep overlapping IPv4 profiles on distinct devices and reject slot aliasing."""

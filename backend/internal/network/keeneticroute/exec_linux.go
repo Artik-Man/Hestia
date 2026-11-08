@@ -12,6 +12,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/Artik-Man/Hestia/internal/network"
 )
 
 const (
@@ -35,11 +37,10 @@ func (ExecRouteRunner) Run(parent context.Context, args ...string) ([]byte, erro
 	ctx, cancel := context.WithTimeout(parent, commandTimeout)
 	defer cancel()
 
-	commandArgs := args
+	commandArgs := keeneticCommandArgs(args)
 	if len(args) >= 3 && args[2] == "show" {
 		switch args[1] {
 		case "route", "rule":
-			commandArgs = append([]string(nil), args...)
 			commandArgs[2] = "list"
 		}
 	}
@@ -55,6 +56,17 @@ func (ExecRouteRunner) Run(parent context.Context, args ...string) ([]byte, erro
 		return nil, errors.New("Entware ip command failed")
 	}
 	return bytes.Clone(stdout.Bytes()), nil
+}
+
+// keeneticCommandArgs translates Linux terminal rule actions into the equivalent Keenetic ip syntax.
+func keeneticCommandArgs(args []string) []string {
+	commandArgs := append([]string(nil), args...)
+	if len(commandArgs) == 8 && (commandArgs[0] == "-4" || commandArgs[0] == "-6") {
+		if commandArgs[1] == "rule" && (commandArgs[2] == "add" || commandArgs[2] == "del") && commandArgs[7] == "unreachable" {
+			return append(commandArgs[:7], "lookup", "unspec", "type", "blackhole")
+		}
+	}
+	return commandArgs
 }
 
 // validRouteCommand accepts read-only route inventory and the exact route mutations reserved by Hestia.
@@ -105,17 +117,31 @@ func validRuleMutation(args []string) bool {
 			return false
 		}
 		slot, ok := awgSlotFromTable(args[8])
-		return ok && args[4] == strconv.Itoa(1002+slot) && args[6] == formatMark(0x202+slot)+"/0xffffffff"
+		if !ok || args[6] != formatMark(0x202+slot)+"/0xffffffff" {
+			return false
+		}
+		priority, err := strconv.Atoi(args[4])
+		if err != nil || strconv.Itoa(priority) != args[4] {
+			return false
+		}
+		return priority == network.MarkRulePriority(slot) || (args[2] == "del" && priority == 1002+slot)
 	}
 	if len(args) == 8 && (args[2] == "add" || args[2] == "del") {
 		if args[3] != "priority" || args[5] != "fwmark" || args[7] != "unreachable" {
 			return false
 		}
 		priority, err := strconv.Atoi(args[4])
-		if err != nil || strconv.Itoa(priority) != args[4] || priority < 1100 || priority >= 1100+50 || !validMarkMask(args[6]) {
+		if err != nil || strconv.Itoa(priority) != args[4] || !validMarkMask(args[6]) {
 			return false
 		}
-		return args[6] == formatMark(0x51000+priority-1100)+"/0xffffffff"
+		for slot := 0; slot < network.SlotCount; slot++ {
+			currentPriority := priority == network.OuterRulePriority(slot)
+			legacyDelete := args[2] == "del" && priority == 1100+slot
+			if (currentPriority || legacyDelete) && args[6] == formatMark(0x51000+slot)+"/0xffffffff" {
+				return true
+			}
+		}
+		return false
 	}
 	return false
 }

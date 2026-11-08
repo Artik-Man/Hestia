@@ -374,19 +374,19 @@ func dispatch(ctx context.Context, table *processTable, input request) response 
 				err = table.stop(ctx, service)
 			}
 			if err != nil {
-				return response{Error: publicError(err)}
+				return response{Error: publicError(err, serviceRole(service.Kind))}
 			}
 		}
 		return response{}
 	case "status":
 		state, err := table.status(input.Service)
 		if err != nil {
-			return response{Error: publicError(err)}
+			return response{Error: publicError(err, serviceRole(input.Service.Kind))}
 		}
 		return response{State: state}
 	case "smoke-fresh", "smoke-current":
 		if err := runSmoke(ctx, table, input.Operation == "smoke-fresh"); err != nil {
-			return response{Error: publicError(err)}
+			return response{Error: publicError(err, "smoke")}
 		}
 		return response{}
 	default:
@@ -395,14 +395,34 @@ func dispatch(ctx context.Context, table *processTable, input request) response 
 }
 
 // publicError removes command details and paths from service errors sent over IPC.
-func publicError(err error) string {
+func publicError(err error, role string) string {
 	if errors.Is(err, ErrUnavailable) {
-		return "managed service role unavailable"
+		return "managed service role unavailable: " + role
 	}
 	if errors.Is(err, ErrInvalid) {
 		return "invalid managed service identity"
 	}
-	return "managed service operation failed"
+	return "managed service operation failed: " + role
+}
+
+// serviceRole maps a closed service kind to a non-sensitive diagnostic role name.
+func serviceRole(kind services.Kind) string {
+	switch kind {
+	case services.Controller:
+		return "controller"
+	case services.Router:
+		return "router"
+	case services.BindingWatch:
+		return "binding-watch"
+	case services.AWG:
+		return "awg"
+	case services.Panel:
+		return "panel"
+	case services.DNS:
+		return "dns"
+	default:
+		return "unknown"
+	}
 }
 
 // stopAll waits for every retained process to exit before the supervisor releases its socket.

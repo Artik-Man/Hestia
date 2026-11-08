@@ -13,7 +13,7 @@ import (
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
 )
 
-// ErrInvalidOrder rejects incomplete orders, duplicate IDs and unknown groups or exits.
+// ErrInvalidOrder rejects incomplete orders, duplicate IDs, unknown members and unsupported exit additions.
 var ErrInvalidOrder = errors.New("requested order must permute every existing group and its exits")
 
 // sameOrder compares only the group and per-group exit sequences.
@@ -46,7 +46,7 @@ func members(groups []panelmodel.OrderedGroup) (map[string]map[string]bool, erro
 	return topology, nil
 }
 
-// ValidateOrder requires exactly the same sets of group and exit IDs on both sides of an edit.
+// ValidateOrder preserves every group and existing exit, allowing only one new platform-reserved exit.
 func ValidateOrder(change panelmodel.GroupOrderChange) error {
 	expected, err := members(change.Expected)
 	if err != nil {
@@ -62,13 +62,18 @@ func ValidateOrder(change panelmodel.GroupOrderChange) error {
 			allExits[id] = true
 		}
 	}
+	addedPlatformExit := false
 	for group, exits := range desired {
 		if _, ok := expected[group]; !ok {
 			return ErrInvalidOrder
 		}
 		for id := range exits {
 			if !allExits[id] {
-				return ErrInvalidOrder
+				if PlatformUnderlayID() == "" || id != PlatformUnderlayID() || addedPlatformExit {
+					return ErrInvalidOrder
+				}
+				addedPlatformExit = true
+				continue
 			}
 			delete(allExits, id)
 		}
@@ -79,10 +84,19 @@ func ValidateOrder(change panelmodel.GroupOrderChange) error {
 	return nil
 }
 
-// ApplyOrder accepts only a permutation of the installed topology and confirms it via the same transaction as list bindings.
+// ApplyOrder applies a validated reorder without adding a platform exit and confirms it through the managed transaction.
 func (e Engine) ApplyOrder(ctx context.Context, change panelmodel.GroupOrderChange) error {
+	return e.ApplyOrderWithUplink(ctx, change, "")
+}
+
+// ApplyOrderWithUplink permits one verified platform exit to be added while preserving the group's selected default.
+func (e Engine) ApplyOrderWithUplink(ctx context.Context, change panelmodel.GroupOrderChange, uplinkDevice string) error {
 	if err := ValidateOrder(change); err != nil {
 		return err
+	}
+	addsPlatformExit := orderAddsPlatformExit(change)
+	if addsPlatformExit != (uplinkDevice != "") {
+		return ErrInvalidOrder
 	}
 	data, err := json.Marshal(change.Groups)
 	if err != nil {
@@ -112,10 +126,29 @@ func (e Engine) ApplyOrder(ctx context.Context, change panelmodel.GroupOrderChan
 		if err := os.WriteFile(request, data, 0600); err != nil {
 			return err
 		}
-		if err := e.profileCompiler().Apply(ctx, profileexec.Request{Operation: profileexec.Reorder, Source: e.dir, Stage: dir}); err != nil {
+		if err := e.profileCompiler().Apply(ctx, profileexec.Request{Operation: profileexec.Reorder, Source: e.dir, Stage: dir, UplinkDevice: uplinkDevice}); err != nil {
 			return err
 		}
 		return os.Remove(request)
 	}
 	return e.apply(ctx, stageOrder, check, sameOrder(change.Expected, change.Groups))
+}
+
+// orderAddsPlatformExit reports whether the desired topology introduces the platform's reserved direct exit.
+func orderAddsPlatformExit(change panelmodel.GroupOrderChange) bool {
+	id := PlatformUnderlayID()
+	if id == "" {
+		return false
+	}
+	for _, group := range change.Expected {
+		if slices.Contains(group.Exits, id) {
+			return false
+		}
+	}
+	for _, group := range change.Groups {
+		if slices.Contains(group.Exits, id) {
+			return true
+		}
+	}
+	return false
 }

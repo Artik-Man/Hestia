@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	awgHealthMaxAge = 5 * time.Second
+	awgHealthMaxAge = 35 * time.Second
 )
 
 var (
@@ -47,7 +47,7 @@ func readAWGHeartbeat(path, id string) (string, bool) {
 	}
 	defer file.Close()
 	info, err := file.Stat()
-	if err != nil || !info.Mode().IsRegular() || info.Mode().Perm() != 0640 {
+	if err != nil || !info.Mode().IsRegular() || !validAWGHealthMode(info.Mode().Perm()) {
 		return "", false
 	}
 	stat, ok := storage.Stat(info)

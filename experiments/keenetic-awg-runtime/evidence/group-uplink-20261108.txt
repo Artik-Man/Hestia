@@ -1,0 +1,26 @@
+Keenetic group uplink acceptance — 8 November 2026
+
+Device: KN-1012, KeeneticOS 5.2 Beta 3, ARM64 Entware.
+Installed package: 20261108-122003-46ed33ac8d30.
+IPK SHA-256: 519b3d72fa654619db002c1b1e20ead65c3d77f5773cdc2ce163fac819779281.
+
+Expected:
+- The RCI provider name is offered as a direct group exit without saving a VPN profile.
+- Adding it changes the group membership through the UI and receives an applied confirmation.
+- The installed default route remains unchanged.
+
+Observed:
+- The underlay catalog returned “ПАКТ”, ID `keenetic-uplink`, type `direct`.
+- The Groups page showed “Добавить ПАКТ в группу”. Adding it to `default` and saving returned “Порядок применён шлюзом”. The page then showed AmneziaWG-debug and ПАКТ as available exits.
+- `/api/groups-and-rules` contained both exits in `default`; no binding-pending or package-maintenance marker remained.
+- Supervisor reported ready. IPv4 default remained `default via 10.40.154.1 dev eth3 metric 1000` before and after the transaction.
+- The sing-box selector now reports `keenetic-uplink` as active: the pre-existing AmneziaWG exit is unavailable to runtime selection, so the ordered group falls back to its next healthy exit. The profile’s saved defaultExit was preserved. This is a group failover result, not confirmation that the VPN works.
+
+Failures encountered and corrected:
+- First group attempt failed because reorder validation assumed the old deny-first outbound layout after the first direct interface was added. Validation now checks the old topology before constructing the new Keenetic layout.
+- The next attempt staged successfully but smoke rejected the old quality report because its group topology predated the new snapshot. Smoke now ignores stale/mismatched quality data when no Hysteria 2 connector exists; Hysteria 2 still requires a current report.
+- The final IPK postinst timed out once waiting for supervisor readiness. Profile, snapshot and sing-box checks passed; `opkg configure hestia` completed successfully and supervisor became ready before UI validation.
+
+Checks: 44 deploy Python tests passed (7 skipped); targeted Go binding/profileexec tests passed; Keenetic ARM64 cross-compilation passed; frontend format and lint passed; full dual-platform build completed. `make check` was not run because `shfmt`/ShellCheck are unavailable in this environment.
+
+Boundaries: this confirms provider catalog publication, group membership commit, supervisor readiness and unchanged kernel default route on this KN-1012 only. It does not confirm AmneziaWG handshake, VPN egress, or client traffic through VPN. The active group fallback currently selects the direct provider while the AmneziaWG exit is unavailable.

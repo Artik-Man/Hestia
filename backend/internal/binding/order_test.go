@@ -34,6 +34,18 @@ func TestOrderPermutation(t *testing.T) {
 	}
 }
 
+// TestOrderRejectsPlatformExitInDefaultBuild keeps platform-only routes unavailable in Linux packages.
+func TestOrderRejectsPlatformExitInDefaultBuild(t *testing.T) {
+	if PlatformUnderlayID() != "" {
+		t.Skip("platform underlay is supplied by a platform-specific build")
+	}
+	old := []panelmodel.OrderedGroup{{ID: "main", Exits: []string{"vpn"}}}
+	change := panelmodel.GroupOrderChange{Expected: old, Groups: []panelmodel.OrderedGroup{{ID: "main", Exits: []string{"vpn", "keenetic-uplink"}}}}
+	if !errors.Is(ValidateOrder(change), ErrInvalidOrder) {
+		t.Fatal("default build accepted a Keenetic-only exit")
+	}
+}
+
 // TestOrderCAS checks a stale baseline against only installed topology and before invoking external commands.
 func TestOrderCAS(t *testing.T) {
 	e := testEngine(t)

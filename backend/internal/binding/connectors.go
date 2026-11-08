@@ -10,6 +10,7 @@ import (
 	"github.com/Artik-Man/Hestia/internal/profileexec"
 	"os"
 	"path/filepath"
+	"slices"
 
 	"github.com/Artik-Man/Hestia/internal/awg"
 	"github.com/Artik-Man/Hestia/internal/controller"
@@ -45,16 +46,19 @@ type connectorGroup struct {
 	DefaultExit string   `json:"defaultExit,omitempty"`
 }
 
+// storedInterface represents one installed direct or native WireGuard exit in the managed profile.
+type storedInterface struct {
+	ID             string `json:"id"`
+	Type           string `json:"type"`
+	ConfigFile     string `json:"config_file,omitempty"`
+	PrivateKeyFile string `json:"private_key_file,omitempty"`
+	BindInterface  string `json:"bind_interface,omitempty"`
+}
+
 type storedProfile struct {
-	Hysteria2  []storedHysteria2 `json:"hysteria2,omitempty"`
-	Version    int               `json:"version"`
-	Interfaces []struct {
-		ID             string `json:"id"`
-		Type           string `json:"type"`
-		ConfigFile     string `json:"config_file,omitempty"`
-		PrivateKeyFile string `json:"private_key_file,omitempty"`
-		BindInterface  string `json:"bind_interface,omitempty"`
-	} `json:"interfaces"`
+	Hysteria2  []storedHysteria2  `json:"hysteria2,omitempty"`
+	Version    int                `json:"version"`
+	Interfaces []storedInterface  `json:"interfaces"`
 	Inbounds   []json.RawMessage  `json:"inbounds,omitzero"`
 	Connectors []connectorProfile `json:"connectors"`
 	Groups     []connectorGroup   `json:"groups"`
@@ -70,12 +74,21 @@ type storedProfile struct {
 
 // ApplyAWG stages profile metadata and secrets, committing an unconfirmed new runtime only as unavailable after rollback.
 func (e Engine) ApplyAWG(ctx context.Context, request panelmodel.AWGSaveRequest, update bool) error {
+	return e.ApplyAWGWithUplink(ctx, request, update, "")
+}
+
+// ApplyAWGWithUplink stages an AWG profile with a platform-verified uplink device when it selects the platform transport.
+func (e Engine) ApplyAWGWithUplink(ctx context.Context, request panelmodel.AWGSaveRequest, update bool, uplinkDevice string) error {
 	if !awg.ValidConnectionID(request.ID) || (request.Name != "" && ValidateGroupName(request.Name) != nil) || !awg.ValidUnderlays(request.ID, request.Underlays) || ((!update || request.Group != "") && !awgID(request.Group)) || request.Priority < 0 {
 		return ErrInvalidConnector
 	}
 	parsed, err := awg.Parse([]byte(request.Profile))
 	if err != nil {
 		return ErrInvalidConnector
+	}
+	if update {
+		// An explicit profile save retries its runtime even when the profile bytes are unchanged.
+		e.retryAWGID = request.ID
 	}
 	check := func(isUpdate bool) func([]byte, bool) error {
 		return func(data []byte, staged bool) error {
@@ -90,7 +103,7 @@ func (e Engine) ApplyAWG(ctx context.Context, request panelmodel.AWGSaveRequest,
 			if err := e.profileCompiler().Apply(ctx, profileexec.Request{Operation: profileexec.Validate, Source: e.dir}); err != nil {
 				return fmt.Errorf("managed profile validation failed: %w", ErrUnavailable)
 			}
-			if err := stageAWGChange(ctx, e, stage, request, parsed, isUpdate, status); err != nil {
+			if err := stageAWGChange(ctx, e, stage, request, parsed, isUpdate, status, uplinkDevice); err != nil {
 				return fmt.Errorf("AWG profile staging failed: %w", err)
 			}
 			return nil
@@ -179,7 +192,7 @@ func (e Engine) DeleteAWG(ctx context.Context, id string) error {
 }
 
 // stageAWGChange replaces one staged connector, preserves neighboring assignments, and builds a ready or inactive generation.
-func stageAWGChange(ctx context.Context, engine Engine, stage string, request panelmodel.AWGSaveRequest, parsed awg.Profile, update bool, status connectorStatus) error {
+func stageAWGChange(ctx context.Context, engine Engine, stage string, request panelmodel.AWGSaveRequest, parsed awg.Profile, update bool, status connectorStatus, uplinkDevice string) error {
 	current, err := readStoredProfile(engine.dir)
 	if err != nil {
 		return ErrUnavailable
@@ -190,6 +203,11 @@ func stageAWGChange(ctx context.Context, engine Engine, stage string, request pa
 	}
 	if current.Version != 2 || current.Healthy == nil {
 		return ErrUnavailable
+	}
+	if slices.Contains(request.Underlays, keeneticUplinkUnderlayID) {
+		if err := ensurePlatformUnderlay(&current, uplinkDevice); err != nil {
+			return err
+		}
 	}
 	index := connectorIndex(current.Connectors, request.ID)
 	if update && index < 0 {

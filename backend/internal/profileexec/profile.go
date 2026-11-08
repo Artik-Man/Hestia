@@ -32,6 +32,7 @@ const (
 type Request struct {
 	Operation                                      Operation
 	Source, Stage, ID, Target, Name, ExpectedGroup string
+	UplinkDevice                                   string
 	Priority                                       int
 	PreserveWireguard                              bool
 }
@@ -78,6 +79,9 @@ func (i Installed) Apply(ctx context.Context, r Request) error {
 		args = append(args, "--rebind", r.Source, r.Stage, r.ID, r.Target)
 	case Reorder:
 		args = append(args, "--reorder", r.Source, r.Stage)
+		if r.UplinkDevice != "" {
+			args = append(args, r.UplinkDevice, "--keenetic")
+		}
 	case CountryMap:
 		args = append(args, "--country-map", r.Source, r.Stage)
 	case SaveList:
@@ -97,6 +101,7 @@ func (i Installed) Apply(ctx context.Context, r Request) error {
 		if r.PreserveWireguard {
 			args = append(args, r.Source)
 		}
+		args = appendPlatformCompileFlag(args)
 	default:
 		return errors.New("unknown profile operation")
 	}
@@ -105,5 +110,6 @@ func (i Installed) Apply(ctx context.Context, r Request) error {
 
 // CheckBackend asks the installed sing-box to validate the staged configuration without starting it.
 func (i Installed) CheckBackend(ctx context.Context, path string) error {
-	return i.run(ctx, Backend, "check", "-c", path)
+	name, args := backendCheckCommand(path)
+	return i.run(ctx, name, args...)
 }

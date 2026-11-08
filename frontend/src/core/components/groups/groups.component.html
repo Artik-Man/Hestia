@@ -210,6 +210,19 @@
               order.dirty() ? "По умолчанию после сохранения" : "По умолчанию"
             }}</span>
           }
+          @for (exit of addableDirectExits(); track exit.id) {
+            <button
+              pButton
+              type="button"
+              class="add-direct-exit"
+              [disabled]="
+                order.pending() || order.dirty() || order.draft().changedSource
+              "
+              (click)="order.addDirectExit(exit.id, group.id)"
+            >
+              Добавить {{ exit.name || "подключение" }} в группу
+            </button>
+          }
         </header>
         <ol
           cdkDropList

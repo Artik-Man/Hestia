@@ -12,6 +12,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Artik-Man/Hestia/internal/controller"
@@ -54,6 +55,37 @@ func TransactionFailureStage(err error) string {
 	return ""
 }
 
+// TransactionFailureCode reports a fixed, non-sensitive category for the transaction's underlying failure.
+func TransactionFailureCode(err error) string {
+	var failure transactionStageError
+	if !errors.As(err, &failure) || failure.cause == nil {
+		return ""
+	}
+	cause := failure.cause.Error()
+	switch {
+	case strings.Contains(cause, "AWG route table contains an unowned IPv4 route"):
+		return "route-table-unowned-ipv4"
+	case strings.Contains(cause, "AWG route table contains an unowned IPv6 route"):
+		return "route-table-unowned-ipv6"
+	case strings.Contains(cause, "AWG rule priority contains an unowned rule"):
+		return "route-rule-unowned"
+	case strings.Contains(cause, "AWG packet mark is used by an unowned rule"):
+		return "route-mark-unowned"
+	case strings.Contains(cause, "AWG route teardown incomplete"):
+		return "route-teardown-incomplete"
+	case strings.Contains(cause, "managed service operation failed: controller") || strings.Contains(cause, "managed service role unavailable: controller"):
+		return "service-controller"
+	case strings.Contains(cause, "managed service operation failed: router") || strings.Contains(cause, "managed service role unavailable: router"):
+		return "service-router"
+	case strings.Contains(cause, "managed service operation failed: awg") || strings.Contains(cause, "managed service role unavailable: awg"):
+		return "service-awg"
+	case errors.Is(failure.cause, ErrAWGRuntimeUnconfirmed):
+		return "runtime-unconfirmed"
+	default:
+		return "transaction-failed"
+	}
+}
+
 const (
 	pending = ".binding-pending"
 )
@@ -71,6 +103,7 @@ type Engine struct {
 	dir, lock      string
 	countryMapPath string
 	snapshotGID    int
+	retryAWGID     string
 	run            func(context.Context, string, ...string) error
 	unitCheck      func() (bool, error)
 	readyWait      func(context.Context, string) error

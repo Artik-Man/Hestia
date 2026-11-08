@@ -571,7 +571,7 @@ func TestAWGRollbackAfterPartialPublication(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err := stageAWGChange(ctx, e, stage, two, parsed, true, connectorReady); err != nil {
+			if err := stageAWGChange(ctx, e, stage, two, parsed, true, connectorReady, ""); err != nil {
 				t.Fatal(err)
 			}
 			if err := e.publishJournal(stage); err != nil {
@@ -800,7 +800,8 @@ func TestDirectConnectionNames(t *testing.T) {
 		t.Fatal(err)
 	}
 	catalog, err := e.UnderlayCandidates()
-	if err != nil || len(catalog) != 2 || catalog[0].Name != "" {
+	expectedCount := 2 + len(platformUnderlayCandidates())
+	if err != nil || len(catalog) != expectedCount || catalog[0].Name != "" {
 		t.Fatalf("legacy catalog: %v %v", catalog, err)
 	}
 	lock, err := e.acquire(false)
@@ -825,7 +826,7 @@ func TestDirectConnectionNames(t *testing.T) {
 			t.Fatal(err)
 		}
 		items, err := e.UnderlayCandidates()
-		if err != nil || len(items) != 2 || items[0].Name != name || items[1].Name != "" {
+		if err != nil || len(items) != expectedCount || items[0].Name != name || items[1].Name != "" {
 			t.Fatalf("catalog: %v %v", items, err)
 		}
 	}

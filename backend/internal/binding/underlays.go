@@ -132,6 +132,11 @@ func (e Engine) connectionCatalog() ([]panelmodel.AWGUnderlayCandidate, error) {
 		}
 		candidates = append(candidates, panelmodel.AWGUnderlayCandidate{ID: item.ID, Type: "hysteria2", Name: item.Name})
 	}
+	for _, candidate := range platformUnderlayCandidates() {
+		if !slices.ContainsFunc(candidates, func(item panelmodel.AWGUnderlayCandidate) bool { return item.ID == candidate.ID }) {
+			candidates = append(candidates, candidate)
+		}
+	}
 	return candidates, nil
 }
 

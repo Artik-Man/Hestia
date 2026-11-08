@@ -7,9 +7,6 @@ import (
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
 )
 
-// SlotCount bounds the tunnel allocation below reserved routing resources.
-const SlotCount = 50
-
 // Physical manages only application-owned Wi-Fi profiles and reports public interface state.
 // Mutations require the caller's installation lock and restore prior state on failure.
 type Physical interface {

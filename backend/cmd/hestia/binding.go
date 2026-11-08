@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"slices"
 	"time"
 
 	"github.com/Artik-Man/Hestia/internal/binding"
@@ -124,7 +125,14 @@ func runBindingCommand(mode string, input io.Reader, output io.Writer) int {
 		if decodeChange(input, 1<<20, &change) != nil {
 			err = binding.ErrInvalidOrder
 		} else {
-			err = engine.ApplyOrder(ctx, change)
+			uplinkDevice := ""
+			platformID := binding.PlatformUnderlayID()
+			if platformID != "" && !orderContainsExit(change.Expected, platformID) && orderContainsExit(change.Groups, platformID) {
+				uplinkDevice, _, err = keeneticUplink(ctx)
+			}
+			if err == nil {
+				err = engine.ApplyOrderWithUplink(ctx, change, uplinkDevice)
+			}
 		}
 	case "-recover-bindings":
 		err = engine.Recover(ctx)
@@ -151,6 +159,16 @@ func runBindingCommand(mode string, input io.Reader, output io.Writer) int {
 		return 1
 	}
 	return 0
+}
+
+// orderContainsExit reports whether a requested group order contains the given exit ID.
+func orderContainsExit(groups []panelmodel.OrderedGroup, id string) bool {
+	for _, group := range groups {
+		if slices.Contains(group.Exits, id) {
+			return true
+		}
+	}
+	return false
 }
 
 // readBindingChange accepts exactly one bounded request with all three strings present.

@@ -20,6 +20,9 @@ func outerPolicy(slot int) (RoutePolicy, error) {
 func (p RoutePolicy) outerBarrier(ctx context.Context, id string, install bool) error {
 	path := filepath.Join(storage.Installed().AWGRuntime, "outer-rule."+id)
 	manifest := p.manifest(id)
+	if err := migrateLegacyRouteManifest(ctx, path, manifest, 1100+p.markValue-0x51000); err != nil {
+		return err
+	}
 	owned, err := loadRouteManifest(path, manifest)
 	if err != nil || (!install && !owned) {
 		return err

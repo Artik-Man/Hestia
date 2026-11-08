@@ -36,7 +36,7 @@ func TestRuntimeOperationsPreserveCommands(t *testing.T) {
 			t.Fatalf("got %s %v want %s %v", gotName, gotArgs, c.name, c.args)
 		}
 	}
-	for query, field := range map[Query]string{PublicKey: "public-key", LatestHandshakes: "latest-handshakes", ListenPort: "listen-port", Endpoints: "endpoints"} {
+	for query, field := range map[Query]string{PublicKey: "public-key", LatestHandshakes: "latest-handshakes", ListenPort: "listen-port", Endpoints: "endpoints", Transfer: "transfer"} {
 		if _, err := driver.Observe(context.Background(), query, "hawg0"); err != nil {
 			t.Fatal(err)
 		}

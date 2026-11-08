@@ -181,7 +181,7 @@ func decodeSnapshot(data []byte) (smokeConfig, error) {
 	seenGroups := make(map[string]bool)
 	exits := make(map[string]bool)
 	for _, group := range config.Groups {
-		if group.ID == "" || seenGroups[group.ID] || len(group.Exits) == 0 {
+		if group.ID == "" || seenGroups[group.ID] {
 			return config, errors.New("invalid controller group")
 		}
 		seenGroups[group.ID] = true
@@ -280,11 +280,7 @@ func effectiveHealth(config smokeConfig, backend backendConfig) map[string]bool 
 func readQualityReport(snapshot string, config smokeConfig) (*panelmodel.QualityReport, error) {
 	data, err := readManagedFile(storage.Installed().QualityReport, maxQualitySize)
 	if errors.Is(err, os.ErrNotExist) {
-		hasHysteria := false
-		for _, kind := range config.ConnectorKinds {
-			hasHysteria = hasHysteria || kind == "hysteria2"
-		}
-		if hasHysteria {
+		if qualityReportIsRequired(config) {
 			return nil, errors.New("Hysteria 2 availability report is missing")
 		}
 		return nil, nil
@@ -301,19 +297,31 @@ func readQualityReport(snapshot string, config smokeConfig) (*panelmodel.Quality
 	}
 	captured, err := time.Parse(time.RFC3339Nano, report.CapturedAt)
 	if err != nil || time.Since(captured) < 0 || time.Since(captured) > time.Minute {
+		if !qualityReportIsRequired(config) {
+			return nil, nil
+		}
 		return nil, errors.New("quality report is stale")
 	}
 	if len(report.Groups) != len(config.Groups) {
+		if !qualityReportIsRequired(config) {
+			return nil, nil
+		}
 		return nil, errors.New("quality report topology differs from the installed snapshot")
 	}
 	for i, group := range config.Groups {
 		row := report.Groups[i]
 		if row.ID != group.ID || len(row.Connections) != len(group.Exits) {
+			if !qualityReportIsRequired(config) {
+				return nil, nil
+			}
 			return nil, errors.New("quality report topology differs from the installed snapshot")
 		}
 		seen := make(map[string]bool, len(group.Exits))
 		for _, connection := range row.Connections {
 			if !slices.Contains(group.Exits, connection.ID) || seen[connection.ID] {
+				if !qualityReportIsRequired(config) {
+					return nil, nil
+				}
 				return nil, errors.New("quality report topology differs from the installed snapshot")
 			}
 			seen[connection.ID] = true
@@ -321,9 +329,22 @@ func readQualityReport(snapshot string, config smokeConfig) (*panelmodel.Quality
 	}
 	snapshotInfo, err := os.Lstat(snapshot)
 	if err != nil || !snapshotInfo.Mode().IsRegular() || snapshotInfo.Mode()&os.ModeSymlink != 0 || captured.Before(snapshotInfo.ModTime()) {
+		if !qualityReportIsRequired(config) {
+			return nil, nil
+		}
 		return nil, errors.New("quality report predates the installed snapshot")
 	}
 	return &report, nil
+}
+
+// qualityReportIsRequired reports whether smoke needs current probe results to safely select a Hysteria 2 exit.
+func qualityReportIsRequired(config smokeConfig) bool {
+	for _, kind := range config.ConnectorKinds {
+		if kind == "hysteria2" {
+			return true
+		}
+	}
+	return false
 }
 
 // confirmedQualityTargets checks reported active choices against current health before using them.

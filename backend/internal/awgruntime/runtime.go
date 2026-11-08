@@ -9,6 +9,15 @@ import (
 	"time"
 )
 
+// ErrCommandFailed identifies a failed Entware child without retaining its potentially sensitive output.
+var ErrCommandFailed = errors.New("Entware command failed")
+
+// ErrInvalidKeepaliveRequest identifies rejected keepalive arguments without returning their values.
+var ErrInvalidKeepaliveRequest = errors.New("invalid AWG keepalive request")
+
+// ErrRuntimeRequiresRoot identifies a runtime mutation attempted without root privileges.
+var ErrRuntimeRequiresRoot = errors.New("Entware AWG runtime requires root")
+
 const (
 	daemon = "/usr/local/lib/hestia/amneziawg-go"
 	tool   = "/usr/local/bin/awg"
@@ -23,6 +32,7 @@ const (
 	LatestHandshakes
 	ListenPort
 	Endpoints
+	Transfer
 )
 
 // Reader reads one fixed AWG observation for an interface using the daemon lifetime context.
@@ -108,6 +118,8 @@ func (l Linux) Observe(ctx context.Context, q Query, name string) ([]byte, error
 		field = "listen-port"
 	case Endpoints:
 		field = "endpoints"
+	case Transfer:
+		field = "transfer"
 	default:
 		return nil, errors.New("invalid AWG observation")
 	}

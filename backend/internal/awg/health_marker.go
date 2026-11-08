@@ -16,7 +16,7 @@ type healthRecord struct {
 }
 
 // writeHealthRecord atomically publishes a small non-secret readiness record with explicit owner, group and mode.
-func writeHealthRecord(path, id string, uid, gid int, updatedAt time.Time, active ...string) error {
+func writeHealthRecord(path, id string, uid, gid int, mode os.FileMode, updatedAt time.Time, active ...string) error {
 	record := healthRecord{ID: id, UpdatedAt: updatedAt, Status: "ready"}
 	if len(active) > 0 {
 		record.ActiveUnderlay = active[0]
@@ -35,7 +35,7 @@ func writeHealthRecord(path, id string, uid, gid int, updatedAt time.Time, activ
 		_ = file.Close()
 		return errors.New("cannot set AWG health record ownership")
 	}
-	if err := file.Chmod(0640); err != nil {
+	if err := file.Chmod(mode); err != nil {
 		_ = file.Close()
 		return errors.New("cannot set AWG health record permissions")
 	}

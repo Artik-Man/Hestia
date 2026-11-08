@@ -141,12 +141,16 @@ func (transport *selectorTransport) RoundTrip(request *http.Request) (*http.Resp
 	return &http.Response{StatusCode: status, Header: make(http.Header), Body: io.NopCloser(bytes.NewReader(payload)), Request: request}, nil
 }
 
-// TestAWGHealthRecordFreshness rejects wrong connector IDs, stale times and future-dated heartbeats.
+// TestAWGHealthRecordFreshness rejects wrong connector IDs, expired or future-dated heartbeats and accepts one missed probe within the grace window.
 func TestAWGHealthRecordFreshness(t *testing.T) {
 	now := time.Date(2026, 11, 4, 12, 0, 0, 0, time.UTC)
 	base := awgHealthRecord{ID: "awg-test", UpdatedAt: now.Add(-time.Second), Status: "ready"}
 	if !validAWGHealthRecord(base, "awg-test", now) {
 		t.Fatal("fresh valid record rejected")
+	}
+	base.UpdatedAt = now.Add(-awgHealthMaxAge + time.Second)
+	if !validAWGHealthRecord(base, "awg-test", now) {
+		t.Fatal("heartbeat inside the grace window was rejected")
 	}
 	for _, record := range []awgHealthRecord{
 		{ID: "other", UpdatedAt: now, Status: "ready"},

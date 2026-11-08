@@ -16,6 +16,7 @@ import (
 	"github.com/Artik-Man/Hestia/internal/binding"
 	"github.com/Artik-Man/Hestia/internal/controller"
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
+	"github.com/Artik-Man/Hestia/internal/platform"
 	"github.com/Artik-Man/Hestia/internal/storage"
 	"github.com/google/uuid"
 )
@@ -48,6 +49,18 @@ func runAWGCommand(mode string, input io.Reader, output io.Writer) int {
 		if err != nil {
 			return 1
 		}
+		_, provider, inventoryErr := keeneticUplink(ctx)
+		filtered := result[:0]
+		for _, candidate := range result {
+			if candidate.ID == binding.PlatformUnderlayID() {
+				if inventoryErr != nil || provider == "" {
+					continue
+				}
+				candidate.Name = provider
+			}
+			filtered = append(filtered, candidate)
+		}
+		result = filtered
 		return encodeAWGResponse(output, result)
 	}
 	if mode == "-awg-read" {
@@ -102,10 +115,22 @@ func runAWGCommand(mode string, input io.Reader, output io.Writer) int {
 				return 42
 			}
 		}
-		if err := binding.Installed().ApplyAWG(ctx, request, update); err != nil {
+		uplinkDevice := ""
+		if slices.Contains(request.Underlays, binding.PlatformUnderlayID()) && binding.PlatformUnderlayID() != "" {
+			var inventoryErr error
+			uplinkDevice, _, inventoryErr = keeneticUplink(ctx)
+			if inventoryErr != nil || uplinkDevice == "" {
+				fmt.Fprintln(os.Stderr, "Keenetic uplink could not be verified")
+				return 1
+			}
+		}
+		if err := binding.Installed().ApplyAWGWithUplink(ctx, request, update, uplinkDevice); err != nil {
 			stage := binding.TransactionFailureStage(err)
+			code := binding.TransactionFailureCode(err)
 			if stage == "" {
 				fmt.Fprintln(os.Stderr, "AWG connection transaction was not committed")
+			} else if code != "" {
+				fmt.Fprintf(os.Stderr, "AWG connection transaction was not committed at %s (%s)\n", stage, code)
 			} else {
 				fmt.Fprintf(os.Stderr, "AWG connection transaction was not committed at %s\n", stage)
 			}
@@ -166,6 +191,28 @@ func runAWGCommand(mode string, input io.Reader, output io.Writer) int {
 	default:
 		return 2
 	}
+}
+
+// keeneticUplink returns the unique kernel interface whose current default route is correlated with a named Keenetic provider by RCI.
+func keeneticUplink(ctx context.Context) (string, string, error) {
+	inventory, err := platform.Physical().Inventory(ctx)
+	if err != nil {
+		return "", "", err
+	}
+	var device, provider string
+	for _, item := range inventory.Interfaces {
+		if item.ProviderName == "" {
+			continue
+		}
+		if device != "" {
+			return "", "", fmt.Errorf("ambiguous provider mapping")
+		}
+		device, provider = item.InterfaceName, item.ProviderName
+	}
+	if device == "" || provider == "" {
+		return "", "", fmt.Errorf("provider mapping unavailable")
+	}
+	return device, provider, nil
 }
 
 // encodeAWGResponse writes one typed helper response and returns a stable helper exit status.

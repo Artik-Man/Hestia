@@ -30,8 +30,11 @@ func TestApplyPreservesArguments(t *testing.T) {
 		called := false
 		adapter := Installed{Run: func(_ context.Context, name string, args ...string) error {
 			called = true
-			expected := append([]string{"-I", "/usr/local/lib/hestia/profile.py"}, c.args...)
-			if name != "/usr/bin/python3" || !reflect.DeepEqual(args, expected) {
+			expected := append([]string{"-I", Compiler}, c.args...)
+			if c.op == Compile {
+				expected = appendPlatformCompileFlag(expected)
+			}
+			if name != Python || !reflect.DeepEqual(args, expected) {
 				t.Fatalf("operation %d got %s %v", c.op, name, args)
 			}
 			return nil

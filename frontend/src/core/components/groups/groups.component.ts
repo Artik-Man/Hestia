@@ -65,6 +65,16 @@ export class Groups implements OnInit {
       ),
   );
 
+  /** addableDirectExits lists trusted direct catalog entries that are not yet members of any group. */
+  protected readonly addableDirectExits = computed(() => {
+    const current = new Set(
+      this.order.draft().order.flatMap((group) => group.exits),
+    );
+    return [...this.catalog.entries().values()].filter(
+      (entry) => entry.type === "direct" && !current.has(entry.id),
+    );
+  });
+
   protected deleting: string | null = null;
   protected editing: string | null = null;
 

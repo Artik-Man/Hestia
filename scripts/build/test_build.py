@@ -32,14 +32,34 @@ class BuildTests(unittest.TestCase):
             root = Path(directory) / 'keenetic-arm64-experimental'
             (root / 'bin').mkdir(parents=True)
             (root / 'opt/bin').mkdir(parents=True)
-            expected_binary = b'static awg runtime'
+            uapi = BUILD.KEENETIC_AWG_UAPI_DIRECTORY.encode()
+            expected_binary = b'static awg runtime' + uapi + b'/'
             expected_hash = hashlib.sha256(expected_binary).hexdigest()
             for target in (root / 'bin/awg', root / 'opt/bin/awg'):
                 target.write_bytes(expected_binary)
+            (root / 'opt/bin/amneziawg-go').write_bytes(b'AWG daemon ' + uapi)
             BUILD.verify_packaged_inputs(root, {'awg-keenetic-static': expected_hash}, {})
             (root / 'opt/bin/awg').write_bytes(b'wrong dynamic runtime')
             with self.assertRaisesRegex(RuntimeError, 'awg-keenetic-static'):
                 BUILD.verify_packaged_inputs(root, {'awg-keenetic-static': expected_hash}, {})
+
+    def test_keenetic_awg_tools_and_daemon_share_uapi_directory(self):
+        """Keenetic packaging rejects an AWG CLI that still targets the default UAPI directory."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'opt/bin').mkdir(parents=True)
+            uapi = BUILD.KEENETIC_AWG_UAPI_DIRECTORY.encode()
+            (root / 'opt/bin/amneziawg-go').write_bytes(b'prefix' + uapi + b'suffix')
+            (root / 'opt/bin/awg').write_bytes(b'prefix' + uapi + b'/suffix')
+            BUILD.verify_keenetic_awg_uapi(root)
+            (root / 'opt/bin/awg').write_bytes(b'/var/run/amneziawg/interface.sock')
+            with self.assertRaisesRegex(RuntimeError, 'UAPI socket directories'):
+                BUILD.verify_keenetic_awg_uapi(root)
+
+    def test_keenetic_awg_uapi_path_matches_runtime_adapter(self):
+        """The package's shared UAPI path equals the directory used by the Entware runtime adapter."""
+        source = (BUILD.ROOT / 'backend/internal/awgruntime/entware_linux.go').read_text()
+        self.assertIn(BUILD.KEENETIC_AWG_UAPI_DIRECTORY, source)
 
     def test_source_mutation_during_packaging(self):
         """A source edit after compilation fails the final packaging provenance guard."""

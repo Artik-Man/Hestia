@@ -12,6 +12,20 @@ import (
 	"time"
 )
 
+// TestTransactionFailureCodeExposesOnlyFixedRouteCategory ensures route diagnostics remain useful without exposing raw device data.
+func TestTransactionFailureCodeExposesOnlyFixedRouteCategory(t *testing.T) {
+	err := transactionStageError{
+		stage: "activation-and-rollback",
+		cause: errors.Join(errors.New("activation failed"), errors.New("AWG route table contains an unowned IPv6 route; refusing teardown: private-route-data")),
+	}
+	if got := TransactionFailureCode(err); got != "route-table-unowned-ipv6" {
+		t.Fatalf("TransactionFailureCode() = %q, want route-table-unowned-ipv6", got)
+	}
+	if got := TransactionFailureCode(errors.New("unwrapped")); got != "" {
+		t.Fatalf("unwrapped TransactionFailureCode() = %q, want empty", got)
+	}
+}
+
 // TestBindingTransaction exercises stale writes, failed live confirmation, rollback and a first confirmed change.
 func TestBindingTransaction(t *testing.T) {
 	e := testEngine(t)

@@ -118,6 +118,9 @@ func (e Engine) planInstances(journal string, routingOnly bool) (runtimePlan, er
 			plan.changes = append(plan.changes, runtimeChange{id, added.slot})
 		}
 	}
+	if err := includeRuntimeChange(&plan, after, e.retryAWGID); err != nil {
+		return plan, err
+	}
 	slices.SortFunc(plan.changes, func(a, b runtimeChange) int { return strings.Compare(a.id, b.id) })
 	if !stable || len(plan.changes) == 0 {
 		return plan, nil
@@ -137,6 +140,24 @@ func (e Engine) planInstances(journal string, routingOnly bool) (runtimePlan, er
 	}
 	plan.sameTopology = true
 	return plan, nil
+}
+
+// includeRuntimeChange adds an explicitly re-saved ready connector to the restart plan if its generation is unchanged.
+func includeRuntimeChange(plan *runtimePlan, ready map[string]runtimeGeneration, id string) error {
+	if id == "" {
+		return nil
+	}
+	instance, exists := ready[id]
+	if !exists {
+		return ErrUnavailable
+	}
+	for _, change := range plan.changes {
+		if change.id == id {
+			return nil
+		}
+	}
+	plan.changes = append(plan.changes, runtimeChange{id: id, slot: instance.slot})
+	return nil
 }
 
 // guarded checks the exact kernel guards for every changed instance, with a fake boundary for non-Linux tests.

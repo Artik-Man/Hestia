@@ -14,6 +14,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'shared'))
 from common import ROOT, file_hash, verify_bundle
 from ipk import create_ipk
 
+KEENETIC_AWG_UAPI_DIRECTORY = '/opt/tmp/hestia-awg-uapi-26b84f/runtime/amneziawg'
+
 
 def compile_go(destination):
     """Compile distinct Linux and Keenetic ARM64 commands without runtime inputs or stand access."""
@@ -129,6 +131,7 @@ def verify_packaged_inputs(bundle, locks, inputs):
             for target in (bundle / 'bin/awg', bundle / 'opt/bin/awg'):
                 if file_hash(target) != expected:
                     raise RuntimeError('Packaged runtime differs from pinned input: ' + name)
+            verify_keenetic_awg_uapi(bundle)
             continue
         elif name == 'awg':
             if bundle.name.startswith('keenetic-'):
@@ -140,6 +143,15 @@ def verify_packaged_inputs(bundle, locks, inputs):
             raise RuntimeError('Packaged runtime differs from pinned input: ' + name)
     if any(not (ROOT / name).is_file() or file_hash(ROOT / name) != digest for name, digest in inputs.items()):
         raise RuntimeError('Build inputs changed during packaging; refusing misleading artifact provenance')
+
+
+def verify_keenetic_awg_uapi(bundle):
+    """Require the Keenetic AWG CLI and daemon to use one identical private UAPI socket directory."""
+    directory = KEENETIC_AWG_UAPI_DIRECTORY.encode()
+    daemon = (bundle / 'opt/bin/amneziawg-go').read_bytes()
+    tools = (bundle / 'opt/bin/awg').read_bytes()
+    if directory not in daemon or directory + b'/' not in tools:
+        raise RuntimeError('Keenetic AWG runtime binaries use different UAPI socket directories')
 
 
 def build(output, runtime):

@@ -121,14 +121,46 @@ func initiateHandshake(ctx context.Context, name string, config []byte, run awgr
 	if err := waitHandshake(probe, name, run); err != nil {
 		return err
 	}
+	return restoreKeepalive(name, peer, config, runtimeDriver)
+}
+
+// peerKeepaliveSetter updates one peer's keepalive without exposing runtime command output.
+type peerKeepaliveSetter interface {
+	Keepalive(context.Context, string, string, string) error
+}
+
+// restoreKeepalive restores the saved keepalive with its own bounded context after handshake confirmation.
+func restoreKeepalive(name, peer string, config []byte, driver peerKeepaliveSetter) error {
 	keepalive := peerSetting(config, "PersistentKeepalive")
 	if keepalive == "" {
 		keepalive = "0"
 	}
-	if err := runtimeDriver.Keepalive(probe, name, peer, keepalive); err != nil {
-		return errors.New("cannot restore AWG peer keepalive")
+	restore, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := driver.Keepalive(restore, name, peer, keepalive); err != nil {
+		return classifyKeepaliveRestoreError(err)
 	}
 	return nil
+}
+
+// classifyKeepaliveRestoreError distinguishes a bounded runtime timeout without exposing tool output.
+func classifyKeepaliveRestoreError(err error) error {
+	if errors.Is(err, context.DeadlineExceeded) {
+		return errors.New("cannot restore AWG peer keepalive before timeout")
+	}
+	if errors.Is(err, awgruntime.ErrCommandFailed) {
+		return errors.New("cannot restore AWG peer keepalive: Entware awg command failed")
+	}
+	if errors.Is(err, awgruntime.ErrInvalidKeepaliveRequest) {
+		return errors.New("cannot restore AWG peer keepalive: invalid Entware request")
+	}
+	if errors.Is(err, awgruntime.ErrRuntimeRequiresRoot) {
+		return errors.New("cannot restore AWG peer keepalive: runtime is not root")
+	}
+	if errors.Is(err, context.Canceled) {
+		return errors.New("cannot restore AWG peer keepalive: context was cancelled")
+	}
+	return errors.New("cannot restore AWG peer keepalive")
 }
 
 // peerSetting returns one named setting from the validated single-peer UAPI configuration, or empty if absent.

@@ -28,7 +28,7 @@ const (
 	entwareDaemon          = "/opt/bin/amneziawg-go"
 	entwareTool            = "/opt/bin/awg"
 	entwareIP              = "/opt/sbin/ip"
-	entwareUAPIRuntime     = "/opt/tmp/hestia-awg-uapi-26b84f/runtime"
+	entwareUAPIRuntime     = "/opt/tmp/hestia-awg-uapi-26b84f/runtime/amneziawg"
 	maxRuntimeOutput       = 1 << 20
 	runtimeReadyTimeout    = 5 * time.Second
 	runtimeStopGracePeriod = 2 * time.Second
@@ -67,8 +67,8 @@ func (Entware) Start(ctx context.Context, name string) (Reader, func(), error) {
 		return nil, nil, err
 	}
 	socketPath := filepath.Join(entwareUAPIRuntime, name+".sock")
-	if _, err := os.Lstat(socketPath); err == nil || !errors.Is(err, os.ErrNotExist) {
-		return nil, nil, errors.New("AWG UAPI socket path is already occupied or unavailable")
+	if err := clearStaleEntwareUAPISocket(socketPath); err != nil {
+		return nil, nil, err
 	}
 	command := exec.CommandContext(ctx, entwareDaemon, "-f", name)
 	command.Env = []string{
@@ -96,6 +96,7 @@ func (Entware) Start(ctx context.Context, name string) (Reader, func(), error) {
 				}
 				<-waited
 			}
+			_ = clearStaleEntwareUAPISocket(socketPath)
 		})
 	}
 	go func() {
@@ -116,6 +117,7 @@ func (Entware) Start(ctx context.Context, name string) (Reader, func(), error) {
 			stop()
 			return nil, nil, errors.New("Entware AWG daemon startup was cancelled")
 		case <-waited:
+			_ = clearStaleEntwareUAPISocket(socketPath)
 			return nil, nil, errors.New("Entware AWG daemon exited during startup")
 		case <-timer.C:
 			stop()
@@ -167,7 +169,7 @@ func (Entware) Keepalive(ctx context.Context, name, peer, value string) error {
 		return err
 	}
 	if !entwareInterfaceName.MatchString(name) || !validPeerKey(peer) || !validKeepalive(value) {
-		return errors.New("invalid AWG keepalive request")
+		return ErrInvalidKeepaliveRequest
 	}
 	return runEntwareCommand(ctx, entwareTool, "set", name, "peer", peer, "persistent-keepalive", value)
 }
@@ -203,6 +205,8 @@ func (Entware) Observe(ctx context.Context, query Query, name string) ([]byte, e
 		field = "listen-port"
 	case Endpoints:
 		field = "endpoints"
+	case Transfer:
+		field = "transfer"
 	default:
 		return nil, errors.New("invalid AWG runtime observation")
 	}
@@ -230,7 +234,7 @@ func (Entware) Delete(ctx context.Context, name string) error {
 // requireEntwareRoot refuses all service mutations unless the process is root.
 func requireEntwareRoot() error {
 	if os.Geteuid() != 0 {
-		return errors.New("Entware AWG runtime requires root")
+		return ErrRuntimeRequiresRoot
 	}
 	return nil
 }
@@ -242,10 +246,37 @@ func prepareEntwareUAPIRuntime() error {
 			return err
 		}
 	}
-	for _, path := range []string{"/opt/tmp/hestia-awg-uapi-26b84f", entwareUAPIRuntime} {
+	for _, path := range []string{
+		"/opt/tmp/hestia-awg-uapi-26b84f",
+		"/opt/tmp/hestia-awg-uapi-26b84f/runtime",
+		entwareUAPIRuntime,
+	} {
 		if err := ensureEntwarePrivateDirectory(path); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+// clearStaleEntwareUAPISocket removes only an inactive socket entry inside the protected AWG runtime directory.
+func clearStaleEntwareUAPISocket(path string) error {
+	info, err := os.Lstat(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	if err != nil || info.Mode()&os.ModeSocket == 0 || info.Mode()&os.ModeSymlink != 0 {
+		return errors.New("AWG UAPI socket path is already occupied or unavailable")
+	}
+	connection, err := net.DialTimeout("unix", path, 500*time.Millisecond)
+	if err == nil {
+		_ = connection.Close()
+		return errors.New("AWG UAPI socket path is already occupied or unavailable")
+	}
+	if !errors.Is(err, syscall.ECONNREFUSED) {
+		return errors.New("AWG UAPI socket path is already occupied or unavailable")
+	}
+	if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return errors.New("AWG UAPI socket path is already occupied or unavailable")
 	}
 	return nil
 }
@@ -257,10 +288,15 @@ func verifyEntwareParentDirectory(path string) error {
 		return errors.New("AWG UAPI parent directory is unavailable")
 	}
 	stat, ok := info.Sys().(*syscall.Stat_t)
-	if !ok || stat.Uid != 0 || info.Mode().Perm()&0022 != 0 && info.Mode()&os.ModeSticky == 0 {
+	if !ok || !entwareParentIsProtected(stat.Uid, stat.Mode) {
 		return errors.New("AWG UAPI parent directory is not root protected")
 	}
 	return nil
+}
+
+// entwareParentIsProtected uses raw Unix mode bits because Entware's Go runtime omits the sticky bit from FileMode.
+func entwareParentIsProtected(uid, mode uint32) bool {
+	return uid == 0 && (mode&0022 == 0 || mode&01000 != 0)
 }
 
 // ensureEntwarePrivateDirectory creates one root-owned runtime directory with private permissions.
@@ -348,7 +384,10 @@ func runEntwareCommand(ctx context.Context, path string, args ...string) error {
 	command.Env = entwareCommandEnvironment()
 	command.Stdout, command.Stderr = io.Discard, io.Discard
 	if err := command.Run(); err != nil {
-		return fmt.Errorf("Entware command failed: %s", filepath.Base(path))
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			return fmt.Errorf("Entware command deadline exceeded: %w", context.DeadlineExceeded)
+		}
+		return fmt.Errorf("%w: %s", ErrCommandFailed, filepath.Base(path))
 	}
 	return nil
 }
@@ -364,10 +403,21 @@ func validPeerKey(key string) bool {
 	return err == nil && len(decoded) == 32
 }
 
-// validKeepalive accepts only a decimal value in the unsigned 16-bit range.
+// validKeepalive accepts a scalar or inclusive AmneziaWG interval in the unsigned 16-bit range.
 func validKeepalive(value string) bool {
-	parsed, err := strconv.ParseUint(value, 10, 16)
-	return value != "" && err == nil && strconv.FormatUint(parsed, 10) == value
+	parts := strings.Split(value, "-")
+	if value == "" || len(parts) > 2 {
+		return false
+	}
+	minimum, err := strconv.ParseUint(parts[0], 10, 16)
+	if err != nil || strconv.FormatUint(minimum, 10) != parts[0] {
+		return false
+	}
+	if len(parts) == 1 {
+		return true
+	}
+	maximum, err := strconv.ParseUint(parts[1], 10, 16)
+	return err == nil && strconv.FormatUint(maximum, 10) == parts[1] && minimum <= maximum
 }
 
 // boundedRuntimeOutput accumulates child output up to a fixed memory ceiling.
