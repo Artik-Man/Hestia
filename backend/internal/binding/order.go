@@ -35,7 +35,7 @@ func members(groups []panelmodel.OrderedGroup) (map[string]map[string]bool, erro
 		seen[group.ID] = true
 		exits := make(map[string]bool, len(group.Exits))
 		for _, id := range group.Exits {
-			if id == "" || seen[id] {
+			if id == "" || seen[id] || PlatformChannelRole(id) == panelmodel.ChannelRoleInput {
 				return nil, ErrInvalidOrder
 			}
 			seen[id] = true
@@ -69,7 +69,7 @@ func ValidateOrder(change panelmodel.GroupOrderChange) error {
 		}
 		for id := range exits {
 			if !allExits[id] {
-				if PlatformUnderlayID() == "" || id != PlatformUnderlayID() || addedPlatformExit {
+				if PlatformOutputID() == "" || id != PlatformOutputID() || addedPlatformExit {
 					return ErrInvalidOrder
 				}
 				addedPlatformExit = true
@@ -89,13 +89,16 @@ func (e Engine) ApplyOrder(ctx context.Context, change panelmodel.GroupOrderChan
 	return e.ApplyOrderWithUplink(ctx, change, "")
 }
 
-// ApplyOrderWithUplink permits one verified platform exit to be added while preserving the group's selected default.
+// ApplyOrderWithUplink permits one platform output to be added while preserving the group's selected default.
 func (e Engine) ApplyOrderWithUplink(ctx context.Context, change panelmodel.GroupOrderChange, uplinkDevice string) error {
 	if err := ValidateOrder(change); err != nil {
 		return err
 	}
 	addsPlatformExit := orderAddsPlatformExit(change)
-	if addsPlatformExit != (uplinkDevice != "") {
+	if addsPlatformExit && platformOutputNeedsDeviceBinding() != (uplinkDevice != "") {
+		return ErrInvalidOrder
+	}
+	if !addsPlatformExit && uplinkDevice != "" {
 		return ErrInvalidOrder
 	}
 	data, err := json.Marshal(change.Groups)
@@ -134,9 +137,9 @@ func (e Engine) ApplyOrderWithUplink(ctx context.Context, change panelmodel.Grou
 	return e.apply(ctx, stageOrder, check, sameOrder(change.Expected, change.Groups))
 }
 
-// orderAddsPlatformExit reports whether the desired topology introduces the platform's reserved direct exit.
+// orderAddsPlatformExit reports whether the desired topology introduces the platform's reserved direct output.
 func orderAddsPlatformExit(change panelmodel.GroupOrderChange) bool {
-	id := PlatformUnderlayID()
+	id := PlatformOutputID()
 	if id == "" {
 		return false
 	}

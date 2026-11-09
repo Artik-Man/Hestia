@@ -52,6 +52,8 @@ make stage1-fresh
 
 ## Экспериментальный пакет Keenetic
 
+Ручные шаги сборки, SSH-доставки, установки, smoke-проверки и восстановления собраны в [процедуре поставки Keenetic IPK](../scripts/deploy/keenetic-ipk.md). Общий deploy-адаптер намеренно отклоняет `--type keenetic`; процедура не означает, что Keenetic стал поддерживаемой целью установки.
+
 Сборка создаёт `keenetic-arm64-experimental` и Entware-пакет `.ipk` для KN-1012 с KeeneticOS 5.2 Beta 3 и архитектурой `aarch64-3.10`. 7 ноября 2026 года установлен пакет `20261107-225942-2bf46144bcb4`; `opkg` подтвердил версию, supervisor готов, а LAN GET API групп, WireGuard/AmneziaWG, Hysteria 2 и физической инвентаризации вернули HTTP 200. Default route hashes IPv4/IPv6 совпали до и после. [Свидетельство установки, SHA-256 и границы](../experiments/keenetic-ipk-packaging/evidence/install-20261107-225942/check.txt). Supervisor ждёт readiness до 60 секунд и по возможности пишет диагностику в `/opt/var/run/hestia/supervisor.log` с mode 0600. VPN-профили и клиентский dataplane не испытывались. Обновление не имеет транзакционного отката.
 
 Перед распаковкой `preinst` запускает Go preflight из control-архива. Он требует запуск от root, архитектуру `aarch64` по `/opt/bin/busybox uname -m`, Entware `opkg` с архитектурой `aarch64-3.10`, успешный token-auth RCI `GET /rci/show/version` и совпадение модели/версии KN-1012 с закреплённым профилем preflight. Token должен быть отдельно размещён в `/opt/etc/hestia/keenetic-rci-token`, принадлежать root и быть недоступным группе/остальным. IPK токен не содержит. `/opt` должен быть защищён от записи другими пользователями и иметь минимум 512 MiB свободного места.

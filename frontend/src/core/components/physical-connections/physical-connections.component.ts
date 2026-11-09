@@ -8,7 +8,6 @@ import {
   effect,
   inject,
   input,
-  output,
   signal,
 } from "@angular/core";
 import { FormsModule } from "@angular/forms";
@@ -16,10 +15,8 @@ import { ButtonDirective } from "primeng/button";
 import { InputText } from "primeng/inputtext";
 import { firstValueFrom } from "rxjs";
 import { PanelService } from "../../services/api/generated/api/panel.service";
-import { ConnectionCatalog } from "../../services/connection-catalog.service";
 import { Notifications } from "../../services/notifications.service";
 
-import type { AWGUnderlayCandidate } from "../../services/api/generated/model/aWGUnderlayCandidate";
 import type { PhysicalInventory as Inventory } from "../../services/api/generated/model/physicalInventory";
 import type { WifiConnection as WifiProfile } from "../../services/api/generated/model/wifiConnection";
 type Band = WifiProfile["band"];
@@ -85,7 +82,7 @@ function validInventory(value: unknown): value is Inventory {
   );
 }
 
-/** PhysicalConnections displays kernel Ethernet interfaces and manages Hestia wireless client profiles. */
+/** PhysicalConnections manages Hestia wireless client profiles and radio inventory. */
 @Component({
   selector: "hestia-physical-connections",
   imports: [Tooltip, Toast, FormsModule, ButtonDirective, InputText],
@@ -94,8 +91,6 @@ function validInventory(value: unknown): value is Inventory {
 })
 export class PhysicalConnections {
   readonly revision = input(0);
-  readonly rename = output<AWGUnderlayCandidate>();
-  protected readonly catalog = inject(ConnectionCatalog);
   private readonly api = inject(PanelService);
   private readonly notifications = inject(Notifications);
   private readonly destroy = inject(DestroyRef);
@@ -104,24 +99,6 @@ export class PhysicalConnections {
   protected readonly busy = signal(false);
   protected readonly reading = signal(false);
   protected readonly editing = signal<WifiProfile | null>(null);
-  protected readonly ethernet = computed(
-    () =>
-      this.inventory()
-        ?.interfaces.filter((a) => a.kind === "ethernet")
-        .flatMap((a) =>
-          (a.exitIds.length ? a.exitIds : [""]).map((id) => {
-            const directName = id ? this.catalog.name(id) : "";
-            return {
-              adapter: a,
-              id,
-              name:
-                directName && directName !== "Название недоступно"
-                  ? directName
-                  : (a.providerName ?? a.interfaceName),
-            };
-          }),
-        ) ?? [],
-  );
   protected readonly radios = computed(
     () =>
       this.inventory()?.interfaces.filter(

@@ -56,6 +56,22 @@ import {
 export class Connections implements OnInit {
   protected readonly revision = signal(0);
   protected readonly catalog = inject(ConnectionCatalog);
+  protected readonly directTransports = computed(() => {
+    const exits = new Map(
+      this.groups().flatMap((group) =>
+        group.exits.map((exit) => [exit.id, exit] as const),
+      ),
+    );
+    return [...this.catalog.entries().values()]
+      .filter((entry) => entry.type === "direct")
+      .map((entry) => ({
+        ...entry,
+        name: this.catalog.name(entry.id),
+        purpose: this.directPurpose(entry.role),
+        available: exits.get(entry.id)?.available,
+      }))
+      .sort((left, right) => left.name.localeCompare(right.name));
+  });
   protected readonly direct = signal<AWGUnderlayCandidate | null>(null);
   protected readonly directName = signal("");
   protected readonly renamePending = signal(false);
@@ -146,6 +162,18 @@ export class Connections implements OnInit {
           row.entry?.type === "amneziawg",
       );
   });
+
+  /** directPurpose translates the backend channel role into user-facing routing language. */
+  protected directPurpose(role: AWGUnderlayCandidate["role"]): string {
+    switch (role) {
+      case "input":
+        return "Входящий трафик Hestia";
+      case "output":
+        return "Прямой выход в интернет";
+      default:
+        return "Прямое подключение";
+    }
+  }
 
   /** Reports each catalog read failure through the active page or modal toast. */
   constructor() {

@@ -17,11 +17,29 @@ const (
 // PlatformUnderlayID returns the stable routing ID reserved by this platform for its discovered internet uplink.
 func PlatformUnderlayID() string { return keeneticUplinkUnderlayID }
 
+// PlatformOutputID returns the stable direct egress ID supplied by the Keenetic gateway.
+func PlatformOutputID() string { return keeneticUplinkUnderlayID }
+
+// platformOutputNeedsDeviceBinding reports that the Keenetic WAN device must be verified when adding the output.
+func platformOutputNeedsDeviceBinding() bool { return true }
+
 // platformUnderlayCandidates publishes the managed Keenetic default-route transport before it is added to a profile.
 func platformUnderlayCandidates() []panelmodel.AWGUnderlayCandidate {
 	return []panelmodel.AWGUnderlayCandidate{
-		{ID: keeneticUplinkUnderlayID, Type: "direct", Name: "Интернет"},
-		{ID: keeneticOpkgTunUnderlayID, Type: "direct", Name: "OpkgTun"},
+		{ID: keeneticUplinkUnderlayID, Type: "direct", Name: "Выход"},
+		{ID: keeneticOpkgTunUnderlayID, Type: "direct", Name: "Вход"},
+	}
+}
+
+// platformChannelRole maps Keenetic endpoint IDs to stable panel roles without exposing NDM or TUN names.
+func platformChannelRole(id string) panelmodel.ChannelRole {
+	switch id {
+	case keeneticOpkgTunUnderlayID:
+		return panelmodel.ChannelRoleInput
+	case keeneticUplinkUnderlayID:
+		return panelmodel.ChannelRoleOutput
+	default:
+		return ""
 	}
 }
 

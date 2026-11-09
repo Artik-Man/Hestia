@@ -136,6 +136,12 @@ components:
         name:
           maxLength: 80
           type: string
+        role:
+          description: Платформенная роль канала; UI не должен выводить внутренний тип интерфейса
+          enum:
+            - input
+            - output
+          type: string
         type:
           enum:
             - direct

@@ -86,11 +86,22 @@ type AWGConnectionProfile struct {
 	Profile   string      `json:"profile" minLength:"1"`
 }
 
-// AWGUnderlayCandidate identifies an existing exit eligible to carry a WireGuard connection.
+// ChannelRole describes a platform channel without exposing its wire implementation to the panel.
+type ChannelRole string
+
+const (
+	// ChannelRoleInput identifies a channel that carries traffic into Hestia.
+	ChannelRoleInput ChannelRole = "input"
+	// ChannelRoleOutput identifies a channel that carries traffic out of Hestia.
+	ChannelRoleOutput ChannelRole = "output"
+)
+
+// AWGUnderlayCandidate identifies an existing route and its platform-neutral role for connection editors.
 type AWGUnderlayCandidate struct {
-	Name string `json:"name,omitempty" maxLength:"80"`
-	ID   string `json:"id" minLength:"1"`
-	Type string `json:"type" enum:"direct,wireguard,amneziawg,hysteria2"`
+	Name string      `json:"name,omitempty" maxLength:"80"`
+	ID   string      `json:"id" minLength:"1"`
+	Type string      `json:"type" enum:"direct,wireguard,amneziawg,hysteria2"`
+	Role ChannelRole `json:"role,omitempty" enum:"input,output" doc:"Платформенная роль канала; UI не должен выводить внутренний тип интерфейса"`
 }
 
 // AWGPriority uses zero internally for an omitted position and rejects explicit nonpositive positions.

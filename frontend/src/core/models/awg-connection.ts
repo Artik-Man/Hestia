@@ -39,7 +39,11 @@ export function isUnderlayCandidate(
     (value.type === "direct" ||
       value.type === "wireguard" ||
       value.type === "amneziawg" ||
-      value.type === "hysteria2")
+      value.type === "hysteria2") &&
+    (!("role" in value) ||
+      value.role === undefined ||
+      value.role === "input" ||
+      value.role === "output")
   );
 }
 

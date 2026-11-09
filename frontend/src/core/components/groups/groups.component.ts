@@ -65,13 +65,16 @@ export class Groups implements OnInit {
       ),
   );
 
-  /** addableDirectExits lists trusted direct catalog entries that are not yet members of any group. */
+  /** addableDirectExits lists unassigned direct outputs and excludes platform inputs from every group. */
   protected readonly addableDirectExits = computed(() => {
     const current = new Set(
       this.order.draft().order.flatMap((group) => group.exits),
     );
     return [...this.catalog.entries().values()].filter(
-      (entry) => entry.type === "direct" && !current.has(entry.id),
+      (entry) =>
+        entry.type === "direct" &&
+        entry.role !== "input" &&
+        !current.has(entry.id),
     );
   });
 

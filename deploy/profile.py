@@ -1105,7 +1105,7 @@ def stage_generation(stage: Path, profile: dict, snapshot: dict, backend: dict) 
 
 
 def stage_keenetic_ingress(base: Path, stage: Path, enabled: bool) -> None:
-    """Stage the reversible OpkgTun inbound change while preserving existing SOCKS and VPN profile data."""
+    """Stage the OpkgTun input and missing default-group output while preserving existing routes and VPN data."""
     profile, snapshot, backend = managed_profile(base)
     inbounds = profile.get("inbounds")
     if enabled:
@@ -1121,6 +1121,7 @@ def stage_keenetic_ingress(base: Path, stage: Path, enabled: bool) -> None:
             for group in profile["groups"]:
                 group.setdefault("defaultExit", "deny")
             inbounds = profile["inbounds"]
+        ensure_keenetic_default_output(profile, keenetic_default_route_device())
         matches = [item for item in inbounds if item.get("tag") == KEENETIC_INGRESS_INBOUND["tag"]]
         require(not matches or matches == [KEENETIC_INGRESS_INBOUND], "Keenetic ingress tag is already in use")
         if not matches:
@@ -1198,6 +1199,27 @@ def stage_list_routes(stage: Path, profile: dict, snapshot: dict, backend: dict)
     replace_domain_routes(backend, profile, groups[0]["id"], rules)
     snapshot["lists"] = profile["lists"]
     stage_generation(stage, profile, snapshot, backend)
+
+
+def ensure_keenetic_default_output(profile: dict, device: str) -> None:
+    """Install the verified Keenetic WAN as a default-group output without changing the selected default exit."""
+    require(device and len(device) <= 15, "invalid Keenetic WAN device")
+    groups = profile.get("groups")
+    interfaces = profile.get("interfaces")
+    require(isinstance(groups, list) and groups, "Keenetic profile has no default group")
+    require(isinstance(interfaces, list), "Keenetic profile has no interface catalog")
+    current = [item for item in interfaces if item.get("id") == "keenetic-uplink"]
+    expected = {"id": "keenetic-uplink", "type": "direct", "bind_interface": device}
+    require(not current or current == [expected], "managed Keenetic output identity differs")
+    if not current:
+        interfaces.append(expected)
+    owners = [group for group in groups if "keenetic-uplink" in group.get("exits", [])]
+    require(len(owners) <= 1, "Keenetic output is assigned to multiple groups")
+    if not owners:
+        default_group = groups[0]
+        exits = default_group.get("exits")
+        require(isinstance(exits, list), "default group exits are invalid")
+        exits.append("keenetic-uplink")
 
 
 def stage_domain_list(base: Path, stage: Path, list_id: str, values: dict) -> None:
@@ -1380,6 +1402,17 @@ def stage_order(
         )
         profile["healthy"][platform_id] = True
         snapshot["healthy"][platform_id] = True
+        exits.add(platform_id)
+        added_platform_exit = True
+    elif not keenetic and any(
+        "keenetic-direct" in group.get("exits", []) for group in groups
+    ) and "keenetic-direct" not in exits:
+        direct = [item for item in profile["interfaces"] if item.get("id") == "keenetic-direct"]
+        require(
+            direct and all(item.get("type") == "direct" for item in direct),
+            "Linux direct output is not configured",
+        )
+        platform_id = "keenetic-direct"
         exits.add(platform_id)
         added_platform_exit = True
     require(

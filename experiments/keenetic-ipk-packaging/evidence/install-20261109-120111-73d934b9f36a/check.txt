@@ -1,0 +1,36 @@
+KN-1012 Hestia IPK update attempt — 2026-11-09
+
+Package version: 20261109-120111-73d934b9f36a
+Local and router-side IPK SHA-256: 4af37c53cc6326ed83fddda9f8fd39e27754f2d43b8ce379722860061d8e8bb1
+Installed before attempt: 20261109-094953-e523f5481e66
+Transport: configured pinned-host-key SSH alias; legacy SCP protocol (-O).
+
+Before update:
+- target preflight passed and supervisor readiness passed;
+- root-only copy of /opt/etc/hestia and opkg status saved under
+  /opt/tmp/hestia-ui-direct-20261109-120111-73d934b9f36a;
+- previous rollback IPK retained under /opt/tmp/hestia-deploy-20261109;
+- IPv4 default-route snapshot SHA-256:
+  f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871.
+
+Observed result:
+- opkg install exited 255 after stopping the previous Hestia process;
+- postinst error: "Hestia profile is missing or invalid";
+- opkg status: install user unpacked;
+- managed-profile validation error: "Invalid deployment profile: check fields, addresses, file references and keys";
+- IPv4 default-route snapshot SHA-256 after failure remained
+  f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871.
+
+Boundary:
+This is a redacted summary of observed command results, not a full raw
+terminal transcript. No secret values are included. A forced rollback to the
+20261108 package was refused by its prerm because a read-only RCI check found
+OpkgTun0 enabled in one of three Keenetic policies. A subsequent install of
+the retained 20261109-094953 package followed the upgrade path but its postinst
+also refused the managed profile. Final observed package status was
+`install user unpacked`; supervisor readiness returned 1, the package
+maintenance marker remained, and no Hestia/sing-box processes were listed.
+Managed-profile validation still returned 1. The IPv4 default-route SHA-256
+remained unchanged. Policy configuration was not modified. Root cause of the
+profile validation failure, LAN API availability, and full route equivalence
+remain unverified.

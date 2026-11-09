@@ -8,6 +8,7 @@
 | Диагностический комплект Keenetic без подключения к роутеру | `python3 scripts/build-keenetic-diagnostics/run.py` | [build-keenetic-diagnostics](build-keenetic-diagnostics/readme.md) |
 | Проверка исходников без стенда | `make test-source` | [test-source](test-source/readme.md) |
 | Установка/обновление готового Linux-комплекта | `make deploy-dev BUNDLE=/path/linux-arm64` | [deploy](deploy/readme.md) |
+| Ручная экспериментальная поставка IPK на Keenetic | по процедуре | [keenetic-ipk](deploy/keenetic-ipk.md) |
 | Проверка установленного dev | `make test-dev` | [test](test/readme.md) |
 | Общие описания стендов, манифесты и отчёты | — | [shared](shared/readme.md) |
 
