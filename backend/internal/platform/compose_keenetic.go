@@ -33,3 +33,9 @@ func CheckSupervisorProcess(pid int) error { return entware.CheckSupervisorProce
 
 // SupervisorReady reports whether the root-only IPC endpoint answers for its managed service table.
 func SupervisorReady(ctx context.Context) error { return entware.SupervisorReady(ctx) }
+
+// ReconcileIngress executes a synchronous root-supervisor policy refresh for an NDM event.
+func ReconcileIngress(ctx context.Context) error { return entware.ReconcileIngress(ctx) }
+
+// QuiesceIngress waits for standalone hook operations before opkg replaces the route lock file.
+func QuiesceIngress(ctx context.Context) error { return entware.QuiesceIngress(ctx) }

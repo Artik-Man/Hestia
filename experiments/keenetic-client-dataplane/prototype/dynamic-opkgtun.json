@@ -1,0 +1,28 @@
+{
+  "log": {
+    "level": "error",
+    "timestamp": true
+  },
+  "inbounds": [
+    {
+      "type": "tun",
+      "tag": "hestia-dynamic-opkgtun-proof",
+      "interface_name": "opkgtun0",
+      "address": ["172.31.250.2/30"],
+      "mtu": 1500,
+      "auto_route": false,
+      "auto_redirect": false,
+      "strict_route": false,
+      "stack": "system"
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "block",
+      "tag": "block"
+    }
+  ],
+  "route": {
+    "final": "block"
+  }
+}

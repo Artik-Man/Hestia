@@ -85,17 +85,30 @@ def stage_keenetic_rootfs(bundle, runtime):
         (library / name).chmod(0o755 if name == 'sing-box' else 0o644)
     shutil.copyfile(ROOT / 'deploy/profile.py', library / 'profile.py')
     (library / 'profile.py').chmod(0o644)
+    stage_keenetic_hooks(bundle)
     assets = bundle / 'opt/share/hestia-panel/current'
     shutil.copytree(bundle / 'browser', assets)
     stage_keenetic_install_lock(bundle)
 
 
+def stage_keenetic_hooks(bundle):
+    """Install the bounded NDM mangle hook that requests synchronous route reconciliation."""
+    source = ROOT / 'deploy/keenetic/netfilter.d/090-hestia-ingress.sh'
+    target = bundle / 'opt/etc/ndm/netfilter.d/090-hestia-ingress.sh'
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(source, target)
+    target.chmod(0o755)
+
+
 def stage_keenetic_install_lock(bundle):
-    """Create the stable owner-only flock file required by installed managed readers and writers."""
+    """Create owner-only install and ingress flock files required by runtime readers and writers."""
     lock = bundle / 'opt/var/lock/hestia-install.lock'
     lock.parent.mkdir(parents=True, exist_ok=True)
     lock.write_bytes(b'')
     lock.chmod(0o600)
+    ingress_lock = bundle / 'opt/var/lock/hestia-ingress.lock'
+    ingress_lock.write_bytes(b'')
+    ingress_lock.chmod(0o600)
 
 
 def prepare_keenetic_config(bundle, work):
@@ -103,7 +116,7 @@ def prepare_keenetic_config(bundle, work):
     config = bundle / 'opt/etc/hestia'
     config.mkdir(parents=True, mode=0o700)
     config.chmod(0o700)
-    profile = ROOT / 'scripts/deploy/default-profile.json'
+    profile = ROOT / 'scripts/deploy/default-profile-keenetic.json'
     shutil.copyfile(profile, config / 'profile.json')
     stage = work / 'keenetic-default-profile'
     stage.mkdir(mode=0o700)
@@ -162,9 +175,10 @@ def build(output, runtime):
             raise ValueError('Missing or mismatched pinned ARM64 runtime input: ' + str(runtime / name))
     revision = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
     tracked = subprocess.check_output(['git', 'ls-files', 'backend', 'frontend', 'deploy', 'scripts'], cwd=ROOT, text=True).splitlines()
-    tracked += ['scripts/build/run.py', 'scripts/deploy/apply.sh', 'scripts/shared/common.py', 'scripts/shared/paths.sh', 'scripts/deploy/fresh.sh', 'scripts/deploy/default-profile.json', 'scripts/build/runtime-lock.json']
+    tracked += ['scripts/build/run.py', 'scripts/deploy/apply.sh', 'scripts/shared/common.py', 'scripts/shared/paths.sh', 'scripts/deploy/fresh.sh', 'scripts/deploy/default-profile.json', 'scripts/deploy/default-profile-keenetic.json', 'scripts/build/runtime-lock.json']
     tracked += [
         'deploy/keenetic/S99hestia',
+        'deploy/keenetic/netfilter.d/090-hestia-ingress.sh',
         'deploy/keenetic/ipk/preinst',
         'deploy/keenetic/ipk/postinst',
         'deploy/keenetic/ipk/prerm',
@@ -183,22 +197,59 @@ def build(output, runtime):
         'backend/pkg/keeneticrci/wireless.go',
         'backend/internal/network/keeneticphysical/carrier.go',
         'backend/internal/network/keeneticroute/exec_linux.go',
+        'backend/internal/network/keeneticroute/ingress_codec_test.go',
+        'backend/internal/network/keeneticroute/ingress_netlink_codec.go',
+        'backend/internal/network/keeneticroute/ingress_netlink_linux.go',
+        'backend/internal/network/keeneticroute/ingress_netlink_linux_integration_test.go',
+        'backend/internal/network/keeneticroute/ingress_rule_state.go',
+        'backend/internal/network/keeneticroute/ingress_rule_state_linux.go',
+        'backend/internal/network/keeneticroute/ingress_rule_state_linux_test.go',
+        'backend/internal/network/keeneticroute/ingress_rule_state_test.go',
+        'backend/internal/network/keeneticroute/ingress_policy.go',
+        'backend/internal/network/keeneticroute/ingress_policy_test.go',
+        'backend/internal/network/keeneticroute/ingress_reconcile.go',
+        'backend/internal/network/keeneticroute/ingress_reconcile_test.go',
         'backend/internal/controller/carrier_default.go',
         'backend/internal/controller/carrier_keenetic.go',
         'backend/internal/storage/installed_default.go',
         'backend/internal/storage/installed_keenetic.go',
+        'backend/internal/storage/layout.go',
+        'backend/internal/storage/layout_test.go',
         'backend/internal/platform/doc.go',
         'backend/internal/platform/compose_default.go',
         'backend/internal/platform/compose_keenetic.go',
+        'backend/internal/platform/opkgtun_keenetic.go',
         'backend/internal/platform/unavailable.go',
         'backend/internal/services/entware/doc.go',
         'backend/internal/services/entware/ipc.go',
+        'backend/internal/services/entware/ingress_default.go',
+        'backend/internal/services/entware/ingress_keenetic.go',
+        'backend/internal/services/entware/ingress_profile.go',
+        'backend/internal/services/entware/ingress_profile.go',
+        'backend/internal/services/entware/ingress_profile_test.go',
+        'backend/internal/services/entware/maintenance_marker.go',
+        'backend/internal/services/entware/maintenance_marker_test.go',
         'backend/internal/services/entware/manager.go',
         'backend/internal/services/entware/processes.go',
         'backend/internal/services/entware/process.go',
         'backend/internal/services/entware/smoke.go',
+        'backend/internal/services/entware/ingress_default.go',
+        'backend/internal/services/entware/ingress_keenetic.go',
+        'backend/internal/network/keeneticroute/ingress_codec_test.go',
+        'backend/internal/network/keeneticroute/ingress_netlink_codec.go',
+        'backend/internal/network/keeneticroute/ingress_netlink_linux.go',
+        'backend/internal/network/keeneticroute/ingress_policy.go',
+        'backend/internal/network/keeneticroute/ingress_policy_test.go',
+        'backend/internal/network/keeneticroute/ingress_reconcile.go',
+        'backend/internal/network/keeneticroute/ingress_reconcile_test.go',
         'backend/internal/profileexec/paths_default.go',
         'backend/internal/profileexec/paths_keenetic.go',
+        'backend/internal/profileexec/profile.go',
+        'backend/internal/profileexec/profile_test.go',
+        'backend/internal/binding/keenetic_ingress.go',
+        'backend/pkg/keeneticrci/policy.go',
+        'backend/pkg/keeneticrci/policy_test.go',
+        'deploy/keenetic/netfilter.d/090-hestia-ingress.sh',
         'backend/internal/platformhelper/run_default.go',
         'backend/internal/platformhelper/run_keenetic.go',
         'backend/internal/awgruntime/unsupported.go',
@@ -239,8 +290,10 @@ def build(output, runtime):
             for name in ('profile.py', 'smoke.py', 'awg-upgrade.sh'):
                 shutil.copyfile(ROOT / 'deploy' / name, bundle / 'helpers' / name)
             (bundle / 'scripts').mkdir()
-            for name in ('apply.sh', 'fresh.sh', 'default-profile.json'):
+            for name in ('apply.sh', 'fresh.sh'):
                 shutil.copyfile(ROOT / 'scripts/deploy' / name, bundle / 'scripts' / name)
+            default_profile = 'default-profile-keenetic.json' if platform.startswith('keenetic') else 'default-profile.json'
+            shutil.copyfile(ROOT / 'scripts/deploy' / default_profile, bundle / 'scripts/default-profile.json')
             if platform.startswith('keenetic'):
                 stage_keenetic_rootfs(bundle, runtime)
                 prepare_keenetic_config(bundle, work)

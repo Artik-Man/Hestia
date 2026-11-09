@@ -3,10 +3,22 @@
 
 set -eu
 
+PATH=/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export PATH
+
 case "${1:-remove}" in
-	remove | upgrade)
-		/opt/etc/init.d/S99hestia prepare-package
-		;;
+    remove | upgrade)
+        /opt/etc/init.d/S99hestia prepare-package
+        if [ "${1:-remove}" = remove ]; then
+            if ! /opt/bin/hestia -service-opkgtun-remove; then
+                printf '%s\n' 'OpkgTun removal was refused; restoring Hestia services' >&2
+                if ! /opt/etc/init.d/S99hestia configure-package; then
+                    printf '%s\n' 'Hestia recovery failed; package maintenance marker remains for guarded recovery' >&2
+                fi
+                exit 1
+            fi
+        fi
+        ;;
 esac
 
 exit 0

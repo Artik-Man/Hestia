@@ -10,6 +10,7 @@ export PATH
 BUSYBOX=/opt/bin/busybox
 DAEMON=/opt/bin/hestia
 RUNDIR=/opt/var/run/hestia
+INGRESS_STATE_DIR=/opt/var/lib/hestia-ingress
 PIDFILE=$RUNDIR/supervisor.pid
 READY=$RUNDIR/supervisor.ready
 CONFIG=/opt/etc/hestia
@@ -18,6 +19,36 @@ SING_BOX=/opt/lib/hestia/sing-box
 PYTHON=/opt/bin/python3
 LOCKFILE=$RUNDIR/lifecycle.lock
 MAINTENANCE=$RUNDIR/package-maintenance
+
+# find_opkg_ancestor returns the enclosing opkg PID and start-time ticks, or fails when its identity cannot be proven.
+find_opkg_ancestor() {
+    pid=$PPID
+    depth=0
+    while [ "$depth" -lt 12 ] && [ "$pid" -gt 1 ] 2>/dev/null; do
+        if [ -r "/proc/$pid/comm" ]; then
+            read -r process_name <"/proc/$pid/comm" || process_name=
+            case "$process_name" in
+                opkg | opkg-cl)
+                    process_start=$(sed 's/^.*) //' "/proc/$pid/stat" 2>/dev/null | awk '{ print $20 }')
+                    case "$process_start" in
+                        '' | *[!0-9]*) return 1 ;;
+                    esac
+                    printf '%s %s\n' "$pid" "$process_start"
+                    return 0
+                    ;;
+            esac
+            parent_pid=$(awk '/^PPid:/ { print $2; exit }' "/proc/$pid/status" 2>/dev/null || true)
+            case "$parent_pid" in
+                '' | *[!0-9]* | 0) return 1 ;;
+            esac
+            pid=$parent_pid
+        else
+            return 1
+        fi
+        depth=$((depth + 1))
+    done
+    return 1
+}
 
 # acquire_lifecycle_lock serializes init and opkg lifecycle actions through an atomic owner symlink.
 acquire_lifecycle_lock() {
@@ -79,6 +110,17 @@ release_lifecycle_lock() {
     fi
 }
 
+# ensure_ingress_state_dir provisions a private Entware location for persistent RPDB ownership identities.
+ensure_ingress_state_dir() {
+    for path in /opt/var /opt/var/lib "$INGRESS_STATE_DIR"; do
+        if [ -L "$path" ]; then
+            printf '%s\n' 'Hestia ingress state path must not be a symbolic link' >&2
+            return 1
+        fi
+    done
+    mkdir -p "$INGRESS_STATE_DIR" && chmod 0700 "$INGRESS_STATE_DIR"
+}
+
 if [ ! -x "$BUSYBOX" ] || [ ! -x "$DAEMON" ]; then
     printf '%s\n' 'Hestia Entware runtime is not installed' >&2
     exit 1
@@ -87,6 +129,7 @@ fi
 case "${1:-}" in
     start)
         acquire_lifecycle_lock || exit 1
+        ensure_ingress_state_dir || exit 1
         if { [ -e "$MAINTENANCE" ] || [ -L "$MAINTENANCE" ]; } && [ "${HESTIA_CONFIGURE_TRANSACTION:-}" != 1 ]; then
             printf '%s\n' 'Hestia package transaction is in progress; refusing to start' >&2
             exit 1
@@ -105,6 +148,10 @@ case "${1:-}" in
         fi
         if ! "$LOADER" --library-path /opt/lib:/opt/lib/hestia "$SING_BOX" check -c "$CONFIG/sing-box.json" >/dev/null 2>&1; then
             printf '%s\n' 'Hestia router configuration is invalid' >&2
+            exit 1
+        fi
+        if ! "$DAEMON" -service-opkgtun-ensure; then
+            printf '%s\n' 'Hestia OpkgTun is not ready; refusing to start services' >&2
             exit 1
         fi
         HELP=$("$BUSYBOX" start-stop-daemon --help 2>&1 || true)
@@ -247,9 +294,38 @@ case "${1:-}" in
             printf '%s\n' 'Hestia package transaction marker is unsafe' >&2
             exit 1
         fi
-        : >"$MAINTENANCE" && chmod 0600 "$MAINTENANCE" || exit 1
+        BOOT_ID=$("$BUSYBOX" cat /proc/sys/kernel/random/boot_id) || exit 1
+        case "$BOOT_ID" in
+            '' | *[!A-Fa-f0-9-]*)
+                printf '%s\n' 'Keenetic boot identity is unavailable' >&2
+                exit 1
+                ;;
+        esac
+        if ! OPKG_IDENTITY=$(find_opkg_ancestor); then
+            printf '%s\n' 'Cannot identify the enclosing opkg process; refusing package replacement' >&2
+            exit 1
+        fi
+        IFS=' ' read -r OPKG_PID OPKG_START OPKG_EXTRA <<EOF
+$OPKG_IDENTITY
+EOF
+        if [ -n "$OPKG_EXTRA" ]; then
+            printf '%s\n' 'Enclosing opkg process identity is malformed; refusing package replacement' >&2
+            exit 1
+        fi
+        printf '%s %s %s\n' "$OPKG_PID" "$BOOT_ID" "$OPKG_START" >"$MAINTENANCE" && chmod 0600 "$MAINTENANCE" || exit 1
         if ! "$0" stop; then
             rm -f "$MAINTENANCE"
+            exit 1
+        fi
+        if ! "$DAEMON" -service-ingress-quiesce; then
+            printf '%s\n' 'Hestia ingress hook has not quiesced; preserving package files' >&2
+            rm -f "$MAINTENANCE"
+            if "$0" start; then
+                printf '%s\n' 'Hestia services were restored; package maintenance was canceled' >&2
+                exit 1
+            fi
+            : >"$MAINTENANCE" && chmod 0600 "$MAINTENANCE" || exit 1
+            printf '%s\n' 'Hestia restart failed; package marker remains for guarded recovery' >&2
             exit 1
         fi
         ;;

@@ -19,6 +19,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Artik-Man/Hestia/internal/awghealth"
 	"github.com/Artik-Man/Hestia/internal/network/keeneticphysical"
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
 	"github.com/Artik-Man/Hestia/internal/routing"
@@ -122,7 +123,7 @@ func runSmoke(ctx context.Context, table *processTable, fresh bool) error {
 	if err != nil {
 		return errors.New("installed router configuration is invalid")
 	}
-	health := effectiveHealth(config, backend)
+	health := effectiveHealth(config, backend, awghealth.HeartbeatHealthy)
 	quality, err := readQualityReport(snapshotPath, config)
 	if err != nil {
 		return err
@@ -248,8 +249,8 @@ func decodeBackend(data []byte) (backendConfig, error) {
 	return config, nil
 }
 
-// effectiveHealth applies only explicitly verifiable Keenetic link and AWG state to the configured snapshot.
-func effectiveHealth(config smokeConfig, backend backendConfig) map[string]bool {
+// effectiveHealth applies only explicitly verifiable Keenetic link state and fresh AWG runtime heartbeats to the snapshot.
+func effectiveHealth(config smokeConfig, backend backendConfig, awgHealthy func(string) bool) map[string]bool {
 	health := make(map[string]bool, len(config.Healthy))
 	for id, available := range config.Healthy {
 		health[id] = available
@@ -264,7 +265,7 @@ func effectiveHealth(config smokeConfig, backend backendConfig) map[string]bool 
 	for _, group := range config.Groups {
 		for _, id := range group.Exits {
 			if config.ConnectorKinds[id] == "awg" {
-				health[id] = false
+				health[id] = awgHealthy != nil && awgHealthy(id)
 				continue
 			}
 			device, direct := devices[id]

@@ -1,0 +1,75 @@
+#!/bin/sh
+set -eu
+
+PATH=/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export PATH
+
+APP=/opt/bin/keen-mvp
+PIDFILE=/opt/var/run/keen-mvp.pid
+BUSYBOX=/opt/bin/busybox
+
+case "${1:-}" in
+    start)
+        if ! "$BUSYBOX" start-stop-daemon -S -b -m -p "$PIDFILE" -x "$APP" -- run; then
+            if "$APP" status >/dev/null 2>&1; then
+                exit 0
+            fi
+            exit 1
+        fi
+        attempt=0
+        while [ "$attempt" -lt 10 ]; do
+            if "$APP" status >/dev/null 2>&1; then
+                exit 0
+            fi
+            sleep 1
+            attempt=$((attempt + 1))
+        done
+        echo "keen-mvp did not become ready" >&2
+        exit 1
+        ;;
+    stop)
+        if [ -s "$PIDFILE" ]; then
+            pid=$(cat "$PIDFILE")
+            proc_comm="/proc/$pid/comm"
+            if [ -r "$proc_comm" ]; then
+                comm=$(cat "$proc_comm")
+                if [ "$comm" != keen-mvp ]; then
+                    echo "keen-mvp pid file does not identify its process" >&2
+                    exit 1
+                fi
+                "$BUSYBOX" start-stop-daemon -K -p "$PIDFILE" -x "$APP" -s TERM || true
+                attempt=0
+                state=
+                while [ "$attempt" -lt 10 ]; do
+                    if [ ! -r "$proc_comm" ] || [ "$(cat "$proc_comm")" != keen-mvp ]; then
+                        break
+                    fi
+                    state=$(awk '{print $3}' "/proc/$pid/stat" 2>/dev/null || true)
+                    if [ "$state" = Z ]; then
+                        break
+                    fi
+                    sleep 1
+                    attempt=$((attempt + 1))
+                done
+                if [ -r "$proc_comm" ] && [ "$(cat "$proc_comm")" = keen-mvp ] && [ "$state" != Z ]; then
+                    echo "keen-mvp did not stop" >&2
+                    exit 1
+                fi
+            fi
+            rm -f "$PIDFILE"
+        fi
+        "$APP" cleanup
+        ;;
+    status)
+        if [ -s "$PIDFILE" ] && "$BUSYBOX" kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
+            "$APP" status
+            exit $?
+        fi
+        echo "keen-mvp is stopped" >&2
+        exit 1
+        ;;
+    *)
+        echo "usage: $0 {start|stop|status}" >&2
+        exit 2
+        ;;
+esac

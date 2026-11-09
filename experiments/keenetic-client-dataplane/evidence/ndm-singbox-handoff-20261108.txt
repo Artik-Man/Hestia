@@ -1,0 +1,25 @@
+Вопрос: может ли NDM OpkgTun на KN-1012 открываться закреплённым sing-box как именованный TUN без изменения системного default route и появляется ли default route в таблице policy?
+Дата: 2026-11-08 UTC; точное время запуска команд не записывалось.
+Устройство: Keenetic Giga KN-1012; KeeneticOS 5.02.B.3.0-2 / 5.2 Beta 3; kernel 4.9-ndm-5; aarch64.
+Runtime: установленный пакет Hestia 20261108-133906-46ed33ac8d30; sing-box 1.14.4 через /opt/lib/ld-linux-aarch64.so.1.
+Интерфейс: тестовый NDM OpkgTun0 / Linux opkgtun0. Адреса пробы: 172.31.250.1/32 (NDM), 172.31.250.2/30 (sing-box), MTU 1500.
+Конфигурация sing-box: именованный TUN inbound, auto_route=false, system stack, block outbound; клиентские пакеты и проверки egress не запускались.
+
+Наблюдения:
+- NDM принял команды создания, адресации, MTU, уровня public, up и удаления интерфейса.
+- sing-box запустился на opkgtun0 и поднял link.
+- Два последовательных штатных старта/остановки прошли. Запуск после SIGKILL также прошёл.
+- После штатного stop адрес sing-box снят, адрес NDM сохранён. После SIGKILL адрес sing-box остался до следующего запуска или удаления интерфейса.
+- Временная policy без устройств получила table ID 4103 и ноль default routes после разрешения OpkgTun0.
+- /opt/sbin/ip — BusyBox 1.37. `ip route add ... table 4103` завершился ошибкой `invalid argument '4103' to 'table'`; маршрут не добавился. Проверка lookup и fail-closed не выполнена.
+- Main default route оставался на eth3 с metric 1000; IPv4 rule hash совпал до и после. Тестовая policy и OpkgTun0 удалены, Linux-интерфейс исчез. system configuration save не вызывался.
+
+Дополнительный тест netlink route adapter:
+- Table ID и mark для новой временной policy прочитаны из RCI: table 4104, mark ffffab0, default route count 0. Статический Linux/ARM64 helper SHA-256 02369b97b13438bc0923a294bbfc166e5f3c47da9db7761af592360b03111473 добавил в table 4104 unreachable default metric 32767 и default dev opkgtun0 metric 1000. BusyBox `ip route show table all` подтвердил обе записи; helper удалил их.
+- Внутри этого опыта main default и IPv4 rules до/после совпали. В финальном read-only снимке main default уже был dev nwg3, тогда как более ранний независимый снимок в тот же день показывал eth3; изменение между снимками не приписывается пробе.
+- Первый RTM_GETROUTE probe не выставлял RTM_F_LOOKUP_TABLE, поэтому его table=main ответ был недостаточен: Linux 4.9 по умолчанию заполняет table_id значением RT_TABLE_MAIN. Исправленный lookup включил source hestia-client `192.168.1.124`, ingress `br0`, mark `ffffaad` и цель `192.0.2.1`; он вернул `table_id=254 device=nwg3`. Снимок таблицы 4102 показывал `default dev br0`. Read-only RTM_GETRULE dump показал `lookup main` на приоритете 9 без `FRA_SUPPRESS_PREFIXLEN`, а fwmark lookup 4102 на приоритете 100 и blackhole fallback на 101. Это согласуется с тем, что main lookup завершается до policy rule; назначение порядка и способ применения Keenetic policy требуют проверки. Пакеты не отправлялись; policy TUN и fail-closed не подтверждены.
+- В последующем read-only снимке table 4104 и mark ffffab0 снова присутствовали в активных правилах, с двумя destination-specific маршрутами через eth3. `show ip policy` не содержал имени `HestiaProof20261108`; владелец текущих объектов не установлен. Эти идентификаторы не считаются свободными и не использовались для новых изменений.
+- Для схемы policy reader выполнены read-only GET `/rci/ip/policy` (9060 bytes) и GET `/rci/show/ip/policy` (99915 bytes). Форма обезличена до ключей/типов: `PolicyN` → config `permit[] {interface:string, enabled:bool}`, `route[]`; runtime `table4:uint32`, `table6:uint32`, `mark:string`, `route4.route[]`, `route6.route6[]`. Сырые тела и пользовательские описания не сохранялись.
+- В одной последовательности NDM объект удалён до остановки sing-box, после чего остался тестовый opkgtun0 без carrier и без NDM конфигурации. После подтверждения, что тестового sing-box процесса нет, этот собственный объект удалён RTM_DELLINK по точному имени; повторная read-only проверка подтвердила отсутствие link, тестовой policy и test mark rules. Тестовые route entries были удалены до link cleanup.
+
+Не проверялись: видимость/поведение UI, корректность policy lookup по mark при установленном маршруте/guard, fallback policy, fail-closed, обратный путь, TCP/UDP пакеты, VPN egress, IPv6, reboot и восстановление после обновления.

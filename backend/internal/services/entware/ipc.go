@@ -27,9 +27,10 @@ const bootRecoveryLimit = 47 * time.Minute
 const supervisorReadyFile = "supervisor.ready"
 
 type request struct {
-	Operation string             `json:"operation"`
-	Services  []services.Service `json:"services,omitempty"`
-	Service   services.Service   `json:"service,omitempty"`
+	Operation     string             `json:"operation"`
+	Services      []services.Service `json:"services,omitempty"`
+	Service       services.Service   `json:"service,omitempty"`
+	TimeoutMillis int                `json:"timeout_millis,omitempty"`
 }
 
 type response struct {
@@ -87,6 +88,7 @@ func RunSupervisor(ctx context.Context) error {
 		_ = os.Remove(path)
 	}()
 	table := processTable{}
+	table.requireIngressGate()
 	acceptErr := make(chan error, 1)
 	var handlers sync.WaitGroup
 	go acceptConnections(ctx, listener, &table, &handlers, acceptErr)
@@ -102,35 +104,86 @@ func RunSupervisor(ctx context.Context) error {
 	if err := awaitBootRecovery(ctx); err != nil {
 		return failStartup(err)
 	}
+	ingressReady := make(chan error, 1)
+	ingressDone := make(chan error, 1)
+	ingressContext, stopIngress := context.WithCancel(ctx)
+	ingressStarted := true
+	go func() {
+		ingressDone <- runIngressLifecycle(ingressContext, &table, ingressReady)
+	}()
+	stopIngressWatch := func() error {
+		if !ingressStarted {
+			return nil
+		}
+		stopIngress()
+		watchErr := <-ingressDone
+		ingressStarted = false
+		return watchErr
+	}
+	failStartupWithIngress := func(startupErr error) error {
+		watchErr := stopIngressWatch()
+		_ = failStartup(startupErr)
+		if watchErr != nil {
+			return errors.Join(startupErr, fmt.Errorf("Keenetic ingress shutdown failed: %w", watchErr))
+		}
+		return startupErr
+	}
+	select {
+	case err := <-ingressReady:
+		if err != nil {
+			return failStartupWithIngress(err)
+		}
+		table.markIngressReady()
+	case err := <-ingressDone:
+		ingressStarted = false
+		if err == nil {
+			err = errors.New("Keenetic ingress lifecycle exited during startup")
+		}
+		return failStartup(err)
+	case <-ctx.Done():
+		return failStartupWithIngress(ctx.Err())
+	}
 	for _, service := range []services.Service{{Kind: services.Router}, {Kind: services.Controller}, {Kind: services.Panel}} {
 		if err := table.start(context.Background(), service); err != nil {
-			return failStartup(err)
+			return failStartupWithIngress(err)
 		}
 	}
 	dnsConfigured, err := dnsServiceConfigured()
 	if err != nil {
-		return failStartup(err)
+		return failStartupWithIngress(err)
 	}
 	if dnsConfigured {
 		if err := table.start(context.Background(), services.Service{Kind: services.DNS}); err != nil {
-			return failStartup(err)
+			return failStartupWithIngress(err)
 		}
 	}
 	if err := publishReadyMarker(readyPath); err != nil {
-		return failStartup(err)
+		return failStartupWithIngress(err)
 	}
 	defer removeReadyMarker(readyPath)
 	go watchOptionalDNS(ctx, &table)
 	select {
 	case err := <-acceptErr:
 		if ctx.Err() != nil {
-			return stopAll(context.Background(), &table)
+			watchErr := stopIngressWatch()
+			return errors.Join(watchErr, stopAll(context.Background(), &table))
 		}
-		return fmt.Errorf("service socket accept failed: %w", err)
+		watchErr := stopIngressWatch()
+		return errors.Join(fmt.Errorf("service socket accept failed: %w", err), watchErr)
+	case err := <-ingressDone:
+		ingressStarted = false
+		if ctx.Err() != nil {
+			return errors.Join(err, stopAll(context.Background(), &table))
+		}
+		if err == nil {
+			err = errors.New("Keenetic ingress lifecycle exited unexpectedly")
+		}
+		return fmt.Errorf("Keenetic ingress lifecycle failed: %w", err)
 	case <-ctx.Done():
 		_ = listener.Close()
 		handlers.Wait()
-		return stopAll(context.Background(), &table)
+		watchErr := stopIngressWatch()
+		return errors.Join(watchErr, stopAll(context.Background(), &table))
 	}
 }
 
@@ -384,6 +437,16 @@ func dispatch(ctx context.Context, table *processTable, input request) response 
 			return response{Error: publicError(err, serviceRole(input.Service.Kind))}
 		}
 		return response{State: state}
+	case "reconcile-ingress":
+		if input.TimeoutMillis < 1 || input.TimeoutMillis > 16_000 {
+			return response{Error: "invalid ingress reconciliation deadline"}
+		}
+		reconcileCtx, cancel := context.WithTimeout(ctx, time.Duration(input.TimeoutMillis)*time.Millisecond)
+		defer cancel()
+		if err := table.reconcileIngress(reconcileCtx, false); err != nil {
+			return response{Error: publicError(err, "ingress")}
+		}
+		return response{}
 	case "smoke-fresh", "smoke-current":
 		if err := runSmoke(ctx, table, input.Operation == "smoke-fresh"); err != nil {
 			return response{Error: publicError(err, "smoke")}

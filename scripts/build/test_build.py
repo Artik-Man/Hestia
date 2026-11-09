@@ -99,6 +99,20 @@ class BuildTests(unittest.TestCase):
         self.assertIn('start-stop-daemon -K -p "$PIDFILE" -x "$DAEMON" -s TERM', source)
         self.assertIn('start-stop-daemon -K -p "$PIDFILE" -x "$DAEMON" -s KILL', source)
         self.assertIn('"$BUSYBOX" usleep 100000', source)
+        self.assertIn('"$DAEMON" -service-ingress-quiesce', source)
+        self.assertIn('find_opkg_ancestor()', source)
+        self.assertIn('Cannot identify the enclosing opkg process; refusing package replacement', source)
+        self.assertIn('"$OPKG_PID" "$BOOT_ID" "$OPKG_START"', source)
+        self.assertIn("awk '{ print $20 }'", source)
+        manager = (BUILD.ROOT / 'backend/internal/services/entware/manager.go').read_text()
+        marker_parser = (BUILD.ROOT / 'backend/internal/services/entware/maintenance_marker.go').read_text()
+        self.assertIn('info.Mode()&(os.ModeSetuid|os.ModeSetgid|os.ModeSticky) != 0', manager)
+        self.assertIn('parsePackageMaintenanceMarker(data)', manager)
+        self.assertIn('strings.Count(marker, "\\n") != 1', marker_parser)
+        self.assertIn('strconv.Itoa(pid) != fields[0]', marker_parser)
+        self.assertIn('strconv.FormatUint(startTime, 10) != fields[2]', marker_parser)
+        self.assertIn('Hestia services were restored; package maintenance was canceled', source)
+        self.assertIn('Hestia restart failed; package marker remains for guarded recovery', source)
         self.assertNotIn('sleep 0.1', source)
         for unsupported in ('--make-pidfile', '--pidfile', '--exec', '--background', '--retry'):
             self.assertNotIn(unsupported, source)
@@ -128,6 +142,54 @@ class BuildTests(unittest.TestCase):
             self.assertTrue(lock.is_file())
             self.assertEqual(lock.read_bytes(), b'')
             self.assertEqual(lock.stat().st_mode & 0o777, 0o600)
+            ingress_lock = root / 'opt/var/lock/hestia-ingress.lock'
+            self.assertEqual(ingress_lock.read_bytes(), b'')
+            self.assertEqual(ingress_lock.stat().st_mode & 0o777, 0o600)
+
+    def test_keenetic_package_stages_synchronous_ingress_hook(self):
+        """The Keenetic IPK installs the bounded netfilter callback with executable permissions."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            BUILD.stage_keenetic_hooks(root)
+            hook = root / 'opt/etc/ndm/netfilter.d/090-hestia-ingress.sh'
+            self.assertEqual(hook.read_text(), (BUILD.ROOT / 'deploy/keenetic/netfilter.d/090-hestia-ingress.sh').read_text())
+            self.assertEqual(hook.stat().st_mode & 0o777, 0o755)
+            self.assertIn('-service-reconcile-ingress', hook.read_text())
+            self.assertIn('MARKER_BOOT" = "$BOOT_ID"', hook.read_text())
+            self.assertIn('MARKER_START"', hook.read_text())
+            self.assertIn('[ -z "$MARKER_EXTRA" ]', hook.read_text())
+            self.assertIn('busybox wc -l <"$MAINTENANCE"', hook.read_text())
+            self.assertIn("sed -n '2,$p'", hook.read_text())
+            self.assertIn('MARKER_SIZE" = "$MARKER_EXPECTED_SIZE"', hook.read_text())
+            self.assertIn("busybox stat -c '%u %a %h %s'", hook.read_text())
+            self.assertIn('[ "$MARKER_UID" = 0 ]', hook.read_text())
+            self.assertIn('opkg | opkg-cl', hook.read_text())
+
+    def test_keenetic_source_manifest_tracks_ingress_implementation(self):
+        """The artifact provenance allowlist covers every new ingress source and its target hook."""
+        source = (BUILD.ROOT / 'scripts/build/run.py').read_text()
+        inputs = (
+            'backend/internal/binding/keenetic_ingress.go',
+            'backend/internal/network/keeneticroute/ingress_codec_test.go',
+            'backend/internal/network/keeneticroute/ingress_netlink_codec.go',
+            'backend/internal/network/keeneticroute/ingress_netlink_linux.go',
+            'backend/internal/network/keeneticroute/ingress_policy.go',
+            'backend/internal/network/keeneticroute/ingress_policy_test.go',
+            'backend/internal/network/keeneticroute/ingress_reconcile.go',
+            'backend/internal/network/keeneticroute/ingress_reconcile_test.go',
+            'backend/internal/services/entware/ingress_default.go',
+            'backend/internal/services/entware/ingress_keenetic.go',
+            'backend/internal/services/entware/ingress_profile.go',
+            'backend/internal/services/entware/ingress_profile_test.go',
+            'backend/internal/services/entware/maintenance_marker.go',
+            'backend/internal/services/entware/maintenance_marker_test.go',
+            'backend/pkg/keeneticrci/policy.go',
+            'backend/pkg/keeneticrci/policy_test.go',
+            'deploy/keenetic/netfilter.d/090-hestia-ingress.sh',
+        )
+        for path in inputs:
+            with self.subTest(path=path):
+                self.assertIn("'" + path + "'", source)
 
     def test_keenetic_panel_registers_physical_helper_without_awg(self):
         """The read-only physical inventory helper is wired independently from AWG features."""

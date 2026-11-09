@@ -62,6 +62,38 @@ func main() {
 		}
 		return
 	}
+	if len(os.Args) == 2 && os.Args[1] == "-service-reconcile-ingress" {
+		ctx, cancel := context.WithTimeout(context.Background(), 18*time.Second)
+		defer cancel()
+		if err := platform.ReconcileIngress(ctx); err != nil {
+			fmt.Fprintln(os.Stderr, "Keenetic ingress reconciliation failed")
+			os.Exit(1)
+		}
+		return
+	}
+	if len(os.Args) == 2 && os.Args[1] == "-service-ingress-quiesce" {
+		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+		defer cancel()
+		if err := platform.QuiesceIngress(ctx); err != nil {
+			fmt.Fprintln(os.Stderr, "Keenetic ingress reconciliation is still active")
+			os.Exit(1)
+		}
+		return
+	}
+	if len(os.Args) == 2 && os.Args[1] == "-service-opkgtun-ensure" {
+		if err := platform.EnsureOpkgTun(); err != nil {
+			fmt.Fprintln(os.Stderr, "Hestia OpkgTun could not be prepared")
+			os.Exit(1)
+		}
+		return
+	}
+	if len(os.Args) == 2 && os.Args[1] == "-service-opkgtun-remove" {
+		if err := platform.RemoveOpkgTun(); err != nil {
+			fmt.Fprintf(os.Stderr, "Hestia OpkgTun could not be removed: %v\n", err)
+			os.Exit(1)
+		}
+		return
+	}
 	if len(os.Args) == 3 && os.Args[1] == "dns" {
 		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 		defer stop()
@@ -79,7 +111,7 @@ func main() {
 			os.Exit(runPhysicalCommand(os.Args[1], os.Stdin, os.Stdout))
 		}
 	}
-	if len(os.Args) == 2 && (os.Args[1] == "-apply-country-map" || os.Args[1] == "-migrate-country-map" || os.Args[1] == "-delete-domain-list" || os.Args[1] == "-create-domain-list" || os.Args[1] == "-update-domain-list" || os.Args[1] == "-delete-group" || os.Args[1] == "-move-exit" || os.Args[1] == "-create-group" || os.Args[1] == "-rename-group" || os.Args[1] == "-rename-direct" || os.Args[1] == "-apply-group-order" || os.Args[1] == "-apply-binding" || os.Args[1] == "-recover-bindings" || os.Args[1] == "-watch-pending-binding") {
+	if len(os.Args) == 2 && (os.Args[1] == "-apply-country-map" || os.Args[1] == "-migrate-country-map" || os.Args[1] == "-delete-domain-list" || os.Args[1] == "-create-domain-list" || os.Args[1] == "-update-domain-list" || os.Args[1] == "-delete-group" || os.Args[1] == "-move-exit" || os.Args[1] == "-create-group" || os.Args[1] == "-rename-group" || os.Args[1] == "-rename-direct" || os.Args[1] == "-apply-group-order" || os.Args[1] == "-apply-binding" || os.Args[1] == "-recover-bindings" || os.Args[1] == "-watch-pending-binding" || os.Args[1] == "-enable-keenetic-ingress" || os.Args[1] == "-disable-keenetic-ingress") {
 		os.Exit(runBindingCommand(os.Args[1], os.Stdin, os.Stdout))
 	}
 	if len(os.Args) == 4 && os.Args[1] == "-awg-guard" {

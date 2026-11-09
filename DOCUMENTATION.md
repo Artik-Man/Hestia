@@ -8,3 +8,4 @@
 - [Лабораторные проверки](tests/lab/README.md)
 - [Инструкции и правила проекта](agents/README.md)
 - [Отчёты и свидетельства экспериментов](experiments/README.md)
+- [Keen-MVP: отдельный Entware-прототип OpkgTun](keen-mvp/README.md)

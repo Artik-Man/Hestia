@@ -4,9 +4,14 @@
 set -eu
 
 case "${1:-configure}" in
-	configure)
-		/opt/etc/init.d/S99hestia configure-package
-		;;
+    configure)
+        /opt/etc/init.d/S99hestia configure-package
+        if ! /opt/bin/hestia -enable-keenetic-ingress; then
+            /opt/etc/init.d/S99hestia stop || printf '%s\n' 'Hestia could not stop after OpkgTun profile migration failed' >&2
+            printf '%s\n' 'Hestia OpkgTun profile migration failed; services remain stopped' >&2
+            exit 1
+        fi
+        ;;
 esac
 
 exit 0

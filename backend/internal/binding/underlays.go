@@ -113,6 +113,9 @@ func (e Engine) connectionCatalog() ([]panelmodel.AWGUnderlayCandidate, error) {
 		name := ""
 		if item.Type == "direct" {
 			name = names[item.ID]
+			if item.ID == keeneticOpkgTunUnderlayID {
+				name = "OpkgTun"
+			}
 		}
 		candidates = append(candidates, panelmodel.AWGUnderlayCandidate{ID: item.ID, Type: item.Type, Name: name})
 	}

@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"syscall"
 
 	"github.com/Artik-Man/Hestia/internal/connectionid"
@@ -182,4 +184,87 @@ func SupervisorReady(ctx context.Context) error {
 		}
 	}
 	return nil
+}
+
+// ReconcileIngress refreshes policy routes synchronously or installs guards before supervisor readiness.
+func ReconcileIngress(ctx context.Context) error {
+	maintenance, err := packageMaintenanceState()
+	if err != nil {
+		return err
+	}
+	if maintenance {
+		return nil
+	}
+	_, err = requestSupervisor(ctx, request{Operation: "reconcile-ingress", TimeoutMillis: 16_000})
+	if err == nil {
+		return nil
+	}
+	if !errors.Is(err, ErrUnavailable) {
+		return err
+	}
+	return reconcileIngressGuard(ctx)
+}
+
+// QuiesceIngress installs guarded policy routes and drains standalone hooks before package replacement.
+func QuiesceIngress(ctx context.Context) error {
+	return quiesceIngressRoute(ctx)
+}
+
+// packageMaintenanceState reports the trusted transaction marker without treating filesystem errors as success.
+func packageMaintenanceState() (bool, error) {
+	path := filepath.Join(storage.Installed().Runtime, "package-maintenance")
+	info, err := os.Lstat(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return false, nil
+	}
+	if err != nil {
+		return false, errors.New("cannot inspect Hestia package transaction marker")
+	}
+	stat, ok := info.Sys().(*syscall.Stat_t)
+	if !info.Mode().IsRegular() || info.Mode().Perm() != 0600 || info.Mode()&(os.ModeSetuid|os.ModeSetgid|os.ModeSticky) != 0 || !ok || stat.Uid != 0 || stat.Nlink != 1 {
+		return false, errors.New("Hestia package transaction marker is unsafe")
+	}
+	if info.Size() > 128 {
+		return false, errors.New("Hestia package transaction marker is too large")
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return false, errors.New("cannot read Hestia package transaction marker")
+	}
+	marker, valid := parsePackageMaintenanceMarker(data)
+	if !valid {
+		return false, nil
+	}
+	bootID, err := os.ReadFile("/proc/sys/kernel/random/boot_id")
+	if err != nil {
+		return false, nil
+	}
+	if marker.bootID != strings.TrimSpace(string(bootID)) {
+		return false, nil
+	}
+	comm, err := os.ReadFile(filepath.Join("/proc", strconv.Itoa(marker.pid), "comm"))
+	if err != nil {
+		return false, nil
+	}
+	processName := strings.TrimSpace(string(comm))
+	if processName != "opkg" && processName != "opkg-cl" {
+		return false, nil
+	}
+	processStat, err := os.ReadFile(filepath.Join("/proc", strconv.Itoa(marker.pid), "stat"))
+	if err != nil {
+		return false, nil
+	}
+	closingParen := strings.LastIndex(string(processStat), ") ")
+	if closingParen < 0 {
+		return false, nil
+	}
+	statFields := strings.Fields(string(processStat)[closingParen+2:])
+	if len(statFields) <= 19 {
+		return false, nil
+	}
+	processStart, err := strconv.ParseUint(statFields[19], 10, 64)
+	if err != nil {
+		return false, nil
+	}
+	return processStart == marker.startTime, nil
 }

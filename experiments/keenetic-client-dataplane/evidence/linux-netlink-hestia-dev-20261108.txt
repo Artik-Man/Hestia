@@ -1,0 +1,17 @@
+Вопрос: корректно ли реальный Linux kernel принимает и возвращает IPv4/IPv6 RPDB rules и Hestia routes через production netlink adapter?
+Дата: 2026-11-08 18:59 MSK.
+Среда: Lima `hestia-dev`, Debian ARM64, kernel `6.1.0-54-cloud-arm64`; тестовый процесс root в отдельном network namespace. VM power и основную сеть не меняли.
+
+Подготовка:
+- Сборка: `GOOS=linux GOARCH=arm64 CGO_ENABLED=0 GOPROXY=off go -C backend test -c -tags 'keenetic netlinktest' -o /private/tmp/hestia-netlink.test ./internal/network/keeneticroute`.
+- ARM64 test binary скопирован во временный `/tmp` внутри `hestia-dev`.
+- Прогон: `sudo -n unshare --net env HESTIA_NETLINK_TEST=1 /tmp/hestia-netlink.test -test.v`.
+- Интеграционный тест требует root, `HESTIA_NETLINK_TEST=1` и отличающиеся `/proc/self/ns/net` и `/proc/1/ns/net`; он отказывается мутировать namespace VM.
+
+Ожидалось: kernel route dump/rule dump round-trip пройдут; guard, TUN default и cleanup коснутся только отдельной таблицы 30001 и тестовых dummy links `br0`/`opkgtun0`; main table останется той же.
+
+Результат: весь `keeneticroute` test binary прошёл, включая реальные RTM_NEWROUTE/RTM_DELROUTE и RTM_NEWRULE/RTM_DELRULE операции. Проверены переходы guard-only → TUN default плюс fallback guard → guard-only → cleanup. Таблица main в namespace до/после совпала. После выхода из namespace отдельная read-only проверка `hestia-dev` показала только исходный `lo`/`eth0`, default gateway `192.168.5.2`, и исходные rules 0/32766/32767; `br0`, `opkgtun0` и Hestia routes отсутствуют.
+
+В ходе прогона найдены и исправлены две реальные decoder несовместимости с kernel 6.1: правило с priority 0 не содержит атрибут `FRA_PRIORITY`, а kernel добавляет нейтральный `FRA_SUPPRESS_PREFIXLEN=UINT32_MAX` и `FRA_PROTOCOL` metadata. Parser теперь трактует опущенный приоритет как 0, разрешает только нейтральные suppression markers и не считает protocol metadata selector-ом; активное prefix suppression остаётся чужим selector и блокирует adoption.
+
+Пределы вывода: это проверка Linux ARM64 kernel 6.1 в одноразовом namespace. Она не доказывает поведение Keenetic kernel 4.9-ndm, NDM policy delivery, hook ordering, TUN packet forwarding или клиентский dataplane. Команды маршрутов не исполнялись в основном namespace VM и на роутер не загружались.

@@ -29,6 +29,22 @@ func SupervisorReady(context.Context) error {
 	return errors.New("Keenetic supervisor check is unavailable")
 }
 
+// ReconcileIngress refuses the Keenetic-only NDM callback request in the default Linux build.
+func ReconcileIngress(context.Context) error {
+	return errors.New("Keenetic ingress reconciliation is unavailable")
+}
+
+// QuiesceIngress refuses the Keenetic-only route lock in the default Linux build.
+func QuiesceIngress(context.Context) error {
+	return errors.New("Keenetic ingress route lock is unavailable")
+}
+
+// EnsureOpkgTun rejects the Keenetic-only NDM interface operation in the Linux build.
+func EnsureOpkgTun() error { return errors.New("Keenetic OpkgTun is unavailable") }
+
+// RemoveOpkgTun rejects the Keenetic-only NDM interface operation in the Linux build.
+func RemoveOpkgTun() error { return errors.New("Keenetic OpkgTun is unavailable") }
+
 // Physical creates the Linux NetworkManager and sysfs adapter for installed physical connections.
 func Physical() network.Physical { return linuxphysical.Manager{} }
 

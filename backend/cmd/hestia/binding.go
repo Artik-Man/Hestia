@@ -138,6 +138,8 @@ func runBindingCommand(mode string, input io.Reader, output io.Writer) int {
 		err = engine.Recover(ctx)
 	case "-watch-pending-binding":
 		err = engine.WatchPending(ctx)
+	case "-enable-keenetic-ingress", "-disable-keenetic-ingress":
+		err = runKeeneticIngress(ctx, mode == "-enable-keenetic-ingress")
 	default:
 		var change panelmodel.BindingChange
 		change, err = readBindingChange(input)

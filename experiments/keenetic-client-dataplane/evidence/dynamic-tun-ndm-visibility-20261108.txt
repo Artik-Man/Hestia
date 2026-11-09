@@ -1,0 +1,21 @@
+Вопрос: появляется ли интерфейс TUN, который sing-box создаёт сам, в списке интерфейсов NDM и пригоден ли он для выбора в Keenetic policy без отдельного NDM OpkgTun объекта?
+
+Среда: KN-1012, KeeneticOS 5.02.B.3.0-2 (5.2 Beta 3), kernel 4.9-ndm-5, aarch64; установленный sing-box 1.14.4. Изменения выполнялись в уникальном временном каталоге `/opt/tmp/hestia-opkgtun-dynamic-20261108`.
+
+Условия: до запуска `opkgtun0` отсутствовал. Проверенный JSON содержал только TUN inbound с `interface_name=opkgtun0`, адресом `172.31.250.2/30`, MTU 1500, `auto_route=false`, `auto_redirect=false`, `strict_route=false` и единственный `block` outbound. Запуск выполнялся через `/opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib`, поскольку бинарник требует glibc loader по пути `/lib/ld-linux-aarch64.so.1`, которого в Keenetic rootfs нет. Тестовый процесс подтвердил sing-box 1.14.4 и остановлен по проверенному PID.
+
+Ожидалось: sing-box создаст Linux TUN; если NDM автоматически не регистрирует внешний link, это будет видно по отсутствию имени в `ndmc show interface`. Main default route, RPDB, WAN и клиентские policy не должны измениться.
+
+Фактический результат:
+
+- Конфигурация прошла `sing-box check` при запуске через штатный loader.
+- Во время работы появился `opkgtun0` с flags `POINTOPOINT,MULTICAST,NOARP,UP,LOWER_UP`, MTU 1500 и адресом `172.31.250.2/30`.
+- В выводе `ndmc -c "show interface"` имя `opkgtun0`/`OpkgTun0` отсутствовало. Точечная команда `show interface opkgtun0` была отвергнута парсером NDM; она не подтвердила регистрацию.
+- sing-box установил только connected route `172.31.250.0/30 dev opkgtun0` и локальные IPv4/IPv6 записи. Глобальный default route и policy rules не добавлялись; RPDB SHA-256 во время теста совпал с исходным `2af45981a6919d24e0acd1e23cbcfb07a1ef80488b9dadf792580dfa39953430`.
+- Default route оставался `default via 10.40.154.1 dev eth3 metric 1000`.
+- После SIGTERM процесс завершился, `opkgtun0` и его маршруты исчезли. IPv4 routes-all SHA-256 вернулся к исходному `44f846066c5fa571f5d50b7aeed3e700ac02370798a6315f68f3d3d092f68891`; IPv4 rules — `2af45981a6919d24e0acd1e23cbcfb07a1ef80488b9dadf792580dfa39953430`; IPv6 routes-all — `cf38dc8583837d8aa12b996d5cd7f324f72d8dd5c7bce43420e54912e38fde18`; IPv6 rules — `0c651f61a467ac7398c5d475d8d996ab59c9aaf8d0ac99074b186126b1be1b05`.
+- Policy `hestia-client`, другие policy, рабочие процессы Hestia и VPN не менялись. Трафик через тестовый TUN не направлялся.
+
+Вывод: dynamic TUN создаёт Linux link, но в этом опыте не стал видимым NDM interface. Для выбора выхода в policy следует использовать отдельный NDM `OpkgTun0`, как в предыдущем handoff proof, и подключать к нему sing-box через `interface_name`. Сам тест не открывал веб-интерфейс Keenetic и не выбирал интерфейс в policy; вывод о выборе опирается на отсутствие dynamic link в NDM interface list и на отдельный подтверждённый тест NDM-managed OpkgTun.
+
+Границы: проверены создание/остановка интерфейса и отсутствие побочного изменения маршрутов/правил. Передача клиентского трафика, возвратный путь, policy selection, IPv4/IPv6 fail-closed, DNS, перезагрузка и UI не проверялись.

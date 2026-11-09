@@ -11,6 +11,7 @@ import unittest
 from pathlib import Path
 from profile import (
     compile_profile,
+    client_route,
     export_paths,
     keenetic_default_route_device,
     keenetic_interface_extension,
@@ -20,6 +21,7 @@ from profile import (
     stage_binding,
     stage_create_group,
     stage_delete_group,
+    stage_keenetic_ingress,
     stage_move_exit,
     stage_order,
     stage_rename_group,
@@ -46,6 +48,114 @@ class ProfileTests(unittest.TestCase):
     def compile(self):
         """Compile the current test profile using only its temporary directory for secrets."""
         return compile_profile(self.profile, self.base)
+
+    def install_managed_profile(self, base, profile):
+        """Write one checksum-verified synthetic generation for managed profile transformation tests."""
+        snapshot, backend = compile_profile(profile, base)
+        profile_raw = json.dumps(profile).encode()
+        backend_raw = json.dumps(backend).encode()
+        (base / "profile.json").write_bytes(profile_raw)
+        (base / "profile-source.sha256").write_text(hashlib.sha256(profile_raw).hexdigest())
+        (base / "sing-box.json").write_bytes(backend_raw)
+        (base / "profile-backend.sha256").write_text(hashlib.sha256(backend_raw).hexdigest())
+        (base / "snapshot.json").write_text(json.dumps(snapshot))
+        return snapshot, backend
+
+    def test_keenetic_ingress_enable_and_disable_are_reversible(self):
+        """Add OpkgTun with an explicit AWG-only route, then remove it without losing SOCKS."""
+        connector_id = "7f02067a-ca17-4c38-ae26-7c7fb21ca06a"
+        awg_dir = self.base / "awg" / connector_id
+        awg_dir.mkdir(parents=True)
+        metadata = awg_dir / "metadata.json"
+        metadata.write_text(json.dumps({
+            "id": connector_id, "group": "amnezia", "priority": 1,
+            "status": "ready", "ipv6Blocked": True, "type": "amneziawg",
+            "ipv4Address": "10.8.1.5/32", "dnsIPv4": "1.1.1.1",
+        }))
+        metadata.chmod(0o600)
+        self.profile["connectors"] = [{
+            "id": connector_id, "type": "amneziawg", "group": "amnezia",
+            "priority": 1, "ipv6Blocked": True, "status": "ready",
+        }]
+        self.profile["groups"].append({"id": "amnezia", "exits": [connector_id]})
+        self.profile["healthy"][connector_id] = True
+        self.profile["version"] = 2
+        self.profile.pop("socks_port")
+        self.profile["inbounds"] = [{
+            "type": "socks", "tag": "hestia-local-socks",
+            "listen": "127.0.0.1", "listen_port": 1080,
+        }]
+        for group in self.profile["groups"]:
+            group["defaultExit"] = "deny"
+        self.install_managed_profile(self.base, self.profile)
+        enabled_stage = self.base / "enabled"
+        enabled_stage.mkdir()
+        stage_keenetic_ingress(self.base, enabled_stage, True)
+
+        enabled_profile = json.loads((enabled_stage / "profile.json").read_bytes())
+        enabled_snapshot = json.loads((enabled_stage / "snapshot.json").read_bytes())
+        enabled_backend = json.loads((enabled_stage / "sing-box.json").read_bytes())
+        self.assertEqual(enabled_profile["version"], 2)
+        self.assertIn({
+            "type": "socks", "tag": "hestia-local-socks", "listen": "127.0.0.1", "listen_port": 1080
+        }, enabled_profile["inbounds"])
+        self.assertEqual(enabled_profile["inbounds"][-1]["tag"], "hestia-keenetic-ingress")
+        self.assertEqual(enabled_snapshot["groups"], [
+            {"id": group["id"], "exits": group["exits"]} for group in enabled_profile["groups"]
+        ])
+        self.assertTrue(
+            {"hestia-local-socks", "hestia-keenetic-ingress"}.issubset(
+                {item.get("tag") for item in enabled_backend["inbounds"]}
+            )
+        )
+        self.assertIn(
+            {"inbound": ["hestia-keenetic-ingress"], "action": "sniff", "timeout": "300ms"},
+            enabled_backend["route"]["rules"],
+        )
+        self.assertIn(
+            {"inbound": ["hestia-keenetic-ingress"], "action": "route", "outbound": "amnezia"},
+            enabled_backend["route"]["rules"],
+        )
+        ingress_rule = enabled_backend["route"]["rules"].index(
+            {"inbound": ["hestia-keenetic-ingress"], "action": "route", "outbound": "amnezia"}
+        )
+        self.assertLess(ingress_rule, enabled_backend["route"]["rules"].index(
+            next(rule for rule in enabled_backend["route"]["rules"] if "domain_suffix" in rule)
+        ))
+
+        disabled_stage = self.base / "disabled"
+        disabled_stage.mkdir()
+        shutil.copytree(self.base / "awg", enabled_stage / "awg")
+        stage_keenetic_ingress(enabled_stage, disabled_stage, False)
+        disabled_profile = json.loads((disabled_stage / "profile.json").read_bytes())
+        disabled_backend = json.loads((disabled_stage / "sing-box.json").read_bytes())
+        self.assertNotIn("hestia-keenetic-ingress", [item["tag"] for item in disabled_profile["inbounds"]])
+        self.assertIn("hestia-local-socks", [item["tag"] for item in disabled_backend["inbounds"]])
+
+    def test_keenetic_ingress_requires_exactly_one_ready_awg_only_group(self):
+        """Reject ambiguous, mixed, non-ready, and non-AWG defaults instead of allowing WAN fallback."""
+        connector_id = "7f02067a-ca17-4c38-ae26-7c7fb21ca06a"
+        profile = {
+            "inbounds": [{"type": "tun", "tag": "hestia-keenetic-ingress"}],
+            "connectors": [{"id": connector_id, "type": "amneziawg", "status": "ready"}],
+            "groups": [{"id": "amnezia", "exits": [connector_id], "defaultExit": "deny"}],
+        }
+        self.assertEqual(client_route(profile, "direct", [], [])[
+            "rules"], [{"inbound": ["hestia-keenetic-ingress"], "action": "route", "outbound": "amnezia"}])
+        profile["groups"].append({"id": "also-amnezia", "exits": [connector_id], "defaultExit": "deny"})
+        with self.assertRaisesRegex(ValueError, "one AmneziaWG-only group"):
+            client_route(profile, "direct", [], [])
+        profile["groups"].pop()
+        profile["groups"][0]["exits"].append("direct-wan")
+        with self.assertRaisesRegex(ValueError, "one AmneziaWG-only group"):
+            client_route(profile, "direct", [], [])
+        profile["groups"][0]["exits"] = [connector_id]
+        profile["groups"][0]["defaultExit"] = connector_id
+        self.assertEqual(client_route(profile, "direct", [], [])[
+            "rules"], [{"inbound": ["hestia-keenetic-ingress"], "action": "route", "outbound": "amnezia"}])
+        profile["groups"][0]["defaultExit"] = "direct-wan"
+        with self.assertRaisesRegex(ValueError, "one AmneziaWG-only group"):
+            client_route(profile, "direct", [], [])
 
     def test_keenetic_interface_extension_is_narrowly_scoped(self):
         """Permit only the reserved Keenetic underlay bound to the discovered uplink device."""

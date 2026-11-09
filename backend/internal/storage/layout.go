@@ -7,6 +7,7 @@ type Layout struct {
 	Runtime, ServicesSocket                                          string
 	PanelListen, PanelAssets                                         string
 	AWGStore, AWGRuntime, AWGReady, AWGHealth, AWGRoutes             string
+	IngressRuleState                                                 string
 	CountryPolicy, QualitySettings, QualityRuntime, QualityReport    string
 	DNSConfig, DNSPaths, DNSPolicy, DNSCache, DNSReport              string
 	Traffic, GeoIPProposals, GeoIPIndex, NetworkProfiles, ResolvConf string
@@ -19,7 +20,8 @@ func Linux() Layout {
 		Runtime: "/run/hestia", ServicesSocket: "/run/hestia/services.sock",
 		PanelListen: "/etc/hestia/panel-listen", PanelAssets: "/usr/local/share/hestia-panel/current",
 		InstallLock: "/run/hestia-install.lock", BindingMarker: "/etc/tmpfiles.d/hestia-binding.conf",
-		AWGStore: "/etc/hestia/awg", AWGRuntime: "/run/hestia-awg", AWGReady: "/run/hestia-awg/ready", AWGHealth: "/run/hestia-awg/health.json", AWGRoutes: "/run/hestia-awg/routes.json",
+		IngressRuleState: "/var/lib/hestia-ingress/rules.json",
+		AWGStore:         "/etc/hestia/awg", AWGRuntime: "/run/hestia-awg", AWGReady: "/run/hestia-awg/ready", AWGHealth: "/run/hestia-awg/health.json", AWGRoutes: "/run/hestia-awg/routes.json",
 		CountryPolicy: "/var/lib/hestia-country-map/policy.json", QualitySettings: "/var/lib/hestia-quality-settings/settings.json", QualityRuntime: "/run/hestia-quality", QualityReport: "/run/hestia-quality/report.json",
 		DNSConfig: "/etc/hestia/dns.json", DNSPaths: "/run/hestia-dns/paths.json", DNSPolicy: "/var/lib/hestia-dns-policy/policy.json", DNSCache: "/var/lib/hestia-dns/cache.json", DNSReport: "/run/hestia-dns/report.json",
 		Traffic: "/var/lib/hestia-traffic", GeoIPProposals: "/var/lib/hestia-geoip-proposals", GeoIPIndex: "/usr/share/hestia/geoip/country.bin", NetworkProfiles: "/etc/NetworkManager/system-connections", ResolvConf: "/etc/resolv.conf",
@@ -36,7 +38,8 @@ func Keenetic() Layout {
 		Runtime: runtime, ServicesSocket: runtime + "/services.sock",
 		PanelListen: config + "/panel-listen", PanelAssets: "/opt/share/hestia-panel/current",
 		InstallLock: "/opt/var/lock/hestia-install.lock", BindingMarker: config + "/binding-managed",
-		AWGStore: config + "/awg", AWGRuntime: runtime + "/awg", AWGReady: runtime + "/awg/ready", AWGHealth: runtime + "/awg/health.json", AWGRoutes: runtime + "/awg/routes.json",
+		IngressRuleState: "/opt/var/lib/hestia-ingress/rules.json",
+		AWGStore:         config + "/awg", AWGRuntime: runtime + "/awg", AWGReady: runtime + "/awg/ready", AWGHealth: runtime + "/awg/health.json", AWGRoutes: runtime + "/awg/routes.json",
 		CountryPolicy: state + "/country-map/policy.json", QualitySettings: state + "/quality/settings.json", QualityRuntime: runtime + "/quality", QualityReport: runtime + "/quality/report.json",
 		DNSConfig: config + "/dns.json", DNSPaths: runtime + "/dns/paths.json", DNSPolicy: state + "/dns-policy/policy.json", DNSCache: state + "/dns/cache.json", DNSReport: runtime + "/dns/report.json",
 		Traffic: state + "/traffic", GeoIPProposals: state + "/geoip-proposals", GeoIPIndex: "/opt/share/hestia/geoip/country.bin", NetworkProfiles: config + "/network-profiles", ResolvConf: "/etc/resolv.conf",

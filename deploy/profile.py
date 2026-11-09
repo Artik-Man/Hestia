@@ -480,12 +480,21 @@ def export_paths(backend: dict, directory: Path, source: os.stat_result | None =
 
 GEOIP_DIRECTORY = Path("/usr/share/hestia/geoip")
 GEOIP_OVERRIDES = Path("/var/lib/hestia-geoip-overrides")
+KEENETIC_INGRESS_INBOUND = {
+    "type": "tun",
+    "tag": "hestia-keenetic-ingress",
+    "interface_name": "opkgtun0",
+    "address": ["172.31.250.2/30"],
+    "mtu": 1500,
+    "auto_route": False,
+    "stack": "system",
+}
 
 
 def client_route(
     profile: dict, final: str, domain_rules: list[dict], pinned: list[dict]
 ) -> dict:
-    """Build ordered client rules after private listener pins, defaulting unknown IPs to the first group."""
+    """Build pinned, OpkgTun-to-AmneziaWG, domain and default routes in precedence order."""
     rules = list(pinned)
     inbound_tags = [
         item["tag"]
@@ -494,6 +503,19 @@ def client_route(
     ]
     if inbound_tags and domain_rules:
         rules.append({"inbound": inbound_tags, "action": "sniff", "timeout": "300ms"})
+    ingress_group = keenetic_ingress_group(profile)
+    if ingress_group is not None:
+        rules.append({
+            "inbound": [KEENETIC_INGRESS_INBOUND["tag"]],
+            "action": "route",
+            "outbound": ingress_group,
+        })
+    elif any(item.get("tag") == KEENETIC_INGRESS_INBOUND["tag"] for item in profile.get("inbounds", [])):
+        rules.append({
+            "inbound": [KEENETIC_INGRESS_INBOUND["tag"]],
+            "action": "route",
+            "outbound": "deny",
+        })
     rules.extend(domain_rules)
     route = {"final": final}
     policy = profile.get("countryMap")
@@ -555,6 +577,44 @@ def client_route(
     if rules:
         route["rules"] = rules
     return route
+
+
+def keenetic_ingress_group(profile: dict) -> str | None:
+    """Resolve the only group that can send OpkgTun traffic exclusively through ready AmneziaWG connectors."""
+    if not any(
+        item.get("type") == "tun" and item.get("tag") == KEENETIC_INGRESS_INBOUND["tag"]
+        for item in profile.get("inbounds", [])
+    ):
+        return None
+    connectors = {
+        item["id"]: item
+        for item in profile.get("connectors", [])
+        if item.get("type") == "amneziawg" and item.get("status") == "ready"
+    }
+    transports = {
+        item["id"]: item.get("underlays", [item.get("underlay")] if item.get("underlay") else [])
+        for item in [*profile.get("connectors", []), *profile.get("hysteria2", [])]
+    }
+
+    def depends_on_opkgtun(identifier: str, visited: set[str]) -> bool:
+        """Detect direct or transitive OpkgTun transport dependencies that would recurse through ingress."""
+        if identifier == "keenetic-opkgtun":
+            return True
+        if identifier in visited:
+            return False
+        visited.add(identifier)
+        return any(depends_on_opkgtun(item, visited) for item in transports.get(identifier, []))
+
+    candidates = [
+        group
+        for group in profile.get("groups", [])
+        if group.get("exits")
+        and group.get("defaultExit", "deny") in {"deny", *group["exits"]}
+        and all(member in connectors for member in group["exits"])
+        and all(not depends_on_opkgtun(member, set()) for member in group["exits"])
+    ]
+    require(len(candidates) <= 1, "Keenetic ingress requires at most one safe AmneziaWG-only group")
+    return candidates[0]["id"] if candidates else None
 
 
 def replace_domain_routes(
@@ -781,7 +841,29 @@ def compile_profile(profile: dict, directory: Path, committed: dict | None = Non
             )
             assigned.add(member)
         outbounds.append(selector(group, default_exit))
-    require(assigned == exits, "each interface must belong to one group")
+    opkgtun_interfaces = [
+        item for item in profile["interfaces"] if item["id"] == "keenetic-opkgtun"
+    ]
+    require(
+        not opkgtun_interfaces
+        or opkgtun_interfaces == [{"id": "keenetic-opkgtun", "type": "direct", "bind_interface": "opkgtun0"}],
+        "invalid managed OpkgTun interface",
+    )
+    opkgtun_inbounds = [
+        item for item in profile.get("inbounds", [])
+        if item.get("tag") == KEENETIC_INGRESS_INBOUND["tag"]
+    ]
+    require(
+        not opkgtun_interfaces or opkgtun_inbounds == [KEENETIC_INGRESS_INBOUND],
+        "OpkgTun underlay requires its exact managed inbound",
+    )
+    require(
+        not opkgtun_inbounds or opkgtun_inbounds == [KEENETIC_INGRESS_INBOUND],
+        "invalid managed OpkgTun inbound",
+    )
+    opkgtun_interface_ids = {item["id"] for item in opkgtun_interfaces}
+    require(not (assigned & opkgtun_interface_ids), "OpkgTun underlay cannot be a group exit")
+    require(assigned == exits - opkgtun_interface_ids, "each interface must belong to one group")
     require(
         isinstance(health, dict)
         and all(k in exits and type(v) is bool for k, v in health.items()),
@@ -1020,6 +1102,52 @@ def stage_generation(stage: Path, profile: dict, snapshot: dict, backend: dict) 
             write_private(
                 stage / checksum, (hashlib.sha256(raw).hexdigest() + "\n").encode()
             )
+
+
+def stage_keenetic_ingress(base: Path, stage: Path, enabled: bool) -> None:
+    """Stage the reversible OpkgTun inbound change while preserving existing SOCKS and VPN profile data."""
+    profile, snapshot, backend = managed_profile(base)
+    inbounds = profile.get("inbounds")
+    if enabled:
+        if profile["version"] == 1 or inbounds is None:
+            socks_port = profile.pop("socks_port", None)
+            profile["version"] = 2
+            profile.setdefault("connectors", [])
+            profile["inbounds"] = []
+            if socks_port is not None:
+                profile["inbounds"].append(
+                    {"type": "socks", "tag": "hestia-local-socks", "listen": "127.0.0.1", "listen_port": socks_port}
+                )
+            for group in profile["groups"]:
+                group.setdefault("defaultExit", "deny")
+            inbounds = profile["inbounds"]
+        matches = [item for item in inbounds if item.get("tag") == KEENETIC_INGRESS_INBOUND["tag"]]
+        require(not matches or matches == [KEENETIC_INGRESS_INBOUND], "Keenetic ingress tag is already in use")
+        if not matches:
+            inbounds.append(dict(KEENETIC_INGRESS_INBOUND))
+    else:
+        opkgtun_underlay_users = [
+            item["id"]
+            for item in [*profile.get("connectors", []), *profile.get("hysteria2", [])]
+            if "keenetic-opkgtun" in item.get("underlays", [item.get("underlay")] if item.get("underlay") else [])
+        ]
+        require(not opkgtun_underlay_users, "cannot disable OpkgTun while a VPN connection uses it as underlay")
+        require(
+            not any("keenetic-opkgtun" in group.get("exits", []) for group in profile["groups"]),
+            "OpkgTun underlay cannot be a group exit",
+        )
+        profile["interfaces"] = [
+            item for item in profile["interfaces"] if item.get("id") != "keenetic-opkgtun"
+        ]
+        if inbounds is None:
+            stage_generation(stage, profile, snapshot, backend)
+            return
+        matches = [item for item in inbounds if item.get("tag") == KEENETIC_INGRESS_INBOUND["tag"]]
+        require(not matches or matches == [KEENETIC_INGRESS_INBOUND], "Keenetic ingress inbound identity differs")
+        if matches:
+            profile["inbounds"] = [item for item in inbounds if item.get("tag") != KEENETIC_INGRESS_INBOUND["tag"]]
+    candidate_snapshot, candidate_backend = compile_profile(profile, base, backend)
+    stage_generation(stage, profile, candidate_snapshot, candidate_backend)
 
 
 def keenetic_interface_extension(previous: list[dict], candidate: list[dict], device: str) -> bool:
@@ -1369,6 +1497,11 @@ def main() -> None:
         return
     if len(sys.argv) == 3 and sys.argv[1] == "--validate-managed":
         managed_profile(Path(sys.argv[2]))
+        return
+    if len(sys.argv) == 5 and sys.argv[1] == "--keenetic-ingress":
+        require(keenetic_compile, "Keenetic ingress changes require the Keenetic platform build")
+        require(sys.argv[4] in {"enable", "disable"}, "invalid Keenetic ingress action")
+        stage_keenetic_ingress(Path(sys.argv[2]), Path(sys.argv[3]), sys.argv[4] == "enable")
         return
     if len(sys.argv) == 4 and sys.argv[1] == "--country-map":
         base, stage = Path(sys.argv[2]), Path(sys.argv[3])

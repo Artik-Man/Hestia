@@ -209,6 +209,11 @@ func stageAWGChange(ctx context.Context, engine Engine, stage string, request pa
 			return err
 		}
 	}
+	if slices.Contains(request.Underlays, keeneticOpkgTunUnderlayID) {
+		if err := ensureOpkgTunUnderlay(&current); err != nil {
+			return err
+		}
+	}
 	index := connectorIndex(current.Connectors, request.ID)
 	if update && index < 0 {
 		return ErrNotFound

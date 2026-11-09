@@ -42,8 +42,55 @@ type processEntry struct {
 }
 
 type processTable struct {
-	mu      sync.Mutex
-	entries map[processKey]*processEntry
+	mu           sync.Mutex
+	entries      map[processKey]*processEntry
+	ingressGate  bool
+	ingressReady bool
+	ingressMu    sync.Mutex
+	ingressSlots chan struct{}
+	ingressSync  func(context.Context, bool) error
+}
+
+// requireIngressGate blocks router startup through any caller until the Keenetic route guard is ready.
+func (t *processTable) requireIngressGate() {
+	t.mu.Lock()
+	t.ingressGate = true
+	t.ingressReady = false
+	t.mu.Unlock()
+}
+
+// markIngressReady opens the router-start gate after a successful initial policy reconciliation.
+func (t *processTable) markIngressReady() {
+	t.mu.Lock()
+	t.ingressReady = true
+	t.mu.Unlock()
+}
+
+// setIngressSync installs or clears the serialized callback used by supervisor and NDM event hooks.
+func (t *processTable) setIngressSync(callback func(context.Context, bool) error) {
+	t.ingressMu.Lock()
+	if callback != nil && t.ingressSlots == nil {
+		t.ingressSlots = make(chan struct{}, 1)
+	}
+	t.ingressSync = callback
+	t.ingressMu.Unlock()
+}
+
+// reconcileIngress serializes one event-driven policy refresh with the periodic lifecycle reconciler.
+func (t *processTable) reconcileIngress(ctx context.Context, forceGuard bool) error {
+	t.ingressMu.Lock()
+	callback, slots := t.ingressSync, t.ingressSlots
+	t.ingressMu.Unlock()
+	if callback == nil || slots == nil {
+		return ErrUnavailable
+	}
+	select {
+	case slots <- struct{}{}:
+		defer func() { <-slots }()
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+	return callback(ctx, forceGuard)
 }
 
 type processSpec struct {
@@ -140,6 +187,10 @@ func (t *processTable) start(ctx context.Context, service services.Service) erro
 		}
 	}
 	t.mu.Lock()
+	if service.Kind == services.Router && t.ingressGate && !t.ingressReady {
+		t.mu.Unlock()
+		return errors.New("router start blocked until Keenetic ingress is ready")
+	}
 	if t.entries == nil {
 		t.entries = make(map[processKey]*processEntry)
 	}

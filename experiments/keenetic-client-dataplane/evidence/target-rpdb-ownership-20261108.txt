@@ -1,0 +1,13 @@
+Вопрос: может ли Hestia надёжно распознать и удалить собственное RPDB rule на ядре KN-1012/Linux 4.9, если `FRA_PROTOCOL` не сохраняется?
+
+Среда: Keenetic Giga KN-1012, KeeneticOS `5.02.B.3.0-2`, kernel `4.9-ndm-5`, aarch64. Проверка выполнялась ARM64 Go test binary с настоящим `NetlinkIngressOps`; это была rule-only проба. Владелец разрешил read-only снимки и временные невыбираемые правила. Клиентская policy и пользовательский трафик не задействовались.
+
+Условия: перед add тест проверил отсутствие совпадающего priority/selector и пустую таблицу 34094. Он создал правило с priority 7, mark `0x0ffffffe/0xffffffff`, table 34094 и существующим input interface `lo`. Селектор не совпадает с клиентским ingress `br0`. После netlink ACK тест прочитал rule обратно, сверил persisted ownership registry, затем удалил правило через штатный `DeleteRule` и подтвердил пустой registry.
+
+Ожидалось: точное правило будет отмечено только после подтверждённого kernel add и будет удалено только при совпадении с persistent ownership identity.
+
+Фактический результат: target test прошёл. Добавленное правило было прочитано с ожидаемой identity и `Owned=true`; `DeleteRule` удалил его и запись registry. Снимки правил и маршрутов после опыта совпали с исходными. SHA-256 после пробы: IPv4 route-all `44f846066c5fa571f5d50b7aeed3e700ac02370798a6315f68f3d3d092f68891`, IPv4 rules `2af45981a6919d24e0acd1e23cbcfb07a1ef80488b9dadf792580dfa39953430`, IPv6 route-all `cf38dc8583837d8aa12b996d5cd7f324f72d8dd5c7bce43420e54912e38fde18`, IPv6 rules `0c651f61a467ac7398c5d475d8d996ab59c9aaf8d0ac99074b186126b1be1b05`. Временный каталог `/opt/tmp/hestia-rule-ownership-probe-20261108` удалён после теста.
+
+Воспроизведение: собрать тест из корня проекта командой `GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go -C backend test -c -tags 'keenetic netlinktest' -o /tmp/hestia-netlink-target-ownership.test ./internal/network/keeneticroute`; скопировать бинарник на KN-1012; создать закрытый временный каталог под `/opt/tmp`; запустить от root с `HESTIA_TARGET_RULE_TEST=1 HESTIA_INGRESS_RULE_STATE_PATH=<временный-каталог>/rules.json`; затем повторно снять все IPv4/IPv6 routes и rules и удалить тестовый каталог.
+
+Границы вывода: подтверждён persistent ownership lifecycle для одного независимого правила с существующим `iif`. Не проверены на KN-1012 пакет из трёх IPv4/IPv6 guard rules, отдельная Hestia route table, её install/remove rollback, supervisor/reconciler, policy mark selection и доставка пакетов. Этот результат сам по себе не разрешает устанавливать IPK или переключать клиентскую policy.

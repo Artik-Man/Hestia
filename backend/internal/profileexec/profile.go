@@ -26,6 +26,7 @@ const (
 	RenameGroup
 	DeleteGroup
 	Compile
+	KeeneticIngress
 )
 
 // Request carries semantic transformation inputs; Source and Stage are trusted transaction directories.
@@ -35,6 +36,7 @@ type Request struct {
 	UplinkDevice                                   string
 	Priority                                       int
 	PreserveWireguard                              bool
+	Enabled                                        bool
 }
 
 // CompilerAPI is the platform boundary used by the transaction coordinator.
@@ -101,6 +103,13 @@ func (i Installed) Apply(ctx context.Context, r Request) error {
 		if r.PreserveWireguard {
 			args = append(args, r.Source)
 		}
+		args = appendPlatformCompileFlag(args)
+	case KeeneticIngress:
+		action := "disable"
+		if r.Enabled {
+			action = "enable"
+		}
+		args = append(args, "--keenetic-ingress", r.Source, r.Stage, action)
 		args = appendPlatformCompileFlag(args)
 	default:
 		return errors.New("unknown profile operation")
