@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"sync/atomic"
 	"time"
 
@@ -182,7 +183,25 @@ func (w *watcher) refreshQuality() error {
 	if err != nil {
 		return err
 	}
-	return w.quality.ApplySettings(settings)
+	if err := w.quality.ApplySettings(settings); err != nil {
+		return err
+	}
+	data, err := os.ReadFile(qualitySettingsFile + ".reset")
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	reset, err := strconv.ParseInt(string(data), 10, 64)
+	if err != nil {
+		return err
+	}
+	if reset > w.qualityReset {
+		w.quality.Reset()
+		w.qualityReset = reset
+	}
+	return nil
 }
 
 // monitorRelay publishes reachability independently of optional quality scoring and stops with the watcher.

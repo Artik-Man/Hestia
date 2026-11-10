@@ -29,6 +29,42 @@ LIMA_HOME="$HOME/.lima" /private/tmp/hestia-vm-run/bin/limactl list
 
 Эти команды только читают локальный список ВМ: не подключаются к гостям и не меняют их питание. Для последующих операций также явно задавайте соответствующий `LIMA_HOME` и имя ВМ.
 
+## Подключение к уже работающей `hestia-client`
+
+В стенде 9 ноября 2026 года `hestia-client` уже работала; запускать или перезапускать её не потребовалось. `limactl list` показывал `Broken` из-за ошибки чтения boot session в ограниченном окружении, а `limactl shell hestia-client ...` завершался ошибкой об отсутствующем `/private/tmp/hestia-vm-run/lima-state/_config/user`. Это не помешало штатному SSH-доступу к гостю: сработал alias из конфигурации конкретной ВМ.
+
+Задайте явный путь к конфигурации и подключайтесь по alias `lima-hestia-client`:
+
+```sh
+CLIENT_LIMA_HOME=/private/tmp/hestia-vm-run/lima-state
+CLIENT_SSH_CONFIG="$CLIENT_LIMA_HOME/hestia-client/ssh.config"
+ssh -F "$CLIENT_SSH_CONFIG" lima-hestia-client 'hostname; ip -4 addr show lima0; ip -4 route show default'
+```
+
+Используйте существующий файл `ssh.config`: не создавайте и не подменяйте `_config/user`, SSH-ключи или конфигурацию ВМ. В проверенном запуске `lima0` имел адрес `192.168.1.124/24`, а основной маршрут шёл через Keenetic `192.168.1.1` с меньшей метрикой; дополнительный маршрут Lima через `eth0` имел большую метрику.
+
+## Отправка адресного HTTPS-запроса
+
+Чтобы запрос точно вышел с `lima0` и его можно было связать с трассировкой, задайте source IP и локальный source port, а адрес назначения закрепите через `--resolve`:
+
+```sh
+CLIENT_LIMA_HOME=/private/tmp/hestia-vm-run/lima-state
+CLIENT_SSH_CONFIG="$CLIENT_LIMA_HOME/hestia-client/ssh.config"
+ssh -F "$CLIENT_SSH_CONFIG" lima-hestia-client \
+  'curl -4 --interface 192.168.1.124 --local-port 49328 --connect-timeout 3 --max-time 5 --resolve one.one.one.one:443:1.1.1.1 -sS -o /dev/null https://one.one.one.one/cdn-cgi/trace'
+```
+
+Для одновременного подтверждения SYN на клиенте передайте захвату и `curl` один и тот же порт:
+
+```sh
+CLIENT_LIMA_HOME=/private/tmp/hestia-vm-run/lima-state
+CLIENT_SSH_CONFIG="$CLIENT_LIMA_HOME/hestia-client/ssh.config"
+ssh -F "$CLIENT_SSH_CONFIG" lima-hestia-client \
+  'sudo -n timeout 10 tcpdump -nn -l -i lima0 "host 1.1.1.1 and tcp port 443" > /tmp/hestia-client-trace.log 2>&1 & capture_pid=$!; sleep 0.3; curl -4 --interface 192.168.1.124 --local-port 49328 --connect-timeout 3 --max-time 5 --resolve one.one.one.one:443:1.1.1.1 -sS -o /dev/null https://one.one.one.one/cdn-cgi/trace; curl_status=$?; wait "$capture_pid" || true; cat /tmp/hestia-client-trace.log; echo curl_exit=$curl_status'
+```
+
+В синхронном опыте были видны два SYN `192.168.1.124:49328 → 1.1.1.1:443`; `curl` завершился кодом 28, потому что SYN-ACK не вернулся. При совместном запуске с `hestia -traffic-trace` передайте тот же source port в JSON trace. Начните захват на Keenetic непосредственно перед клиентской командой и дождитесь завершения обоих процессов; сверяйте tuple и окно захвата, а не только близкие timestamps разных ВМ.
+
 ## Доступ и изоляция экспериментов
 
 `hestia-prod` — личная рабочая ВМ владельца с адресом `192.168.1.133`. Доступ к ней и её Keenetic, отправка проб, изменение настроек и управление питанием требуют отдельного разрешения владельца. Это правило действует и при обращении к prod или Keenetic через `hestia-client`.

@@ -1,0 +1,50 @@
+KN-1012 bounded client-flow trace — 9 November 2026
+
+Question
+Whether the installed Hestia trace can correlate one client SYN across the Keenetic bridge and OpkgTun, and whether the 15-second maximum session is stored successfully.
+
+Environment and package
+- Device: KN-1012, KeeneticOS 5.2 Beta 3, kernel 4.9-ndm-5, Entware aarch64-3.10.
+- Client: already-running Lima VM hestia-client, 192.168.1.124 on lima0.
+- Installed IPK: 20261109-155544-db76edb7f3e1.
+- Local and router IPK SHA-256: 0322df5f6e4358131a45afe1ff40cce753a74ba27cf607e457f59ee2bb16c4f8.
+- opkg status: install user installed, architecture aarch64-3.10.
+- /opt/bin/hestia -service-supervisor-ready: exit 0; readiness marker present; package-maintenance marker absent.
+- GET /, /api/groups-and-rules, /api/physical-connections, /api/traffic: HTTP 200.
+- IPv4 default route SHA-256 before/after upgrade: f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871.
+- IPv6 default-route snapshot was empty before/after (SHA-256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855).
+- The existing profile/configuration remained in place; opkg reported differing conffiles and saved package defaults as `.opkg` files.
+
+Conditions and commands
+The policy, routes, groups, connections and domain lists were not changed. A 15-second root trace was started on KN-1012 for TCP tuple 192.168.1.124:49328 -> 1.1.1.1:443. At the same time, hestia-client ran:
+
+```sh
+sudo -n timeout 10 tcpdump -nn -l -i lima0 'host 1.1.1.1 and tcp port 443'
+curl -4 --interface 192.168.1.124 --local-port 49328 --connect-timeout 3 --max-time 5 \
+  --resolve one.one.one.one:443:1.1.1.1 -sS -o /dev/null \
+  https://one.one.one.one/cdn-cgi/trace
+```
+
+Expected result
+One summary containing all 11 stages is returned and persisted. The client capture verifies that the same five-tuple was actually emitted during the trace window.
+
+Observed result
+- Client `tcpdump` captured two SYNs from 192.168.1.124:49328 to 1.1.1.1:443 (sequence 4251715915); no SYN-ACK returned to that source. Curl exited 28 after a 3-second connection timeout.
+- Router trace command exited 0, reported durationMs=15000, and returned the full 11-stage summary. `/api/traffic?limit=100` contained source port 49328, confirming journal persistence.
+- `br0`: observed, count=2.
+- `opkgtun0`: not_observed, count=0.
+- sing-box inbound/rule/group/outbound/block: not_observed for the exact tuple.
+- sing-box response/close, policy_mark, WAN: unavailable in this implementation.
+- Trace began at 13:05:28 UTC; client/router clocks differed by about two seconds at the post-run check. Both captured SYN retries were inside the 15-second collection window.
+- Read-only `/api/groups-and-rules` summary: default group `Россия` has `keenetic-uplink` available; group `Остальной мир` has one configured exit marked available. Both domain lists are enabled and each is bound to its corresponding group; domain mask contents were not copied into evidence. The preceding profile snapshot maps `hestia-keenetic-ingress` to `Остальной мир`.
+- Read-only router path snapshot: priority 7 is `fwmark 0xffffaac iif br0 lookup 32732`; priority 8 is the matching unreachable fallback; system `lookup main` is priority 9. Table 32732 has `default dev opkgtun0` and an unreachable default guard. These are configured FIB facts, not evidence that this packet received mark `0xffffaac`.
+- Keenetic has no `iptables`, `iptables-save`, `nft`, `bpftool`, or `tcpdump` CLI. NDM policy RCI exposes configuration but no packet/byte hit counters. `nfnetlink_log` is loaded, but `xt_NFLOG` is not loaded, no NFLOG target is registered, and its logging group is empty. No module or firewall rule was changed.
+
+Defect found and corrected during this run
+An earlier package 20261109-154214 reported cleanup overhead as a DurationMs slightly greater than 15000 and rejected the summary. The implementation now clamps only the reported duration to the requested session window; the 1–15 second request validation and capture timer remain unchanged. A regression test covers 15.25 seconds elapsed -> 15000 ms. The corrected package was independently code- and security-reviewed before this update.
+
+Conclusion and limits
+The trace successfully bracketed the test flow at the Keenetic bridge but did not observe it at OpkgTun or in sing-box. Current group exits are available and the domain lists are enabled, but these decisions occur inside sing-box after TUN ingress and cannot directly explain this earlier gap. This localizes the next investigation to the bridge-to-OpkgTun segment; it does not identify whether policy classification, packet marking, RPDB lookup, another forwarding condition, or a capture limitation caused the gap. `not_observed` is not a kernel drop verdict. WAN absence, VPN egress, return routing and UDP behavior were not tested. No route or policy mutation was made.
+
+Reproduction
+On the authorized test window, start the root-only `/opt/bin/hestia -traffic-trace` with the same tuple and `durationSeconds: 15`, then immediately run the tcpdump/curl commands above from hestia-client. A trace summary is written to stdout and the bounded traffic journal. The source port must match in both commands.

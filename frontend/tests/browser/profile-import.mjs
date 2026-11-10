@@ -54,7 +54,13 @@ AllowedIPs = ${required.AllowedIPs}
 /** fixture serves only a local production bundle and a synthetic typed API, retaining public and private records separately. */
 async function fixture(
   page,
-  { includeOrphan = false, hasRadio = true, directName } = {},
+  {
+    includeOrphan = false,
+    hasRadio = true,
+    directName,
+    inputCandidate = false,
+    savedUnderlays = [],
+  } = {},
 ) {
   const publicRecord = {
     id: storedID,
@@ -63,6 +69,7 @@ async function fixture(
     priority: 2,
     status: "ready",
     ipv6Blocked: true,
+    ...(savedUnderlays.length ? { underlays: savedUnderlays } : {}),
   };
   const records = new Map([[publicRecord.id, publicRecord]]);
   const profiles = new Map([[publicRecord.id, config]]);
@@ -177,6 +184,16 @@ async function fixture(
           direct,
           { id: "wan-b", type: "direct" },
           { id: "unmatched", type: "direct" },
+          ...(inputCandidate
+            ? [
+                {
+                  id: "wg-keenetic",
+                  type: "wireguard",
+                  name: "Вход",
+                  role: "input",
+                },
+              ]
+            : []),
           ...[...records.values()].map(({ id, name }) => ({
             name,
             id,
@@ -548,6 +565,57 @@ test("ordered transports persist and the automatic mode clears all explicit choi
       dialog.getByRole("button", { name: "Сохранить", exact: true }).click(),
     );
     assert.deepEqual(state.writes.at(-1).data.underlays, []);
+  } finally {
+    await browser.close();
+  }
+});
+
+test("underlay picker hides platform input and preserves its saved reference", async () => {
+  const browser = await chromium.launch({
+    executablePath: process.env.CHROME_BIN,
+  });
+  try {
+    const page = await browser.newPage({ serviceWorkers: "block" });
+    const { state } = await fixture(page, {
+      directName: "ПАКТ",
+      includeOrphan: true,
+      inputCandidate: true,
+      savedUnderlays: ["wg-keenetic"],
+    });
+    await perform(page, "GET", "/api/awg", () => page.goto(url));
+    const dialog = await edit(page, storedID, "existing");
+    const trigger = dialog.locator("#underlay-trigger");
+    assert.match(await trigger.innerText(), /Системный маршрут/);
+    assert.doesNotMatch(await trigger.innerText(), /Вход/);
+    await trigger.click();
+    const directChoice = dialog.getByRole("checkbox", {
+      name: "ПАКТ",
+      exact: true,
+    });
+    await expect(directChoice).toBeVisible();
+
+    assert.equal(
+      await dialog.getByRole("checkbox", { name: "Вход", exact: true }).count(),
+      0,
+    );
+    assert.equal(await directChoice.count(), 1);
+    assert.equal(
+      await dialog
+        .getByRole("checkbox", { name: "pending", exact: true })
+        .count(),
+      1,
+    );
+    assert.equal(
+      await dialog
+        .getByRole("checkbox", { name: "existing", exact: true })
+        .count(),
+      0,
+    );
+    await dialog.getByLabel("Название подключения").fill("existing updated");
+    await perform(page, "PUT", "/api/awg/" + storedID, () =>
+      dialog.getByRole("button", { name: "Сохранить", exact: true }).click(),
+    );
+    assert.deepEqual(state.writes.at(-1).data.underlays, ["wg-keenetic"]);
   } finally {
     await browser.close();
   }

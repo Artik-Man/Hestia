@@ -70,5 +70,76 @@
     </dd>
     <dt>Связанный DNS-запрос</dt>
     <dd>{{ item.dnsQueryId || "Связь с DNS-запросом не установлена" }}</dd>
+    @if (item.trace; as trace) {
+      <dt>Trace tuple</dt>
+      <dd>
+        {{ trace.source }}:{{ trace.sourcePort }} → {{ trace.destination }}:{{
+          trace.destinationPort
+        }}
+        · {{ trace.durationMs }} мс
+      </dd>
+      @if (trace.ndmConntrack; as conntrack) {
+        <dt>NDM conntrack</dt>
+        <dd>
+          @switch (conntrack.status) {
+            @case ("observed") {
+              Запись найдена (read-only)
+            }
+            @case ("not_observed") {
+              Точная запись не наблюдалась
+            }
+            @case ("truncated") {
+              Снимок ограничен до совпадения
+            }
+            @default {
+              Недоступно
+            }
+          }
+        </dd>
+        @if (conntrack.status === "observed") {
+          <dt>Connection mark</dt>
+          <dd>
+            {{ formatConntrackMark(conntrack.mark) }} · это метка записи
+            conntrack, не прямое чтение skb mark
+          </dd>
+          <dt>Conntrack счётчики</dt>
+          <dd>
+            исходящие {{ conntrack.originalPackets ?? "—" }} пакетов /
+            {{ conntrack.originalBytes ?? "—" }} байт; обратные
+            {{ conntrack.replyPackets ?? "—" }} пакетов /
+            {{ conntrack.replyBytes ?? "—" }} байт
+          </dd>
+          <dt>NDM ifl / ifw</dt>
+          <dd>
+            {{ conntrack.ifl ?? "—"
+            }}{{ conntrack.iflName ? " (" + conntrack.iflName + ")" : "" }}
+            /
+            {{ conntrack.ifw ?? "—"
+            }}{{ conntrack.ifwName ? " (" + conntrack.ifwName + ")" : "" }}
+          </dd>
+          @if (conntrack.ndmMark !== undefined) {
+            <dt>NDM mark</dt>
+            <dd>{{ formatConntrackMark(conntrack.ndmMark) }}</dd>
+          }
+          @if (conntrack.flags?.length) {
+            <dt>Conntrack flags</dt>
+            <dd>{{ (conntrack.flags ?? []).join(", ") }}</dd>
+          }
+        }
+      }
+      <dt>Стадии</dt>
+      <dd>
+        <ul>
+          @for (stage of trace.stages; track stage.name) {
+            <li>
+              {{ stage.name }} — {{ stage.status }}
+              @if (stage.detail) {
+                · {{ stage.detail }}
+              }
+            </li>
+          }
+        </ul>
+      </dd>
+    }
   </dl>
 </p-dialog>

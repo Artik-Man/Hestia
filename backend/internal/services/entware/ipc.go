@@ -93,15 +93,13 @@ func RunSupervisor(ctx context.Context) error {
 	var handlers sync.WaitGroup
 	go acceptConnections(ctx, listener, &table, &handlers, acceptErr)
 	failStartup := func(startupErr error) error {
+		log.Printf("Hestia supervisor startup failed: %v", startupErr)
 		_ = listener.Close()
 		handlers.Wait()
 		_ = stopAll(context.Background(), &table)
 		return startupErr
 	}
 	if err := table.start(context.Background(), services.Service{Kind: services.BindingWatch}); err != nil {
-		return failStartup(err)
-	}
-	if err := awaitBootRecovery(ctx); err != nil {
 		return failStartup(err)
 	}
 	ingressReady := make(chan error, 1)
@@ -143,10 +141,16 @@ func RunSupervisor(ctx context.Context) error {
 	case <-ctx.Done():
 		return failStartupWithIngress(ctx.Err())
 	}
-	for _, service := range []services.Service{{Kind: services.Router}, {Kind: services.Controller}, {Kind: services.Panel}} {
+	for _, service := range []services.Service{{Kind: services.Router}, {Kind: services.Controller}} {
 		if err := table.start(context.Background(), service); err != nil {
 			return failStartupWithIngress(err)
 		}
+	}
+	if err := awaitBootRecovery(ctx); err != nil {
+		return failStartupWithIngress(err)
+	}
+	if err := table.start(context.Background(), services.Service{Kind: services.Panel}); err != nil {
+		return failStartupWithIngress(err)
 	}
 	dnsConfigured, err := dnsServiceConfigured()
 	if err != nil {

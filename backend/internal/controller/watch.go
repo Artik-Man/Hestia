@@ -16,17 +16,18 @@ import (
 )
 
 type watcher struct {
-	relayProbes chan struct{}
-	relayReady  map[string]*atomic.Bool
-	devices     map[string]string
-	carrier     func(string) panelmodel.CarrierState
-	quality     *quality.Engine
-	client      *http.Client
-	base        string
-	desired     *Config
-	pinned      bool
-	confirmed   map[string]string
-	healthyAWG  func(string) bool
+	relayProbes  chan struct{}
+	relayReady   map[string]*atomic.Bool
+	devices      map[string]string
+	carrier      func(string) panelmodel.CarrierState
+	quality      *quality.Engine
+	qualityReset int64
+	client       *http.Client
+	base         string
+	desired      *Config
+	pinned       bool
+	confirmed    map[string]string
+	healthyAWG   func(string) bool
 }
 
 // newWatcher starts reconciliation with no desired snapshot or confirmed targets and selected platform link observation.

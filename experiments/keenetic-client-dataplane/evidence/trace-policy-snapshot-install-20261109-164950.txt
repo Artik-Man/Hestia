@@ -1,0 +1,68 @@
+KN-1012 policy-snapshot trace package install — 9 November 2026
+
+## Question
+
+Install the reviewed Hestia build that resolves the explicit client policy from read-only RCI before a bounded tuple trace, preserve the previous package and configuration for recovery, and run one synchronized tuple trace from `hestia-client` without changing policy or routes.
+
+## Environment and package
+
+- Target: KN-1012, KeeneticOS 5.2 Beta 3, kernel `4.9-ndm-5`, Entware `aarch64-3.10`.
+- Client: existing Lima VM `hestia-client`, expected source `192.168.1.124` on `lima0`.
+- Previous Hestia package: `20261109-155544-db76edb7f3e1`, status `install user installed`.
+- Installed package: `20261109-164950-db76edb7f3e1`.
+- New IPK SHA-256, local and target staging copy: `3a3d0db9eab77a0c1d57059c3dd25d58d6ab9479131a6dfc0dba92c2f5a2e1eb`.
+- Rollback package: `20261109-130906-db76edb7f3e1`, SHA-256 verified locally and on target as `79a219edddee1605cc60ef875ca2f82daa7f55ebd7575462ea0a2a28ee18e348`.
+- Independent code and security reviews found no blocker for the read-only RCI snapshot implementation.
+
+## Preparation and install
+
+The bundle manifest was verified locally with `scripts/shared/common.py:verify_bundle`. The configured SSH alias `keenetic-hestia` with its pinned host key and legacy SCP was used; no key, token, or SSH config content was copied into this record.
+
+Read-only preflight confirmed root execution, architecture `aarch64-3.10`, previous package status `install user installed`, supervisor readiness, and no package-maintenance marker. Baseline default-route hashes:
+
+- IPv4: `f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871`.
+- IPv6: empty snapshot, SHA-256 `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+
+A root-only backup was created at `/opt/tmp/hestia-deploy-20261109-1655-trace164950` containing `/opt/etc/hestia`, `/opt/lib/opkg/status`, IPv4/IPv6 default-route snapshots, and the verified rollback package. The new package was copied to the same mode-0700 directory and the remote SHA-256 matched the local value above.
+
+Install command:
+
+```sh
+/opt/bin/opkg install /opt/tmp/hestia-deploy-20261109-1655-trace164950/hestia_20261109-164950-db76edb7f3e1_aarch64-3.10.ipk
+```
+
+`opkg install` exited 0 and configured Hestia. Existing profile/snapshot/backend/sing-box conffiles differed from package defaults; Entware retained the defaults as `*-opkg` files. No policy, route, firewall, or forwarding configuration was changed.
+
+## Post-install checks
+
+- `opkg status hestia`: `Version: 20261109-164950-db76edb7f3e1`, `Status: install user installed`, `Architecture: aarch64-3.10`.
+- `/opt/bin/hestia -service-supervisor-ready`: exit 0; readiness marker present; package-maintenance marker absent.
+- `/opt/bin/hestia -check -config /opt/etc/hestia/snapshot.json`: exit 0.
+- GET `http://192.168.1.1:8080/api/traffic?limit=1`: HTTP 200; response body was not emitted into the shell log.
+- IPv4 default-route hash after install: `f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871` (unchanged).
+- IPv6 default-route hash after install: `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` (still empty).
+- Installed `/opt/bin/hestia` SHA-256: `4f4722b0e1017fdf90b15af2b71c065ab55acf8b67b60c027f1d3219555fb44d`.
+
+An initial attempted CLI flag `-validate-managed-profile` is not supported by the runtime CLI and returned usage/error code 2. It was read-only and made no state change. The supported `-check -config` validation above then passed.
+
+## Client probe status
+
+Expected synchronized trace tuple: `192.168.1.124:49328 → 1.1.1.1:443`, TCP, 15 seconds. The trace command prepared for the router root shell is:
+
+```sh
+printf '%s\n' '{"protocol":"TCP","source":"192.168.1.124","sourcePort":49328,"destination":"1.1.1.1","destinationPort":443,"durationSeconds":15}' | /opt/bin/hestia -traffic-trace
+```
+
+The paired `tcpdump`/source-bound `curl` command is preserved in `trace-installed-20261109-155544.txt`. Neither command was run for the new package because the authorized client VM could not be reached. `limactl list` reported boot-session detection as `operation not permitted` and showed `hestia-client` as `Broken`; this status alone does not prove the VM is powered off. `limactl shell hestia-client hostname` failed before connecting with:
+
+```text
+stat /private/tmp/hestia-vm-run/lima-state/_config/user: no such file or directory
+```
+
+The expected Lima SSH identity file is missing. No replacement key was generated, no other VM's key was substituted, and no Lima power/disk state was changed. `hestia-prod` was not accessed. Consequently, no fresh source→client→policy RCI snapshot, packet observation, or new `/api/traffic` trace record exists for package `20261109-164950-db76edb7f3e1`.
+
+## Conclusion and next step
+
+The package update and post-install smoke passed, and the default routes remained unchanged. This does not validate the new RCI JSON schema or any packet path. The previous exact-tuple evidence remains two SYNs on `br0`, none on `opkgtun0` or sing-box; it is not evidence for the new build and `not_observed` remains distinct from a drop verdict.
+
+The smallest next step is for the owner to restore the existing Lima identity file or provide the supported connection method for the already-running `hestia-client`, then repeat the single 15-second tuple above. Do not change policy/routes or create a new VM. If RCI objects/schema do not match, keep policy and dependent route stages `unavailable`. Even a coherent snapshot will remain configuration expectation and will not prove the packet's mark or actual route lookup.

@@ -13,3 +13,13 @@ func TestDefaultPlatformHasNoKeeneticUnderlay(t *testing.T) {
 		t.Fatal("default platform accepted a Keenetic-only underlay")
 	}
 }
+
+// TestDefaultPlatformChannelRolesPreserveLinuxEndpoints checks the Linux input/output metadata used by the panel.
+func TestDefaultPlatformChannelRolesPreserveLinuxEndpoints(t *testing.T) {
+	if got := PlatformChannelRole("wg-keenetic"); got != "input" {
+		t.Fatalf("Linux input role = %q, want input", got)
+	}
+	if got := PlatformChannelRole("keenetic-direct"); got != "output" {
+		t.Fatalf("Linux output role = %q, want output", got)
+	}
+}

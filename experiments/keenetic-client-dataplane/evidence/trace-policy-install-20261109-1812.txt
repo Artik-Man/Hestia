@@ -1,0 +1,72 @@
+KN-1012 RCI-aware trace package install and synchronized probe — 9 November 2026
+
+## Question
+
+Does the RCI-aware trace package install cleanly after the first postinst smoke failure, and does its trace persist the configured policy/RPDB/FIB expectations beside an exact client tuple?
+
+## Device recovery and preflight
+
+- Device: KN-1012, KeeneticOS 5.2 Beta 3, kernel `4.9-ndm-5`, Entware `aarch64-3.10`.
+- After the first `20261109-172910-db76edb7f3e1` postinst failure, the saved rollback restored `20261109-164950-db76edb7f3e1`, supervisor readiness and default route hashes.
+- The exact underlying `SmokeCurrent` subcheck from the first failure was not retained by the package's sanitized error. After rollback, the current generation passed three consecutive read-only `smoke-current` IPC checks, two seconds apart. Read-only target selector comparisons also had zero mismatches; profile and quality report were valid.
+- Local and staged new IPK SHA-256 both matched: `ca6eea559f1e68da4bd35c6914551ed62a0d6395c88486da93c9f32dbb3d7116`.
+- Saved rollback IPK SHA-256 matched: `3a3d0db9eab77a0c1d57059c3dd25d58d6ab9479131a6dfc0dba92c2f5a2e1eb`.
+- Preinstall IPv4 default-route SHA-256: `f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871`.
+- Preinstall IPv6 default-route snapshot was empty, SHA-256 `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+
+## Installation and post-install verification
+
+Command:
+
+```sh
+/opt/bin/opkg install /opt/tmp/hestia-deploy-20261109-172910-activefilter/hestia_20261109-172910-db76edb7f3e1_aarch64-3.10.ipk
+```
+
+The command exited 0 and `opkg` reports `Version: 20261109-172910-db76edb7f3e1`, `Status: install user installed`, `Architecture: aarch64-3.10`. Entware retained differing managed profile conffiles and placed package defaults beside them as `*-opkg`. Package-maintenance marker and opkg lock were absent after completion.
+
+Post-install read-only checks passed:
+
+- `/opt/bin/hestia -service-supervisor-ready`: exit 0;
+- `/opt/bin/python3 -I /opt/lib/hestia/profile.py --validate-managed /opt/etc/hestia`: exit 0;
+- `/opt/bin/hestia -check -config /opt/etc/hestia/snapshot.json`: exit 0;
+- sing-box check using `/opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia`: exit 0;
+- GET `/`, `/api/traffic?limit=1`, `/api/groups-and-rules`: HTTP 200;
+- read-only supervisor `smoke-current`: pass;
+- IPv4 default-route hash after install remained `f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871`;
+- IPv6 default-route snapshot remained empty with hash `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+
+No policy, route, firewall, module, VM power or SSH key was changed. `hestia-prod` was not accessed.
+
+## Synchronized trace
+
+Trace tuple: TCP `192.168.1.124:49333 → 1.1.1.1:443`, duration 15 seconds.
+
+- Router trace `startedAt=2026-11-09T15:12:17.761130713Z`, `configurationObservedAt=2026-11-09T15:12:17.633795103Z`, `durationMs=15000`.
+- Client `lima0` captured two SYNs at `18:12:22.664` and `18:12:23.678` local time (UTC+3), both inside the trace window. Curl exited 28 after timeout.
+- Trace: `br0 observed count=2`; `opkgtun0 not_observed`; sing-box exact-tuple inbound/rule/group/outbound/block `not_observed`; policy mark and WAN `unavailable`.
+- The integrated configuration snapshot reported `policyKey=Policy2`, `configuredMark=268434092` (`0xffffaac`), `ndmTable=4100`, and `hestiaTable=32732`.
+- `ndm_policy`, `hestia_lookup_rule`, `hestia_guard_rule`, `hestia_rule_order` and `hestia_table_routes` were all `configured_expectation`. These fields describe the read-only configuration/FIB, not actual packet classification, mark or route lookup.
+- GET `/api/traffic?limit=100` at `192.168.1.1:8080` returned HTTP 200 and one record matching source port `49333`. Its kind was `unconfirmed` and reason was `opt-in flow trace summary`.
+
+## Conclusion and limits
+
+The RCI-aware package is now installed and ready. The exact tuple was again visible at `br0` but not observed on `opkgtun0` or in sing-box. The source-to-Policy2 mapping and mark/table/RPDB/FIB configuration are now captured in the same trace as configured expectations. This still does not establish that the packet received `0xffffaac`, hit the Hestia RPDB rule, or was dropped. `not_observed` is not a drop verdict; the client timeout indicates no HTTPS response arrived, but not where or why.
+
+In the traffic UI this trace is an `unconfirmed` summary, not a `blocked` sing-box event. Other visible UDP rows to different destinations are not attributable to this TCP tuple. The trace itself persists successfully. The next packet-level step remains no-mutation discovery of a target-supported NDM counter/event or proven post-classification hook. Do not add Netfilter/NFLOG rules, load modules, or change policy/routes under this diagnostic scope.
+
+## Reproduction commands
+
+Router:
+
+```sh
+printf '%s' '{"protocol":"TCP","source":"192.168.1.124","sourcePort":49333,"destination":"1.1.1.1","destinationPort":443,"durationSeconds":15}' | /opt/bin/hestia -traffic-trace
+```
+
+Client, synchronized through the existing `lima-hestia-client` SSH alias:
+
+```sh
+CLIENT_LIMA_HOME=/private/tmp/hestia-vm-run/lima-state
+CLIENT_SSH_CONFIG="$CLIENT_LIMA_HOME/hestia-client/ssh.config"
+ssh -F "$CLIENT_SSH_CONFIG" lima-hestia-client \
+  'sudo -n timeout 15 tcpdump -nn -l -i lima0 "(src host 192.168.1.124 and src port 49333 and dst host 1.1.1.1 and dst port 443) or (src host 1.1.1.1 and src port 443 and dst host 192.168.1.124 and dst port 49333)" > /tmp/hestia-client-trace-49333.log 2>&1 & capture_pid=$!; sleep 5; curl -4 --interface 192.168.1.124 --local-port 49333 --connect-timeout 3 --max-time 5 --resolve one.one.one.one:443:1.1.1.1 -sS -o /dev/null https://one.one.one.one/cdn-cgi/trace; curl_status=$?; wait "$capture_pid" || true; cat /tmp/hestia-client-trace-49333.log; echo curl_exit=$curl_status'
+```

@@ -17,6 +17,8 @@ const (
 	ingressRouteMetric      = 1000
 	ingressGuardMetric      = 32767
 	ingressGuardFloorMetric = 0
+	// KeeneticOS can mark an installed OpkgTun route link-down until sing-box attaches to the TUN device.
+	ingressRouteFlagLinkDown = 16
 	// 253 is a local route protocol used to identify only Hestia-owned ingress routes in kernel dumps.
 	ingressRouteProtocol = 253
 	ingressIPv4Family    = 2
@@ -271,6 +273,14 @@ func (p IngressPolicy) DeactivateIPv4(ctx context.Context) error {
 	if err := p.InstallGuard(ctx); err != nil {
 		return err
 	}
+	linksUp, err := p.ops.LinkUp(ctx, p.tunnel)
+	if err != nil {
+		return errors.New("cannot inspect Hestia TUN interface")
+	}
+	if !linksUp {
+		// The floor guard makes the link-down route unreachable until the TUN reader is ready.
+		return nil
+	}
 	if err := p.deleteIfPresent(ctx, p.tunnelRoute()); err != nil {
 		return err
 	}
@@ -348,8 +358,11 @@ func (p IngressPolicy) ensureRule(ctx context.Context, wanted ingressRule) error
 func (p IngressPolicy) inspectRoutes(routes []ingressRoute) (map[uint32]bool, error) {
 	state := map[uint32]bool{}
 	for _, route := range routes {
+		linkDownTunnelRoute := route.Flags == ingressRouteFlagLinkDown && route.Type == ingressUnicast &&
+			route.Device == p.tunnel && route.Metric == ingressRouteMetric
 		if route.Table != p.table || route.PrefixBits != 0 || route.SourcePrefixBits != 0 || route.TOS != 0 ||
-			route.Scope != 0 || route.Protocol != ingressRouteProtocol || route.Flags != 0 || route.HasGateway || route.HasOtherAttributes {
+			route.Scope != 0 || route.Protocol != ingressRouteProtocol || (route.Flags != 0 && !linkDownTunnelRoute) ||
+			route.HasGateway || route.HasOtherAttributes {
 			return nil, errors.New("Hestia ingress table contains an unowned route")
 		}
 		owned := route.Type == ingressUnreachable && route.Device == "" &&

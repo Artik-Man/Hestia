@@ -23,13 +23,14 @@ func TestTrafficHTTP(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer store.Close()
-	if err = store.Append(t.Context(), traffic.TrafficEvent{Time: time.Now().UTC().Add(-3 * time.Hour), Address: "2001:db8::5", Protocol: "UDP", Port: 443, Kind: traffic.Unconfirmed, Connection: "old-fi"}); err != nil {
+	traceEvent := traffic.TrafficEvent{Time: time.Now().UTC().Add(-3 * time.Hour), Address: "2001:db8::5", Protocol: "UDP", Port: 443, Kind: traffic.Unconfirmed, Connection: "old-fi", Trace: &traffic.TraceEvidence{SessionID: "20261109T120000.000000000Z", StartedAt: time.Now().UTC(), DurationMs: 15000, PolicyKey: "Policy2", ConfiguredMark: 0x0ffffaac, NDMTable: 4102, HestiaTable: 32732, Source: "192.0.2.4", SourcePort: 49322, Destination: "192.0.2.5", DestinationPort: 443, Stages: []traffic.TraceStage{{Name: "br0", Status: "observed", Count: 2, ReverseCount: 1}, {Name: "policy_mark", Status: "unavailable"}}}}
+	if err = store.Append(t.Context(), traceEvent); err != nil {
 		t.Fatal(err)
 	}
 	h := panelHandler("", "", nil, panelWrites{traffic: store})
 	res := dnsRequest(t, h, http.MethodGet, "/api/traffic?query=db8&protocol=UDP&output=connection%3Aold-fi&limit=1", nil, "")
 	var page traffic.TrafficPage
-	if err = json.Unmarshal(res.Body.Bytes(), &page); err != nil || res.Code != 200 || page.Total != 1 || len(page.Events) != 1 || page.Events[0].Port != 443 || page.SourceAvailable {
+	if err = json.Unmarshal(res.Body.Bytes(), &page); err != nil || res.Code != 200 || page.Total != 1 || len(page.Events) != 1 || page.Events[0].Port != 443 || page.SourceAvailable || page.Events[0].Trace == nil || page.Events[0].Trace.SourcePort != 49322 || len(page.Events[0].Trace.Stages) != 2 || page.Events[0].Trace.Stages[0].ReverseCount != 1 {
 		t.Fatalf("status %d: %s err=%v", res.Code, res.Body.String(), err)
 	}
 	for _, query := range []string{"?limit=501", "?from=invalid", "?protocol=ICMP", "?output=unknown", "?snapshot=future"} {

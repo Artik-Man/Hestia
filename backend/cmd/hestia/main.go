@@ -38,6 +38,13 @@ func main() {
 		}
 		return
 	}
+	if trafficTraceEnabled() && len(os.Args) == 2 && os.Args[1] == "-traffic-trace" {
+		if err := runTrafficTraceCommand(os.Stdin, os.Stdout); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
+	}
 	if len(os.Args) == 2 && os.Args[1] == "-service-check-idle" {
 		if err := platform.CheckManagedProcessesStopped(); err != nil {
 			fmt.Fprintln(os.Stderr, err)

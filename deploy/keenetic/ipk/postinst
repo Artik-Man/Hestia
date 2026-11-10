@@ -5,6 +5,18 @@ set -eu
 
 case "${1:-configure}" in
     configure)
+        for state_dir in /opt/var/lib /opt/var/lib/hestia /opt/var/lib/hestia/country-map; do
+            if [ -L "$state_dir" ] || { [ -e "$state_dir" ] && [ ! -d "$state_dir" ]; }; then
+                printf '%s\n' 'Hestia country-map state path is unsafe' >&2
+                exit 1
+            fi
+            if [ ! -d "$state_dir" ]; then
+                (
+                    umask 077
+                    /opt/bin/busybox mkdir -m 0700 "$state_dir"
+                )
+            fi
+        done
         /opt/etc/init.d/S99hestia configure-package
         if ! /opt/bin/hestia -enable-keenetic-ingress; then
             /opt/etc/init.d/S99hestia stop || printf '%s\n' 'Hestia could not stop after OpkgTun profile migration failed' >&2

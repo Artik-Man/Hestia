@@ -90,7 +90,8 @@ class ProfileTests(unittest.TestCase):
         self.install_managed_profile(self.base, self.profile)
         enabled_stage = self.base / "enabled"
         enabled_stage.mkdir()
-        stage_keenetic_ingress(self.base, enabled_stage, True)
+        with patch("profile.keenetic_default_route_device", return_value="wan9"):
+            stage_keenetic_ingress(self.base, enabled_stage, True)
 
         enabled_profile = json.loads((enabled_stage / "profile.json").read_bytes())
         enabled_snapshot = json.loads((enabled_stage / "snapshot.json").read_bytes())
@@ -143,19 +144,19 @@ class ProfileTests(unittest.TestCase):
         self.assertEqual(client_route(profile, "direct", [], [])[
             "rules"], [{"inbound": ["hestia-keenetic-ingress"], "action": "route", "outbound": "amnezia"}])
         profile["groups"].append({"id": "also-amnezia", "exits": [connector_id], "defaultExit": "deny"})
-        with self.assertRaisesRegex(ValueError, "one AmneziaWG-only group"):
+        with self.assertRaisesRegex(ValueError, "one .*AmneziaWG-only group"):
             client_route(profile, "direct", [], [])
         profile["groups"].pop()
         profile["groups"][0]["exits"].append("direct-wan")
-        with self.assertRaisesRegex(ValueError, "one AmneziaWG-only group"):
-            client_route(profile, "direct", [], [])
+        self.assertEqual(client_route(profile, "direct", [], [])[
+            "rules"], [{"inbound": ["hestia-keenetic-ingress"], "action": "route", "outbound": "deny"}])
         profile["groups"][0]["exits"] = [connector_id]
         profile["groups"][0]["defaultExit"] = connector_id
         self.assertEqual(client_route(profile, "direct", [], [])[
             "rules"], [{"inbound": ["hestia-keenetic-ingress"], "action": "route", "outbound": "amnezia"}])
         profile["groups"][0]["defaultExit"] = "direct-wan"
-        with self.assertRaisesRegex(ValueError, "one AmneziaWG-only group"):
-            client_route(profile, "direct", [], [])
+        self.assertEqual(client_route(profile, "direct", [], [])[
+            "rules"], [{"inbound": ["hestia-keenetic-ingress"], "action": "route", "outbound": "deny"}])
 
     def test_keenetic_interface_extension_is_narrowly_scoped(self):
         """Permit only the reserved Keenetic underlay bound to the discovered uplink device."""

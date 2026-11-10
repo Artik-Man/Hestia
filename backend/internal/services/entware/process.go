@@ -128,7 +128,7 @@ func serviceSpec(service services.Service) (processSpec, error) {
 		}
 		return processSpec{path: "/opt/bin/hestia-panel", args: []string{
 			"-listen", listen, "-assets", layout.PanelAssets, "-snapshot", layout.Snapshot,
-			"-dns-report", layout.DNSReport,
+			"-dns-policy", layout.DNSPolicy, "-dns-report", layout.DNSReport,
 			"-geoip-index", layout.GeoIPIndex, "-quality-settings", layout.QualitySettings,
 			"-quality-report", layout.QualityReport,
 			"-enable-bindings", "-enable-group-order", "-enable-domain-lists", "-enable-awg",

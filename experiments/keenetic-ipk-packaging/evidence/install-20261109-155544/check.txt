@@ -1,0 +1,22 @@
+Keenetic IPK update and trace verification — 9 November 2026
+
+Device: KN-1012, KeeneticOS 5.2 Beta 3, Entware architecture aarch64-3.10.
+Package: hestia 20261109-155544-db76edb7f3e1.
+Local and remote IPK SHA-256: 0322df5f6e4358131a45afe1ff40cce753a74ba27cf607e457f59ee2bb16c4f8.
+Previous known-good rollback IPK: hestia 20261109-130906-db76edb7f3e1, SHA-256 79a219edddee1605cc60ef875ca2f82daa7f55ebd7575462ea0a2a28ee18e348.
+
+Before each install, root-only backups were created under `/opt/tmp/hestia-deploy-20261109-154214/backup` and `/opt/tmp/hestia-deploy-20261109-155544/backup`: `/opt/etc/hestia`, `/opt/lib/opkg/status`, the IPv4/IPv6 default-route snapshots, and the known-good rollback IPK. No Hestia policy or route was changed.
+
+The first update to 20261109-154214 completed `opkg install`; its 15-second trace exposed a persistence-boundary bug because cleanup overhead reported DurationMs > 15000. That summary was rejected and no JSON was returned. The reported duration was clamped to the requested window, with a regression test, before producing 20261109-155544. Code and security review passed before the corrected IPK was installed.
+
+Final install result:
+- `opkg status hestia`: `Status: install user installed`, `Architecture: aarch64-3.10`, `Version: 20261109-155544-db76edb7f3e1`.
+- `/opt/bin/hestia -service-supervisor-ready`: exit 0; readiness marker present; package-maintenance marker absent.
+- GET `/`, `/api/groups-and-rules`, `/api/physical-connections`, `/api/traffic`: HTTP 200.
+- IPv4 default-route SHA-256 before/after: `f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871`.
+- IPv6 default-route snapshot empty before/after: SHA-256 `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+- Existing operator configuration was retained. opkg warned that profile/snapshot/sing-box conffiles differed from package defaults and stored defaults as `*-opkg` files.
+
+Trace verification used one synchronized test tuple `192.168.1.124:49328 → 1.1.1.1:443` with a 15-second capture. `hestia-client:lima0` tcpdump observed two SYNs and no SYN-ACK; the KN-1012 trace returned exit 0 and durationMs 15000. It reported `br0=observed,count=2`, `opkgtun0=not_observed,count=0`, and no exact-tuple sing-box inbound/rule/group/outbound/block events. `sing_box_response`, `sing_box_close`, `policy_mark`, and `wan` were `unavailable`. A read-only `/api/traffic?limit=100` query contained source port `49328`, confirming journal persistence.
+
+Result: package installation and the bounded trace worked. For this sample, packet observation stops between the bridge and OpkgTun. This does not prove a specific policy/mark/route drop; `not_observed` is not a drop verdict. VPN egress, return routing, UDP and fail-closed remain unverified. Detailed packet trace is in `../../../../keenetic-client-dataplane/evidence/trace-installed-20261109-155544.txt`.

@@ -1,6 +1,11 @@
 import type { AWGUnderlayCandidate } from "../services/api/generated/model/aWGUnderlayCandidate";
 import type { AWGConnection } from "../services/api/generated/model/aWGConnection";
 
+const platformInputIDs: ReadonlySet<string> = new Set([
+  "wg-keenetic",
+  "keenetic-opkgtun",
+]);
+
 /** isConnectionUUID recognizes canonical UUIDs that must stay out of user-facing labels. */
 export function isConnectionUUID(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/u.test(
@@ -45,6 +50,14 @@ export function isUnderlayCandidate(
       value.role === "input" ||
       value.role === "output")
   );
+}
+
+/** isUserSelectableUnderlay excludes platform ingress by role or stable ID while retaining unknown saved IDs. */
+export function isUserSelectableUnderlay(
+  id: string,
+  candidate: AWGUnderlayCandidate | undefined,
+): boolean {
+  return candidate?.role !== "input" && !platformInputIDs.has(id);
 }
 
 /** isUnderlayOrder checks the optional transport priority list received from the gateway. */

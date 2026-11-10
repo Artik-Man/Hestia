@@ -9,6 +9,16 @@ import (
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
 )
 
+// TestKeeneticPlatformChannelRolesPreserveOpkgEndpoints checks the Keenetic input/output metadata used by the panel.
+func TestKeeneticPlatformChannelRolesPreserveOpkgEndpoints(t *testing.T) {
+	if got := PlatformChannelRole(keeneticOpkgTunUnderlayID); got != panelmodel.ChannelRoleInput {
+		t.Fatalf("Keenetic input role = %q, want %q", got, panelmodel.ChannelRoleInput)
+	}
+	if got := PlatformChannelRole(keeneticUplinkUnderlayID); got != panelmodel.ChannelRoleOutput {
+		t.Fatalf("Keenetic output role = %q, want %q", got, panelmodel.ChannelRoleOutput)
+	}
+}
+
 // TestEnsurePlatformUnderlayAddsOnlyTheVerifiedUplink checks dynamic device binding and stable routing identity.
 func TestEnsurePlatformUnderlayAddsOnlyTheVerifiedUplink(t *testing.T) {
 	profile := storedProfile{Groups: []connectorGroup{{ID: "default", DefaultExit: "deny"}}}

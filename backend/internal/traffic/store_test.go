@@ -73,6 +73,44 @@ func TestJournalPages(t *testing.T) {
 	}
 }
 
+// TestTrafficTraceStoresCompleteStageSet round-trips the maximum current diagnostic trace through SQLite and Page JSON decoding.
+func TestTrafficTraceStoresCompleteStageSet(t *testing.T) {
+	store, err := Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+	stages := []TraceStage{
+		{Name: "br0", Status: "observed", Count: 2},
+		{Name: "opkgtun0", Status: "not_observed"},
+		{Name: "sing_box_inbound", Status: "not_observed"},
+		{Name: "sing_box_rule", Status: "not_observed"},
+		{Name: "sing_box_group", Status: "not_observed"},
+		{Name: "sing_box_outbound", Status: "not_observed"},
+		{Name: "sing_box_block", Status: "not_observed"},
+		{Name: "sing_box_response", Status: "unavailable"},
+		{Name: "sing_box_close", Status: "unavailable"},
+		{Name: "policy_mark", Status: "unavailable"},
+		{Name: "wan", Status: "unavailable"},
+		{Name: "ndm_policy", Status: "configured_expectation"},
+		{Name: "hestia_lookup_rule", Status: "configured_expectation"},
+		{Name: "hestia_guard_rule", Status: "configured_expectation"},
+		{Name: "hestia_rule_order", Status: "configured_expectation"},
+		{Name: "hestia_table_routes", Status: "configured_expectation"},
+	}
+	if len(stages) != MaxTraceStages || len(stages) > MaxTraceStages {
+		t.Fatalf("trace stage bound mismatch: %d / %d", len(stages), MaxTraceStages)
+	}
+	event := TrafficEvent{Time: time.Now().UTC(), Protocol: "TCP", Address: "1.1.1.1", Port: 443, Kind: Unconfirmed, Trace: &TraceEvidence{SessionID: "trace-test", StartedAt: time.Now().UTC(), DurationMs: 15000, PolicyKey: "Policy2", ConfiguredMark: 0x0ffffaac, NDMTable: 4102, HestiaTable: 32732, Source: "192.168.1.124", SourcePort: 49322, Destination: "1.1.1.1", DestinationPort: 443, Stages: stages}}
+	if err := store.Append(t.Context(), event); err != nil {
+		t.Fatalf("append complete trace: %v", err)
+	}
+	page, err := store.Page(t.Context(), Query{Limit: 1})
+	if err != nil || page.Total != 1 || len(page.Events) != 1 || page.Events[0].Trace == nil || len(page.Events[0].Trace.Stages) != MaxTraceStages || page.Events[0].Trace.Stages[0].Count != 2 || page.Events[0].Trace.Stages[8].Status != "unavailable" || page.Events[0].Trace.ConfiguredMark != 0x0ffffaac || page.Events[0].Trace.NDMTable != 4102 || page.Events[0].Trace.HestiaTable != 32732 {
+		t.Fatalf("trace page round-trip: %+v err=%v", page, err)
+	}
+}
+
 // TestJournalBounds verifies atomic policy replacement, age cleanup and actual on-disk size after tightening the quota.
 func TestJournalBounds(t *testing.T) {
 	ctx := context.Background()
