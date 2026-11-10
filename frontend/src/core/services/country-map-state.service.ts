@@ -6,6 +6,8 @@ import { Notifications } from "./notifications.service";
 import { PanelService } from "./api/generated/api/panel.service";
 import type { CountryMap } from "./api/generated/model/countryMap";
 
+const countryMapSaveTimeoutMs = 4 * 60 * 1000;
+
 /** CountryMapState serializes changes and reconciles uncertain writes against gateway storage. */
 @Injectable({ providedIn: "root" })
 export class CountryMapState {
@@ -65,7 +67,7 @@ export class CountryMapState {
     this.value.set(candidate);
   }
 
-  /** save sends the whole draft once; unsuccessful writes leave all pending changes editable. */
+  /** save sends the whole draft once and waits for the bounded gateway transaction to finish. */
   save(): void {
     const candidate = this.value(),
       baseline = this.baseline();
@@ -74,7 +76,7 @@ export class CountryMapState {
     this.phase.set("saving");
     this.api
       .updateCountryMap(candidate)
-      .pipe(timeout(10000))
+      .pipe(timeout(countryMapSaveTimeoutMs))
       .subscribe({
         next: (map) => {
           if (!isCountryMap(map)) {

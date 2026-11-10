@@ -1,0 +1,46 @@
+# Managed profile recovery and package configure — 10 November 2026
+
+## Scope and pre-state
+
+Target: Keenetic Giga KN-1012, KeeneticOS 5.02.B.3.0-2, Entware `aarch64-3.10`. Work used the pinned `keenetic-hestia` SSH alias after the owner asked to resolve the failed installation. No client traffic, external probes, policy changes, or manual route changes were made.
+
+The already-unpacked package was `20261110-094102-e2ca76bd1fc4` (`install user unpacked`). Hestia services were stopped. The managed profile validator failed because the saved sing-box ingress route targeted `Остальной мир`, while the current profile safety predicate returned no eligible ingress group and expected `deny`. The group contained the ready Zarubin AmneziaWG exit and Laurel Hysteria 2. At the time of repair, the active Keenetic default route used `eth3`, matching the stored `keenetic-uplink` binding.
+
+A root-only backup was created at `/opt/tmp/hestia-profile-repair-20261110T154523Z/`, containing `/opt/etc/hestia`, opkg status, and IPv4/IPv6 default-route snapshots. The existing `package-maintenance` marker was confirmed to be a secure root-owned regular file with no matching live `opkg` process; it was preserved for the package's normal configure step. Existing `*-opkg` conffile sidecars were left untouched.
+
+## Recovery
+
+The owner had previously approved moving Laurel to `Россия` at priority 2, leaving Zarubin as the sole exit in `Остальной мир`. An offline candidate was compiled from the verified installed profile/backend, using the installed `profile.py` generation helpers. It passed the managed-profile validator, Hestia controller snapshot check, and sing-box config check before publication.
+
+Five active files were replaced individually via same-directory atomic renames: `profile.json`, `profile-source.sha256`, `sing-box.json`, `profile-backend.sha256`, and `snapshot.json`. On any post-publication validation error, the procedure restored those files from the root-only backup. The published profile/backend/snapshot SHA-256 values match the previously approved candidate:
+
+- `profile.json`: `d844b6b8b37484f5903604f256d6b827bda6e1aa45effce0047668535b08ff37`
+- `sing-box.json`: `47602ac0e7323a10dc61cac7cb800d3439ee957a0264adad8c1aaf9d43fc64ec`
+- `snapshot.json`: `8bc0176e150ae2259356a62027f7eaa5f3c27d0fe5df5495c1dcca93451ed2a0`
+
+Managed-profile, controller snapshot, and sing-box checks all passed on the active files. `/opt/bin/opkg configure hestia` then completed with exit 0 and cleared the package-maintenance marker.
+
+## Result
+
+- `opkg status hestia`: version `20261110-094102-e2ca76bd1fc4`, `install user installed`, architecture `aarch64-3.10`.
+- Supervisor readiness: exit 0; package-maintenance and `.binding-pending` markers absent.
+- GET `/`, `/api/groups-and-rules`, `/api/physical-connections`, and `/api/traffic` on `http://192.168.1.1:8080`: HTTP 200.
+- IPv4 default-route SHA-256 before and after: `f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871`.
+- IPv6 default-route output remained empty; SHA-256 before and after: `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+
+Reproduction checks (run over the pinned SSH alias, without printing profile contents or credentials):
+
+```sh
+/opt/bin/opkg configure hestia
+/opt/bin/hestia -service-supervisor-ready
+/opt/bin/python3 -I /opt/lib/hestia/profile.py --validate-managed /opt/etc/hestia
+/opt/bin/hestia -check -config /opt/etc/hestia/snapshot.json
+/opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia \
+  /opt/lib/hestia/sing-box check -c /opt/etc/hestia/sing-box.json
+```
+
+## Limits
+
+This restores the package lifecycle, panel, and tested GET APIs. It does not verify client forwarding, VPN egress, return routing, DNS behavior, or fail-closed behavior. No external connectivity probe or client traffic was generated. The `eth3` WAN observation is a point-in-time state and does not prove the same uplink will remain active.
+
+A final GET from the Mac to `http://192.168.1.1:8080/` returned HTTP 200 from `192.168.1.1` (curl exit 0).
