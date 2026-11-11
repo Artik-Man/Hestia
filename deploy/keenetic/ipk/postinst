@@ -23,7 +23,10 @@ case "${1:-configure}" in
         fi
         source_fingerprint=$(/opt/bin/busybox cat "$geoip_data/rule-set-source.sha256")
         case "$source_fingerprint" in
-            '' | *[!a-f0-9]*) printf '%s\n' 'Hestia GeoIP source fingerprint is invalid' >&2; exit 1 ;;
+            '' | *[!a-f0-9]*)
+                printf '%s\n' 'Hestia GeoIP source fingerprint is invalid' >&2
+                exit 1
+                ;;
         esac
         sing_box_fingerprint=$(/opt/bin/busybox sha256sum /opt/lib/hestia/sing-box | /opt/bin/busybox cut -d ' ' -f 1)
         expected_fingerprint="$source_fingerprint:$sing_box_fingerprint"
@@ -40,7 +43,10 @@ case "${1:-configure}" in
         while IFS= read -r code; do
             case "$code" in
                 [A-Z][A-Z]) ;;
-                *) printf '%s\n' 'Hestia GeoIP country catalogue is invalid' >&2; exit 1 ;;
+                *)
+                    printf '%s\n' 'Hestia GeoIP country catalogue is invalid' >&2
+                    exit 1
+                    ;;
             esac
             rule="$geoip_overrides/$code.json"
             if [ -L "$rule" ] || { [ -e "$rule" ] && [ ! -f "$rule" ]; }; then
@@ -53,7 +59,10 @@ case "${1:-configure}" in
                     printf '%s\n' 'Hestia GeoIP override staging path is occupied' >&2
                     exit 1
                 fi
-                (umask 022; printf '%s\n' '{"version":3,"rules":[]}' >"$temporary")
+                (
+                    umask 022
+                    printf '%s\n' '{"version":3,"rules":[]}' >"$temporary"
+                )
                 /opt/bin/busybox chmod 0644 "$temporary"
                 /opt/bin/busybox mv "$temporary" "$rule"
             fi
@@ -74,7 +83,10 @@ case "${1:-configure}" in
             while IFS= read -r code; do
                 case "$code" in
                     [A-Z][A-Z]) ;;
-                    *) printf '%s\n' 'Hestia GeoIP country catalogue is invalid' >&2; exit 1 ;;
+                    *)
+                        printf '%s\n' 'Hestia GeoIP country catalogue is invalid' >&2
+                        exit 1
+                        ;;
                 esac
                 source="$geoip_data/$code.json"
                 compiled="$geoip_data/$code.srs"
@@ -97,11 +109,14 @@ case "${1:-configure}" in
                 printf '%s\n' 'Hestia GeoIP fingerprint staging path is occupied' >&2
                 exit 1
             fi
-            (umask 022; printf '%s\n' "$expected_fingerprint" >"$temporary")
+            (
+                umask 022
+                printf '%s\n' "$expected_fingerprint" >"$temporary"
+            )
             /opt/bin/busybox chmod 0644 "$temporary"
             /opt/bin/busybox mv "$temporary" "$compiled_fingerprint"
         fi
-        for state_dir in /opt/var/lib /opt/var/lib/hestia /opt/var/lib/hestia/country-map /opt/var/lib/hestia/dns-policy; do
+        for state_dir in /opt/var/lib /opt/var/lib/hestia /opt/var/lib/hestia/country-map /opt/var/lib/hestia/dns-policy /opt/var/lib/hestia/quality; do
             if [ -L "$state_dir" ] || { [ -e "$state_dir" ] && [ ! -d "$state_dir" ]; }; then
                 printf '%s\n' 'Hestia state path is unsafe' >&2
                 exit 1

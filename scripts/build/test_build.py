@@ -175,6 +175,14 @@ class BuildTests(unittest.TestCase):
         self.assertIn('rule-set compile', source)
         self.assertIn('.srs', source)
 
+    def test_keenetic_postinst_creates_quality_settings_directory(self):
+        """The IPK creates its settings parent before the panel starts and accepts edits."""
+        source = (BUILD.ROOT / 'deploy/keenetic/ipk/postinst').read_text()
+        state_setup = source.index('for state_dir in')
+        service_start = source.index('/opt/etc/init.d/S99hestia configure-package')
+        self.assertIn('/opt/var/lib/hestia/quality', source[state_setup:service_start])
+        self.assertLess(state_setup, service_start)
+
     def test_keenetic_package_stages_synchronous_ingress_hook(self):
         """The Keenetic IPK installs the bounded netfilter callback with executable permissions."""
         with tempfile.TemporaryDirectory() as directory:
