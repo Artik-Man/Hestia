@@ -207,7 +207,6 @@ func startBootServices(ctx context.Context, recoverBindings func(context.Context
 func recoverBindingsAtBoot(ctx context.Context) error {
 	command := exec.CommandContext(ctx, "/opt/bin/hestia", "-recover-bindings")
 	command.Env = []string{"PATH=/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin", "LANG=C"}
-	command.Stdout = io.Discard
 	command.SysProcAttr = &syscall.SysProcAttr{Pdeathsig: syscall.SIGTERM}
 	if _, err := command.Output(); err != nil {
 		return bindingRecoveryError(err)
