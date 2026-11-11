@@ -23,24 +23,37 @@ IPK=/absolute/path/to/hestia_<version>_aarch64-3.10.ipk
 shasum -a 256 "$IPK"
 ```
 
-## SSH-доступ и доставка
+## Управляющий доступ и передача пакета
 
-Используйте только настроенный SSH alias `keenetic-hestia` из приватного файла `private/keenetic/ssh/config`. Конфигурация закрепляет host key; не отключайте проверку ключа и не подключайтесь по непроверенному адресу/ключу. Не копируйте содержимое приватной конфигурации, закрытые ключи, RCI token или значения секретов в документацию, отчёты, команды с раскрытием аргументов либо журналы.
+SSH используется только для запуска удалённых команд. Передача бинарников и IPK выполняется через уже запущенный HTTP-сервер `hestia-cli` на доверенном LAN-адресе. Не используйте SCP/SFTP и не передавайте содержимое файлов через stdin SSH. При первой установке `hestia-cli` сервер должен быть заранее установлен и настроен вне SSH-передачи; он не может загрузить сам себя.
+
+Используйте только настроенный SSH alias `keenetic-hestia` из приватного файла `private/keenetic/ssh/config`. Конфигурация закрепляет host key; не отключайте проверку ключа и не подключайтесь по непроверенному адресу/ключу. Не копируйте содержимое приватной конфигурации, закрытые ключи, RCI token или значения секретов в документацию, отчёты, команды либо журналы.
 
 ```sh
 SSH_CONFIG=private/keenetic/ssh/config
 ssh -F "$SSH_CONFIG" keenetic-hestia 'id -u; /opt/bin/opkg print-architecture'
 ```
 
-Устройство не предоставляет `sftp-server`, поэтому для копирования используйте legacy SCP protocol через `-O`:
+Проверьте, что `hestia-cli` отвечает на LAN URL, локальный token-файл доступен и закрыт от остальных пользователей. Сервер принимает пакеты в `/opt/var/lib/hestia-cli/inbox`; размер одного файла ограничен 128 MiB. HTTP доступ разрешён только из доверенной LAN, сервер должен оставаться привязан к LAN-адресу.
 
 ```sh
-STAGE=/opt/tmp/hestia-deploy-<run-id>
-ssh -F "$SSH_CONFIG" keenetic-hestia "umask 077; mkdir -m 700 '$STAGE'"
-scp -O -F "$SSH_CONFIG" "$IPK" "keenetic-hestia:$STAGE/"
+HESTIA_CLI_URL=http://192.168.1.1:8081
+HESTIA_CLI_TOKEN_FILE=private/hestia-cli.token
+REMOTE_INBOX=/opt/var/lib/hestia-cli/inbox
+IPK_NAME=$(basename "$IPK")
+LOCAL_SHA=$(shasum -a 256 "$IPK" | awk '{print $1}')
+test -r "$HESTIA_CLI_TOKEN_FILE"
+curl --disable --fail-with-body --connect-timeout 5 --max-time 600 \
+  --config - --upload-file "$IPK" \
+  "$HESTIA_CLI_URL/v1/files/upload/$IPK_NAME" <<EOF
+header = "Authorization: Bearer $(cat "$HESTIA_CLI_TOKEN_FILE")"
+EOF
+REMOTE_SHA=$(ssh -F "$SSH_CONFIG" keenetic-hestia \
+  "sha256sum '$REMOTE_INBOX/$IPK_NAME' | cut -d ' ' -f 1")
+test "$LOCAL_SHA" = "$REMOTE_SHA" || { printf '%s\n' 'IPK hash mismatch'; exit 1; }
 ```
 
-Проверяйте, что SHA-256 локального файла и staging-копии совпадает. Например, вычислите локальный хеш командой выше, затем выполните на роутере `sha256sum <полный-путь-к-IPK>` через alias и сравните значения вручную. Не продолжайте при несовпадении.
+Если hash не совпал, не запускайте `opkg`; удалённую копию можно удалить отдельной SSH-командой после проверки точного пути.
 
 ## Preflight и резервная копия
 
@@ -61,15 +74,31 @@ BACKUP=/opt/tmp/hestia-deploy-<run-id>
 ssh -F "$SSH_CONFIG" keenetic-hestia "umask 077; mkdir -m 700 '$BACKUP'; cp -R /opt/etc/hestia '$BACKUP/etc-hestia'; cp /opt/lib/opkg/status '$BACKUP/opkg-status'; chmod -R go-rwx '$BACKUP'; ls -ld '$BACKUP' '$BACKUP/etc-hestia'"
 ```
 
-Убедитесь, что каталог резервной копии принадлежит root и доступен только root. Скопируйте предыдущий известный исправный IPK в этот каталог тем же `scp -O`, проверьте его SHA-256 с локальным доверенным экземпляром и оставьте исходный экземпляр нетронутым. Не удаляйте backup и rollback IPK до успешного post-install smoke.
+Убедитесь, что каталог резервной копии принадлежит root и доступен только root. Передайте предыдущий известный исправный IPK через тот же HTTP upload endpoint, затем сохраните его в backup-каталог удалённой командой и сверьте SHA-256 с локальным доверенным экземпляром:
+
+```sh
+PREVIOUS_IPK=/absolute/path/to/hestia_<previous-version>_aarch64-3.10.ipk
+PREVIOUS_NAME=$(basename "$PREVIOUS_IPK")
+PREVIOUS_SHA=$(shasum -a 256 "$PREVIOUS_IPK" | awk '{print $1}')
+curl --disable --fail-with-body --connect-timeout 5 --max-time 600 \
+  --config - --upload-file "$PREVIOUS_IPK" \
+  "$HESTIA_CLI_URL/v1/files/upload/$PREVIOUS_NAME" <<EOF
+header = "Authorization: Bearer $(cat "$HESTIA_CLI_TOKEN_FILE")"
+EOF
+REMOTE_PREVIOUS_SHA=$(ssh -F "$SSH_CONFIG" keenetic-hestia \
+  "umask 077; cp '$REMOTE_INBOX/$PREVIOUS_NAME' '$BACKUP/$PREVIOUS_NAME'; chmod 0600 '$BACKUP/$PREVIOUS_NAME'; sha256sum '$BACKUP/$PREVIOUS_NAME' | cut -d ' ' -f 1")
+test "$REMOTE_PREVIOUS_SHA" = "$PREVIOUS_SHA" || { printf '%s\n' 'Rollback IPK hash mismatch'; exit 1; }
+```
+
+Сравните удалённый хеш с `PREVIOUS_SHA`. Не удаляйте backup и rollback IPK до успешного post-install smoke.
 
 ## Установка и post-install smoke
 
-Только после preflight, совпадения хешей и проверки резервной копии выполните установку от root:
+Только после preflight, совпадения хешей и проверки резервной копии выполните установку от root. `configure-package` ждёт readiness не дольше 47 минут, чтобы не прервать supervisor раньше его предельного boot recovery:
 
 ```sh
 ssh -F "$SSH_CONFIG" keenetic-hestia \
-  '/opt/bin/opkg install /opt/tmp/hestia-deploy-<run-id>/hestia_<version>_aarch64-3.10.ipk'
+  "/opt/bin/opkg install '$REMOTE_INBOX/$IPK_NAME'"
 ```
 
 Успешное завершение требует одновременно:
@@ -91,7 +120,8 @@ ssh -F "$SSH_CONFIG" keenetic-hestia \
 Когда откат выбран как восстановление, сначала убедитесь, что profile validator проходит на текущей конфигурации, и проверьте условия lifecycle hook. Используйте сохранённый предыдущий IPK и резервную копию конфигурации, сверив их хеши и права. Команда ручного понижения версии:
 
 ```sh
-/opt/bin/opkg install --force-downgrade --force-reinstall /opt/tmp/hestia-deploy-<run-id>/<previous-known-good>.ipk
+ssh -F "$SSH_CONFIG" keenetic-hestia \
+  "/opt/bin/opkg install --force-downgrade --force-reinstall '$BACKUP/$PREVIOUS_NAME'"
 ```
 
 После команды повторите весь post-install smoke и сравните route hashes. Если пакет не поднимается или причина не установлена, остановитесь и передайте диагностические сведения владельцу; не удаляйте рабочие данные роутера ради очистки статуса `opkg`. Фактический неуспешный прогон 9 ноября 2026 года описан отдельно в [отчёте опыта](../../experiments/keenetic-ipk-packaging/README.md#неудачное-обновление-keenetic-9-ноября-2026-года).

@@ -1,0 +1,58 @@
+# KN-1012 update result, 11 November 2026
+
+## Question and environment
+
+Did the Keenetic IPK finish update and reach the installed state after correcting
+the supervisor, candidate backend validation, and selector convergence bounds?
+Device: Keenetic Giga KN-1012, KeeneticOS 5.2 Beta 3, Entware `aarch64-3.10`.
+
+## Artifact and delivery
+
+- Bundle/version: `20261111-163505-77d6f73ccf3d`
+- IPK SHA-256: `03966500def8a42b2c0d182efb45880cec87564cd280cb0cb67545479f147d48`
+- Manifest: 634 source inputs, including the previously omitted
+  `backend/internal/binding/command_timeout.go`; bundle verification passed.
+- Upload: through hestia-cli using `private/hestia-cli.token`; secret value is
+  not recorded. Local and router SHA-256 matched.
+- Rollback IPK remained in the root-only backup and its SHA-256 matched the
+  pre-install trusted copy.
+
+## Result
+
+`opkg install` exited 0. Package status is `install user installed`, version
+`20261111-163505-77d6f73ccf3d`, architecture `aarch64-3.10`. The supervisor
+readiness marker exists, the maintenance marker is absent, and a subsequent
+`/opt/bin/hestia -service-supervisor-ready` check exited 0. The supervisor,
+panel, and sing-box router processes were present. `GET /` and
+`GET /api/groups-and-rules` returned HTTP 200 from the LAN panel. The
+`/api/physical-connections` read-only GET did not return within 30 seconds.
+
+The installation changed the aggregate route table hashes during the managed
+OpkgTun migration. IPv4 default route remained `default via 10.40.154.1 dev
+eth3 metric 1000`; IPv6 default route remains absent, as in the backup. No
+manual route or rule cleanup, reboot, or client traffic test was performed.
+
+## Validation limits and observations
+
+Standalone read-only managed-profile and sing-box validators were attempted
+after installation but were stopped after device memory became constrained;
+one readiness probe run concurrently with those validators segfaulted, then a
+later single readiness probe succeeded. At the final resource sample,
+`MemAvailable` was about 20 MiB and swap was absent. This is a meaningful runtime
+limit: the package lifecycle is complete and two APIs respond, but the
+physical-connections API and full profile/backend post-install checks remain
+unverified under current router load. No OOM or segfault line was found in the
+kernel log sample.
+
+The first failed update exposed the 60-second init wait; raising it allowed
+readiness. The next attempts identified a two-minute candidate backend timeout
+and a five-second selector convergence timeout introduced by commit `880c07c`.
+The final bundle includes bounded 10-minute backend validation, 15-minute
+ingress migration, 47-minute supervisor boot readiness, and 30-second selector
+convergence. This target run completed with all of those limits in place.
+
+Local validation passed: `make build`, bundle manifest verification, build
+Python tests, `go test` for binding/profileexec, and docs/style checks. Linux
+Keenetic test binaries compiled; they were not executable on the macOS host.
+ShellCheck was unavailable in the environment. No client dataplane, VPN egress,
+policy behavior, or rollback exercise is claimed.

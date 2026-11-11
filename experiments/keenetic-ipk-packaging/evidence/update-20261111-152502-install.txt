@@ -1,0 +1,55 @@
+Дата: 11 ноября 2026 года
+Устройство: Keenetic Giga KN-1012, KeeneticOS 5.2 Beta 3, Entware aarch64-3.10
+Запрос: установить Keenetic IPK, передав его через hestia-cli.
+
+Сборка и доставка
+-----------------
+Keenetic bundle `20261111-152502-77d6f73ccf3d` прошёл `verify_bundle`.
+IPK `hestia_20261111-152502-77d6f73ccf3d_aarch64-3.10.ipk`, SHA-256
+`55732ce0a63fe52f38747d8b2e358b4a50df39da6146a8397e799bfc6e387cc1`, принят
+через `hestia-cli`. На устройство также передан ранее установленный рабочий
+кандидат `20261111-103248-d9a573386528`; его локальный и удалённый SHA-256
+совпали: `7351ecd795ec1f655761c14ffa8579f794a17f90e90d404c4f840182a7988053`.
+
+До обновления на KN-1012 находилась версия `20261111-143406-07650c939f6c`
+со статусом `install user unpacked`; supervisor readiness уже отсутствовала.
+Создана root-only резервная копия `/opt/tmp/hestia-deploy-20261111-152502-77d6f73ccf3d`:
+текущий `/opt/etc/hestia`, opkg status, полные IPv4/IPv6 route и rule snapshots,
+а также rollback IPK с проверенным SHA-256.
+
+Результат установки
+-------------------
+`opkg install` прошёл target preflight и распаковал новую версию, но postinst
+завершился ошибкой `Hestia supervisor did not become ready`. `opkg status hestia`
+показывает версию `20261111-152502-77d6f73ccf3d`, статус
+`install user unpacked`; package-maintenance marker остаётся, readiness и PID
+markers отсутствуют. Повторные install/configure/rollback команды не запускались.
+
+Postinst сначала вызывает `S99hestia configure-package`, который запускает
+supervisor, и только после его успешного завершения вызывает
+`-enable-keenetic-ingress`. Следовательно, данный прогон остановился на старте
+supervisor до OpkgTun profile migration. Managed profile, controller snapshot и
+sing-box config прошли отдельные read-only проверки после отказа. Наличие
+`/opt/bin/hestia` подтверждено. Записей OOM в доступном kernel log нет; свежей
+ошибки старта в `supervisor.log` или выделенных service logs не найдено.
+
+IPv4/IPv6 route snapshots после отказа побайтно совпали с сохранёнными до
+обновления. Использованная RAM оставалась около 208 MiB. Клиентский dataplane
+не запускался.
+
+Выводы о коммитах
+-----------------
+На момент первоначального preflight рабочая версия пакета уже была
+`20261111-143406-07650c939f6c`, собранная до коммита
+`77d6f73ccf3d` (`Add hestia-cli research file transfer`); она уже имела статус
+`install user unpacked`. Сам `77d6f73` добавляет отдельную команду, документацию
+и её сборку в bundles. Keenetic rootfs staging копирует явно выбранные бинарники
+`hestia`, `hestia-panel` и `hestia-observe`; `/opt/bin/hestia-cli` в IPK не
+включён. Старый и новый IPK содержат одинаковые 310 путей, ни один не содержит
+`hestia-cli`. Это исключает прямое изменение Keenetic package payload данным
+коммитом как причину отказа.
+
+Причина, по которой supervisor не стал ready, остаётся неизвестной. До выяснения
+ошибки startup/recovery не повторять `opkg install`, `opkg configure`, rollback
+или reboot. Следующая диагностика должна получить stderr конкретного неудачного
+старта supervisor и проверить startup recovery с сохранённым состоянием.

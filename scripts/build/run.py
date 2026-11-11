@@ -244,6 +244,7 @@ def build(output, runtime):
         'backend/cmd/keenetic-route-preflight/main.go',
         'backend/cmd/hestia-cli/main.go',
         'backend/internal/hestiacli/fileserver.go',
+        'backend/internal/binding/command_timeout.go',
         'backend/pkg/keeneticrci/client.go',
         'backend/pkg/keeneticrci/ethernet.go',
         'backend/pkg/keeneticrci/schema.go',

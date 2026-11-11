@@ -1,0 +1,49 @@
+Дата: 11 ноября 2026 года
+Устройство: Keenetic Giga KN-1012, Entware aarch64-3.10
+Запрос: собрать и установить обновление Hestia с передачей через hestia-cli.
+
+Сборка
+------
+`make build` завершилась успешно. Keenetic bundle
+`dist/artifacts/20261111-152502-77d6f73ccf3d/keenetic-arm64-experimental`
+прошёл `verify_bundle`; версия и IPK:
+`20261111-152502-77d6f73ccf3d`,
+`hestia_20261111-152502-77d6f73ccf3d_aarch64-3.10.ipk`.
+Локальный SHA-256 IPK:
+`55732ce0a63fe52f38747d8b2e358b4a50df39da6146a8397e799bfc6e387cc1`.
+
+Preflight
+---------
+Закреплённый SSH alias подтвердил root-доступ к KN-1012. `hestia-cli` на
+`192.168.1.1:8081` принял аутентифицированный запрос и ответил HTTP 404 на
+несуществующий файл, как ожидалось. IPK не загружался.
+
+`opkg status hestia` показал версию `20261111-143406-07650c939f6c`, архитектуру
+`aarch64-3.10` и состояние `install user unpacked`. Команда
+`/opt/bin/hestia -service-supervisor-ready` завершилась ошибкой; readiness
+marker отсутствует. Package-maintenance и lifecycle lock markers отсутствуют.
+В управляемых процессах Hestia/sing-box ничего не найдено; работает отдельный
+сервер `hestia-cli`.
+
+Read-only validation прошла для managed profile и controller snapshot.
+Проверка sing-box прошла через Entware loader по
+`/opt/lib/hestia/sing-box`. Основные маршруты не изменились:
+
+- IPv4 default-route SHA-256: `f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871`.
+- IPv6 default-route SHA-256: `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` (пустой вывод).
+
+Решение и границы
+-----------------
+Установка не выполнялась. В [свидетельстве предыдущей неудачной установки](update-20261111-recovery.txt)
+причина завершения migration helper сигналом `killed` не установлена; там же
+зафиксировано требование не повторять install/configure/reboot до исправления
+причины и подготовки проверяемого recovery-плана. Локальные изменения
+увеличивают timeout проверки backend до двух минут и добавляют безопасную
+диагностику, но этот кандидат ещё не прошёл целевую миграцию на KN-1012 и не
+доказывает устранение прежнего отказа. Поэтому новый пакет и rollback-кандидат
+не передавались, `opkg install`, `opkg configure`, запуск служб и перезагрузка
+не выполнялись.
+
+Следующий шаг — установить причину прежнего `signal: killed` и проверить
+восстановление на целевом устройстве до новой попытки установки. Клиентский
+dataplane не запускался.

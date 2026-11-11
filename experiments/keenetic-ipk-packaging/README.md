@@ -1,5 +1,18 @@
 # Локальная сборка IPK для Keenetic
 
+## Сборка, preflight и неудачная установка через hestia-cli — 11 ноября 2026 года
+
+По запросу владельца собран Keenetic IPK `20261111-152502-77d6f73ccf3d`;
+манифест и локальная сборка проверены. Оба IPK переданы через новый `hestia-cli`,
+их SHA-256 совпали; перед установкой сохранены конфигурация и маршруты с root-only
+rollback-копией. `opkg install` завершился ошибкой `Hestia supervisor did not
+become ready`, статус новой версии — `install user unpacked`, maintenance marker
+остался. Ошибка произошла на startup supervisor до OpkgTun migration. Managed
+profile, controller snapshot, sing-box config и маршруты отдельно проверены;
+startup error в доступных журналах не найден. Повторную операцию не запускали.
+Сравнение последнего коммита и точные результаты — в [свидетельстве установки](evidence/update-20261111-152502-install.txt);
+подготовительный снимок preflight — [отдельно](evidence/update-preflight-20261111-152502.txt).
+
 ## Неудачное обновление Keenetic — 11 ноября 2026 года
 
 **Вопрос и условия.** По просьбе владельца обновить KN-1012 пакетом с исправлениями
@@ -286,10 +299,22 @@ IPK `20261107-225942-2bf46144bcb4` собран из чистого коммит
 
 **Границы вывода.** Проверены установка пакета, supervisor, конфигурации, GET API, активная Hestia ingress table и неизменность IPv4/IPv6 default-route snapshot. Клиентский TCP/UDP dataplane, обратный путь, VPN egress, DNS, IPv6 forwarding, reboot recovery и fail-closed при смене policy не проверялись. `hestia-client` остался отключён от policy, пользовательский трафик не генерировался. В supervisor log сохранилось предупреждение о ingress reconciliation из предыдущего неуспешного postinst; при итоговой проверке supervisor был готов и обе route entries присутствовали.
 
-**Воспроизведение.** Повторить локально `GOCACHE=/private/tmp/hestia-go-cache-task make build`, проверить bundle через `scripts/shared/common.py:verify_bundle`, затем сверить IPK SHA-256. Перед целевым обновлением подтвердить профиль, snapshot, резервную копию, политику, версию и архитектуру. Установить IPK через настроенный SSH alias с legacy SCP. Если postinst завершится ошибкой, не повторять установку автоматически: собрать профильную и lifecycle диагностику; `opkg configure hestia` выполнять только после подтверждения валидности профиля и восстановления причины отказа.
+**Воспроизведение.** Повторить локально `GOCACHE=/private/tmp/hestia-go-cache-task make build`, проверить bundle через `scripts/shared/common.py:verify_bundle`, затем сверить IPK SHA-256. Перед целевым обновлением подтвердить профиль, snapshot, резервную копию, политику, версию и архитектуру. Загрузить IPK в inbox через HTTP endpoint `hestia-cli`, сверить удалённый SHA-256 SSH-командой и запустить `opkg` через SSH alias. SSH используется только для удалённых команд, не для передачи содержимого файлов. Если postinst завершится ошибкой, не повторять установку автоматически: собрать профильную и lifecycle диагностику; `opkg configure hestia` выполнять только после подтверждения валидности профиля и восстановления причины отказа.
 
 ## Установка исправленного trace IPK на KN-1012 — 9 ноября 2026 года
 
 После независимого code/security review исправленный пакет `20261109-155544-db76edb7f3e1` был установлен на KN-1012. IPK SHA-256 совпал локально и на роутере; `opkg` показал `install user installed`, supervisor readiness прошла, package-maintenance marker отсутствовал. Read-only GET `/`, `/api/groups-and-rules`, `/api/physical-connections` и `/api/traffic` ответили HTTP 200. IPv4 default-route hash совпал до и после обновления, IPv6 default route был пустым до и после. Конфигурация оператора осталась на месте; отличавшиеся от package defaults conffiles получили суффикс `-opkg`.
 
 На установленном пакете проведён синхронный 15-секундный trace с тестовым tuple. `/api/traffic` подтвердил сохранение сводки. В трассе два SYN наблюдались на `br0`, но ни один не появился на `opkgtun0` или в sing-box inbound. Это подтверждает работу наблюдателя и локализует следующий этап между bridge и OpkgTun, не определяя фактическую причину отсутствия перехода. [Протокол установки и границы](evidence/install-20261109-155544/check.txt); [пакетная трасса и tcpdump клиента](../keenetic-client-dataplane/evidence/trace-installed-20261109-155544.txt).
+
+## Readiness и candidate backend timeout на KN-1012 — 11 ноября 2026 года
+
+Первый повторный пакет `20261111-160750-77d6f73ccf3d` с 47-минутным ожиданием supervisor дошёл до готовности и запуска OpkgTun migration. Migration завершилась на `candidate-backend-check`: процесс sing-box проверки превысил внутренний предел `2m1.532s`; внешний предел команды составлял пять минут. `opkg` оставил `install user unpacked` и maintenance marker. Главные IPv4/IPv6 route snapshots совпали с backup. IPv4/IPv6 rule tables после supervisor guard reconciliation содержали дополнительные Hestia guard rules; они сохранены и не удалялись вручную. В коде следующий кандидатный timeout повышен до 10 минут, а общий предел migration — до 15 минут. Новая установка нужна для проверки этой поправки. [Evidence и ограничения](evidence/update-20261111-160750-attempt.txt).
+
+## Activation smoke timeout на KN-1012 — 11 ноября 2026 года
+
+Пакет `20261111-162047-77d6f73ccf3d` прошёл preflight, поднял supervisor, восстановил AWG runtime и завершил candidate backend validation после более чем двух минут работы. Миграция дошла до активации и вернула `activation: managed service operation failed: smoke`; rollback восстановил исходную конфигурацию и остановил службы с guard-состоянием. Main IPv4/IPv6 route hashes остались совпадающими с backup. Supervisor log показывает, что во время этого запуска не удалось стабильно установить TUN route; текущая причина smoke не сохраняется деталями через IPC. Проверка истории показала, что commit `880c07c` добавил пятсекундное окно selector convergence. Оно повышено до 30 секунд как вероятное исправление, с регрессионной проверкой. Следующий target install должен подтвердить или опровергнуть гипотезу. [Свидетельство прогона](evidence/update-20261111-162047-attempt.txt).
+
+## Установка IPK `20261111-163505` на KN-1012 — 11 ноября 2026 года
+
+После увеличения selector convergence timeout до 30 секунд IPK `20261111-163505-77d6f73ccf3d` установлен успешно: `opkg` завершился с кодом 0, статус — `install user installed`, supervisor readiness подтверждена, package-maintenance marker снят. Read-only `GET /` и `/api/groups-and-rules` ответили HTTP 200. `/api/physical-connections` не ответил за 30 секунд. После запуска сервисов память была ограничена (около 20 MiB доступно, swap отсутствует); отдельные managed-profile/backend проверки остановлены, readiness probe повторно прошёл после остановки этих проверок. IPv4 default route остался через тот же gateway; IPv6 default route отсутствует как и в backup. Aggregate route hashes изменились при успешной OpkgTun migration; ручной cleanup не выполнялся. Клиентский трафик, VPN egress, policy behavior и rollback не проверялись. [Полное свидетельство, hash пакета и ограничения](evidence/update-20261111-163505-installed.txt).

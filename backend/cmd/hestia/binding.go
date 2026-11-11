@@ -11,7 +11,6 @@ import (
 	"io"
 	"os"
 	"slices"
-	"time"
 
 	"github.com/Artik-Man/Hestia/internal/binding"
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
@@ -24,14 +23,7 @@ func runBindingCommand(mode string, input io.Reader, output io.Writer) int {
 		fmt.Fprintln(os.Stderr, "binding helper requires root")
 		return 1
 	}
-	limit := 2 * time.Minute
-	if mode == "-recover-bindings" {
-		limit = binding.AWGActivationLimit
-	} else if mode == "-watch-pending-binding" {
-		// Allow the active writer to finish its deadline and rollback before taking the lock.
-		limit = 3*binding.AWGActivationLimit + time.Minute
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), limit)
+	ctx, cancel := context.WithTimeout(context.Background(), binding.CommandTimeout(mode))
 	defer cancel()
 	engine := binding.Installed()
 	var err error
@@ -148,7 +140,7 @@ func runBindingCommand(mode string, input io.Reader, output io.Writer) int {
 		}
 	}
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		writeBindingFailure(os.Stderr, binding.TransactionFailureStage(err), err)
 		if errors.Is(err, binding.ErrInvalidCountryMap) || errors.Is(err, binding.ErrInvalidOrder) || errors.Is(err, binding.ErrInvalidDomainList) {
 			return 42
 		}
@@ -161,6 +153,15 @@ func runBindingCommand(mode string, input io.Reader, output io.Writer) int {
 		return 1
 	}
 	return 0
+}
+
+// writeBindingFailure prints a safe fixed transaction stage beside the bounded operation error.
+func writeBindingFailure(output io.Writer, stage string, err error) {
+	if stage != "" {
+		fmt.Fprintf(output, "Hestia transaction failed at %s: %v\n", stage, err)
+		return
+	}
+	fmt.Fprintln(output, err)
 }
 
 // orderContainsExit reports whether a requested group order contains the given exit ID.

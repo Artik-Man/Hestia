@@ -26,6 +26,17 @@ func TestTransactionFailureCodeExposesOnlyFixedRouteCategory(t *testing.T) {
 	}
 }
 
+// TestTransactionFailureStageExposesFixedStage verifies migration failures expose only the fixed internal stage label.
+func TestTransactionFailureStageExposesFixedStage(t *testing.T) {
+	err := transactionStageError{stage: "candidate-backend-check", cause: errors.New("backend validator failed")}
+	if got := TransactionFailureStage(err); got != "candidate-backend-check" {
+		t.Fatalf("TransactionFailureStage() = %q, want candidate-backend-check", got)
+	}
+	if got := TransactionFailureStage(errors.New("unwrapped")); got != "" {
+		t.Fatalf("unwrapped TransactionFailureStage() = %q, want empty", got)
+	}
+}
+
 // TestBindingTransaction exercises stale writes, failed live confirmation, rollback and a first confirmed change.
 func TestBindingTransaction(t *testing.T) {
 	e := testEngine(t)

@@ -13,6 +13,13 @@ import (
 	"github.com/Artik-Man/Hestia/internal/routing"
 )
 
+// TestSelectorConvergenceHasBoundedStartupGrace gives a loaded Keenetic controller time to publish fresh selector state.
+func TestSelectorConvergenceHasBoundedStartupGrace(t *testing.T) {
+	if selectorConvergenceTimeout != 30*time.Second {
+		t.Fatalf("selector convergence timeout = %s, want 30s", selectorConvergenceTimeout)
+	}
+}
+
 // TestEffectiveHealthRequiresFreshAWGHeartbeat keeps configured AWG exits unavailable until their runtime heartbeat is fresh.
 func TestEffectiveHealthRequiresFreshAWGHeartbeat(t *testing.T) {
 	config := smokeConfig{

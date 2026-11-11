@@ -29,7 +29,7 @@ import (
 
 const (
 	smokeAPITimeout             = 500 * time.Millisecond
-	selectorConvergenceTimeout  = 5 * time.Second
+	selectorConvergenceTimeout  = 30 * time.Second
 	selectorConvergenceInterval = 100 * time.Millisecond
 	maxSnapshotSize             = 2 << 20
 	maxQualitySize              = 2 << 20

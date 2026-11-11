@@ -94,12 +94,16 @@ class BuildTests(unittest.TestCase):
     def test_keenetic_init_uses_busybox_short_options(self):
         """Keenetic lifecycle uses the short start-stop-daemon flags supported by target BusyBox."""
         source = (BUILD.ROOT / 'deploy/keenetic/S99hestia').read_text()
+        supervisor = (BUILD.ROOT / 'backend/internal/services/entware/ipc.go').read_text()
         preflight = (BUILD.ROOT / 'backend/cmd/keenetic-preflight/main.go').read_text()
         self.assertIn('for option in -S -K -b -m -p -x -s;', source)
         self.assertIn('start-stop-daemon -S -b -m -p "$PIDFILE" -x "$DAEMON"', source)
         self.assertIn('start-stop-daemon -K -p "$PIDFILE" -x "$DAEMON" -s TERM', source)
         self.assertIn('start-stop-daemon -K -p "$PIDFILE" -x "$DAEMON" -s KILL', source)
         self.assertIn('"$BUSYBOX" usleep 100000', source)
+        self.assertIn('READY_TIMEOUT_SECONDS=2820', source)
+        self.assertIn('while [ "$attempt" -lt "$((READY_TIMEOUT_SECONDS * 10))" ]; do', source)
+        self.assertIn('const bootRecoveryLimit = 47 * time.Minute', supervisor)
         self.assertIn('"$DAEMON" -service-ingress-quiesce', source)
         self.assertIn('find_opkg_ancestor()', source)
         self.assertIn('Cannot identify the enclosing opkg process; refusing package replacement', source)

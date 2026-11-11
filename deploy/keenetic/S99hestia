@@ -19,6 +19,8 @@ SING_BOX=/opt/lib/hestia/sing-box
 PYTHON=/opt/bin/python3
 LOCKFILE=$RUNDIR/lifecycle.lock
 MAINTENANCE=$RUNDIR/package-maintenance
+# Match the supervisor's 47-minute boot recovery limit in ipc.go, polling every 100ms.
+READY_TIMEOUT_SECONDS=2820
 
 # find_opkg_ancestor returns the enclosing opkg PID and start-time ticks, or fails when its identity cannot be proven.
 find_opkg_ancestor() {
@@ -219,7 +221,7 @@ case "${1:-}" in
             exit 1
         fi
         attempt=0
-        while [ "$attempt" -lt 600 ]; do
+        while [ "$attempt" -lt "$((READY_TIMEOUT_SECONDS * 10))" ]; do
             if [ -f "$PIDFILE" ] && [ ! -L "$PIDFILE" ]; then
                 PID=$(cat "$PIDFILE")
                 if "$DAEMON" -service-check-pid "$PID" >/dev/null 2>&1 &&
