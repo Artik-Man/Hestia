@@ -60,6 +60,8 @@ make stage1-fresh
 
 `postinst configure` запускает `/opt/etc/init.d/S99hestia configure-package`; init проверяет managed profile, конфигурации controller/sing-box, возможности BusyBox и состояние процессов, затем поднимает supervisor, router, controller, panel и binding watcher. Install hook ждёт до 47 минут — установленного предела boot recovery supervisor — и требует readiness marker и подтверждённые статусы ролей через root-only IPC. Supervisor по возможности пишет startup/runtime ошибки в `/opt/var/run/hestia/supervisor.log` с mode 0600; при ошибке открытия файла сообщения остаются в stderr процесса.
 
+На Keenetic процесс sing-box запускается с `GOMEMLIMIT=90MiB` и `GOGC=50`; эти значения ограничивают Go runtime сборщик мусора sing-box, но не являются жёстким лимитом RSS или общей памяти процесса.
+
 Для доступа к панели из LAN задайте root-only `/opt/etc/hestia/panel-listen` со значением `<LAN-IP>:8080` и выполните `/opt/etc/init.d/S99hestia restart`. На проверенном KN-1012 LAN-IP — `192.168.1.1`, поэтому адрес панели — `http://192.168.1.1:8080/`. Конкретный частный IP обязателен: wildcard bind запрещён, и HTTP Host должен совпадать с адресом слушателя. Панель не имеет аутентификации; доступ ограничивается доверенной LAN-сетью, порт нельзя публиковать в WAN.
 
 Проверенная установка не подтверждает приём клиентского трафика: RoutePolicy/dataplane и DNS не проверялись, AWG и Wi-Fi/WISP отключены, а upgrade не имеет автоматического транзакционного отката при ошибке `postinst`. Для использования как рабочего шлюза нужны отдельные спецификации и прогоны маршрутизации/DNS, подтверждённый план восстановления пакета и отдельное разрешённое окно.

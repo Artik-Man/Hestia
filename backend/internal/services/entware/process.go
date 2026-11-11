@@ -277,11 +277,7 @@ func (t *processTable) start(ctx context.Context, service services.Service) erro
 		configDigest = sha256.Sum256(data)
 	}
 	command := exec.Command(spec.path, spec.args...)
-	command.Env = []string{
-		"PATH=/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin",
-		"LANG=C",
-		"HESTIA_MANAGED_SERVICE=" + managedServiceRole(service.Kind),
-	}
+	command.Env = managedServiceEnvironment(service)
 	command.Stdout, command.Stderr = logFile, logFile
 	command.SysProcAttr = &syscall.SysProcAttr{Pdeathsig: syscall.SIGTERM}
 	if err := command.Start(); err != nil {
@@ -307,6 +303,19 @@ func (t *processTable) start(ctx context.Context, service services.Service) erro
 	case <-timer.C:
 		return nil
 	}
+}
+
+// managedServiceEnvironment returns a minimal environment and applies the router's Go memory limits only to sing-box.
+func managedServiceEnvironment(service services.Service) []string {
+	environment := []string{
+		"PATH=/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+		"LANG=C",
+		"HESTIA_MANAGED_SERVICE=" + managedServiceRole(service.Kind),
+	}
+	if service.Kind == services.Router {
+		environment = append(environment, "GOMEMLIMIT=90MiB", "GOGC=50")
+	}
+	return environment
 }
 
 // prepareQualityPaths runs the installed profile exporter before enabling controller carrier and probe checks.

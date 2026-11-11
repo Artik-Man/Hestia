@@ -1,0 +1,13 @@
+Задача: запустить Hestia на KN-1012 с GOMEMLIMIT=90MiB и GOGC=50 именно для sing-box; остановить Hestia при потреблении памяти выше 85%.
+
+Исходное состояние: до обновления Hestia была остановлена штатным /opt/etc/init.d/S99hestia stop. /opt/bin/hestia -service-check-idle подтвердил отсутствие managed процессов. Установлен пакет 20261111-175949-745d70b83179. IPv4 default-route hash до установки: f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871. IPv6 default route отсутствовал (empty SHA-256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855).
+
+Код: managedServiceEnvironment добавляет GOMEMLIMIT=90MiB и GOGC=50 для services.Router. Controller и прочие роли эти переменные не получают. go test -count=1 ./internal/services/entware прошёл; make build завершился успешно; make fmt, make docs-check и git diff --check прошли. make check дошёл до ShellCheck, но завершился, потому что shellcheck отсутствует в среде; go vet прошёл.
+
+Артефакт: IPK hestia_20261111-222317-d87148df7d8a_aarch64-3.10.ipk, SHA-256 96583100e80a3cdeede57f9787c60bd618be3d9ed6a65f216aa379bef9ad3bac. Проверка bundle вернула версию 20261111-222317-d87148df7d8a. Rollback IPK 20261111-175949-745d70b83179 был сохранён в root-only backup вместе с /opt/etc/hestia и opkg status; его hash 83fd92a2f6a952abd7f9fcfb05f0bff794a9617f654af450256e5063bbc6e1ee совпал с локальным экземпляром. Загрузка нового и rollback IPK через LAN-bound hestia-cli вернула HTTP 201, удалённый hash нового пакета совпал с локальным.
+
+Установка: /opt/bin/opkg install завершилась кодом 0. Итог opkg: Version 20261111-222317-d87148df7d8a, Status install user installed. Supervisor readiness прошла. Конфигурационные файлы, отличавшиеся от package defaults, opkg сохранил как -opkg; активные значения не заменены. /proc/<pid>/environ фактического процесса sing-box содержал GOMEMLIMIT=90MiB и GOGC=50.
+
+Монитор: 5 минут, выборка каждые 5 секунд, used/total из команды free; если отношение достигло бы 85%, наблюдатель вызвал бы /opt/etc/init.d/S99hestia stop и проверил бы idle. Порог не достигнут. На выборках в течение окна занято 63–64%, процесс supervisor оставался готов. Владелец сообщил собственный показатель 207/512 MiB (40%), отличающийся от BusyBox free used в наших снимках; это разные срезы/метрики и прямое сопоставление не установлено. Временный LAN file server остановлен после передачи IPK.
+
+Маршруты после установки: IPv4 default-route hash прежний f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871; IPv6 default route отсутствует. Ограничения: пятиминутное наблюдение не заменяет длительное нагрузочное измерение, reboot recovery не проверялся. Порог был реализован только на время наблюдения этой операции, постоянный watchdog на роутере не устанавливался.
