@@ -1,5 +1,36 @@
 # Локальная сборка IPK для Keenetic
 
+## Неудачное обновление Keenetic — 11 ноября 2026 года
+
+**Вопрос и условия.** По просьбе владельца обновить KN-1012 пакетом с исправлениями
+Keenetic ingress и сохранения DNS policy key. Перед установкой проверены bundle,
+совпадение локального и удалённого SHA-256, target preflight, предыдущий рабочий
+пакет и root-only backup конфигурации.
+
+**Сборки.** Первая версия `20261111-130014-880c07cd3950` завершила запуск
+supervisor ошибкой `exec: Stdout already set`. Исправление вошло в
+`4b039442c7d1`. Повторный IPK `20261111-132045-4b039442c7d1` имел SHA-256
+`e4ff1839a33ab09ff0dd549d184bd2a3b19cf0935ff622628ecf66b8fac1bb3d` и прошёл
+проверку bundle и target staging hash.
+
+**Фактический результат.** Исправленная версия завершила postinst с ошибкой
+`ld-linux-aarch64.so.1 failed: signal: killed` во время OpkgTun profile migration.
+Rollback к известному рабочему IPK `20261111-121609-d9a573386528` также не поднял
+supervisor; статус пакета остался `install user unpacked`. Проверенные отдельно
+managed profile, controller snapshot и sing-box config валидны, однако
+`opkg configure hestia` повторил ошибку `signal: killed`, а штатный
+`S99hestia start` завершился `Hestia supervisor did not become ready`. В текущем
+состоянии supervisor readiness и panel API не подтверждены; API 2ip после сбоя
+не проверен. Каталог DNS policy и файл ключа присутствуют, значение ключа не
+сохранялось.
+
+IPv4 default-route hash до и после равен
+`f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871`; IPv6
+default route отсутствовал до и после. Kernel log не подтвердил OOM, поэтому
+нехватка памяти записана только как гипотеза, а не установленная причина.
+Протокол проверок и границы вывода: [evidence прогона](evidence/update-20261111-recovery.txt).
+Задача по системному исправлению: [KEENETIC-IPK-UPDATE-01](../../docs/features/keenetic-ipk-updates.md).
+
 Вопрос: может ли текущий экспериментальный Keenetic-комплект формировать Entware IPK с начальной managed-конфигурацией и lifecycle hooks, не обращаясь к роутеру?
 
 ## Условия

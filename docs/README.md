@@ -22,6 +22,7 @@
 - [Минимальный объём исследования API Keenetic](keenetic-platform-minimal.md) — необходимые операции и проверки программных интерфейсов для коннекторов Hestia.
 - [Клиент Keenetic RCI](features/keenetic-rci-client.md) — общий аутентифицированный транспорт для экспериментов и read-only Go Ethernet-коннектор.
 - [Платформенные коннекторы Hestia для Keenetic](features/keenetic-connectors.md) — этапы реализации Go-адаптеров, интеграции и установки.
+- [Надёжное обновление Hestia IPK на Keenetic](features/keenetic-ipk-updates.md) — задача KEENETIC-IPK-UPDATE-01: транзакция, миграция, rollback и восстановление после отказа.
 - [Клиентский dataplane на Keenetic](features/keenetic-client-dataplane.md) — проект цели, критериев и плана первого пути LAN/Wi-Fi через Hestia на opkg.
 - [Исследование готовых решений](research.md) — сравнение существующих средств маршрутизации, переключения, VPN и измерения сети.
 

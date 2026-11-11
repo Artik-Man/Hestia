@@ -61,6 +61,13 @@
 
 ## Платформенные модули и Keenetic
 
+После неудачного обновления KN-1012 11 ноября пакет остался `install user unpacked`,
+supervisor readiness и panel API не восстановлены; OpkgTun migration завершился
+`signal: killed`, а попытка rollback не подняла службы. Причина сигнала и отдельный
+сбой readiness пока не установлены; OOM не подтверждён. Разработка должна сначала
+закрыть [KEENETIC-IPK-UPDATE-01](features/keenetic-ipk-updates.md), затем пройти
+аппаратные проверки update/rollback. [Протокол и evidence](../experiments/keenetic-ipk-packaging/README.md#неудачное-обновление-keenetic-11-ноября-2026-года).
+
 Третий цикл на KN-1012 с sing-box 1.14.4: [VLESS](../experiments/keenetic-vless-local/README.md) прошёл локальную передачу TCP/UDP и отказ неверного UUID в TCP-пробе; [Hysteria 2](../experiments/keenetic-hysteria2-local/README.md) — локальную передачу TCP/UDP с проверкой CA/имени TLS и отказ неверного пароля без роста счётчиков сервиса. В финальном прогоне Hysteria 2 сетевые снимки совпали; изменение хеша IPv4 rules в предыдущей попытке осталось необъяснённым. [FakeIP](../experiments/keenetic-fakeip-local/README.md) связал выданный синтетический адрес с доменом и доставил TCP/UDP-маркеры через SOCKS; приватный cache-файл сохранил эту привязку через штатный перезапуск процесса, повторный клиентский DNS-запрос не понадобился. Внешние серверы, клиентский транзит, смена IP после TTL и группы Hestia этими опытами не проверены.
 
 Отдельная сборка amneziawg-go v3.1.20260828 прошла запуск с приватным UAPI и собственным TUN, чтение/изменение синтетического ключа и очистку. Интерфейс оставался DOWN, пиров не было; handshake и VPN-трафик не проверены. [Протокол](../experiments/keenetic-awg-uapi/README.md).
