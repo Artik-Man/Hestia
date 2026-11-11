@@ -28,7 +28,7 @@ def compile_go(destination):
         command = ['go', 'build', '-trimpath', '-buildvcs=false']
         if tags:
             command.extend(['-tags', tags])
-        commands = ['./cmd/hestia', './cmd/hestia-panel', './cmd/hestia-observe']
+        commands = ['./cmd/hestia', './cmd/hestia-panel', './cmd/hestia-observe', './cmd/hestia-cli']
         if tags == 'keenetic':
             commands.append('./cmd/keenetic-preflight')
         command.extend(['-o', str(output) + '/', *commands])
@@ -242,6 +242,8 @@ def build(output, runtime):
         'backend/cmd/keenetic-rci-survey-schema/main.go',
         'backend/cmd/keenetic-rci-wisp-status/main.go',
         'backend/cmd/keenetic-route-preflight/main.go',
+        'backend/cmd/hestia-cli/main.go',
+        'backend/internal/hestiacli/fileserver.go',
         'backend/pkg/keeneticrci/client.go',
         'backend/pkg/keeneticrci/ethernet.go',
         'backend/pkg/keeneticrci/schema.go',

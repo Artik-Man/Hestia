@@ -51,6 +51,7 @@
 ## Спецификации функций
 
 - [Диагностическая сборка Keenetic](features/keenetic-diagnostics.md)
+- [hestia-cli: передача файлов для исследований](features/hestia-cli.md)
 - [Платформенный модуль управления службами](features/platform-services.md)
 - [Модули системных операций, хранения и сети](features/platform-modules.md)
 - [Настройки пользователя](features/admin-password.md) — ссылка на актуальный проект спецификации в плане версии 1.0.0.
