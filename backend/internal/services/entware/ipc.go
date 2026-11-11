@@ -12,6 +12,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -141,10 +142,8 @@ func RunSupervisor(ctx context.Context) error {
 	case <-ctx.Done():
 		return failStartupWithIngress(ctx.Err())
 	}
-	for _, service := range []services.Service{{Kind: services.Router}, {Kind: services.Controller}} {
-		if err := table.start(context.Background(), service); err != nil {
-			return failStartupWithIngress(err)
-		}
+	if err := startBootServices(ctx, recoverBindingsAtBoot, table.start); err != nil {
+		return failStartupWithIngress(err)
 	}
 	if err := awaitBootRecovery(ctx); err != nil {
 		return failStartupWithIngress(err)
@@ -189,6 +188,42 @@ func RunSupervisor(ctx context.Context) error {
 		watchErr := stopIngressWatch()
 		return errors.Join(watchErr, stopAll(context.Background(), &table))
 	}
+}
+
+// startBootServices restores committed connector runtimes before starting traffic-selection services.
+func startBootServices(ctx context.Context, recoverBindings func(context.Context) error, startService func(context.Context, services.Service) error) error {
+	if err := recoverBindings(ctx); err != nil {
+		return fmt.Errorf("cannot restore committed connector runtimes: %w", err)
+	}
+	for _, service := range []services.Service{{Kind: services.Router}, {Kind: services.Controller}} {
+		if err := startService(ctx, service); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// recoverBindingsAtBoot asks the binding engine to restore committed AWG runtimes while routing services are stopped.
+func recoverBindingsAtBoot(ctx context.Context) error {
+	command := exec.CommandContext(ctx, "/opt/bin/hestia", "-recover-bindings")
+	command.Env = []string{"PATH=/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin", "LANG=C"}
+	command.Stdout = io.Discard
+	command.SysProcAttr = &syscall.SysProcAttr{Pdeathsig: syscall.SIGTERM}
+	if _, err := command.Output(); err != nil {
+		return bindingRecoveryError(err)
+	}
+	return nil
+}
+
+// bindingRecoveryError preserves bounded command diagnostics for root-only supervisor logs.
+func bindingRecoveryError(err error) error {
+	var exitError *exec.ExitError
+	if errors.As(err, &exitError) {
+		if detail := strings.TrimSpace(string(exitError.Stderr)); detail != "" {
+			return fmt.Errorf("binding recovery failed: %s", detail)
+		}
+	}
+	return fmt.Errorf("binding recovery failed: %w", err)
 }
 
 // watchOptionalDNS reconciles the optional DNS worker after config and router generations change.

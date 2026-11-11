@@ -1,0 +1,27 @@
+# Установка исправления и сохранение карты стран — 11 ноября 2026 года
+
+## Исправление и сборка
+
+- Цель: KN-1012 через закреплённый SSH alias `keenetic-hestia`.
+- Первичный вариант исправления `20261111-115617-d9a573386528` был установлен. `smoke-current` после запуска supervisor проходил, но повторное сохранение всё ещё отвечало HTTP 503. Свежие controller events показали, что группа быстро переходила из `deny` на доступный Hysteria exit, пока менялись quality данные.
+- Уточнённая проверка пересчитывает ожидаемые selector targets из последнего валидного quality report и ждёт подтверждения live selectors и свежих controller events в одном ограниченном окне; постоянное расхождение остаётся ошибкой.
+- `make build` завершилась успешно; `verify_bundle` подтвердил версию `20261111-121609-d9a573386528`.
+- IPK SHA-256: `314ddeaa88e587451b01f9c64f15a5ededde8387b2396fba710864418577b8f7`.
+- Для отката сохранён предыдущий известный исправный пакет `20261111-103248-d9a573386528`; SHA-256 `7351ecd795ec1f655761c14ffa8579f794a17f90e90d404c4f840182a7988053`.
+- Перед установкой выполнены read-only preflight и root-only backup в `/opt/tmp/hestia-country-map-fix-20261111-121609`; новый и rollback IPK проверены по удалённым SHA-256.
+
+## Установка и проверка сохранения
+
+- `/opt/bin/opkg install` завершился с кодом 0; финальный package status — `install user installed`, версия `20261111-121609-d9a573386528`, архитектура `aarch64-3.10`.
+- Supervisor ready, readiness marker корректен, package-maintenance marker отсутствует. Managed profile, controller snapshot и sing-box config проходят проверки; `smoke-current` проходит.
+- До и после установки IPv4 default route SHA-256 совпал: `f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871`. IPv6 default route отсутствует до и после: `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+- Состояние до PUT: карта выключена, 249 назначений, версия `MN2MOIZ7YRAKU6MMDNYHGEPMVS`.
+- PUT изменил только признак `enabled`, сохранив текущие назначения стран. Ответ — HTTP 200; ответ и последующий GET подтвердили `enabled=true`, 249 назначений, версия `PVOQUCZ2EAZLCQVJROBPI6VYNZ`.
+- Read-only проверка `/opt/etc/hestia/snapshot.json` подтвердила сохранённую включённую карту с 249 назначениями. Статусы supervisor roles controller, router и binding-watch — active.
+- После перезагрузки страницы `/#/country-map` переключатель отображался включённым, кнопка «Сохранить» была выключена, а назначения остались прежними: Россия — «Россия», остальные страны — «Остальной мир».
+
+## Проверки исходников и границы
+
+- `go test -count=1 ./internal/services/entware` — успешно, включая переходы quality target и controller confirmation.
+- `go vet ./internal/services/entware`, `make docs-check` и `git diff --check` — успешно.
+- Проверено сохранение через PUT, повторный GET и чтение установленного snapshot. Перезагрузка KN-1012, клиентский трафик и фактический выход через страновые правила не проверялись.

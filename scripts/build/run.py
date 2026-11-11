@@ -1,5 +1,6 @@
 """Build distinct Linux and experimental Keenetic application artifacts without accessing a stand."""
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -15,6 +16,7 @@ from common import ROOT, file_hash, verify_bundle
 from ipk import create_ipk
 
 KEENETIC_AWG_UAPI_DIRECTORY = '/opt/tmp/hestia-awg-uapi-26b84f/runtime/amneziawg'
+KEENETIC_GEOIP_SHA256 = 'e5c8459d638a272ece7f4d7cfa49dce18d91b4f403f6940ba9249bf0db3781fd'
 
 
 def compile_go(destination):
@@ -85,6 +87,7 @@ def stage_keenetic_rootfs(bundle, runtime):
         (library / name).chmod(0o755 if name == 'sing-box' else 0o644)
     shutil.copyfile(ROOT / 'deploy/profile.py', library / 'profile.py')
     (library / 'profile.py').chmod(0o644)
+    stage_keenetic_geoip(bundle)
     stage_keenetic_hooks(bundle)
     assets = bundle / 'opt/share/hestia-panel/current'
     shutil.copytree(bundle / 'browser', assets)
@@ -156,6 +159,55 @@ def verify_packaged_inputs(bundle, locks, inputs):
             raise RuntimeError('Packaged runtime differs from pinned input: ' + name)
     if any(not (ROOT / name).is_file() or file_hash(ROOT / name) != digest for name, digest in inputs.items()):
         raise RuntimeError('Build inputs changed during packaging; refusing misleading artifact provenance')
+
+
+def stage_keenetic_geoip(bundle):
+    """Build and stage the pinned country database and sing-box rule sets under /opt/share."""
+    archive = ROOT / 'deploy/geoip/dbip-country-lite-2026-11.csv.gz'
+    if file_hash(archive) != KEENETIC_GEOIP_SHA256:
+        raise RuntimeError('Pinned Keenetic GeoIP archive hash does not match')
+    target = bundle / 'opt/share/hestia/geoip'
+    if target.exists():
+        raise RuntimeError('Keenetic GeoIP output already exists')
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix='hestia-keenetic-geoip-') as directory:
+        generated = Path(directory) / 'geoip'
+        subprocess.run(
+            [sys.executable, '-I', str(ROOT / 'deploy/import_geoip.py'), str(archive), str(generated)],
+            cwd=ROOT,
+            check=True,
+        )
+        shutil.copytree(generated, target)
+    countries = (ROOT / 'backend/internal/geoip/countries.txt').read_text(encoding='ascii').split()
+    (target / 'countries.txt').write_text('\n'.join(countries) + '\n', encoding='ascii')
+    shutil.copyfile(ROOT / 'deploy/geoip/README.md', target / 'NOTICE')
+    source_hashes = '\n'.join((
+        file_hash(archive),
+        file_hash(ROOT / 'deploy/import_geoip.py'),
+        file_hash(ROOT / 'backend/internal/geoip/countries.txt'),
+    )).encode()
+    (target / 'rule-set-source.sha256').write_text(hashlib.sha256(source_hashes).hexdigest() + '\n')
+    verify_keenetic_geoip(target)
+
+
+def verify_keenetic_geoip(directory):
+    """Reject incomplete or malformed GeoIP payloads before publishing the Keenetic package."""
+    manifest = json.loads((directory / 'manifest.json').read_bytes())
+    countries = manifest.get('countries')
+    catalogue = set((ROOT / 'backend/internal/geoip/countries.txt').read_text(encoding='ascii').split())
+    if not isinstance(countries, list) or not countries or countries != sorted(set(countries)):
+        raise RuntimeError('Keenetic GeoIP manifest is invalid')
+    if set(countries) != catalogue or not (directory / 'country.bin').is_file():
+        raise RuntimeError('Keenetic GeoIP data is incomplete')
+    if (directory / 'country.bin').read_bytes()[:4] != b'HGI1':
+        raise RuntimeError('Keenetic GeoIP index header is invalid')
+    if not {'countries.txt', 'NOTICE', 'rule-set-source.sha256'}.issubset({path.name for path in directory.iterdir()}):
+        raise RuntimeError('Keenetic GeoIP metadata is incomplete')
+    countries_file = (directory / 'countries.txt').read_text(encoding='ascii').splitlines()
+    if not countries_file or countries_file != sorted(set(countries_file)) or set(countries_file) != catalogue:
+        raise RuntimeError('Keenetic GeoIP country catalogue is invalid')
+    if any(not (directory / (code + '.json')).is_file() for code in countries):
+        raise RuntimeError('Keenetic GeoIP rule sets are incomplete')
 
 
 def verify_keenetic_awg_uapi(bundle):

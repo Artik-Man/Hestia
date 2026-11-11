@@ -478,8 +478,15 @@ def export_paths(backend: dict, directory: Path, source: os.stat_result | None =
     os.replace(stream.name, directory / "paths.json")
 
 
-GEOIP_DIRECTORY = Path("/usr/share/hestia/geoip")
-GEOIP_OVERRIDES = Path("/var/lib/hestia-geoip-overrides")
+def geoip_directories(script_path: Path = Path(__file__)) -> tuple[Path, Path]:
+    """Resolve immutable GeoIP data and writable override paths for the installed platform layout."""
+    if script_path.resolve().parents[2] == Path("/opt"):
+        return Path("/opt/share/hestia/geoip"), Path("/opt/var/lib/hestia-geoip-overrides")
+    return Path("/usr/share/hestia/geoip"), Path("/var/lib/hestia-geoip-overrides")
+
+
+GEOIP_DIRECTORY, GEOIP_OVERRIDES = geoip_directories()
+GEOIP_BINARY = GEOIP_DIRECTORY == Path("/opt/share/hestia/geoip")
 KEENETIC_INGRESS_INBOUND = {
     "type": "tun",
     "tag": "hestia-keenetic-ingress",
@@ -560,12 +567,13 @@ def client_route(
                     if prefix == "geoip" and group == final:
                         continue
                     tag = prefix + "-" + code
+                    binary = prefix == "geoip" and GEOIP_BINARY
                     local_sets.append(
                         {
                             "type": "local",
                             "tag": tag,
-                            "format": "source",
-                            "path": str(directory / (code + ".json")),
+                            "format": "binary" if binary else "source",
+                            "path": str(directory / (code + (".srs" if binary else ".json"))),
                         }
                     )
                     by_group.setdefault(group, []).append(tag)
@@ -580,7 +588,7 @@ def client_route(
 
 
 def keenetic_ingress_group(profile: dict) -> str | None:
-    """Resolve the only group that can send OpkgTun traffic exclusively through ready AmneziaWG connectors."""
+    """Resolve the unique AWG-anchored VPN group without recursive OpkgTun transports."""
     if not any(
         item.get("type") == "tun" and item.get("tag") == KEENETIC_INGRESS_INBOUND["tag"]
         for item in profile.get("inbounds", [])
@@ -591,6 +599,8 @@ def keenetic_ingress_group(profile: dict) -> str | None:
         for item in profile.get("connectors", [])
         if item.get("type") == "amneziawg" and item.get("status") == "ready"
     }
+    hysteria2 = {item["id"]: item for item in profile.get("hysteria2", [])}
+    allowed_exits = {*connectors, *hysteria2}
     transports = {
         item["id"]: item.get("underlays", [item.get("underlay")] if item.get("underlay") else [])
         for item in [*profile.get("connectors", []), *profile.get("hysteria2", [])]
@@ -609,11 +619,12 @@ def keenetic_ingress_group(profile: dict) -> str | None:
         group
         for group in profile.get("groups", [])
         if group.get("exits")
+        and any(member in connectors for member in group["exits"])
         and group.get("defaultExit", "deny") in {"deny", *group["exits"]}
-        and all(member in connectors for member in group["exits"])
+        and all(member in allowed_exits for member in group["exits"])
         and all(not depends_on_opkgtun(member, set()) for member in group["exits"])
     ]
-    require(len(candidates) <= 1, "Keenetic ingress requires at most one safe AmneziaWG-only group")
+    require(len(candidates) <= 1, "Keenetic ingress requires at most one safe AWG-anchored VPN group")
     return candidates[0]["id"] if candidates else None
 
 

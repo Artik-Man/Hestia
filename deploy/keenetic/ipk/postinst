@@ -5,9 +5,105 @@ set -eu
 
 case "${1:-configure}" in
     configure)
-        for state_dir in /opt/var/lib /opt/var/lib/hestia /opt/var/lib/hestia/country-map; do
+        geoip_data=/opt/share/hestia/geoip
+        geoip_overrides=/opt/var/lib/hestia-geoip-overrides
+        if [ -L "$geoip_data" ] || [ ! -d "$geoip_data" ]; then
+            printf '%s\n' 'Hestia GeoIP database is missing or unsafe' >&2
+            exit 1
+        fi
+        for file in manifest.json countries.txt country.bin rule-set-source.sha256; do
+            if [ -L "$geoip_data/$file" ] || [ ! -f "$geoip_data/$file" ]; then
+                printf '%s\n' 'Hestia GeoIP database is incomplete' >&2
+                exit 1
+            fi
+        done
+        if [ -L /opt/lib/hestia/sing-box ] || [ ! -f /opt/lib/hestia/sing-box ]; then
+            printf '%s\n' 'Hestia GeoIP compiler is missing or unsafe' >&2
+            exit 1
+        fi
+        source_fingerprint=$(/opt/bin/busybox cat "$geoip_data/rule-set-source.sha256")
+        case "$source_fingerprint" in
+            '' | *[!a-f0-9]*) printf '%s\n' 'Hestia GeoIP source fingerprint is invalid' >&2; exit 1 ;;
+        esac
+        sing_box_fingerprint=$(/opt/bin/busybox sha256sum /opt/lib/hestia/sing-box | /opt/bin/busybox cut -d ' ' -f 1)
+        expected_fingerprint="$source_fingerprint:$sing_box_fingerprint"
+        if [ -L "$geoip_overrides" ] || { [ -e "$geoip_overrides" ] && [ ! -d "$geoip_overrides" ]; }; then
+            printf '%s\n' 'Hestia GeoIP overrides path is unsafe' >&2
+            exit 1
+        fi
+        if [ ! -d "$geoip_overrides" ]; then
+            (
+                umask 077
+                /opt/bin/busybox mkdir -m 0750 "$geoip_overrides"
+            )
+        fi
+        while IFS= read -r code; do
+            case "$code" in
+                [A-Z][A-Z]) ;;
+                *) printf '%s\n' 'Hestia GeoIP country catalogue is invalid' >&2; exit 1 ;;
+            esac
+            rule="$geoip_overrides/$code.json"
+            if [ -L "$rule" ] || { [ -e "$rule" ] && [ ! -f "$rule" ]; }; then
+                printf '%s\n' 'Hestia GeoIP override is unsafe' >&2
+                exit 1
+            fi
+            if [ ! -e "$rule" ]; then
+                temporary="$geoip_overrides/.$code.json.$$"
+                if [ -e "$temporary" ] || [ -L "$temporary" ]; then
+                    printf '%s\n' 'Hestia GeoIP override staging path is occupied' >&2
+                    exit 1
+                fi
+                (umask 022; printf '%s\n' '{"version":3,"rules":[]}' >"$temporary")
+                /opt/bin/busybox chmod 0644 "$temporary"
+                /opt/bin/busybox mv "$temporary" "$rule"
+            fi
+        done <"$geoip_data/countries.txt"
+        compiled_fingerprint="$geoip_data/rule-set-binary.sha256"
+        compile_rule_sets=0
+        if [ -L "$compiled_fingerprint" ] || { [ -e "$compiled_fingerprint" ] && [ ! -f "$compiled_fingerprint" ]; } ||
+            [ "$(/opt/bin/busybox cat "$compiled_fingerprint" 2>/dev/null || true)" != "$expected_fingerprint" ]; then
+            compile_rule_sets=1
+        fi
+        while IFS= read -r code; do
+            compiled="$geoip_data/$code.srs"
+            if [ -L "$compiled" ] || [ ! -f "$compiled" ]; then
+                compile_rule_sets=1
+            fi
+        done <"$geoip_data/countries.txt"
+        if [ "$compile_rule_sets" -eq 1 ]; then
+            while IFS= read -r code; do
+                case "$code" in
+                    [A-Z][A-Z]) ;;
+                    *) printf '%s\n' 'Hestia GeoIP country catalogue is invalid' >&2; exit 1 ;;
+                esac
+                source="$geoip_data/$code.json"
+                compiled="$geoip_data/$code.srs"
+                temporary="$geoip_data/.$code.srs.$$"
+                if [ -L "$source" ] || [ ! -f "$source" ] || [ -L "$temporary" ] || [ -e "$temporary" ] ||
+                    [ -L "$compiled" ] || { [ -e "$compiled" ] && [ ! -f "$compiled" ]; }; then
+                    printf '%s\n' 'Hestia GeoIP rule-set input or staging path is unsafe' >&2
+                    exit 1
+                fi
+                if ! /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia \
+                    /opt/lib/hestia/sing-box rule-set compile --output "$temporary" "$source" >/dev/null 2>&1; then
+                    printf '%s\n' 'Hestia GeoIP rule-set compilation failed' >&2
+                    exit 1
+                fi
+                /opt/bin/busybox chmod 0644 "$temporary"
+                /opt/bin/busybox mv "$temporary" "$compiled"
+            done <"$geoip_data/countries.txt"
+            temporary="$geoip_data/.rule-set-binary.sha256.$$"
+            if [ -L "$temporary" ] || [ -e "$temporary" ]; then
+                printf '%s\n' 'Hestia GeoIP fingerprint staging path is occupied' >&2
+                exit 1
+            fi
+            (umask 022; printf '%s\n' "$expected_fingerprint" >"$temporary")
+            /opt/bin/busybox chmod 0644 "$temporary"
+            /opt/bin/busybox mv "$temporary" "$compiled_fingerprint"
+        fi
+        for state_dir in /opt/var/lib /opt/var/lib/hestia /opt/var/lib/hestia/country-map /opt/var/lib/hestia/dns-policy; do
             if [ -L "$state_dir" ] || { [ -e "$state_dir" ] && [ ! -d "$state_dir" ]; }; then
-                printf '%s\n' 'Hestia country-map state path is unsafe' >&2
+                printf '%s\n' 'Hestia state path is unsafe' >&2
                 exit 1
             fi
             if [ ! -d "$state_dir" ]; then

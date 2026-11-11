@@ -1,6 +1,7 @@
 """Check publication rejects runtime or source drift without invoking a compiler."""
 import importlib.util
 import hashlib
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -145,6 +146,30 @@ class BuildTests(unittest.TestCase):
             ingress_lock = root / 'opt/var/lock/hestia-ingress.lock'
             self.assertEqual(ingress_lock.read_bytes(), b'')
             self.assertEqual(ingress_lock.stat().st_mode & 0o777, 0o600)
+
+    def test_keenetic_package_stages_complete_geoip_payload(self):
+        """A Keenetic bundle includes the pinned index and every country routing rule set."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            BUILD.stage_keenetic_geoip(root)
+            geoip = root / 'opt/share/hestia/geoip'
+            BUILD.verify_keenetic_geoip(geoip)
+            manifest = json.loads((geoip / 'manifest.json').read_bytes())
+            self.assertEqual(len(manifest['countries']), 249)
+            catalogue = (geoip / 'countries.txt').read_text(encoding='ascii').splitlines()
+            self.assertEqual(len(catalogue), 249)
+            self.assertEqual(catalogue, sorted(set(catalogue)))
+            self.assertTrue((geoip / 'rule-set-source.sha256').is_file())
+            self.assertTrue((geoip / 'RU.json').is_file())
+            self.assertTrue((geoip / 'country.bin').read_bytes().startswith(b'HGI1'))
+
+    def test_keenetic_postinst_seeds_each_whitespace_catalogue_country(self):
+        """The installed country catalogue format matches postinst's line-by-line seed loop."""
+        source = (BUILD.ROOT / 'deploy/keenetic/ipk/postinst').read_text()
+        self.assertIn('while IFS= read -r code; do', source)
+        self.assertIn('done <"$geoip_data/countries.txt"', source)
+        self.assertIn('rule-set compile', source)
+        self.assertIn('.srs', source)
 
     def test_keenetic_package_stages_synchronous_ingress_hook(self):
         """The Keenetic IPK installs the bounded netfilter callback with executable permissions."""

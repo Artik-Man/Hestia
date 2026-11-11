@@ -5,6 +5,8 @@ package entware
 import (
 	"context"
 	"errors"
+	"os/exec"
+	"reflect"
 	"testing"
 	"time"
 
@@ -18,6 +20,54 @@ func TestPublicErrorIncludesOnlyFixedServiceRole(t *testing.T) {
 	}
 	if got := publicError(ErrUnavailable, serviceRole(services.Controller)); got != "managed service role unavailable: controller" {
 		t.Fatalf("publicError() = %q, want fixed controller category", got)
+	}
+}
+
+// TestBootServicesRecoverConnectorsBeforeRouting verifies committed AWG runtimes are restored before router and controller startup.
+func TestBootServicesRecoverConnectorsBeforeRouting(t *testing.T) {
+	var events []string
+	recoverBindings := func(context.Context) error {
+		events = append(events, "recover-bindings")
+		return nil
+	}
+	startService := func(_ context.Context, service services.Service) error {
+		switch service.Kind {
+		case services.Router:
+			events = append(events, "router")
+		case services.Controller:
+			events = append(events, "controller")
+		default:
+			t.Errorf("unexpected boot service kind: %d", service.Kind)
+		}
+		return nil
+	}
+	if err := startBootServices(context.Background(), recoverBindings, startService); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"recover-bindings", "router", "controller"}
+	if !reflect.DeepEqual(events, want) {
+		t.Fatalf("boot events = %v, want %v", events, want)
+	}
+}
+
+// TestBootServicesStopWhenConnectorRecoveryFails prevents routing services from starting with an un-restored committed connector generation.
+func TestBootServicesStopWhenConnectorRecoveryFails(t *testing.T) {
+	var starts int
+	recoverBindings := func(context.Context) error { return errors.New("fixture recovery failure") }
+	startService := func(context.Context, services.Service) error {
+		starts++
+		return nil
+	}
+	if err := startBootServices(context.Background(), recoverBindings, startService); err == nil || starts != 0 {
+		t.Fatalf("boot continued after connector recovery failure: err=%v starts=%d", err, starts)
+	}
+}
+
+// TestBindingRecoveryErrorPreservesStderr keeps the cause of a failed boot recovery in supervisor diagnostics.
+func TestBindingRecoveryErrorPreservesStderr(t *testing.T) {
+	err := bindingRecoveryError(&exec.ExitError{Stderr: []byte("profile recovery failed\n")})
+	if got, want := err.Error(), "binding recovery failed: profile recovery failed"; got != want {
+		t.Fatalf("bindingRecoveryError() = %q, want %q", got, want)
 	}
 }
 

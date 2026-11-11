@@ -28,10 +28,12 @@ import (
 )
 
 const (
-	smokeAPITimeout = 500 * time.Millisecond
-	maxSnapshotSize = 2 << 20
-	maxQualitySize  = 2 << 20
-	maxServiceLog   = 8 << 20
+	smokeAPITimeout             = 500 * time.Millisecond
+	selectorConvergenceTimeout  = 5 * time.Second
+	selectorConvergenceInterval = 100 * time.Millisecond
+	maxSnapshotSize             = 2 << 20
+	maxQualitySize              = 2 << 20
+	maxServiceLog               = 8 << 20
 )
 
 type backendOutbound struct {
@@ -123,25 +125,13 @@ func runSmoke(ctx context.Context, table *processTable, fresh bool) error {
 	if err != nil {
 		return errors.New("installed router configuration is invalid")
 	}
-	health := effectiveHealth(config, backend, awghealth.HeartbeatHealthy)
-	quality, err := readQualityReport(snapshotPath, config)
-	if err != nil {
-		return err
-	}
-	qualityTargets, err := confirmedQualityTargets(config, health, quality)
-	if err != nil {
-		return err
-	}
-	var confirmed map[string]string
+	var controllerStarted time.Time
 	if fresh {
 		controllerEntry := table.entry(services.Service{Kind: services.Controller})
 		if controllerEntry == nil {
 			return errors.New("controller process handle is unavailable")
 		}
-		confirmed, err = freshControllerEvents(filepath.Join(storage.Installed().Runtime, "service-1.log"), controllerEntry.started)
-		if err != nil {
-			return err
-		}
+		controllerStarted = controllerEntry.started
 	}
 	client := &http.Client{
 		Timeout:       smokeAPITimeout,
@@ -149,23 +139,7 @@ func runSmoke(ctx context.Context, table *processTable, fresh bool) error {
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
 	}
 	defer client.CloseIdleConnections()
-	for _, group := range config.Groups {
-		wanted := expectedTarget(group, health)
-		if target, ok := qualityTargets[group.ID]; ok {
-			wanted = target
-		}
-		if fresh && confirmed[group.ID] != wanted {
-			return errors.New("controller has not confirmed the current selector target")
-		}
-		state, err := readLiveSelector(ctx, client, group.ID)
-		if err != nil || !selectorMatches(state, group, wanted) {
-			return errors.New("router selector differs from the installed snapshot")
-		}
-	}
-	if len(config.Groups) == 0 {
-		return errors.New("controller snapshot has no selector groups")
-	}
-	return nil
+	return waitForSmokeSelectors(ctx, client, "http://127.0.0.1:9090", snapshotPath, config, backend, fresh, controllerStarted)
 }
 
 // decodeSnapshot validates the controller configuration shape without importing Linux composition packages.
@@ -384,11 +358,10 @@ func expectedTarget(group routing.Group, health map[string]bool) string {
 }
 
 // readLiveSelector performs a bounded local read of one selector endpoint without following redirects or proxies.
-func readLiveSelector(parent context.Context, client *http.Client, id string) (selectorState, error) {
+func readLiveSelector(parent context.Context, client *http.Client, endpoint, id string) (selectorState, error) {
 	ctx, cancel := context.WithTimeout(parent, smokeAPITimeout)
 	defer cancel()
-	endpoint := "http://127.0.0.1:9090/proxies/" + url.PathEscape(id)
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint+"/proxies/"+url.PathEscape(id), nil)
 	if err != nil {
 		return selectorState{}, err
 	}
@@ -406,6 +379,104 @@ func readLiveSelector(parent context.Context, client *http.Client, id string) (s
 		return selectorState{}, err
 	}
 	return state, nil
+}
+
+// waitForLiveSelectors retries exact selector checks while the controller converges after a transient health update.
+func waitForLiveSelectors(parent context.Context, client *http.Client, endpoint string, config smokeConfig, health map[string]bool, qualityTargets map[string]string) error {
+	return waitForSelectorTargets(parent, client, endpoint, config.Groups, func() (map[string]string, error) {
+		return expectedSelectorTargets(config.Groups, health, qualityTargets), nil
+	}, nil)
+}
+
+// waitForSmokeSelectors re-reads quality and controller evidence while the newly loaded generation converges.
+func waitForSmokeSelectors(parent context.Context, client *http.Client, endpoint, snapshotPath string, config smokeConfig, backend backendConfig, fresh bool, controllerStarted time.Time) error {
+	if len(config.Groups) == 0 {
+		return errors.New("controller snapshot has no selector groups")
+	}
+	expected := func() (map[string]string, error) {
+		quality, err := readQualityReport(snapshotPath, config)
+		if err != nil {
+			return nil, err
+		}
+		health := effectiveHealth(config, backend, awghealth.HeartbeatHealthy)
+		qualityTargets, err := confirmedQualityTargets(config, health, quality)
+		if err != nil {
+			return nil, err
+		}
+		return expectedSelectorTargets(config.Groups, health, qualityTargets), nil
+	}
+	var confirmed func(map[string]string) bool
+	if fresh {
+		logPath := filepath.Join(storage.Installed().Runtime, "service-1.log")
+		confirmed = func(targets map[string]string) bool {
+			events, err := freshControllerEvents(logPath, controllerStarted)
+			if err != nil {
+				return false
+			}
+			for id, target := range targets {
+				if events[id] != target {
+					return false
+				}
+			}
+			return true
+		}
+	}
+	return waitForSelectorTargets(parent, client, endpoint, config.Groups, expected, confirmed)
+}
+
+// expectedSelectorTargets returns one live target per installed group using its latest health and quality evidence.
+func expectedSelectorTargets(groups []routing.Group, health map[string]bool, qualityTargets map[string]string) map[string]string {
+	targets := make(map[string]string, len(groups))
+	for _, group := range groups {
+		target := expectedTarget(group, health)
+		if selected, ok := qualityTargets[group.ID]; ok {
+			target = selected
+		}
+		targets[group.ID] = target
+	}
+	return targets
+}
+
+// waitForSelectorTargets retries until live selectors and optional controller events agree with current expectations.
+func waitForSelectorTargets(parent context.Context, client *http.Client, endpoint string, groups []routing.Group, expected func() (map[string]string, error), confirmed func(map[string]string) bool) error {
+	ctx, cancel := context.WithTimeout(parent, selectorConvergenceTimeout)
+	defer cancel()
+	lastErr := error(errors.New("router selector differs from the installed snapshot"))
+	for {
+		targets, err := expected()
+		if err != nil {
+			lastErr = err
+		} else {
+			matches := true
+			for _, group := range groups {
+				state, readErr := readLiveSelector(ctx, client, endpoint, group.ID)
+				if readErr != nil || !selectorMatches(state, group, targets[group.ID]) {
+					matches = false
+					lastErr = errors.New("router selector differs from the installed snapshot")
+					break
+				}
+			}
+			if matches && (confirmed == nil || confirmed(targets)) {
+				return nil
+			}
+			if matches {
+				lastErr = errors.New("controller has not confirmed the current selector target")
+			}
+		}
+		timer := time.NewTimer(selectorConvergenceInterval)
+		select {
+		case <-parent.Done():
+			timer.Stop()
+			return parent.Err()
+		case <-ctx.Done():
+			timer.Stop()
+			if parent.Err() != nil {
+				return parent.Err()
+			}
+			return lastErr
+		case <-timer.C:
+		}
+	}
 }
 
 // selectorMatches requires the expected selector type, current target and configured member order.

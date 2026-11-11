@@ -1,0 +1,24 @@
+# Установка Keenetic IPK для карты стран — 11 ноября 2026 года
+
+## Артефакт и подготовка
+
+- Целевое устройство: KN-1012 через закреплённый SSH alias `keenetic-hestia`.
+- Установлен пакет: `20261110-215624-d9a573386528`, architecture `aarch64-3.10`.
+- Локальный и удалённый SHA-256 IPK: `8ffde6ea0580c40a161c31ba4baab979f68140e79261a8def9652e24145db907`.
+- До установки активен был предыдущий рабочий пакет `20261110-205949-d9a573386528`; его rollback IPK проверен по SHA-256 `098ae0027c1b13b8b62f35a6bb637f7bcc342c0fc7edc98416b0577440f6e630`.
+- До обновления supervisor был готов, managed profile, controller snapshot и sing-box config проходили проверки. В root-only каталоге `/opt/tmp/hestia-country-map-update-20261111-215624` сохранены копия `/opt/etc/hestia`, opkg status, исходные route hashes и rollback IPK.
+- Исходный IPv4 default route hash: `f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871`. IPv6 default route отсутствовал: `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+
+## Результат установки
+
+- `/opt/bin/opkg install` завершился без ошибки; финальный package status — `install user installed`, версия `20261110-215624-d9a573386528`.
+- `/opt/bin/hestia -service-supervisor-ready` завершился с кодом 0; `/opt/var/run/hestia/supervisor.ready` существует, `/opt/var/run/hestia/package-maintenance` отсутствует.
+- Managed profile validation, `/opt/bin/hestia -check -config /opt/etc/hestia/snapshot.json` и `sing-box check -c /opt/etc/hestia/sing-box.json` завершились с кодом 0.
+- Под `/opt/share/hestia/geoip` находятся 249 бинарных `.srs` наборов.
+- После установки IPv4 default route hash совпал с исходным `f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871`; IPv6 default route по-прежнему отсутствует с hash `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+- В браузере загрузились страницы качества и маршрутов по странам. UI качества показывал Laurel активным, Zarubin недоступным на момент просмотра; причина отдельно не исследовалась.
+- Страница country map показала выключенную функцию, Россию как группу по умолчанию и все страны в группе «Россия». Кнопка «Сохранить» была неактивна. Политика маршрутизации не менялась; сохранение карты и фактический country routing не проверялись.
+
+## Границы
+
+Установка пакета и readiness подтверждены. Пользовательская конфигурация маршрутизации по странам не изменялась; сквозной трафик, выходы VPN и leak-test не проверялись.

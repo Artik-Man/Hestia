@@ -13,6 +13,7 @@ from profile import (
     compile_profile,
     client_route,
     export_paths,
+    geoip_directories,
     keenetic_default_route_device,
     keenetic_interface_extension,
     managed_profile,
@@ -60,6 +61,17 @@ class ProfileTests(unittest.TestCase):
         (base / "profile-backend.sha256").write_text(hashlib.sha256(backend_raw).hexdigest())
         (base / "snapshot.json").write_text(json.dumps(snapshot))
         return snapshot, backend
+
+    def test_geoip_directories_follow_the_installed_platform_layout(self):
+        """Resolve GeoIP rules and overrides inside Entware on Keenetic and standard paths elsewhere."""
+        self.assertEqual(
+            geoip_directories(Path("/opt/lib/hestia/profile.py")),
+            (Path("/opt/share/hestia/geoip"), Path("/opt/var/lib/hestia-geoip-overrides")),
+        )
+        self.assertEqual(
+            geoip_directories(Path("/usr/local/lib/hestia/profile.py")),
+            (Path("/usr/share/hestia/geoip"), Path("/var/lib/hestia-geoip-overrides")),
+        )
 
     def test_keenetic_ingress_enable_and_disable_are_reversible(self):
         """Add OpkgTun with an explicit AWG-only route, then remove it without losing SOCKS."""
@@ -133,27 +145,37 @@ class ProfileTests(unittest.TestCase):
         self.assertNotIn("hestia-keenetic-ingress", [item["tag"] for item in disabled_profile["inbounds"]])
         self.assertIn("hestia-local-socks", [item["tag"] for item in disabled_backend["inbounds"]])
 
-    def test_keenetic_ingress_requires_exactly_one_ready_awg_only_group(self):
-        """Reject ambiguous, mixed, non-ready, and non-AWG defaults instead of allowing WAN fallback."""
+    def test_keenetic_ingress_accepts_safe_awg_and_hysteria_group(self):
+        """Allow non-recursive Hysteria beside ready AWG while rejecting unsafe exits and ambiguity."""
         connector_id = "7f02067a-ca17-4c38-ae26-7c7fb21ca06a"
+        hysteria_id = "2db91e0d-39d2-4194-a8b9-1c9fdc9c86bd"
+        relay_id = "8f6f8820-52f0-4d87-956e-217b99a5d544"
         profile = {
             "inbounds": [{"type": "tun", "tag": "hestia-keenetic-ingress"}],
             "connectors": [{"id": connector_id, "type": "amneziawg", "status": "ready"}],
-            "groups": [{"id": "amnezia", "exits": [connector_id], "defaultExit": "deny"}],
+            "hysteria2": [
+                {"id": hysteria_id, "underlay": "keenetic-uplink"},
+                {"id": relay_id, "underlay": "keenetic-opkgtun"},
+            ],
+            "groups": [{"id": "rest-of-world", "exits": [connector_id, hysteria_id], "defaultExit": "deny"}],
         }
         self.assertEqual(client_route(profile, "direct", [], [])[
-            "rules"], [{"inbound": ["hestia-keenetic-ingress"], "action": "route", "outbound": "amnezia"}])
-        profile["groups"].append({"id": "also-amnezia", "exits": [connector_id], "defaultExit": "deny"})
-        with self.assertRaisesRegex(ValueError, "one .*AmneziaWG-only group"):
+            "rules"], [{"inbound": ["hestia-keenetic-ingress"], "action": "route", "outbound": "rest-of-world"}])
+        profile["groups"].append({"id": "also-safe", "exits": [connector_id], "defaultExit": "deny"})
+        with self.assertRaisesRegex(ValueError, "one .*AWG-anchored VPN group"):
             client_route(profile, "direct", [], [])
         profile["groups"].pop()
         profile["groups"][0]["exits"].append("direct-wan")
         self.assertEqual(client_route(profile, "direct", [], [])[
             "rules"], [{"inbound": ["hestia-keenetic-ingress"], "action": "route", "outbound": "deny"}])
-        profile["groups"][0]["exits"] = [connector_id]
+        profile["groups"][0]["exits"] = [connector_id, hysteria_id]
+        profile["hysteria2"][0]["underlay"] = relay_id
+        self.assertEqual(client_route(profile, "direct", [], [])[
+            "rules"], [{"inbound": ["hestia-keenetic-ingress"], "action": "route", "outbound": "deny"}])
+        profile["hysteria2"][0]["underlay"] = "keenetic-uplink"
         profile["groups"][0]["defaultExit"] = connector_id
         self.assertEqual(client_route(profile, "direct", [], [])[
-            "rules"], [{"inbound": ["hestia-keenetic-ingress"], "action": "route", "outbound": "amnezia"}])
+            "rules"], [{"inbound": ["hestia-keenetic-ingress"], "action": "route", "outbound": "rest-of-world"}])
         profile["groups"][0]["defaultExit"] = "direct-wan"
         self.assertEqual(client_route(profile, "direct", [], [])[
             "rules"], [{"inbound": ["hestia-keenetic-ingress"], "action": "route", "outbound": "deny"}])
@@ -275,6 +297,33 @@ class ProfileTests(unittest.TestCase):
             self.profile["countryMap"]["enabled"] = False
             _, backend = self.compile()
             self.assertNotIn("rule_set", backend["route"])
+
+    def test_keenetic_country_route_uses_compiled_geoip_rule_sets(self):
+        """Use compact binary GeoIP sets on Keenetic while exact IP overrides remain reloadable JSON."""
+        codes = (
+            (Path(__file__).resolve().parents[1] / "backend/internal/geoip/countries.txt")
+            .read_text()
+            .split()
+        )
+        assignments = dict.fromkeys(codes, "russia")
+        assignments["FI"] = "finland"
+        self.profile["countryMap"] = {
+            "enabled": True,
+            "version": "fixture",
+            "assignments": assignments,
+        }
+        (self.base / "manifest.json").write_text(json.dumps({"countries": ["FI", "RU"]}))
+        (self.base / "FI.srs").write_bytes(b"compiled")
+        with (
+            patch("profile.GEOIP_BINARY", True),
+            patch("profile.GEOIP_DIRECTORY", self.base),
+            patch("profile.GEOIP_OVERRIDES", self.base),
+        ):
+            _, backend = self.compile()
+        geoip = next(item for item in backend["route"]["rule_set"] if item["tag"] == "geoip-FI")
+        exact = next(item for item in backend["route"]["rule_set"] if item["tag"] == "exact-FI")
+        self.assertEqual((geoip["format"], geoip["path"]), ("binary", str(self.base / "FI.srs")))
+        self.assertEqual((exact["format"], exact["path"]), ("source", str(self.base / "FI.json")))
 
     def test_ordered_hysteria_candidates_and_cycle(self):
         """Compile independent physical and VPN clients, probe each privately and reject cross-protocol cycles."""

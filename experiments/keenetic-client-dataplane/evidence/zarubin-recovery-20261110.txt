@@ -1,0 +1,44 @@
+# Восстановление Zarubin на KN-1012 — 10 ноября 2026 года
+
+## Среда
+
+- Устройство: Keenetic Giga KN-1012, KeeneticOS 5.02.B.3.0-2, Entware `aarch64-3.10`.
+- Hestia: `20261110-094102-e2ca76bd1fc4`, установленный пакет `install user installed`.
+- Работа выполнялась через pinned SSH alias `keenetic-hestia`; секреты профиля в свидетельство не включались.
+- Root-only резервная копия и staging: `/opt/tmp/hestia-zarubin-repair-20261110T165610Z/`.
+
+## Исходное состояние и причина отказа
+
+В группе `Остальной мир` находились одновременно Zarubin AmneziaWG и Laurel Hysteria 2. Безопасная ingress-проверка требует отдельную группу, состоящую только из готовых AmneziaWG-коннекторов. Поэтому сохранённая sing-box route не совпадала с маршрутом, вычисляемым из текущего профиля; managed-profile validation не проходила. В публичном API у Zarubin был `status=error`, отсутствовал его runtime health marker, а страница качества показывала 0/0 для UDP и TCP.
+
+## Исправление и проверка
+
+1. Из digest-verified профиля собран offline-кандидат с ранее согласованным распределением: Laurel в `Россия` на приоритете 2, Zarubin — единственный выход `Остального мира` на приоритете 1. Входной `OpkgTun0` направляется в группу Zarubin.
+2. Кандидат прошёл `profile.py managed_profile`, Hestia controller snapshot check и sing-box config check. Хеши совпали с ранее проверенным поколением:
+   - `profile.json`: `d844b6b8b37484f5903604f256d6b827bda6e1aa45effce0047668535b08ff37`
+   - `sing-box.json`: `47602ac0e7323a10dc61cac7cb800d3439ee957a0264adad8c1aaf9d43fc64ec`
+   - `snapshot.json`: `8bc0176e150ae2259356a62027f7eaa5f3c27d0fe5df5495c1dcca93451ed2a0`
+3. Пять файлов поколения опубликованы атомарной заменой после остановки штатным `S99hestia`; profile, snapshot и sing-box проверки после публикации прошли. Supervisor и панель затем стали готовы; `/`, `/api/groups-and-rules` и `/api/physical-connections` отвечали HTTP 200.
+4. Встроенная временная проверка Zarubin подтвердила handshake с peer (`handshake_confirmed`) без изменения группового маршрута. Затем root-only Hestia supervisor принял start одного AWG runtime Zarubin. Появился health marker; журнал сообщил: `AWG egress probe passed using configured DNS resolver 2 after earlier resolver failure`.
+5. Публичный `-awg-list` вернул Zarubin `status=ready`, `activeUnderlay=keenetic-uplink`. На странице качества в 20:18 10 ноября 2026 года отображалось: Zarubin «Активно», UDP `2/2`, TCP `2/2`, качество `100%`.
+6. IPv4 default-route SHA-256 до и после: `f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871`. IPv6 default route отсутствовал до и после; hash пустого результата: `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+
+Повторное сохранение неизменённого профиля через `-awg-update` завершилось rollback на этапе activation. Причина этого rollback отдельно не установлена. Последующий supervisor-managed start runtime прошёл и создал свежий heartbeat; конфигурацию или ключи ради этого не меняли.
+
+## Границы вывода
+
+Подтверждены peer handshake, встроенная проверка egress, текущий runtime heartbeat и две успешные UDP- и TCP-проверки качества через Zarubin. Клиентский сквозной поток из `hestia-client`, обратный путь для произвольного клиента и отсутствие утечек этим прогоном не проверялись. Результат не локализует прежний отказ ниже клиентского dataplane.
+
+## Воспроизведение
+
+На KN-1012, не выводя профиль или ключи:
+
+```sh
+/opt/bin/python3 -I /opt/lib/hestia/profile.py --validate-managed /opt/etc/hestia
+/opt/bin/hestia -check -config /opt/etc/hestia/snapshot.json
+/opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia \
+  /opt/lib/hestia/sing-box check -c /opt/etc/hestia/sing-box.json
+/opt/bin/hestia -service-supervisor-ready
+```
+
+Для peer check используйте `-awg-read` только внутри root-only процесса, передайте поле `profile` напрямую в `-awg-check` и сохраняйте только status/result. Runtime запускайте только через Hestia supervisor; затем проверяйте `-awg-list`, наличие неустаревшего `health.json.<id>` и страницу качества. Не печатайте результат `-awg-read`: он содержит ключевой материал.
