@@ -175,6 +175,17 @@ func (e Engine) Apply(ctx context.Context, id, expected, target string) error {
 // apply checks the operation's precondition under the installer lock, stages and validates the proposed change,
 // and runs a supervised transaction. Even a no-op requires confirmation of the current services.
 func (e Engine) apply(ctx context.Context, prepare func(string) error, check func([]byte, bool) error, noChange bool) error {
+	return e.applyWithNoChangeCheck(ctx, prepare, check, noChange, nil)
+}
+
+// applyWithNoChangeCheck skips an identical request only when its prepared route needs no repair.
+func (e Engine) applyWithNoChangeCheck(
+	ctx context.Context,
+	prepare func(string) error,
+	check func([]byte, bool) error,
+	noChange bool,
+	canSkip func(string) (bool, error),
+) error {
 	lock, err := e.acquire(true)
 	if err != nil {
 		return err
@@ -222,7 +233,16 @@ func (e Engine) apply(ctx context.Context, prepare func(string) error, check fun
 		return transactionStageError{stage: "current-generation-smoke", cause: err}
 	}
 	if noChange {
-		return nil
+		if canSkip == nil {
+			return nil
+		}
+		skip, err := canSkip(stage)
+		if err != nil {
+			return transactionStageError{stage: "no-change-check", cause: err}
+		}
+		if skip {
+			return nil
+		}
 	}
 	if err := e.requireServiceActive(ctx, services.BindingWatch); err != nil {
 		return transactionStageError{stage: "binding-watch-check", cause: err}

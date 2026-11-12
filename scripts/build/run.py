@@ -9,7 +9,6 @@ import subprocess
 import sys
 import tarfile
 import tempfile
-import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'shared'))
 from common import ROOT, file_hash, verify_bundle
@@ -221,6 +220,8 @@ def verify_keenetic_awg_uapi(bundle):
 
 def build(output, runtime):
     """Compile platform-specific applications and publish immutable manifests with explicit platform limits."""
+    subprocess.run(['npm', 'version', 'patch', '--no-git-tag-version'], cwd=ROOT / 'frontend', check=True)
+    version = json.loads((ROOT / 'frontend/package.json').read_text(encoding='utf-8'))['version']
     locks = json.loads((ROOT / 'scripts/build/runtime-lock.json').read_text())
     for name, expected in locks.items():
         if not (runtime / name).is_file() or (runtime / name).is_symlink() or file_hash(runtime / name) != expected:
@@ -314,7 +315,6 @@ def build(output, runtime):
     ]
     inputs = {name: file_hash(ROOT / name) for name in sorted(set(tracked)) if (ROOT / name).is_file()}
     dirty = bool(subprocess.check_output(['git', 'status', '--porcelain'], cwd=ROOT, text=True))
-    version = time.strftime('%Y%m%d-%H%M%S') + '-' + revision[:12]
     target = output.resolve() / version
     if target.exists():
         raise ValueError('Version output already exists')

@@ -6,7 +6,7 @@ make build
 bash scripts/build/run.sh --output /tmp/hestia-artifacts
 ```
 
-`run.sh` вызывает `run.py`. Нужны Go согласно `backend/go.mod`, Node/npm согласно `frontend/package.json` и установленные зависимости frontend. Сценарий собирает три приложения (`hestia`, `hestia-panel`, `hestia-observe`) дважды: Linux ARM64 и Keenetic ARM64 с build tag `keenetic`. Панель тоже собирается отдельно для каждой платформы: в `linux-arm64` она показывает версию из `frontend/package.json` с суффиксом `-vm`, а в `keenetic-arm64-experimental` — с суффиксом `-keenetic`. Обычный `npm run build` без конфигурации платформы показывает только базовую версию. Затем сценарий создаёт два комплекта в `dist/artifacts/<версия>/`: `linux-arm64` и `keenetic-arm64-experimental`.
+`run.sh` вызывает `run.py`. Нужны Go согласно `backend/go.mod`, Node/npm согласно `frontend/package.json` и установленные зависимости frontend. Перед каждой полной сборкой `run.py` один раз вызывает `npm version patch --no-git-tag-version` в `frontend`: npm повышает patch-номер в `package.json` и `package-lock.json`, не создавая Git-коммит или тег. Эта версия используется обоими платформенными комплектами и именем каталога в `dist/artifacts/<версия>/`. Linux ARM64 панель показывает `<версия>-vm`, Keenetic ARM64 — `<версия>-keenetic`; обычный `npm run build` без конфигурации платформы показывает базовую версию. Повышение сохраняется, даже если дальнейшая сборка завершится ошибкой. Режим `--check-go` не меняет версию.
 
 Каждый комплект содержит манифест версии, ревизии, состояния рабочего дерева, Go build tags, хешей исходных входов и файлов поставки. Повторная сборка не перезаписывает существующий комплект. Сборка не подключается к стендам и ничего на них не устанавливает.
 

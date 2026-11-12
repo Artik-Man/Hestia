@@ -587,6 +587,57 @@ def client_route(
     return route
 
 
+def normalize_stale_ingress_route(
+    actual: dict, expected: dict, groups: list[dict]
+) -> None:
+    """Normalize one exact stale Keenetic ingress target before a managed transaction."""
+    actual_rules = actual.get("rules", [])
+    expected_rules = expected.get("rules", [])
+    if (
+        not isinstance(actual_rules, list)
+        or not isinstance(expected_rules, list)
+        or len(actual_rules) != len(expected_rules)
+    ):
+        return
+    differences = [
+        index
+        for index, (current, wanted) in enumerate(zip(actual_rules, expected_rules))
+        if current != wanted
+    ]
+    if len(differences) != 1:
+        return
+    index = differences[0]
+    wanted = expected_rules[index]
+    current = actual_rules[index]
+    ingress_route = {
+        "inbound": [KEENETIC_INGRESS_INBOUND["tag"]],
+        "action": "route",
+    }
+    if (
+        not isinstance(wanted, dict)
+        or {key: wanted.get(key) for key in ingress_route} != ingress_route
+        or set(wanted) != {*ingress_route, "outbound"}
+        or not isinstance(current, dict)
+        or current.get("inbound") != wanted["inbound"]
+        or current.get("action") != wanted["action"]
+        or set(current) != {*ingress_route, "outbound"}
+    ):
+        return
+
+    wanted_outbound = wanted["outbound"]
+    current_outbound = current["outbound"]
+    stale_to_empty_group = (
+        wanted_outbound == "deny"
+        and any(
+            group["id"] == current_outbound and not group["exits"]
+            for group in groups
+        )
+    )
+    stale_deny = wanted_outbound != "deny" and current_outbound == "deny"
+    if stale_to_empty_group or stale_deny:
+        actual_rules[index] = wanted
+
+
 def keenetic_ingress_group(profile: dict) -> str | None:
     """Resolve the unique AWG-anchored VPN group without recursive OpkgTun transports."""
     if not any(
@@ -1043,6 +1094,7 @@ def managed_profile(base: Path) -> tuple[dict, dict, dict]:
             previous_route["rules"] = previous_rules
         if backend["route"] == previous_route:
             backend["route"] = expected_route
+    normalize_stale_ingress_route(backend["route"], expected_route, groups)
     require(
         backend["route"]
         == expected_route,
@@ -1382,6 +1434,10 @@ def stage_move_exit(base: Path, stage: Path, exit_id: str, expected_group: str, 
         outbounds[outbounds.index(old_selector)] = selector(group, group.get("defaultExit", "deny"))
     synchronize_connector_assignments(profile, groups, stage)
     snapshot["groups"] = [snapshot_group(group) for group in groups]
+    rules = domain_routes(
+        profile["lists"], {group["id"]: index for index, group in enumerate(groups)}
+    )
+    replace_domain_routes(backend, profile, groups[0]["id"], rules)
     stage_generation(stage, profile, snapshot, backend)
 
 

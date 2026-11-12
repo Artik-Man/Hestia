@@ -15,6 +15,7 @@ from profile import (
     export_paths,
     geoip_directories,
     keenetic_default_route_device,
+    KEENETIC_INGRESS_INBOUND,
     keenetic_interface_extension,
     managed_profile,
     pinned_paths,
@@ -724,6 +725,166 @@ class ProfileTests(unittest.TestCase):
         _, _, candidate = managed_profile(stage)
         selector = next(out for out in candidate["outbounds"] if out["tag"] == group["id"])
         self.assertEqual(selector["default"], "deny")
+
+    def test_reorder_repairs_stale_ingress_route_to_empty_group(self):
+        """Recover a route-equivalent empty-group ingress target and publish the requested order."""
+        profile = json.loads((Path(__file__).parent / "scheme3" / "guest-profile.json").read_text())
+        profile["connectors"] = []
+        profile["inbounds"] = [dict(KEENETIC_INGRESS_INBOUND)]
+        profile["groups"].append({"id": "reserve", "exits": [], "defaultExit": "deny"})
+        snapshot, backend = self.install_managed_profile(self.base, profile)
+        ingress_rule = {
+            "inbound": ["hestia-keenetic-ingress"],
+            "action": "route",
+            "outbound": "deny",
+        }
+        self.assertIn(ingress_rule, backend["route"]["rules"])
+        ingress_index = next(
+            index
+            for index, rule in enumerate(backend["route"]["rules"])
+            if rule.get("inbound") == ["hestia-keenetic-ingress"] and rule.get("action") == "route"
+        )
+        backend["route"]["rules"][ingress_index]["outbound"] = "reserve"
+        backend_path = self.base / "sing-box.json"
+        backend_raw = json.dumps(backend).encode()
+        backend_path.write_bytes(backend_raw)
+        (self.base / "profile-backend.sha256").write_text(hashlib.sha256(backend_raw).hexdigest())
+
+        stage = self.base / "stage"
+        stage.mkdir()
+        groups = list(reversed(snapshot["groups"]))
+        stage_order(self.base, stage, groups)
+        _, staged_snapshot, staged_backend = managed_profile(stage)
+        self.assertEqual(staged_snapshot["groups"], groups)
+        self.assertIn(ingress_rule, staged_backend["route"]["rules"])
+
+        backend["route"]["rules"][ingress_index]["outbound"] = "default"
+        backend_raw = json.dumps(backend).encode()
+        backend_path.write_bytes(backend_raw)
+        (self.base / "profile-backend.sha256").write_text(hashlib.sha256(backend_raw).hexdigest())
+        with self.assertRaisesRegex(ValueError, "backend routes differ from the installed profile"):
+            managed_profile(self.base)
+
+    def test_reorder_repairs_stale_deny_ingress_route_to_safe_group(self):
+        """Recompile one exact stale deny ingress route to the eligible AWG group during reorder."""
+        connector_id = "7f02067a-ca17-4c38-ae26-7c7fb21ca06a"
+        awg_dir = self.base / "awg" / connector_id
+        awg_dir.mkdir(parents=True)
+        (awg_dir / "metadata.json").write_text(json.dumps({
+            "id": connector_id,
+            "group": "vpn",
+            "priority": 1,
+            "status": "ready",
+            "ipv6Blocked": True,
+            "type": "amneziawg",
+            "ipv4Address": "10.8.1.5/32",
+            "dnsIPv4": "1.1.1.1",
+        }))
+        (awg_dir / "metadata.json").chmod(0o600)
+        profile = json.loads((Path(__file__).parent / "scheme3" / "guest-profile.json").read_text())
+        profile["connectors"] = [{
+            "id": connector_id,
+            "type": "amneziawg",
+            "group": "vpn",
+            "priority": 1,
+            "ipv6Blocked": True,
+            "status": "ready",
+        }]
+        profile["interfaces"] = []
+        profile["groups"] = [
+            {"id": "vpn", "exits": [connector_id], "defaultExit": "deny"},
+            {"id": "reserve", "exits": [], "defaultExit": "deny"},
+        ]
+        profile["healthy"] = {connector_id: True}
+        profile["inbounds"] = [dict(KEENETIC_INGRESS_INBOUND)]
+        snapshot, backend = self.install_managed_profile(self.base, profile)
+        ingress_index = next(
+            index
+            for index, rule in enumerate(backend["route"]["rules"])
+            if rule.get("inbound") == ["hestia-keenetic-ingress"] and rule.get("action") == "route"
+        )
+        self.assertEqual(backend["route"]["rules"][ingress_index]["outbound"], "vpn")
+
+        backend["route"]["rules"][ingress_index]["outbound"] = "deny"
+        backend_path = self.base / "sing-box.json"
+        backend_raw = json.dumps(backend).encode()
+        backend_path.write_bytes(backend_raw)
+        (self.base / "profile-backend.sha256").write_text(hashlib.sha256(backend_raw).hexdigest())
+
+        stage = self.base / "stage"
+        stage.mkdir()
+        shutil.copytree(self.base / "awg", stage / "awg")
+        stage_order(self.base, stage, list(reversed(snapshot["groups"])))
+        _, staged_snapshot, staged_backend = managed_profile(stage)
+        self.assertEqual(staged_snapshot["groups"][0]["id"], "reserve")
+        self.assertEqual(
+            staged_backend["route"]["rules"][ingress_index]["outbound"],
+            "vpn",
+        )
+
+        backend["route"]["rules"][ingress_index]["outbound"] = "deny"
+        backend["route"]["rules"][ingress_index]["unexpected"] = True
+        backend_raw = json.dumps(backend).encode()
+        backend_path.write_bytes(backend_raw)
+        (self.base / "profile-backend.sha256").write_text(hashlib.sha256(backend_raw).hexdigest())
+        with self.assertRaisesRegex(ValueError, "backend routes differ from the installed profile"):
+            managed_profile(self.base)
+
+        backend["route"]["rules"][ingress_index]["outbound"] = "reserve"
+        backend["route"]["rules"][ingress_index]["extra"] = "unexpected"
+        backend_raw = json.dumps(backend).encode()
+        backend_path.write_bytes(backend_raw)
+        (self.base / "profile-backend.sha256").write_text(hashlib.sha256(backend_raw).hexdigest())
+        with self.assertRaisesRegex(ValueError, "backend routes differ from the installed profile"):
+            managed_profile(self.base)
+
+    def test_move_exit_updates_keenetic_ingress_target(self):
+        """Moving the last safe VPN exit also moves the client ingress route to its new group."""
+        connector_id = "7f02067a-ca17-4c38-ae26-7c7fb21ca06a"
+        awg_dir = self.base / "awg" / connector_id
+        awg_dir.mkdir(parents=True)
+        metadata = {
+            "id": connector_id,
+            "group": "vpn",
+            "priority": 1,
+            "status": "ready",
+            "ipv6Blocked": True,
+            "type": "amneziawg",
+            "ipv4Address": "10.8.1.5/32",
+            "dnsIPv4": "1.1.1.1",
+        }
+        (awg_dir / "metadata.json").write_text(json.dumps(metadata))
+        (awg_dir / "metadata.json").chmod(0o600)
+        profile = json.loads((Path(__file__).parent / "scheme3" / "guest-profile.json").read_text())
+        profile["connectors"] = [
+            {
+                "id": connector_id,
+                "type": "amneziawg",
+                "group": "vpn",
+                "priority": 1,
+                "ipv6Blocked": True,
+                "status": "ready",
+            }
+        ]
+        profile["interfaces"] = []
+        profile["groups"] = [
+            {"id": "vpn", "exits": [connector_id], "defaultExit": "deny"},
+            {"id": "reserve", "exits": [], "defaultExit": "deny"},
+        ]
+        profile["healthy"] = {connector_id: True}
+        profile["inbounds"] = [dict(KEENETIC_INGRESS_INBOUND)]
+        self.install_managed_profile(self.base, profile)
+        stage = self.base / "stage"
+        stage.mkdir()
+        shutil.copytree(self.base / "awg", stage / "awg")
+
+        stage_move_exit(self.base, stage, connector_id, "vpn", "reserve", 1)
+        _, moved_snapshot, moved_backend = managed_profile(stage)
+        self.assertEqual(moved_snapshot["groups"][1]["exits"], [connector_id])
+        self.assertIn(
+            {"inbound": ["hestia-keenetic-ingress"], "action": "route", "outbound": "reserve"},
+            moved_backend["route"]["rules"],
+        )
 
     def test_scheme3_managed_profile_rejects_changed_bootstrap_path(self):
         """Reject an adoption candidate whose initial exit or TUN address differs from the live path."""

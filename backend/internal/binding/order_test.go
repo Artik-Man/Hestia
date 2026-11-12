@@ -58,6 +58,31 @@ func TestOrderCAS(t *testing.T) {
 	}
 }
 
+// TestSameBackendRouteDetectsIngressRepair ensures a same-order request can activate a corrected backend route.
+func TestSameBackendRouteDetectsIngressRepair(t *testing.T) {
+	current := t.TempDir()
+	staged := t.TempDir()
+	currentBackend := `{"route":{"rules":[{"inbound":["hestia-keenetic-ingress"],"outbound":"deny"}]}}`
+	stagedBackend := `{"route":{"rules":[{"inbound":["hestia-keenetic-ingress"],"outbound":"world"}]}}`
+	if err := os.WriteFile(filepath.Join(current, "sing-box.json"), []byte(currentBackend), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(staged, "sing-box.json"), []byte(stagedBackend), 0600); err != nil {
+		t.Fatal(err)
+	}
+	same, err := sameBackendRoute(current, staged)
+	if err != nil || same {
+		t.Fatalf("stale route was treated as a no-op: same=%v err=%v", same, err)
+	}
+	if err := os.WriteFile(filepath.Join(staged, "sing-box.json"), []byte(currentBackend), 0600); err != nil {
+		t.Fatal(err)
+	}
+	same, err = sameBackendRoute(current, staged)
+	if err != nil || !same {
+		t.Fatalf("identical routes were not treated as a no-op: same=%v err=%v", same, err)
+	}
+}
+
 // TestApplyOrderReadsLatestTopology checks that concurrent health or list edits do not invalidate an unchanged order.
 // The simulated compiler takes its input from the private request file used by the production transaction.
 func TestApplyOrderReadsLatestTopology(t *testing.T) {

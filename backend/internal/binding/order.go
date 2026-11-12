@@ -7,6 +7,7 @@ import (
 	"github.com/Artik-Man/Hestia/internal/profileexec"
 	"os"
 	"path/filepath"
+	"reflect"
 	"slices"
 
 	"github.com/Artik-Man/Hestia/internal/controller"
@@ -134,7 +135,35 @@ func (e Engine) ApplyOrderWithUplink(ctx context.Context, change panelmodel.Grou
 		}
 		return os.Remove(request)
 	}
-	return e.apply(ctx, stageOrder, check, sameOrder(change.Expected, change.Groups))
+	return e.applyWithNoChangeCheck(ctx, stageOrder, check, sameOrder(change.Expected, change.Groups), func(stage string) (bool, error) {
+		return sameBackendRoute(e.dir, stage)
+	})
+}
+
+// sameBackendRoute confirms an unchanged order is a true no-op only when current and staged routes match.
+func sameBackendRoute(currentDir, stagedDir string) (bool, error) {
+	readRoute := func(directory string) (any, error) {
+		data, err := os.ReadFile(filepath.Join(directory, "sing-box.json"))
+		if err != nil {
+			return nil, ErrUnavailable
+		}
+		var backend struct {
+			Route any `json:"route"`
+		}
+		if err := json.Unmarshal(data, &backend); err != nil || backend.Route == nil {
+			return nil, ErrUnavailable
+		}
+		return backend.Route, nil
+	}
+	current, err := readRoute(currentDir)
+	if err != nil {
+		return false, err
+	}
+	staged, err := readRoute(stagedDir)
+	if err != nil {
+		return false, err
+	}
+	return reflect.DeepEqual(current, staged), nil
 }
 
 // orderAddsPlatformExit reports whether the desired topology introduces the platform's reserved direct output.
