@@ -30,6 +30,11 @@ func run(args []string) error {
 		printUsage(os.Stdout)
 		return nil
 	}
+	if args[0] == "dns-forwarder" {
+		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		defer stop()
+		return hestiacli.RunDNSForwarder(ctx, args[1:], os.Stdout, os.Stderr)
+	}
 	if args[0] != "serve" {
 		return fmt.Errorf("unknown command %q; use 'hestia-cli help'", args[0])
 	}
@@ -107,6 +112,10 @@ func runFileServer(args []string) error {
 func printUsage(writer *os.File) {
 	fmt.Fprintln(writer, `Usage:
   hestia-cli serve -upload-dir DIR -download-dir DIR -token-file FILE [-listen :8081]
+  hestia-cli dns-forwarder enable -interface NAME [-interface NAME ...]
+  hestia-cli dns-forwarder status
+  hestia-cli dns-forwarder disable
 
-The server exposes authenticated file upload and download endpoints. It does not execute uploaded files.`)
+The server exposes authenticated file upload and download endpoints. It does not execute uploaded files.
+The DNS-forwarder command manages the Hestia DNS profile on Keenetic.`)
 }
