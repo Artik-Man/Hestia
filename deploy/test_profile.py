@@ -114,6 +114,7 @@ class ProfileTests(unittest.TestCase):
             "type": "socks", "tag": "hestia-local-socks", "listen": "127.0.0.1", "listen_port": 1080
         }, enabled_profile["inbounds"])
         self.assertEqual(enabled_profile["inbounds"][-1]["tag"], "hestia-keenetic-ingress")
+        self.assertEqual(enabled_profile["inbounds"][-1]["stack"], "gvisor")
         self.assertEqual(enabled_snapshot["groups"], [
             {"id": group["id"], "exits": group["exits"]} for group in enabled_profile["groups"]
         ])

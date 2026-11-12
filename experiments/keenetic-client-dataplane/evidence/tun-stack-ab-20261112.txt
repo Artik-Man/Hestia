@@ -1,0 +1,65 @@
+# A/B тест TUN stack на KN-1012 — 12 ноября 2026 года
+
+## Вопрос и критерий
+
+Проверить, устраняет ли переход входного TUN OpkgTun с `stack=system` на `stack=gvisor` отказ TCP от `hestia-client`. Успех: одинаковые короткие TCP-запросы к закреплённому Google IPv4 и к `194.106.254.98:1080` отвечают через основной маршрут `lima0 → Keenetic`; контрольный запрос через `eth0` остаётся доступен.
+
+## Среда и исходное состояние
+
+- Keenetic Giga KN-1012, KeeneticOS `5.02.B.3.0-2`, kernel `4.9-ndm-5`, AArch64.
+- Пакет Hestia `0.1.5`, sing-box `1.14.4`; проверка через `/opt/bin/busybox` и `/opt/etc/init.d/S99hestia`.
+- Клиент `hestia-client`: `lima0=192.168.1.124`, обычный маршрут до Google — `192.168.1.1 dev lima0`; контрольный интерфейс — `eth0`.
+- До теста supervisor был готов, единственный sing-box работал с `stack=system`. Память Keenetic: 497612 KiB total, 182944 KiB available; swap отсутствует.
+- Root-only резервная копия пяти managed profile-файлов и профильного helper сохранена на роутере в `/opt/tmp/hestia-tun-ab-gvisor-20261112-b`. Секретное содержимое не включалось в отчёт.
+
+## A — baseline `system`
+
+С hestia-client выполнены одинаковые команды (таймауты ограничены 4/7 секундами):
+
+```sh
+curl -sS -o /dev/null -w 'google_tcp code=%{http_code} connect=%{time_connect}\n' \
+  --connect-timeout 4 --max-time 7 \
+  --resolve google.com:443:142.250.120.100 https://google.com/
+curl -sS -o /dev/null -w 'target_tcp code=%{http_code} connect=%{time_connect}\n' \
+  --connect-timeout 4 --max-time 7 \
+  http://194.106.254.98:1080/control/userimage.html
+curl -sS -o /dev/null -w 'google_eth0 code=%{http_code} connect=%{time_connect}\n' \
+  --interface eth0 --connect-timeout 4 --max-time 7 \
+  --resolve google.com:443:142.250.120.100 https://google.com/
+```
+
+Результат baseline: Google TCP `HTTP 000`, exit 28, timeout после 4 s; целевой endpoint — `HTTP 000`, exit 28, timeout после 4 s; контроль через `eth0` — HTTP 301, TCP connect 1.251 s. До переключения применялся `stack=system`.
+
+## B — candidate `gvisor`
+
+Кандидат сначала проверен профильным компилятором и установленным `sing-box check`. После первой неудачной попытки компилятор выдал `Invalid deployment profile`; автоматический rollback восстановил исходные конфиги и helper, SHA-256 всех пяти файлов совпали с резервной копией, supervisor снова прошёл readiness. Причиной была проверка candidate без размещённых рядом файлов AWG/Hysteria. После добавления root-only ссылочных метаданных обе валидации прошли.
+
+Семантическое сравнение исходного и candidate JSON показало изменения только в `profile.json /inbounds/1/stack` и `sing-box.json /inbounds/1/stack`; `snapshot.json` не изменился. Policy, правила RPDB, маршруты, outbound-селектор и подключения не менялись. Перед публикацией baseline Hestia штатно остановлена, `/opt/bin/hestia -service-check-idle` подтвердил idle; после старта работала только одна Hestia/sing-box версия. Candidate запущен с `stack=gvisor`, supervisor readiness прошла.
+
+Повтор тех же curl-команд:
+
+- Google через `lima0`: HTTP 301, TCP connect 5.917 ms, exit 0.
+- `194.106.254.98:1080/control/userimage.html` через `lima0`: HTTP 200, TCP connect 5.842 ms, exit 0.
+- Google через контрольный `eth0`: HTTP 301, TCP connect 35.359 ms, exit 0.
+
+После запуска candidate `free` сообщил 237084 KiB available и отсутствие swap; OOM и отказ readiness не наблюдались. Это разовые снимки памяти, не сравнительный нагрузочный тест.
+
+## Установка штатного исправления
+
+Изменение закреплено в исходниках, включая профиль новой установки. Собран и проверен bundle `0.1.7`; `verify_bundle` подтвердил версию, IPK SHA-256 `9c816088700122946e6baa760e7cc35e6e8be0cf7d0aad5fbfdebc2fba1d4c06`. Точный rollback IPK `0.1.5` сохранён; его встроенный `/opt/bin/hestia` SHA совпадает с установленным до обновления бинарником (`5eecefdf…04e6a`). Оба IPK переданы через временный LAN `hestia-cli`, локальные/удалённые хеши совпали. До установки сохранены конфигурация/helper и оба IPK в root-only каталоге `/opt/tmp/hestia-tun-ab-gvisor-20261112-b`.
+
+`opkg install` штатно остановил прежний supervisor, прошёл target preflight и обновил пакет до `0.1.7`; одновременно работала только одна версия Hestia/sing-box. После установки: `Status: install user installed`, supervisor ready, maintenance marker отсутствует, managed profile и sing-box check прошли, активный TUN stack — `gvisor`. SHA main IPv4 default route совпал с исходным `f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871`; IPv6 default route отсутствовал до и после. GET `/api/groups-and-rules` и `/api/physical-connections` вернули HTTP 200.
+
+После установки те же клиентские пробы снова прошли: Google TCP — HTTP 301, connect 67.097 ms; целевой HTTP endpoint — HTTP 200, connect 5.154 ms; Google через `eth0` — HTTP 301, connect 343.738 ms. Отдельный 12-секундный HTTP/3 probe после установки получил HTTP 301 от того же `142.250.120.100:443`. quic-go сообщил, что ядро увеличило UDP receive buffer только с 208 до 416 KiB при запрошенных 7168 KiB, но handshake и HTTP/3 запрос завершились успешно. Временный transfer server остановлен через BusyBox, загруженные копии удалены из inbox; root-only backup оставлен для восстановления. Финальный `free` показал 195208 KiB available, swap отсутствует. IPv6, длительная нагрузка, reboot recovery и производительность не проверялись.
+
+## Вывод и границы
+
+На KN-1012 при данных профиле, policy и выходах `gvisor` восстановил TCP через OpkgTun, тогда как до переключения те же два адреса истекали по timeout. Изменение одного поля профиля и успешный обходной контроль подтверждают TUN `system` stack как причину этого отказа в проверенной конфигурации. Штатное исправление установлено пакетом `0.1.7`; post-install проверки, TCP-повтор и HTTP/3-повтор прошли, основной default route сохранился. Отдельный A/B PPE/FASTNAT не проводился; результат не доказывает поведение других моделей/версий KeeneticOS, длительную стабильность, полный набор клиентских протоколов или производительность.
+
+## Проверки исходников
+
+- `deploy/test_profile.py::test_keenetic_ingress_enable_and_disable_are_reversible` — passed.
+- `scripts/build/test_build.py::test_keenetic_default_profile_uses_gvisor_ingress` и lifecycle test — passed.
+- Keenetic-tagged Go regression test `TestEnsureOpkgTunUnderlayUsesGVisor` cross-compiled as Linux/ARM64 and passed on the ARM64 `hestia-client` VM; the VM ran only a unit test binary, not a Hestia service.
+- `make build-go`, full Keenetic package build `0.1.7`, `make test`, `make test-installer`, `make test-workflows`, `make fmt-check`, and `make docs-check` passed.
+- `make check` не завершился из-за отсутствующего `shellcheck`. `make test-lab` не завершился на несвязанных DNS lab-модулях: в локальном Python окружении нет пакета `dnspython` (`dns`), а один dynamic import в `dns-restart` также завершился ошибкой. Эти проверки не влияют на сборку или работу исправления.

@@ -1,0 +1,92 @@
+# Клиентский DNS и dataplane trace — 12 ноября 2026 года
+
+## Среда
+
+- Keenetic Giga KN-1012, KeeneticOS `5.02.B.3.0-2` (5.2 Beta 3), kernel `4.9-ndm-5`, AArch64.
+- Установленный пакет Hestia: `0.1.5`, `install user installed`; SHA-256 `/opt/bin/hestia`: `5eecefdfb870b46eb2fbffe65a4dc01749378ba11d6edca7da1859d9ccc04e6a`.
+- Supervisor readiness: exit 0. `br0` и `opkgtun0` имели `UP,LOWER_UP`; `opkgtun0` был зарегистрирован с Linux ifindex 47.
+- Клиент: `hestia-client`, `lima0=192.168.1.124/24`, `eth0=192.168.5.15/24`. IPv4 default route через `192.168.1.1` на `lima0` имел метрику 100, дополнительный маршрут через `192.168.5.2` на `eth0` — метрику 200.
+- `systemd-resolved` считал оба интерфейса DefaultRoute. DNS на `lima0`: `192.168.1.1` и link-local IPv6 Keenetic; DNS на `eth0`: `192.168.5.2`.
+
+## Проверки DNS и HTTPS
+
+- `resolvectl query --interface=lima0 google.com` вернул A и AAAA за 9,8 ms.
+- `resolvectl query --interface=eth0 google.com` вернул A за 54,2 ms.
+- `resolvectl query --interface=lima0 --type=A ya.ru` вернул `77.88.55.242`, `77.88.44.242` и `5.255.255.242` за 5,6 ms.
+- Затем выполнен HTTPS-запрос к `ya.ru` с `--resolve ya.ru:443:5.255.255.242`, привязанный к source IP `192.168.1.124`. TCP connect завершился тайм-аутом через 5 секунд (`HTTP 000`). Ручное разрешение имени исключало DNS из этой пробы.
+
+Ранее во время этой же диагностики один обычный `curl https://google.com` завершился DNS timeout через 5 секунд. При последующих отдельных запросах через оба интерфейса DNS ответил быстро, поэтому причина первоначального timeout не установлена и периодический DNS-сбой не исключён. Он не объясняет провал HTTPS к заранее заданному IP.
+
+## Синхронная точечная трасса
+
+На Keenetic запущена штатная read-only команда `/opt/bin/hestia -traffic-trace` на 15 секунд для `192.168.1.124:49671 → 1.1.1.1:443/TCP`. Во время окна клиентский `curl` был привязан к `lima0` и тому же source port; адрес закреплён через `--resolve`. Клиентский `tcpdump` на `lima0` увидел три SYN и не увидел SYN-ACK. `curl` завершился кодом 28 через 5 секунд.
+
+Hestia вернула и сохранила в `/api/traffic` событие `unconfirmed` с причиной `opt-in flow trace summary`. Наблюдения для точного tuple:
+
+- `br0`: `observed`, 3 пакета.
+- `opkgtun0`: `not_observed`.
+- sing-box inbound, rule, group, outbound и block: `not_observed`.
+- NDM conntrack: 3 original packets / 180 bytes, 0 reply packets, `UNREPLIED` и `FASTNAT`; connection mark `0x0ffffaac`, `ndmmark=0`, `ifl=33` (`br0`), `ifw=47` (`opkgtun0`).
+- Текущий снимок связывает source IP с явной `Policy2`, где `OpkgTun0` разрешён. Priority-7 lookup по mark и `br0`, priority-8 unreachable guard, порядок до `main`, default через `opkgtun0` и unreachable fallback отмечены как `configured_expectation`.
+- `policy_mark` имеет статус `unavailable`: инструмент не читает per-packet `skb->mark`. WAN capture также `unavailable`.
+
+## Вывод и границы
+
+Для этой пробы DNS не был причиной: имя разрешилось, а HTTPS к вручную закреплённому IP всё равно не установился. Пакет дошёл от клиента до Keenetic bridge; conntrack отметил connection mark, совпадающий с policy, и raw `ifw` index, численно соответствующий `opkgtun0`. При этом точный tuple не наблюдался на `opkgtun0` и во входе sing-box. Текущая неисправность локализуется между bridge/NDM обработкой и фактической доставкой в TUN.
+
+Трасса не доказывает применение этого connection mark как `skb->mark`, успешный RPDB lookup или то, куда пакет вышел после bridge. Семантика поля `ifw` на этой версии Keenetic отдельно не подтверждена; статус `FASTNAT` сам по себе не устанавливает причину пропуска. Поэтому точная причина разрыва остаётся неизвестной. Конфигурация Keenetic, policy, routes, Hestia profile и питание устройств не менялись.
+
+## Путь DNS клиента и проверки качества
+
+- Read-only `ndmc -c "show ip name-server"` на Keenetic показал upstream `8.8.8.8`. На клиенте DNS серверами `lima0` являются `192.168.1.1` и link-local адрес Keenetic; `eth0` использует `192.168.5.2`.
+- Прямой A-запрос `ya.ru` от клиента к `192.168.1.1:53` получил `RCODE=0`, три A-ответа за 4,9 ms. Отдельный прямой A-запрос `google.com` к `8.8.8.8:53` получил `RCODE=0`, шесть A-ответов за 32 ms.
+- Синхронная 15-секундная trace для UDP `192.168.1.124:49674 → 8.8.8.8:53` сохранилась в Hestia. Пакет и ответ наблюдались на `br0` (`count=1`, `reverseCount=1`); на `opkgtun0` и во входе sing-box точный tuple не наблюдался. Conntrack сообщил по одному исходному и ответному пакету, `FASTNAT`, mark `0x0ffffaac`, `ifl=33` (`br0`) и `ifw=47` (`opkgtun0`).
+- Для отдельного UDP запроса `192.168.1.124:49676 → 8.8.8.8:53` `ndmc show ip conntrack`, отфильтрованный на Keenetic по точному tuple, вернул (MAC исключён):
+
+  ```text
+  UDP 17 src=192.168.1.124 dst=8.8.8.8 sport=49676 dport=53 packets=1 bytes=51 src=8.8.8.8 dst=172.31.250.1 sport=53 dport=49676 packets=1 bytes=99 [FASTNAT] mark=0x0ffffaac ndmmark=0x00 unclass sc=0 ifl=33 ifw=47 swan
+  ```
+
+  Reply NAT destination `172.31.250.1` усиливает связь NDM conntrack с OpkgTun, но не доказывает чтение датаграммы процессом sing-box. Причинная роль `FASTNAT` не установлена; packet capture Hestia и NDM conntrack здесь расходятся.
+- Свежий GET `/api/quality` в 10:18:48 UTC показал включённые UDP и DNS проверки на `1.1.1.1:53` и `8.8.8.8:53`, с A-запросом `example.com`. Для всех четырёх записей подключений в двух группах DNS был `236/236` успешных проб на обоих резолверах; UDP — `236/236`, кроме одной записи с `235/236` на UDP `1.1.1.1:53`. В backend quality probe подключается к заданным IP:port через путь каждого выхода и отправляет DNS-пакет; это не проверка цепочки LAN-клиент → DNS Keenetic → upstream.
+- GET `/api/dns/policy` ответил ревизией 4; GET `/api/dns/warm` вернул HTTP 503, то есть отчёт наблюдений DNS worker недоступен. Это не означает, что Keenetic DNS не отвечает: запросы клиента к `192.168.1.1` и `8.8.8.8` выше получили ответы.
+
+## Уточнённая интерпретация
+
+В текущей проверке клиентский DNS функционален: ответы получены и от локального DNS Keenetic, и при прямом запросе к `8.8.8.8`. Качество выходов также включает отдельные успешные DNS-пробы к публичным резолверам. Эти факты не подтверждают, что Hestia получает DNS-имя клиента и применяет доменное правило: DNS-проверки качества идут из независимого quality worker через каждый выход, а актуальная resolver-конфигурация клиента указывает на Keenetic/второй интерфейс. Проектная интеграция клиентского DNS с Hestia отдельно не подтверждена.
+
+Прямой DNS flow к `8.8.8.8` был помечен NDM с `Policy2` и связан с интерфейсом OpkgTun по `ifw`, но его не увидели Hestia packet/log stages. Поэтому нельзя утверждать, что он обработан sing-box, или что он обошёл туннель: `FASTNAT`/ускоренный путь может ограничивать наблюдение, а WAN egress не захватывался. Для доменной маршрутизации остаётся проверить, как Hestia получает имя запроса клиента (через Hestia resolver или поддержанный прозрачный DNS capture) и снять независимое свидетельство фактического ingress в TUN.
+
+## Прямой IP и сопоставление TCP — 12 ноября 2026 года
+
+Пользователь сообщил, что с рабочего компьютера URL `http://194.106.254.98:1080/control/userimage.html` открывается. Это пользовательское наблюдение, не проверенное здесь отдельно. С `hestia-client` маршрут к адресу выбран через `192.168.1.1 dev lima0`; прямое обращение по IP, без DNS, завершилось connect timeout за 5 s.
+
+Синхронная trace tuple `192.168.1.124:49688 → 194.106.254.98:1080/TCP` показала на клиенте 3 исходящих SYN и 0 SYN-ACK. На Keenetic exact tuple увиден 3 раза на `br0`, 0 раз на `opkgtun0` и ни в одном sing-box stage. Conntrack: 3 исходных пакета / 180 bytes, 0 ответов, mark `0x0ffffaac`, `ifl=33` (`br0`), `ifw=47` (`opkgtun0`), flags `UNREPLIED` и `FASTNAT`. Настроенное соответствие клиента Policy2/OpkgTun и маршруты Hestia остаются только `configured_expectation`; per-packet mark, фактический выход и WAN egress не наблюдались.
+
+Короткие connect-пробы без DNS с клиента также истекли для `1.1.1.1:443`, `8.8.8.8:443`, `142.250.72.14:443` и `93.184.216.34:80` (в каждой `time_connect=0`). На Keenetic read-only проверка показала `/proc/sys/net/hwnat/ppe_enabled=1`. Фактический `ip rule list` содержит priority 7 `fwmark 0xffffaac iif br0 lookup 32732`, priority 8 matching `unreachable` и priority 10 `fwmark 0xffffa00 lookup main`; это подтверждает наличие нужных RPDB rules, но не доказывает mark конкретного SYN или route lookup. Снимок `/proc/net/route` отражает только main table и не показывает table 32732. Попытка получить дополнительные интерфейсные счётчики штатной BusyBox-командой `ip -s link` не поддерживается этой сборкой и данных не дала.
+
+Наблюдения локализуют сбой в общем исходящем TCP-пути `hestia-client`, назначенном на Hestia/OpkgTun через Keenetic, а не в разрешении имён или одном целевом сервисе. FASTNAT/PPE — важная гипотеза для расхождения между conntrack (`ifw=opkgtun0`) и отсутствием пакета в Hestia capture, но причинность не доказана: нет захвата WAN, фактического `skb->mark`/route lookup или парного теста при отключённом ускорении. Наличие priority-7/8 RPDB rules подтверждено, применение их к конкретному SYN — нет. Настройки роутера не менялись.
+
+## Сравнение с компьютером владельца — 12 ноября 2026 года
+
+С компьютера владельца `curl https://google.com/` завершился HTTP 301 (`remote=142.251.1.100`, TCP connect 46,9 ms), а `curl http://194.106.254.98:1080/control/userimage.html` — HTTP 200 (TCP connect 58,9 ms). На `hestia-client` системный DNS вернул Google A/AAAA за 6,1 ms; TCP/443 к Google IPv4 через обычный `curl` истёк, а IPv6-маршрута не было. Proxy variables не заданы; curl 7.88.1 собран без поддержки HTTP/3.
+
+После уточнения владельца о том, что Google открывается и с `hestia-client`, выполнена отдельная QUIC/HTTP3 проверка и синхронная TCP-проба к одному и тому же закреплённому IPv4 `142.250.120.100`:
+
+- UDP/HTTP3 tuple `192.168.1.124:49690 → 142.250.120.100:443`: probe получил HTTP 301 по `HTTP/3.0`. Hestia trace/NDM conntrack увидели 22 исходных и 28 ответных пакетов; `br0` увидел 10 исходящих и 16 ответных заголовков. Conntrack mark `0x0ffffaac`, `ifw=47` (`opkgtun0`), flags `ASSURED, FASTNAT`. `opkgtun0` и sing-box stages exact tuple не наблюдали; WAN capture отсутствует. Это доказывает работоспособность HTTP/3 запроса с клиента и наличие ответного UDP трафика, но не фактическую доставку пакетов в TUN.
+- TCP tuple `192.168.1.124:49691 → 142.250.120.100:443`: curl завершился timeout через 5 s. Trace увидела 3 исходящих SYN на `br0`, 0 ответов; conntrack сообщил `UNREPLIED, FASTNAT`, тот же mark и `ifw=opkgtun0`. TUN и sing-box stages tuple не наблюдали.
+- Исходник HTTP/3 probe сохранён рядом с этим свидетельством. Использовались только временный бинарник и короткие запросы; бинарник удалён с клиента и Keenetic, временный сервер `hestia-cli` остановлен через BusyBox, PID/log удалены. Сетевые настройки не менялись.
+
+Итак, браузерное открытие Google согласуется с рабочим QUIC/UDP-путём, а отказ прямого HTTP endpoint на TCP/1080 — с наблюдаемой проблемой TCP. TCP к тому же Google IP тоже не отвечает при успешном HTTP/3. Проблема не является полной потерей IP-связности и не объясняется DNS. Точная причина TCP/UDP-разницы не установлена: conntrack связывает оба потока с `opkgtun0`, но Hestia capture не наблюдает их на TUN, а WAN egress и реальный packet mark/route lookup недоступны.
+
+## Контроль обходным интерфейсом и активный профиль — 12 ноября 2026 года
+
+Повторные пробы из той же ВМ с принудительной привязкой сокета к `eth0` подтвердили, что проблема находится в основном пути через Keenetic, а не в `hestia-client` или удалённых сервисах:
+
+- `curl --interface eth0 --resolve google.com:443:142.250.120.100 https://google.com/` получил HTTP 301, TCP connect 34,5 ms.
+- `curl --interface eth0 http://194.106.254.98:1080/` установил TCP за 68,1 ms и получил HTTP 302.
+- Привязка только к адресу источника `192.168.5.15` не меняет Linux route lookup: он всё ещё выбрал `lima0 via 192.168.1.1`. Поэтому положительный контроль выполнялся именно с `curl --interface eth0`.
+
+Из активного `/opt/etc/hestia/sing-box.json` без чтения ключей/серверных адресов выведены только безопасные поля: TUN ingress — `stack=system`, `auto_route=false`; route final — группа `Остальной мир`; правило для `hestia-keenetic-ingress` направляет поток в ту же группу. Её selector выбирает Hysteria2 через `keenetic-uplink` (`bind_interface=eth3`) по умолчанию, с AWG direct `awg0` в списке резервных выходов; все показанные exits доступны в API. Это профиль маршрутизации без TCP/UDP-разветвления. Качество Hysteria2/WAN ранее показывало TCP-пробы, но это тесты outbound, не клиентского TUN ingress.
+
+Из кода следует, что TUN stack системный и policy route одинаков для TCP/UDP. Самая узкая подтверждённая локализация — TCP соединения, пришедшие по `lima0 → br0 → Policy2/OpkgTun`, не получают ответа; те же TCP сервисы доступны при принудительном обходе через `eth0`. Вероятные компоненты для контролируемого A/B — TCP обработка `stack=system` в sing-box 1.14.4 и Keenetic PPE/FASTNAT. Ни один из них пока не доказан как причина; переключение stack/ускорения и профиль не менялись.

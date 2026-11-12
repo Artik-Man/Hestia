@@ -23,7 +23,7 @@
 - [Локальный DNS sing-box по UDP/TCP](keenetic-dns-local/README.md).
 - [Совместимость awg-tools на Keenetic](keenetic-awg-runtime/README.md).
 - [Создание и очистка TUN на Keenetic](keenetic-tun/README.md).
-- [TUN-вход Hestia через OpkgTun на Keenetic](keenetic-client-dataplane/README.md) — начальная проверка NDM/sing-box handoff; policy route и клиентский dataplane не проверены.
+- [TUN-вход Hestia через OpkgTun на Keenetic](keenetic-client-dataplane/README.md) — A/B sing-box stack на KN-1012 подтвердил восстановление клиентского TCP при `gvisor`; исправление установлено Hestia `0.1.7`, default route сохранился. PPE/FASTNAT и длительная нагрузка отдельно не проверялись.
 - [Проверка возможностей RCI/CLI только для чтения на KN-1012](keenetic-rci-readonly/README.md) — выборочная проверка команд `show`.
 - [Незавершённая инвентаризация Netfilter](keenetic-netfilter-readonly/README.md).
 - [Незавершённая проверка атомарного хранения](keenetic-storage-atomic/README.md).

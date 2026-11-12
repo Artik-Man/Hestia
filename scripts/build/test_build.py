@@ -126,6 +126,13 @@ class BuildTests(unittest.TestCase):
         self.assertNotIn('print-architecture', preflight)
         self.assertNotIn('verifyOpkgArchitecture', preflight)
 
+    def test_keenetic_default_profile_uses_gvisor_ingress(self):
+        """Fresh Keenetic installs use the TUN stack validated by the KN-1012 TCP A/B test."""
+        profile = json.loads((BUILD.ROOT / 'scripts/deploy/default-profile-keenetic.json').read_text())
+        inbounds = [item for item in profile['inbounds'] if item.get('tag') == 'hestia-keenetic-ingress']
+        self.assertEqual(len(inbounds), 1)
+        self.assertEqual(inbounds[0]['stack'], 'gvisor')
+
     def test_keenetic_package_declares_profile_unicode_dependency(self):
         """The IPK and its manifest include Entware's Python Unicode module package."""
         source = (BUILD.ROOT / 'scripts/build/run.py').read_text()

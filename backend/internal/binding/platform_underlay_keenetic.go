@@ -74,7 +74,7 @@ func ensureManagedOpkgTunInbound(profile *storedProfile) error {
 		AutoRoute     bool     `json:"auto_route"`
 		Stack         string   `json:"stack"`
 	}
-	want := inbound{Type: "tun", Tag: "hestia-keenetic-ingress", InterfaceName: "opkgtun0", Address: []string{"172.31.250.2/30"}, MTU: 1500, AutoRoute: false, Stack: "system"}
+	want := inbound{Type: "tun", Tag: "hestia-keenetic-ingress", InterfaceName: "opkgtun0", Address: []string{"172.31.250.2/30"}, MTU: 1500, AutoRoute: false, Stack: "gvisor"}
 	for _, raw := range profile.Inbounds {
 		var item inbound
 		if err := json.Unmarshal(raw, &item); err != nil {

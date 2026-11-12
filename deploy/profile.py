@@ -494,7 +494,7 @@ KEENETIC_INGRESS_INBOUND = {
     "address": ["172.31.250.2/30"],
     "mtu": 1500,
     "auto_route": False,
-    "stack": "system",
+    "stack": "gvisor",
 }
 
 

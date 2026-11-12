@@ -3,6 +3,7 @@
 package binding
 
 import (
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -16,6 +17,30 @@ func TestKeeneticPlatformChannelRolesPreserveOpkgEndpoints(t *testing.T) {
 	}
 	if got := PlatformChannelRole(keeneticUplinkUnderlayID); got != panelmodel.ChannelRoleOutput {
 		t.Fatalf("Keenetic output role = %q, want %q", got, panelmodel.ChannelRoleOutput)
+	}
+}
+
+// TestEnsureOpkgTunUnderlayUsesGVisor checks the managed TUN mode selected for Keenetic client traffic.
+func TestEnsureOpkgTunUnderlayUsesGVisor(t *testing.T) {
+	profile := storedProfile{Groups: []connectorGroup{{ID: "default", DefaultExit: "deny"}}}
+	if err := ensureOpkgTunUnderlay(&profile); err != nil {
+		t.Fatalf("OpkgTun underlay was rejected: %v", err)
+	}
+	if len(profile.Inbounds) != 1 {
+		t.Fatalf("managed ingress count = %d, want 1", len(profile.Inbounds))
+	}
+	var inbound struct {
+		Tag   string `json:"tag"`
+		Stack string `json:"stack"`
+	}
+	if err := json.Unmarshal(profile.Inbounds[0], &inbound); err != nil {
+		t.Fatalf("decode managed ingress: %v", err)
+	}
+	if inbound.Tag != "hestia-keenetic-ingress" || inbound.Stack != "gvisor" {
+		t.Fatalf("managed ingress = %+v, want Keenetic gvisor TUN", inbound)
+	}
+	if err := ensureOpkgTunUnderlay(&profile); err != nil || len(profile.Inbounds) != 1 {
+		t.Fatalf("managed ingress was not idempotent: count=%d error=%v", len(profile.Inbounds), err)
 	}
 }
 
