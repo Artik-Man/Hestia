@@ -1,0 +1,7 @@
+[
+  {
+    "name": "preflight",
+    "status": "FAIL",
+    "error": "Missing dependency: shfmt"
+  }
+]

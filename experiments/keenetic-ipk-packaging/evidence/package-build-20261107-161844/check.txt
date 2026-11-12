@@ -1,0 +1,12 @@
+Keenetic IPK build for discussion/review — 7 November 2026
+
+Command: `GOCACHE=/private/tmp/hestia-go-cache make build`
+Build host: macOS ARM64; standard build used Go 1.27.3, Node.js frontend build and the pinned runtime inputs in `dist/runtime`.
+
+Artifact: `dist/artifacts/20261107-161844-bb7c3856ca40/keenetic-arm64-experimental/`
+Manifest: version `20261107-161844-bb7c3856ca40`, revision `bb7c3856ca4007d062a134eb67d6e952c632fb8e`, platform `keenetic-arm64-experimental`, `dirty=true`, 151 file hashes.
+IPK: `hestia_20261107-161844-bb7c3856ca40_aarch64-3.10.ipk`
+SHA-256: `a85f1174d5b6ab70b1bae7642bf822aa681e9387fe79515b5af3fe260ef5f945`
+Frontend main asset contains the base version `0.1.1` and platform label `keenetic` used by the header.
+
+The build and packaging verifier completed successfully. This build has not been installed on KN-1012. Target `opkg` lifecycle, current device state, and recovery via reinstalling the prior package are not covered by this build. Known package limits remain: no complete client RoutePolicy/dataplane or DNS path; AWG and Wi-Fi/WISP are not enabled; upgrade is not transactionally rolled back after a `postinst` failure. Previous installed IPK `20261107-123735-f9fea441ebfd` is available under `dist/artifacts/` for a manual restore plan.

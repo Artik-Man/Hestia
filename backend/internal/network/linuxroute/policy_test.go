@@ -3,8 +3,11 @@ package linuxroute
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/Artik-Man/Hestia/internal/network"
 )
 
 type fakeRouteRunner struct {
@@ -26,7 +29,7 @@ func (f *fakeRouteRunner) Run(_ context.Context, args ...string) ([]byte, error)
 // TestRoutePolicyPreflightRejectsIPv4AndIPv6Collisions verifies both routing families are checked before mutations.
 func TestRoutePolicyPreflightRejectsIPv4AndIPv6Collisions(t *testing.T) {
 	for _, rules := range []string{
-		"1002: from all lookup 202",
+		fmt.Sprintf("%d: from all lookup 202", network.MarkRulePriority(0)),
 		"1200: from all fwmark 0x200/0xff8 lookup 201",
 		"1500: from 10.0.0.0/8 lookup 202",
 	} {
@@ -66,8 +69,8 @@ func TestRoutePolicyIPv6NeverGetsAnAWGDefault(t *testing.T) {
 	runner := cleanRouteRunner()
 	runner.outputs["-4 route show table 202"] = "default dev awg0 metric 100\nunreachable default metric 32767"
 	runner.outputs["-6 route show table 202"] = "unreachable default metric 32767"
-	runner.outputs["-4 rule show"] = "1002: from all fwmark 0x202/0xffffffff lookup 202"
-	runner.outputs["-6 rule show"] = "1002: from all fwmark 0x202/0xffffffff lookup 202"
+	runner.outputs["-4 rule show"] = fmt.Sprintf("%d: from all fwmark 0x202/0xffffffff lookup 202", network.MarkRulePriority(0))
+	runner.outputs["-6 rule show"] = fmt.Sprintf("%d: from all fwmark 0x202/0xffffffff lookup 202", network.MarkRulePriority(0))
 	runner.outputs["-o link show"] = "7: awg0: <POINTOPOINT,UP>"
 	if err := NewRoutePolicy(runner).ActivateIPv4(context.Background()); err != nil {
 		t.Fatalf("ActivateIPv4 returned error: %v", err)
@@ -99,8 +102,8 @@ func TestRouteTeardownDeletesOnlyExactOwnedRoutes(t *testing.T) {
 	runner := cleanRouteRunner()
 	runner.outputs["-4 route show table 202"] = "default dev awg0 scope link metric 100\nunreachable default metric 32767"
 	runner.outputs["-6 route show table 202"] = "unreachable default metric 32767"
-	runner.outputs["-4 rule show"] = "1002: from all fwmark 0x202/0xffffffff lookup 202"
-	runner.outputs["-6 rule show"] = "1002: from all fwmark 0x202/0xffffffff lookup 202"
+	runner.outputs["-4 rule show"] = fmt.Sprintf("%d: from all fwmark 0x202/0xffffffff lookup 202", network.MarkRulePriority(0))
+	runner.outputs["-6 rule show"] = fmt.Sprintf("%d: from all fwmark 0x202/0xffffffff lookup 202", network.MarkRulePriority(0))
 	policy := NewRoutePolicy(runner)
 	if err := policy.Teardown(context.Background(), func(context.Context) error { return nil }); err != nil {
 		t.Fatalf("Teardown failed for exact owned state: %v", err)
@@ -108,8 +111,8 @@ func TestRouteTeardownDeletesOnlyExactOwnedRoutes(t *testing.T) {
 	last := runner.calls[len(runner.calls)-5:]
 	want := []string{
 		"-4 route del default dev awg0 table 202 metric 100",
-		"-4 rule del priority 1002 fwmark 0x202/0xffffffff lookup 202",
-		"-6 rule del priority 1002 fwmark 0x202/0xffffffff lookup 202",
+		fmt.Sprintf("-4 rule del priority %d fwmark 0x202/0xffffffff lookup 202", network.MarkRulePriority(0)),
+		fmt.Sprintf("-6 rule del priority %d fwmark 0x202/0xffffffff lookup 202", network.MarkRulePriority(0)),
 		"-4 route del unreachable default table 202 metric 32767",
 		"-6 route del unreachable default table 202 metric 32767",
 	}
@@ -138,7 +141,7 @@ func TestRoutePolicyIPRoute2Output(t *testing.T) {
 	runner.outputs["-4 route show table 202"] = "unreachable default metric 32767"
 	runner.outputs["-6 route show table 202"] = "unreachable default dev lo metric 32767 pref medium"
 	for _, family := range []string{"-4", "-6"} {
-		runner.outputs[family+" rule show"] = "1002:\tfrom all fwmark 0x202 lookup 202"
+		runner.outputs[family+" rule show"] = fmt.Sprintf("%d:\tfrom all fwmark 0x202 lookup 202", network.MarkRulePriority(0))
 	}
 	policy := NewRoutePolicy(runner)
 	if err := policy.AdoptOwnedState(context.Background()); err != nil {
@@ -147,7 +150,11 @@ func TestRoutePolicyIPRoute2Output(t *testing.T) {
 	if err := policy.VerifyReadyPolicy(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	for _, rule := range []string{"1002: from all fwmark 0x202 lookup 2020", "1002: from all fwmark 0x202 iif eth0 lookup 202", "1002: from all fwmark 0x202/0x00ff lookup 202"} {
+	runner.outputs["-6 route show table 202"] = "unreachable default dev lo metric 32767 error -113"
+	if err := policy.AdoptOwnedState(context.Background()); err != nil {
+		t.Fatalf("Keenetic IPv6 unreachable guard was not recognized as owned: %v", err)
+	}
+	for _, rule := range []string{fmt.Sprintf("%d: from all fwmark 0x202 lookup 2020", network.MarkRulePriority(0)), fmt.Sprintf("%d: from all fwmark 0x202 iif eth0 lookup 202", network.MarkRulePriority(0)), fmt.Sprintf("%d: from all fwmark 0x202/0x00ff lookup 202", network.MarkRulePriority(0))} {
 		runner.outputs["-4 rule show"] = rule
 		if err := policy.AdoptOwnedState(context.Background()); err == nil {
 			t.Fatal("accepted foreign selector", rule)
@@ -159,7 +166,7 @@ func TestRoutePolicyIPRoute2Output(t *testing.T) {
 func TestSecondTunnelPolicyIgnoresFirst(t *testing.T) {
 	runner := cleanRouteRunner()
 	for _, family := range []string{"-4", "-6"} {
-		runner.outputs[family+" rule show"] = "1002: from all fwmark 0x202 lookup 202\n1003: from all fwmark 0x203 lookup 203"
+		runner.outputs[family+" rule show"] = fmt.Sprintf("%d: from all fwmark 0x202 lookup 202\n%d: from all fwmark 0x203 lookup 203", network.MarkRulePriority(0), network.MarkRulePriority(1))
 		runner.outputs[family+" route show table 203"] = "unreachable default metric 32767"
 	}
 	runner.outputs["-o link show"] = "7: awg0: <UP>\n8: awg1: <UP>"
@@ -186,8 +193,8 @@ func TestIncompleteSecondFamilyRetainsFirstRule(t *testing.T) {
 	runner := cleanRouteRunner()
 	runner.outputs["-4 route show table 202"] = "unreachable default metric 32767"
 	runner.outputs["-6 route show table 202"] = "unreachable default dev lo metric 32767"
-	runner.outputs["-4 rule show"] = "1002: from all fwmark 0x202 lookup 202"
-	runner.fail["-6 rule add priority 1002 fwmark 0x202/0xffffffff lookup 202"] = true
+	runner.outputs["-4 rule show"] = fmt.Sprintf("%d: from all fwmark 0x202 lookup 202", network.MarkRulePriority(0))
+	runner.fail[fmt.Sprintf("-6 rule add priority %d fwmark 0x202/0xffffffff lookup 202", network.MarkRulePriority(0))] = true
 	if err := NewRoutePolicy(runner).InstallMarkRules(context.Background()); err == nil {
 		t.Fatal("accepted missing IPv6 rule")
 	}
@@ -208,7 +215,7 @@ func TestEarlyPolicyRulesCannotBypassGuard(t *testing.T) {
 		{"0: from all lookup 255", true},
 		{"1000: from all iif wg-keenetic lookup 200", true},
 		{"1001: from all iif hestia0 lookup 201", true},
-		{"1002: from all fwmark 0x202 lookup 202", true},
+		{fmt.Sprintf("%d: from all fwmark 0x202 lookup 202", network.MarkRulePriority(0)), true},
 		{"800: from all lookup main", false},
 		{"800: from 10.0.0.0/8 lookup main", false},
 		{"800: from all iif lo lookup main", false},
@@ -227,7 +234,7 @@ func TestEarlyPolicyRulesCannotBypassGuard(t *testing.T) {
 		}
 		for _, family := range []string{"-4", "-6"} {
 			runner.outputs[family+" route show table 203"] = "unreachable default metric 32767"
-			runner.outputs[family+" rule show"] = tc.line + "\n1003: from all fwmark 0x203 lookup 203"
+			runner.outputs[family+" rule show"] = tc.line + fmt.Sprintf("\n%d: from all fwmark 0x203 lookup 203", network.MarkRulePriority(1))
 		}
 		if err := policy.VerifyReadyPolicy(context.Background()); (err == nil) != tc.safe {
 			t.Errorf("guard confirmation rule %q safe=%t, err=%v", tc.line, tc.safe, err)
@@ -255,7 +262,7 @@ func TestOuterBarrierPublishesOwnershipBeforeMutations(t *testing.T) {
 	if err != nil || !published {
 		t.Fatalf("publish %v error %v", published, err)
 	}
-	if len(runner.calls) != 4 || runner.calls[2] != "-4 rule add priority 1101 fwmark 0x51001/0xffffffff unreachable" || runner.calls[3] != "-6 rule add priority 1101 fwmark 0x51001/0xffffffff unreachable" {
+	if len(runner.calls) != 4 || runner.calls[2] != fmt.Sprintf("-4 rule add priority %d fwmark 0x51001/0xffffffff unreachable", network.OuterRulePriority(1)) || runner.calls[3] != fmt.Sprintf("-6 rule add priority %d fwmark 0x51001/0xffffffff unreachable", network.OuterRulePriority(1)) {
 		t.Fatalf("calls %v", runner.calls)
 	}
 }
@@ -263,7 +270,7 @@ func TestOuterBarrierPublishesOwnershipBeforeMutations(t *testing.T) {
 // TestOuterBarrierRejectsForeignRule refuses to claim an existing terminal rule without ownership.
 func TestOuterBarrierRejectsForeignRule(t *testing.T) {
 	runner := cleanRouteRunner()
-	runner.outputs["-4 rule show"] = "1100: from all fwmark 0x51000 unreachable"
+	runner.outputs["-4 rule show"] = fmt.Sprintf("%d: from all fwmark 0x51000 unreachable", network.OuterRulePriority(0))
 	policy, err := NewOuterPolicy(runner, 0)
 	if err != nil {
 		t.Fatal(err)
@@ -294,7 +301,37 @@ func TestRouteAllocationBounds(t *testing.T) {
 		t.Fatal(err)
 	}
 	d := policy.Descriptor()
-	if d.Device != "awg1" || d.Mark != "0x203" || d.MarkValue != 515 || d.Table != "203" || d.Priority != "1003" {
+	if d.Device != "awg1" || d.Mark != "0x203" || d.MarkValue != 515 || d.Table != "203" || d.Priority != fmt.Sprint(network.MarkRulePriority(1)) {
 		t.Fatalf("descriptor %+v", d)
+	}
+}
+
+// TestOwnedRulePriorityMigrationMovesOnlyTheDeclaredSlotRule keeps the guard route while changing its marked rule.
+func TestOwnedRulePriorityMigrationMovesOnlyTheDeclaredSlotRule(t *testing.T) {
+	runner := cleanRouteRunner()
+	policy, err := NewSlotPolicy(runner, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if policy.priority == "1002" {
+		return
+	}
+	for _, family := range []string{"-4", "-6"} {
+		runner.outputs[family+" route show table 202"] = "unreachable default metric 32767"
+		runner.outputs[family+" rule show"] = "1002: from all fwmark 0x202 lookup 202"
+	}
+	if err := policy.MigrateOwnedRulePriority(context.Background(), "1002"); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{
+		"-4 rule add priority " + policy.priority + " fwmark 0x202/0xffffffff lookup 202",
+		"-6 rule add priority " + policy.priority + " fwmark 0x202/0xffffffff lookup 202",
+		"-4 rule del priority 1002 fwmark 0x202/0xffffffff lookup 202",
+		"-6 rule del priority 1002 fwmark 0x202/0xffffffff lookup 202",
+	}
+	for _, call := range want {
+		if !strings.Contains(strings.Join(runner.calls, "\n"), call) {
+			t.Errorf("migration did not issue %q; calls=%v", call, runner.calls)
+		}
 	}
 }

@@ -1,0 +1,1 @@
+5cbd4fcea720d05aedd596ccb9308717ac99ffc07bcd7361c67022ce62226359  keenetic-rci-ethernet-darwin-arm64

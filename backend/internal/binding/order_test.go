@@ -34,6 +34,18 @@ func TestOrderPermutation(t *testing.T) {
 	}
 }
 
+// TestOrderRejectsPlatformExitInDefaultBuild keeps platform-only routes unavailable in Linux packages.
+func TestOrderRejectsPlatformExitInDefaultBuild(t *testing.T) {
+	if PlatformUnderlayID() != "" {
+		t.Skip("platform underlay is supplied by a platform-specific build")
+	}
+	old := []panelmodel.OrderedGroup{{ID: "main", Exits: []string{"vpn"}}}
+	change := panelmodel.GroupOrderChange{Expected: old, Groups: []panelmodel.OrderedGroup{{ID: "main", Exits: []string{"vpn", "keenetic-uplink"}}}}
+	if !errors.Is(ValidateOrder(change), ErrInvalidOrder) {
+		t.Fatal("default build accepted a Keenetic-only exit")
+	}
+}
+
 // TestOrderCAS checks a stale baseline against only installed topology and before invoking external commands.
 func TestOrderCAS(t *testing.T) {
 	e := testEngine(t)
@@ -43,6 +55,31 @@ func TestOrderCAS(t *testing.T) {
 	err := e.ApplyOrder(context.Background(), panelmodel.GroupOrderChange{Expected: []panelmodel.OrderedGroup{ru, fi}, Groups: []panelmodel.OrderedGroup{fi, ru}})
 	if !errors.Is(err, ErrConflict) {
 		t.Fatalf("stale order: %v", err)
+	}
+}
+
+// TestSameBackendRouteDetectsIngressRepair ensures a same-order request can activate a corrected backend route.
+func TestSameBackendRouteDetectsIngressRepair(t *testing.T) {
+	current := t.TempDir()
+	staged := t.TempDir()
+	currentBackend := `{"route":{"rules":[{"inbound":["hestia-keenetic-ingress"],"outbound":"deny"}]}}`
+	stagedBackend := `{"route":{"rules":[{"inbound":["hestia-keenetic-ingress"],"outbound":"world"}]}}`
+	if err := os.WriteFile(filepath.Join(current, "sing-box.json"), []byte(currentBackend), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(staged, "sing-box.json"), []byte(stagedBackend), 0600); err != nil {
+		t.Fatal(err)
+	}
+	same, err := sameBackendRoute(current, staged)
+	if err != nil || same {
+		t.Fatalf("stale route was treated as a no-op: same=%v err=%v", same, err)
+	}
+	if err := os.WriteFile(filepath.Join(staged, "sing-box.json"), []byte(currentBackend), 0600); err != nil {
+		t.Fatal(err)
+	}
+	same, err = sameBackendRoute(current, staged)
+	if err != nil || !same {
+		t.Fatalf("identical routes were not treated as a no-op: same=%v err=%v", same, err)
 	}
 }
 

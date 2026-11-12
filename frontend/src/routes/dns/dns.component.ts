@@ -11,6 +11,7 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { FormControl, FormGroup, ReactiveFormsModule } from "@angular/forms";
 import { ButtonDirective } from "primeng/button";
 import { InputNumber } from "primeng/inputnumber";
+import { TabsModule } from "primeng/tabs";
 import { ToggleSwitch } from "primeng/toggleswitch";
 import { Notifications } from "../../core/services/notifications.service";
 import { Subscription, timer, timeout } from "rxjs";
@@ -37,6 +38,7 @@ import {
     ReactiveFormsModule,
     ButtonDirective,
     InputNumber,
+    TabsModule,
     ToggleSwitch,
     DnsNames,
     GeoipSettings,

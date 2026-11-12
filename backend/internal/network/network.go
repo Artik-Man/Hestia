@@ -7,9 +7,6 @@ import (
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
 )
 
-// SlotCount bounds the tunnel allocation below reserved routing resources.
-const SlotCount = 50
-
 // Physical manages only application-owned Wi-Fi profiles and reports public interface state.
 // Mutations require the caller's installation lock and restore prior state on failure.
 type Physical interface {
@@ -18,8 +15,10 @@ type Physical interface {
 	DeleteWiFi(context.Context, string) error
 }
 
-// Carrier observes link presence; an unavailable or unreadable link is offline.
-type Carrier interface{ Online(string) bool }
+// Carrier observes a kernel interface link and preserves an unavailable observation as unknown.
+type Carrier interface {
+	State(string) panelmodel.CarrierState
+}
 
 // RouteDescriptor identifies the immutable resources allocated to one VPN instance.
 type RouteDescriptor struct {
@@ -43,7 +42,8 @@ type RoutePolicy interface {
 }
 
 var (
-	ErrInvalid  = errors.New("invalid physical connection settings")
-	ErrConflict = errors.New("physical connection conflicts with gateway state")
-	ErrNotFound = errors.New("physical connection not found")
+	ErrInvalid     = errors.New("invalid physical connection settings")
+	ErrConflict    = errors.New("physical connection conflicts with gateway state")
+	ErrNotFound    = errors.New("physical connection not found")
+	ErrUnsupported = errors.New("physical connection operation is unsupported")
 )

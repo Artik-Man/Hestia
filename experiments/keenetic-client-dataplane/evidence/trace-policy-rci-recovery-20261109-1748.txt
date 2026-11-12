@@ -1,0 +1,74 @@
+KN-1012 policy snapshot and synchronized client trace — 9 November 2026
+
+## Question
+
+Can the current tuple be linked to a contemporaneous read-only Keenetic client-policy snapshot, and does the exact SYN appear on the bridge and OpkgTun? Can the latest trace package be left installed without disturbing Keenetic policy or routes?
+
+## Environment and package state
+
+- Target: KN-1012, KeeneticOS 5.2 Beta 3, kernel `4.9-ndm-5`, Entware `aarch64-3.10`.
+- Client: already-running `hestia-client`, source `192.168.1.124` on `lima0`.
+- The trace ran on the restored package `20261109-164950-db76edb7f3e1`, SHA-256 `3a3d0db9eab77a0c1d57059c3dd25d58d6ab9479131a6dfc0dba92c2f5a2e1eb`.
+- The locally reviewed package `20261109-172910-db76edb7f3e1`, SHA-256 `ca6eea559f1e68da4bd35c6914551ed62a0d6395c88486da93c9f32dbb3d7116`, was unpacked on the target but its `postinst` exited 255 during `-enable-keenetic-ingress`: `managed service operation failed: smoke`. `opkg` initially reported `install user unpacked` and the services were stopped.
+- Read-only checks passed for managed profile validation, controller snapshot validation and sing-box configuration validation. The documented rollback IPK hash matched target and local evidence.
+- Local source inspection shows `-enable-keenetic-ingress` stages/validates its candidate and then runs `SmokeCurrent` before journal publication or activation (`backend/internal/binding/engine.go`, `apply`). Thus this error arose at the pre-activation smoke gate; it did not identify which live selector/health check failed. The generic error intentionally omits that diagnostic detail.
+- A documented downgrade attempt refused to remove `OpkgTun0` while it remained selected by a Keenetic policy, then restored Hestia services. Final target state was `20261109-164950-db76edb7f3e1`, `Status: install user installed`; `/opt/bin/hestia -service-supervisor-ready` returned 0 and package-maintenance marker was absent.
+- IPv4 default-route SHA-256 before and after recovery: `f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871`.
+- IPv6 default-route snapshot remained empty, SHA-256 `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+- No policy, firewall, module, route, VM power or SSH key changes were made. `hestia-prod` was not accessed.
+
+## Read-only policy and routing snapshot
+
+At `2026-11-09T14:50:10Z`, authenticated GETs returned HTTP 200 for `/rci/show/ip/hotspot` and `/rci/ip/hotspot/host`. The runtime response contained exactly one active host record for source `192.168.1.124`; matching its MAC in memory to the configuration response resolved explicit host policy `Policy2`. The MAC, hostname, token and raw responses were not printed or persisted.
+
+Read-only GETs to `/rci/ip/policy` and `/rci/show/ip/policy` returned HTTP 200. The selected `Policy2` record had table4 `4100`, mark `ffffaac`, and explicitly permitted `OpkgTun0`. The same-session route-netlink inventory showed:
+
+- priority 7: `fwmark 0xffffaac iif br0 lookup 32732`;
+- priority 8: matching `unreachable` fallback;
+- priority 9: `lookup main`;
+- table 32732: `default dev opkgtun0` and `unreachable default` fallback.
+
+These are configuration and FIB expectations. The NDM assignment and policy snapshot do not prove that the test SYN received `0xffffaac` or executed a lookup in table 32732.
+
+## Synchronized trace
+
+An initial attempt used source port `49331`, but the client SYN fell outside the router's 15-second trace window. Its all-`not_observed` output is a timing miss and is excluded from packet-path conclusions.
+
+The synchronized repeat used TCP tuple `192.168.1.124:49332 → 1.1.1.1:443`. The router trace reported `startedAt=2026-11-09T14:48:44.009103197Z`, `configurationObservedAt=2026-11-09T14:48:43.963478495Z`, and `durationMs=15000`. Client capture timestamps were `17:48:48.922` and `17:48:49.954` local time (UTC+3), both within the trace window. The client emitted two SYNs and curl exited 28 after timeout.
+
+The trace recorded:
+
+- `br0`: `observed`, count 2;
+- `opkgtun0`: `not_observed`, count 0;
+- exact-tuple sing-box inbound/rule/group/outbound/block: `not_observed`;
+- sing-box response/close, per-flow policy mark and WAN: `unavailable`;
+- package policy snapshot and dependent route stages: `unavailable` because the installed 164950 parser does not recognize the target RCI response shape.
+
+`/api/traffic?limit=100` was queried at the panel's actual bind address, `192.168.1.1:8080`; one record contained source port `49332`.
+
+The traffic UI (`#/traffic`) displayed this trace row as `Выход не подтверждён` with reason `opt-in flow trace summary`; it showed no first-response data. It separately displayed a collection-resumed notice and one lost event after the service interruption. Other visible rows labeled `Заблокировано` were UDP events to different destinations, not the TCP tuple in this probe, so they were not attributed to this test.
+
+## Exact reproduction commands
+
+Start the trace on the router:
+
+```sh
+printf '%s' '{"protocol":"TCP","source":"192.168.1.124","sourcePort":49332,"destination":"1.1.1.1","destinationPort":443,"durationSeconds":15}' | ssh -F private/keenetic/ssh/config keenetic-hestia /opt/bin/hestia -traffic-trace
+```
+
+The synchronized run started a client-side 15-second `tcpdump` first, delayed the curl by five seconds, and launched the router trace one second later:
+
+```sh
+CLIENT_LIMA_HOME=/private/tmp/hestia-vm-run/lima-state
+CLIENT_SSH_CONFIG="$CLIENT_LIMA_HOME/hestia-client/ssh.config"
+ssh -F "$CLIENT_SSH_CONFIG" lima-hestia-client \
+  'sudo -n timeout 15 tcpdump -nn -l -i lima0 "host 1.1.1.1 and tcp port 443" > /tmp/hestia-client-trace-49332.log 2>&1 & capture_pid=$!; sleep 5; curl -4 --interface 192.168.1.124 --local-port 49332 --connect-timeout 3 --max-time 5 --resolve one.one.one.one:443:1.1.1.1 -sS -o /dev/null https://one.one.one.one/cdn-cgi/trace; curl_status=$?; wait "$capture_pid" || true; cat /tmp/hestia-client-trace-49332.log; echo curl_exit=$curl_status'
+```
+
+Read-only policy snapshots used GET requests only. Their outputs were restricted to match count, active flag, `PolicyN`, table, mark and whether `OpkgTun0` was permitted. To capture future evidence in the package, install a corrected build only after the post-install smoke failure has been diagnosed and the package lifecycle succeeds.
+
+## Conclusion and limits
+
+The exact SYNs were observed on `br0` and not observed on `opkgtun0` or in sing-box during a synchronized window. The fresh RCI snapshot separately confirms that `192.168.1.124` was actively assigned to `Policy2`, whose current configuration allowed `OpkgTun0` and exposed table/mark `4100`/`ffffaac`. Together with the route snapshot, this makes the expected configuration coherent, but does not establish an actual packet mark, classifier hit, route lookup or drop verdict. `not_observed` is not a drop verdict.
+
+The corrected 172910 package is not installed. Its current limiting issue is post-install `smoke` failure during `-enable-keenetic-ingress`; the underlying smoke mismatch is not yet identified. The safe next step is to diagnose that smoke failure offline/read-only against the captured profile/service state, then install only after a reviewed fix is ready. For packet-level localization, continue a no-mutation search for a vendor-supported counter/event after NDM classification; the current proven AF_PACKET hook is an interface observation, not a post-classification verdict.

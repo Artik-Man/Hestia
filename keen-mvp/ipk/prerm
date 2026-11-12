@@ -1,0 +1,8 @@
+#!/bin/sh
+set -eu
+
+case "${1:-}" in
+    remove | upgrade)
+        /opt/etc/init.d/S52keen-mvp stop
+        ;;
+esac

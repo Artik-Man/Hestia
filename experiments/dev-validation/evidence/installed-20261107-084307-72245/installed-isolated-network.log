@@ -1,0 +1,18 @@
+Running as unit: hestia-validation-20261107-084307-72245.service
+PASS awg-multi
+PASS wg-default
+PASS wg-automatic
+PASS wg-native
+PASS wg-loss
+PASS wg-padding
+PASS hysteria-plain
+PASS hysteria-watch
+PASS hysteria-ordered
+PASS controller-routing
+PASS group-quality
+FAIL physical-inventory exit=1
+PASS partial-loss
+Finished with result: exit-code
+Main processes terminated with: code=exited/status=1
+Service runtime: 11min 48.138s
+CPU time consumed: 53.733s

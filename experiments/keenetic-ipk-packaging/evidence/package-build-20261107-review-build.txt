@@ -1,0 +1,17 @@
+Дата: 2026-11-07
+Назначение: зафиксировать Linux и Keenetic комплекты, переданные Product Owner для самостоятельной проверки.
+
+`GOCACHE=/private/tmp/hestia-go-cache make build-go` завершилась с кодом 0. Полная команда `GOCACHE=/private/tmp/hestia-go-cache bash scripts/build/run.sh --output /private/tmp/hestia-final-review-build` также завершилась с кодом 0: Go Linux ARM64, Go Keenetic ARM64 (`-tags keenetic`), research commands, production frontend и Keenetic `.ipk` собраны. Сборка выполнялась локально, без VM или сетевых запросов к роутеру.
+
+Версия: `20261107-083541-5dd5889e639b`.
+
+- Linux комплект: `/private/tmp/hestia-final-review-build/20261107-083541-5dd5889e639b/linux-arm64`.
+- Linux `bin/hestia` SHA-256: `a1dda128c7b653d0a06cb45ad1410b68117666c7f0ff5731c0e71b46d0260316`.
+- Keenetic комплект: `/private/tmp/hestia-final-review-build/20261107-083541-5dd5889e639b/keenetic-arm64-experimental`.
+- Keenetic `bin/hestia` SHA-256: `f87f3d2d67a2131d1bca18af6878aa9dfea654dfd539bea566d79caebc2327af`.
+- IPK: `/private/tmp/hestia-final-review-build/20261107-083541-5dd5889e639b/keenetic-arm64-experimental/hestia_20261107-083541-5dd5889e639b_aarch64-3.10.ipk`.
+- IPK size: 58 991 851 bytes; SHA-256: `488d334bf224690212f976b07777df85b96d632b7b195c75574b7aca96377090`.
+- Manifest: 555 source inputs and 145 packaged files. It contains source `backend/cmd/keenetic-route-preflight/main.go` with SHA-256 `ea195404568bea52aedcf0ebb2bd6f3a206083de50a6cea1d39b14ba3a8a14c5`.
+- Research binaries are separate from the runtime IPK: `dist/go/keenetic-arm64-experimental/research/keenetic-rci-wisp-status` SHA-256 `d7cbf1ff7976689f992bae33072a1fd870a8507283fa644a78f9672b96632d3a`; `keenetic-route-preflight` SHA-256 `8d07524d0d48bf9835b0e3272970e5fb92362159a26b233cf417e2dbc4e1ac0b`.
+
+`fmt-check`, `docs-check` and `git diff --check` passed for this source state. Tests were not run. The build does not verify IPK installation, service lifecycle, RCI WISP schema, route policy on KN-1012, VPN, DNS or client dataplane. No target command or configuration change was made.

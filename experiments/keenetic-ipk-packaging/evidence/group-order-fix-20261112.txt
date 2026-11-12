@@ -1,0 +1,115 @@
+Hestia default group order failure: Keenetic deployment record
+Date: 2026-11-12
+Target: KN-1012 at 192.168.1.1, Entware aarch64-3.10
+
+Root cause
+----------
+Existing service log recorded repeated `candidate-preparation` failures from
+profile-compiler when applying group order. A temporary non-live reproduction
+classified the compiler error as backend route mismatch. The installed ingress
+route targeted `g-78311245-9f72-414e-a426-5cac78d7f707` after its last exit had
+been moved out; the expected route target was `deny`.
+
+Fix and local checks
+-------------------
+- Recompile ingress routes after moving a connector.
+- Recover only the exact stale ingress-to-empty-group mismatch as `deny`;
+  reject non-empty stale targets and any other route differences.
+- Add regression tests for both behaviors.
+- `python3 -m unittest discover -s deploy`: 50 tests, 7 skipped, OK.
+- `make docs-check`: passed.
+- `git diff --check`: passed.
+- `python3 -B -m py_compile deploy/profile.py deploy/test_profile.py`: passed.
+- Bundle `0.1.3` verified; packaged `profile.py` matched workspace source.
+- New IPK SHA-256:
+  `b3e999b9fa52c7647e3f358bb8cc53e3e289dc78a658a2f21efaf35a8af4aaa4`.
+
+Rollout
+-------
+- Previous package: `20261111-222317-d87148df7d8a`.
+- Previous package SHA-256:
+  `96583100e80a3cdeede57f9787c60bd618be3d9ed6a65f216aa379bef9ad3bac`.
+- Root-only backup directory:
+  `/opt/tmp/hestia-deploy-0.1.2-group-order-20261112`.
+- Rollback package stored as `rollback.ipk`, mode 0600, hash matched local.
+- Both package uploads returned HTTP 201 and remote hashes matched local.
+- Plain `opkg install` did not apply the package because version comparison
+  treated the timestamp-tagged installed version as newer than `0.1.3`.
+- `opkg install --force-downgrade --force-reinstall ...0.1.3...` printed that
+  `prerm` could not remove OpkgTun0 while a Keenetic policy allowed it, followed
+  by recovery text saying the profile was missing or invalid. The command
+  returned exit 0. Do not infer lifecycle hook cleanliness from that exit code.
+- Subsequent read-only checks showed `Version: 0.1.3`,
+  `Status: install user installed`, no package-maintenance marker, and
+  `/opt/bin/hestia -service-supervisor-ready` exit 0.
+- Installed `/opt/lib/hestia/profile.py` SHA-256 matched local source:
+  `660a9f1a6579b42a62bf69c16b3c826726ac4acbb1aa967ce084f284f83c38d0`.
+- GET `/` returned HTTP 200; GET `/api/groups-and-rules` returned HTTP 200;
+  GET `/api/physical-connections` returned HTTP 200.
+- IPv4 default-route SHA-256 matched pre-install and post-install:
+  `f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871`.
+- IPv6 default-route snapshot was empty before and after (SHA-256
+  `e3b0c44298fc1c149afbf4f8996fb92427ae41e4649b934ca495991b7852b855`).
+- Temporary LAN-bound `hestia-cli` upload server was stopped; its pid/log files
+  were removed. The unrelated listener on another address was not touched.
+
+Limits
+-----
+No `PUT /api/group-order` was sent after deployment because the user did not
+specify which group should become default. Existing order remains unchanged:
+`Россия` is default, and `Остальной мир` has no exits. The lifecycle warning
+about OpkgTun policy remains recorded; no policy was changed and OpkgTun was
+not manually removed. The first reinstall attempt received readiness and
+read-only API smoke checks, but the actual order-change path was not exercised
+on the live router.
+
+Follow-up reinstall after Product Owner removed OpkgTun0 from policies
+-----------------------------------------------------------------------
+- Preflight found package `0.1.3` installed, supervisor ready, no maintenance
+  marker, expected IPK and rollback hashes, and unchanged default route hashes.
+- `opkg install --force-reinstall ...hestia_0.1.3...` completed lifecycle
+  without OpkgTun refusal: `prerm` removed the old package, opkg installed
+  `0.1.3`, and `postinst` configured it. Modified Hestia conffiles were kept.
+- Final package status: `Version: 0.1.3`, `Status: install user installed`,
+  architecture `aarch64-3.10`.
+- Supervisor readiness passed; maintenance marker absent; supervisor and panel
+  processes were running.
+- `/`, `/api/groups-and-rules`, and `/api/physical-connections` each returned
+  HTTP 200.
+- Installed `profile.py` SHA-256 still matched the workspace source
+  (`660a9f1a6579b42a62bf69c16b3c826726ac4acbb1aa967ce084f284f83c38d0`).
+- IPv4 default route hash remained
+  `f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871`;
+  IPv6 default route remained absent.
+
+Ingress deny repair, build 0.1.5
+--------------------------------
+- The traffic journal's latest historical blocked event matched inbound
+  `hestia-keenetic-ingress` and result `deny`. Installed profile validation
+  failed with `backend routes differ from the installed profile`.
+- Root cause: the generated profile expected the ingress to use the safe
+  «Остальной мир» group, but the installed sing-box route still targeted
+  `deny`.
+- Build `0.1.5` accepts only this known safe-group-versus-deny stale-route
+  mismatch and lets same-order apply activate a route-only repair. Other route
+  differences remain fail-closed; true no-op applies still avoid restart.
+- Local regression tests: `deploy/test_profile.py` covers this repair and
+  rejects additional route-field differences; Go binding tests cover detection
+  of the ingress repair on same-backend order.
+- Bundle and packaged `profile.py` verified. IPK SHA-256:
+  `873d60387e45e9eeca06da4d8e0e926490cb427b9773a9adf02e64fb518d568b`.
+- Normal `opkg install` upgraded `0.1.4` to `0.1.5`; final opkg status was
+  `install user installed`, supervisor readiness passed, no maintenance marker
+  remained, and installed managed profile validation passed.
+- The exact current group order was submitted as both expected and requested
+  order; API returned HTTP 200 and retained the same topology. Installed
+  ingress route now targets group
+  `g-78311245-9f72-414e-a426-5cac78d7f707` («Остальной мир»), not `deny`.
+- IPv4 default route hash remained
+  `f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871`;
+  IPv6 default route remained absent.
+- Browser journal showed only historical blocked events and the collector's
+  reconnect banner. No post-repair traffic event was available. The user had
+  removed OpkgTun0 from all policies, so live client ingress and egress remain
+  unverified. No Keenetic policy was changed.
+- Temporary upload server was stopped and verified not listening.

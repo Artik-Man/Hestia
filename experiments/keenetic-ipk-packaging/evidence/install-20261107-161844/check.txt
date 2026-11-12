@@ -1,0 +1,16 @@
+KN-1012 update attempt and recovery — 7 November 2026
+
+Target: Keenetic Giga KN-1012, KeeneticOS 5.02.B.3.0-2, Entware aarch64-3.10.
+Previous installed version: 20261107-123735-f9fea441ebfd, Status `install user installed`.
+Requested version: 20261107-161844-bb7c3856ca40.
+New IPK SHA-256: a85f1174d5b6ab70b1bae7642bf822aa681e9387fe79515b5af3fe260ef5f945.
+Previous IPK SHA-256: 413a0d7dc7ad599d4ad98da34fc80e4ff29a4649b4539919df5981f60684b932.
+
+Before install: model/firmware/architecture preflight matched; `/opt` had 6.6 GiB free; RCI token and panel-listen were root-owned mode 0600; supervisor was ready. A root-only backup of `/opt/etc/hestia` (including the token) and opkg status was created on-device at `/opt/tmp/hestia-upgrade-20261107-bb7c3856ca40/`. Config archive SHA-256: `3a565dfada00acf4d2c38ff31d41f120e3778dba896ae471becb2b381eef3c30`. Both requested and previous IPKs were staged on-device and their hashes verified.
+
+Install command: `/opt/bin/opkg install /opt/tmp/hestia-upgrade-20261107-bb7c3856ca40/hestia_20261107-161844-bb7c3856ca40_aarch64-3.10.ipk`.
+Observed: target preflight passed, `prerm` stopped Hestia, and opkg unpacked the new package. `postinst` failed with `Hestia supervisor did not become ready`; cleanup printed `no /opt/bin/hestia found; none killed`. No supervisor process remained and opkg marked the new package `install user unpacked`. Hestia service logs/syslog did not expose a more specific failure. This report does not infer the root cause.
+
+Recovery: `/opt/bin/opkg install --force-downgrade --force-reinstall /opt/tmp/hestia-upgrade-20261107-bb7c3856ca40/hestia_20261107-123735-f9fea441ebfd_aarch64-3.10.ipk` exited 0. The previous version is again `install user installed`; supervisor is ready; the maintenance marker is absent; RCI token and panel-listen remain root:root mode 0600. LAN checks returned HTTP 200 for panel, `/api/groups-and-rules`, and `/api/physical-connections`.
+
+Boundary: the requested update is not active. No RCI write, Wi-Fi/WISP operation, or client-route/dataplane probe was performed. The failed IPK, previous IPK, and root-only configuration backup remain staged on the router for investigation and recovery.

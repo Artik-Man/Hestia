@@ -97,7 +97,7 @@ func registerDirectRename(api huma.API, rename groupRenamer) {
 		if err := rename(ctx, in.ID, in.Body.Name); err != nil {
 			return nil, err
 		}
-		return &directRenameOutput{Body: panelmodel.AWGUnderlayCandidate{ID: in.ID, Type: "direct", Name: in.Body.Name}}, nil
+		return &directRenameOutput{Body: panelmodel.AWGUnderlayCandidate{ID: in.ID, Type: "direct", Name: in.Body.Name, Role: binding.PlatformChannelRole(in.ID)}}, nil
 	})
 }
 

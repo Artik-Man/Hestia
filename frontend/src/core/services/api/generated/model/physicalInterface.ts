@@ -10,13 +10,21 @@
 
 
 export interface PhysicalInterface { 
+    carrierState: PhysicalInterface.CarrierStateEnum;
     exitIds: Array<string>;
     interfaceName: string;
     kind: PhysicalInterface.KindEnum;
     online: boolean;
     present: boolean;
+    providerName?: string;
 }
 export namespace PhysicalInterface {
+    export const CarrierStateEnum = {
+        Up: 'up',
+        Down: 'down',
+        Unknown: 'unknown'
+    } as const;
+    export type CarrierStateEnum = typeof CarrierStateEnum[keyof typeof CarrierStateEnum];
     export const KindEnum = {
         Ethernet: 'ethernet',
         Wifi: 'wifi'

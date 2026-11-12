@@ -1,6 +1,6 @@
 {
   "name": "hestia-panel",
-  "version": "0.1.1",
+  "version": "0.1.7",
   "private": true,
   "type": "module",
   "engines": {
@@ -9,7 +9,7 @@
   "scripts": {
     "build": "ng build",
     "test": "node --test tests/*.test.mjs",
-    "test:browser": "node --test tests/browser/geo.mjs tests/browser/profile-import.mjs tests/browser/group-create.mjs tests/browser/connection-move.mjs tests/browser/domain-list-save.mjs tests/browser/quality.mjs tests/browser/traffic.mjs tests/browser/dns.mjs && npm run test:browser:dns-api:built",
+    "test:browser": "node --test --test-concurrency=1 tests/browser/geo.mjs tests/browser/profile-import.mjs tests/browser/group-create.mjs tests/browser/connection-move.mjs tests/browser/domain-list-save.mjs tests/browser/quality.mjs tests/browser/traffic.mjs tests/browser/dns.mjs && npm run test:browser:dns-api:built",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint src --max-warnings 0",

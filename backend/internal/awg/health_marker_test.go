@@ -17,7 +17,7 @@ func TestHealthRecordPublicationIgnoresCrashLeftover(t *testing.T) {
 	}
 	path := filepath.Join(directory, "health.json")
 	updatedAt := time.Date(2026, 11, 4, 12, 0, 0, 0, time.UTC)
-	if err := writeHealthRecord(path, "awg-test", os.Getuid(), os.Getgid(), updatedAt); err != nil {
+	if err := writeHealthRecord(path, "awg-test", os.Getuid(), os.Getgid(), 0640, updatedAt); err != nil {
 		t.Fatalf("stale temporary file blocked health publication: %v", err)
 	}
 	info, err := os.Stat(path)

@@ -1,0 +1,63 @@
+Дата: 11 ноября 2026 года
+Устройство: Keenetic Giga KN-1012, Entware aarch64-3.10
+Пакет до обновления: 20261111-121609-d9a573386528
+Исходный пакет обновления: 20261111-130014-880c07cd3950
+Исправленный пакет обновления: 20261111-132045-4b039442c7d1
+SHA-256 исправленного пакета: e4ff1839a33ab09ff0dd549d184bd2a3b19cf0935ff622628ecf66b8fac1bb3d
+SHA-256 rollback-пакета: 314ddeaa88e587451b01f9c64f15a5ededde8387b2396fba710864418577b8f7
+
+Ход обновления
+--------------
+1. Первая сборка остановила запуск supervisor с ошибкой `exec: Stdout already set`.
+   Ошибка была исправлена в ревизии 4b039442c7d1 и прошла целевой тест пакета
+   entware локально.
+2. Исправленный IPK прошёл проверку bundle и сверку SHA-256 между локальным и
+   staging-файлом на устройстве. Аппаратный preflight прошёл.
+3. Обновление завершилось ошибкой миграции OpkgTun profile:
+   `ld-linux-aarch64.so.1 failed: signal: killed`.
+   Postinst остановил службы; новая версия получила статус `install user unpacked`.
+4. Сохранённый IPK предыдущей рабочей версии имел ожидаемый SHA-256. Попытка
+   установить его с `--force-downgrade --force-reinstall` завершилась ошибкой
+   `Hestia supervisor did not become ready`; opkg оставил rollback-версию в
+   статусе `install user unpacked`. При rollback также появились package
+   defaults с суффиксом `-opkg` для изменённых пользовательских конфигураций.
+5. Для rollback-версии отдельно прошли read-only проверки managed profile,
+   controller snapshot и sing-box configuration. Проверка idle подтвердила
+   отсутствие управляемых процессов; повторный `opkg configure hestia` снова
+   завершился `ld-linux-aarch64.so.1 failed: signal: killed` во время миграции.
+   Штатный init `S99hestia start` завершился `Hestia supervisor did not become
+   ready`.
+
+Итоговое наблюдаемое состояние
+------------------------------
+- `opkg status hestia`: Version `20261111-121609-d9a573386528`, Status
+  `install user unpacked`, Architecture `aarch64-3.10`.
+- Supervisor readiness отсутствует; readiness и PID markers отсутствуют;
+  package-maintenance marker отсутствует; проверка idle проходит.
+- Managed profile, controller snapshot и sing-box configuration проходят
+  read-only проверки.
+- API-панель не ответила на локальную проверку. API-статус 2ip после сбоя не
+  проверен.
+- Каталог `/opt/var/lib/hestia/dns-policy` и файл `2ip.key` присутствуют;
+  значение ключа в свидетельство не включено.
+- IPv4 default-route SHA-256 до и после:
+  `f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871`.
+- IPv6 default-route SHA-256 до и после:
+  `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`
+  (маршрут отсутствовал).
+- Kernel log не показал совпадений для `out of memory`, `killed process` или
+  `oom-kill`; доступная RAM в момент проверки составляла около 215 MB.
+
+Границы вывода
+--------------
+Сигнал `killed` подтверждён, его источник и причина не установлены. OOM не
+подтверждён; нехватка памяти остаётся гипотезой. Отдельные проверки sing-box
+конфигурации прошли, но это не доказывает успешность полного migration path при
+одновременно работающих службах. Причина отсутствия supervisor readiness после
+rollback отдельно не локализована. Клиентский dataplane, 2ip API и восстановление
+служб на устройстве не подтверждены. Маршруты по умолчанию не изменились.
+
+Проверки выполнялись через настроенный SSH alias, без сохранения секретов и
+полного пользовательского профиля в этом файле. Не запускать новые
+install/configure/reboot попытки до исправления причины supervisor/migration
+сбоев и подготовки проверяемого recovery-плана.

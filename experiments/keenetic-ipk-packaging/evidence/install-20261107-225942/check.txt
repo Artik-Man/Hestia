@@ -1,0 +1,21 @@
+KN-1012 update with VPN profile API build — 7 November 2026
+
+Target: Keenetic Giga KN-1012, KeeneticOS 5.02.B.3.0-2, Entware aarch64-3.10.
+Source: codex/panel-platform-version, commit 2bf46144bcb4b06bc65eed809839cfad0ce282f3.
+Package: hestia_20261107-225942-2bf46144bcb4_aarch64-3.10.ipk.
+SHA-256: 185712644fd6d7910f65452dfb3190e6d69a11941f500e1885628aab4dfd9b00
+
+The package was built clean (`dirty=false`). Local and router-side package hashes matched this digest.
+
+Access used the documented root SSH key, port 222, and strict pinned host-key checking. The local RCI token file had mode 0600; on the router the token and parent directory were root-owned, mode 0600 and 0700. No token value was printed or saved. `preinst` ran the read-only token-authenticated RCI version preflight and reported `Hestia target preflight passed`.
+
+The local token file was also exercised through a temporary pinned SSH forward using the shared Go RCI client. `GET /rci/show/interface` returned five typed ports; raw response saving was false. The forward was closed after the request.
+
+Before update, installed version was `20261107-165338-bb7c3856ca40`, Entware architecture was `aarch64-3.10`, and supervisor readiness passed. A root-only configuration archive and opkg status were saved under `/opt/tmp/hestia-upgrade-20261107-225942-2bf46144bcb4/`; the previous IPK was staged there for manual recovery. Local and remote SHA-256 values matched for both the new and previous IPKs.
+
+Install command: `/opt/bin/opkg install /opt/tmp/hestia-upgrade-20261107-225942-2bf46144bcb4/hestia_20261107-225942-2bf46144bcb4_aarch64-3.10.ipk`.
+Result: exit 0. `opkg status hestia` reports Version `20261107-225942-2bf46144bcb4`, Status `install user installed`, Architecture `aarch64-3.10`. Supervisor IPC readiness passed, the package-maintenance marker is absent, and the root-only supervisor log is empty.
+
+LAN HTTP status: 200 for `/`, `/api/groups-and-rules`, `/api/awg`, `/api/hysteria2`, and `/api/physical-connections`. Default IPv4 and IPv6 route hashes matched before and after installation. The saved configuration archive hash is `e8af0b9ef4a46e98bf423f9efd2e4d84800b7a8b7646d24c685e4975006ae9f8`.
+
+Boundary: the package lifecycle, target preflight, supervisor readiness, GET API availability, and default route preservation were checked. No VPN profile was created, updated, or deleted. Client traffic, internet egress, VPN dataplane, fail-closed behavior, and rollback after postinst failure were not tested. The IPK update has no automatic transactional rollback; the previous package and root-only configuration backup remain staged on the router for recovery.

@@ -1,0 +1,72 @@
+KN-1012 install attempt for `20261109-203924-db76edb7f3e1` — 9 November 2026
+
+## Package and action
+
+- Device: KN-1012, KeeneticOS `5.02.B.3.0-2`, kernel `4.9-ndm-5`, Entware `aarch64-3.10`.
+- IPK: `/opt/tmp/hestia-deploy-20261109-2045-ndmconntrack/hestia_20261109-203924-db76edb7f3e1_aarch64-3.10.ipk`.
+- Local and staged SHA-256 matched: `797a6ce14589a5b0d95c7e64437fe9048598922e08a6e6bcae21430385ab20b9`.
+- Known-good rollback IPK was preserved in the root-only staging backup; it was not applied.
+- `/opt/bin/opkg install <staged-ipk>` was started. Its original command output was not retained in this evidence; a later read-only status showed the package transaction had left version `20261109-203924-db76edb7f3e1` as `install user unpacked`.
+- After read-only checks found the package idle, managed profile valid, controller snapshot valid, and sing-box configuration valid, the documented completion command `/opt/bin/opkg configure hestia` was attempted once.
+
+## Observations after the failed configure
+
+The configure command exited `255` and printed:
+
+```text
+no /opt/bin/hestia found; none killed
+Hestia supervisor did not become ready
+Collected errors:
+ * pkg_run_script: package "hestia" postinst script returned status 1.
+ * opkg_configure: hestia.postinst returned 1.
+Configuring hestia.
+```
+
+Read-only checks immediately after the command:
+
+- `opkg status hestia`: `Version: 20261109-203924-db76edb7f3e1`, `Status: install user unpacked`.
+- `/opt/bin/hestia -service-check-idle`: exit `0`.
+- `/opt/bin/hestia -service-supervisor-ready`: exit `1`.
+- `supervisor.pid`, `supervisor.ready`, `package-maintenance`, and `lifecycle.lock` were absent.
+- Managed profile validator: exit `0`.
+- `/opt/bin/hestia -check -config /opt/etc/hestia/snapshot.json`: exit `0`.
+- Sing-box `check -c /opt/etc/hestia/sing-box.json`: exit `0`.
+- IPv4 default-route SHA-256 remained `f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871`; IPv6 default-route SHA-256 remained the empty-output hash `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+- `ip -4 route show table all | grep "table 32732"` returned only `unreachable default table 32732` (no metric shown by BusyBox).
+- A separate one-shot `RTM_GETROUTE` dump filtered to reserved Hestia tables `30000..34095` returned exactly one record: table `32732`, `0.0.0.0/0`, type `7` (unreachable), protocol `253`, scope `0`, flags `0`, no `RTA_PRIORITY` attribute (default metric 0), no output interface, and only `RTA_TABLE` as an attribute. This matches the current code's Hestia floor guard identity. The snapshot was taken after the failed configure, so it does not prove the same state was present during the earlier failing reconcile.
+- `ip -4 rule show` still showed priority 7 mark/iif lookup to table 32732, priority 8 matching unreachable guard, and priority 9 main lookup.
+- `/opt/var/lib/hestia-ingress/rules.json` contains the owned RPDB selectors, but no route ownership record.
+- The root-only supervisor log ends with ingress reconciliation errors including `Hestia ingress table contains an unowned route`; the exact failing route attribute is not recorded. It also contains `managed Hestia process remains active` during startup/stop activity.
+
+## Reproduction and read-only commands
+
+The package completion attempt was:
+
+```sh
+ssh -F private/keenetic/ssh/config keenetic-hestia '/opt/bin/opkg configure hestia'
+```
+
+Read-only target checks were run through the same pinned SSH alias:
+
+```sh
+/opt/bin/opkg status hestia
+/opt/bin/hestia -service-check-idle
+/opt/bin/hestia -service-supervisor-ready
+/opt/bin/python3 -I /opt/lib/hestia/profile.py --validate-managed /opt/etc/hestia
+/opt/bin/hestia -check -config /opt/etc/hestia/snapshot.json
+/opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box check -c /opt/etc/hestia/sing-box.json
+ip -4 route show default | sha256sum
+ip -6 route show default | sha256sum
+ip -4 route show table all | grep "table 32732"
+ip -4 rule show
+tail -n 35 /opt/var/run/hestia/supervisor.log
+cat /opt/var/lib/hestia-ingress/rules.json
+```
+
+No client probe was started after the failed install. No direct policy, firewall, kernel-module, or route command was run; `hestia-prod` and VM state were not accessed.
+
+## Conclusion and limits
+
+The update is **not installed successfully** and Hestia supervisor readiness is currently unavailable. Configuration validation passes. The startup log reports ingress reconciliation rejecting a route as unowned, but the later exact netlink snapshot shows the only current route in the reserved Hestia table range is a valid protocol-253 floor guard, matching `guardRoute(0)`. Therefore the offending state was not reproduced in the post-failure snapshot; it may have been transient during startup or tied to another momentary state. The snapshot does not prove route provenance beyond matching Hestia's identity fields. The default route hash only confirms the main IPv4 default route stayed unchanged; it says nothing about Hestia's policy table.
+
+Do not retry `opkg configure`, reinstall, rollback, or alter table 32732 under the current no-policy/route-mutation boundary. The exact current route has been read. The smallest next diagnostic is a reviewed read-only capture of *all* reserved-table route attributes at the moment of any separately authorized package recovery, correlated with the sanitized reconcile error and policy mark/table. This is needed because the post-failure route matches the expected floor guard and the startup-time mismatch was not retained. Recovery must preserve the current no-policy/route-mutation boundary unless separately authorized.

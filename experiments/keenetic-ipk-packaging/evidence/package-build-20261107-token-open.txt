@@ -1,0 +1,21 @@
+Дата: 2026-11-07
+Вопрос: защищён ли RCI token read от подмены owner-only файла симлинком/FIFO между Lstat и open?
+Изменение: FileTokenSource открывает токен с O_NOFOLLOW|O_NONBLOCK, затем подтверждает тот же inode, тип, owner и permissions.
+
+Проверки:
+- gofmt backend/pkg/keeneticrci/client.go
+- GOCACHE=/private/tmp/hestia-go-cache go -C backend vet ./...
+- GOCACHE=/private/tmp/hestia-go-cache GOOS=linux GOARCH=arm64 go -C backend vet -tags keenetic ./...
+- SHFMT=/private/tmp/hestia-tools/shfmt make docs-check
+- git diff --check
+- GOCACHE=/private/tmp/hestia-go-cache python3 scripts/build/run.py --output /private/tmp/hestia-token-open-final
+
+Все команды завершились кодом 0; тесты не запускались.
+
+Артефакт: /private/tmp/hestia-token-open-final/20261107-071541-5dd5889e639b/keenetic-arm64-experimental/hestia_20261107-071541-5dd5889e639b_aarch64-3.10.ipk
+Размер: 58,969,932 байта
+SHA-256: 1e671a15cfbefa07b179e9593343e6f536ce28713eeed97c32fd8017064004d5
+Manifest: 552 source inputs; 145 packaged files.
+Source hash `backend/pkg/keeneticrci/client.go`: `a5e839ef2983c48ef6bd0c207b66e4fa8dfb1bffa66f915328c02e86d36f3181`.
+
+Границы: локальные Linux/Keenetic ARM64 статические проверки и сборка подтверждены; чтение токена на KN-1012, `opkg`, установка, RCI, тесты и сетевое поведение не запускались.

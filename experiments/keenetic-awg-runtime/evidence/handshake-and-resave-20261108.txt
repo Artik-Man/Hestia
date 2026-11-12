@@ -1,0 +1,21 @@
+# Handshake check and unchanged profile save — 2026-11-08
+
+## Environment
+
+- Device: KN-1012, KeeneticOS 5.2 Beta 3.
+- Installed Hestia IPK: `20261108-122003-46ed33ac8d30`.
+- Profile: `AmneziaWG-debug` (existing user-provided profile; configuration and keys are intentionally omitted).
+- Probe time: 2026-11-08 around 12:40 Moscow time.
+
+## Procedure and result
+
+1. Submitted the already saved profile to `/opt/bin/hestia -awg-check` over its authorized SSH connection. The helper created a temporary interface, issued a handshake probe and removed the temporary runtime without installing an address or route.
+2. Result: `{"status":"handshake_confirmed","message":"AmneziaWG handshake подтверждён; групповой маршрут не изменён","routeReady":false}`.
+3. Re-saved the unchanged existing profile through the Hestia UI. The editor closed successfully, but the connection remained «Недоступно».
+4. Read-only post-check on the router confirmed Hestia supervisor readiness, public AWG status `error`, no AWG interface or `amneziawg-go` process, and fail-closed IPv4/IPv6 defaults in table 202. The router's ordinary IPv4 default route remained `default via 10.40.154.1 dev eth3 metric 1000`.
+
+## Interpretation and limits
+
+The peer can complete a handshake from the temporary check environment. This does not prove that the long-lived runtime has a fresh handshake or can pass tunnel egress. The unchanged UI save restarted the shared router/controller generation but did not create a fresh AWG runtime attempt: no new AWG runtime service log or process appeared. Source inspection found that the transaction planner only restarts AWG instances whose profile generation changed; the explicit update path did not request a retry when the saved bytes were unchanged. A source fix and target re-check are pending.
+
+No default route, saved profile, or group membership was changed by the temporary check. The UI save preserved the profile's current group. Client traffic through the tunnel remains unverified.

@@ -28,7 +28,11 @@ jobs:
         run: |
           for target in darwin/arm64 linux/amd64 linux/arm android/arm64; do
             packages=$(GOOS="${target%/*}" GOARCH="${target#*/}" go -C backend list ./cmd/...)
-            test -z "$packages"
+            unexpected=$(printf '%s\n' "$packages" | grep -Ev '^github.com/Artik-Man/Hestia/cmd/keenetic-' || true)
+            if [ -n "$unexpected" ]; then
+              printf 'Unexpected gateway commands for %s:\n%s\n' "$target" "$unexpected"
+              exit 1
+            fi
           done
       - run: make check
   frontend:

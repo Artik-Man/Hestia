@@ -1,0 +1,119 @@
+npm notice run hestia-panel@0.1.1 test:browser
+npm notice run node --test tests/browser/geo.mjs tests/browser/profile-import.mjs tests/browser/group-create.mjs tests/browser/connection-move.mjs tests/browser/domain-list-save.mjs tests/browser/quality.mjs tests/browser/traffic.mjs tests/browser/dns.mjs && npm run test:browser:dns-api:built
+✔ dragging an exit into an empty group stages a cancellable change until Save (2179.775209ms)
+✔ DNS edits independent lists, rejects stale writes and preserves draft settings (3370.562209ms)
+✔ domain lists persist after reload and compare edits against their original snapshot (5798.441417ms)
+✔ country matrix keeps explicit choices when the default changes (5318.122041ms)
+✔ groups preserve names, show modal and page Toasts, and require confirmation before deletion (2810.536167ms)
+✔ the keyboard menu imports editable WireGuard fields and an ambiguous save cleans up only its own ID (2477.580708ms)
+✖ one dialog creates manually, reopens all stored keys, retains drafts on failure, and confirms deletion (30405.074542ms)
+✔ ordered transports persist and the automatic mode clears all explicit choices (912.578625ms)
+✖ connections retain profiles absent from the snapshot and native exits absent from storage (30286.982ms)
+✖ a legacy direct-connection link opens the Ethernet table (5296.347ms)
+✖ renaming an Ethernet connection updates its row and survives a reload (30287.643958ms)
+✔ selecting a named Ethernet transport saves its routing ID in the VPN profile (552.674417ms)
+✖ manual Wi-Fi setup uses the selected radio, band, SSID and password, and lists only public fields (30276.1435ms)
+✖ Wi-Fi setup cannot be submitted when a gateway has no radio (30279.043ms)
+✔ a failed physical inventory read appears in a PrimeNG error toast (298.965042ms)
+✔ Hysteria 2 imports a YAML and PEM pair, preserves the secret on rename and deletes the profile (1328.877375ms)
+✔ quality page displays all ranked groups, keeps a measured zero, and persists each individual modal action (14250.219125ms)
+✔ traffic journal reaches rows past 500 and refresh preserves its filters (5454.923709ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 12
+ℹ fail 6
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 162740.476417
+
+✖ failing tests:
+
+test at tests/browser/profile-import.mjs:297:1
+✖ one dialog creates manually, reopens all stored keys, retains drafts on failure, and confirms deletion (30405.074542ms)
+  locator.waitFor: Timeout 30000ms exceeded.
+  Call log:
+  [2m  - waiting for getByRole('table').getByRole('row').filter({ has: getByRole('rowheader', { name: 'wan-a', exact: true }) }) to be visible[22m
+  
+      at TestContext.<anonymous> (/Users/artikman/Documents/projects/hestia/frontend/tests/browser/profile-import.mjs:314:18) {
+    name: 'TimeoutError',
+    log: [ "  - waiting for getByRole('table').getByRole('row').filter({ has: getByRole('rowheader', { name: 'wan-a', exact: true }) }) to be visible" ]
+  }
+
+test at tests/browser/profile-import.mjs:552:1
+✖ connections retain profiles absent from the snapshot and native exits absent from storage (30286.982ms)
+  locator.waitFor: Timeout 30000ms exceeded.
+  Call log:
+  [2m  - waiting for getByRole('table').getByRole('row').filter({ has: getByRole('rowheader', { name: 'wan-b', exact: true }) }).getByText('Адаптер отсутствует', { exact: true }) to be visible[22m
+  
+      at TestContext.<anonymous> (/Users/artikman/Documents/projects/hestia/frontend/tests/browser/profile-import.mjs:563:8) {
+    name: 'TimeoutError',
+    log: [ "  - waiting for getByRole('table').getByRole('row').filter({ has: getByRole('rowheader', { name: 'wan-b', exact: true }) }).getByText('Адаптер отсутствует', { exact: true }) to be visible" ]
+  }
+
+test at tests/browser/profile-import.mjs:593:1
+✖ a legacy direct-connection link opens the Ethernet table (5296.347ms)
+  Error: expect(locator).toBeVisible() failed
+  
+  Locator: getByRole('table', { name: 'Ethernet', exact: true }).getByRole('row').filter({ has: getByRole('rowheader', { name: 'wan-a', exact: true }) }).getByRole('button', { name: 'Редактировать подключение wan-a', exact: true })
+  Expected: visible
+  Timeout: 5000ms
+  Error: element(s) not found
+  
+  Call log:
+    - Expect "toBeVisible" getByRole('table', { name: 'Ethernet', exact: true }).getByRole('row').filter({ has: getByRole('rowheader', { name: 'wan-a', exact: true }) }).getByRole('button', { name: 'Редактировать подключение wan-a', exact: true }) with timeout 5000ms
+    - waiting for getByRole('table', { name: 'Ethernet', exact: true }).getByRole('row').filter({ has: getByRole('rowheader', { name: 'wan-a', exact: true }) }).getByRole('button', { name: 'Редактировать подключение wan-a', exact: true })
+  
+      at captureRawStack (/Users/artikman/Documents/projects/hestia/frontend/node_modules/playwright-core/lib/coreBundle.js:8588:17)
+      at callMatcherAsStep (/Users/artikman/Documents/projects/hestia/frontend/node_modules/playwright/lib/matchers/expect.js:13310:57)
+      at Object.toBeVisible (/Users/artikman/Documents/projects/hestia/frontend/node_modules/playwright/lib/matchers/expect.js:13302:23)
+      at TestContext.<anonymous> (/Users/artikman/Documents/projects/hestia/frontend/tests/browser/profile-import.mjs:611:5) {
+    matcherResult: { message: `expect(locator).toBeVisible() failed\n\nLocator: getByRole('table', { name: 'Ethernet', exact: true }).getByRole('row').filter({ has: getByRole('rowheader', { name: 'wan-a', exact: true }) }).getByRole('button', { name: 'Редактировать подключение wan-a', exact: true })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect "toBeVisible" getByRole('table', { name: 'Ethernet', exact: true }).getByRole('row').filter({ has: getByRole('rowheader', { name: 'wan-a', exact: true }) }).getByRole('button', { name: 'Редактировать подключение wan-a', exact: true }) with timeout 5000ms\n  - waiting for getByRole('table', { name: 'Ethernet', exact: true }).getByRole('row').filter({ has: getByRole('rowheader', { name: 'wan-a', exact: true }) }).getByRole('button', { name: 'Редактировать подключение wan-a', exact: true })\n`, pass: false, actual: undefined, name: 'toBeVisible', expected: 'visible', log: [ `  - Expect "toBeVisible" getByRole('table', { name: 'Ethernet', exact: true }).getByRole('row').filter({ has: getByRole('rowheader', { name: 'wan-a', exact: true }) }).getByRole('button', { name: 'Редактировать подключение wan-a', exact: true }) with timeout 5000ms`, "  - waiting for getByRole('table', { name: 'Ethernet', exact: true }).getByRole('row').filter({ has: getByRole('rowheader', { name: 'wan-a', exact: true }) }).getByRole('button', { name: 'Редактировать подключение wan-a', exact: true })" ], timeout: 5000, ariaSnapshot: '- alert:\n  - text: Не удалось обновить список физических подключений.\n  - button "Закрыть"\n- banner: Hestia 0.1.1\n- complementary:\n  - navigation "Основная навигация":\n    - link "Качество связи":\n      - /url: "#/quality"\n    - link "Журнал трафика":\n      - /url: "#/traffic"\n    - link "Подключения":\n      - /url: "#/connections"\n    - link "Группы подключений":\n      - /url: "#/groups"\n    - link "Доменные списки":\n      - /url: "#/domain-lists"\n    - link "Маршруты по странам":\n      - /url: "#/country-map"\n    - link "DNS":\n      - /url: "#/dns"\n  - button "Развернуть меню"\n- main:\n  - heading "Подключения" [level=1]\n  - button "Обновить"\n  - heading "Ethernet" [level=2]\n  - table "Ethernet":\n    - rowgroup:\n      - row "Название подключения Интерфейс Состояние линка Редактировать":\n        - columnheader "Название подключения"\n        - columnheader "Интерфейс"\n        - columnheader "Состояние линка"\n        - columnheader "Редактировать"\n    - rowgroup:\n      - row "Нет данных":\n        - cell "Нет данных"\n  - heading "Wi-Fi" [level=2]\n  - button "Добавить Wi-Fi" [disabled]\n  - table "Wi-Fi":\n    - rowgroup:\n      - row "SSID Адаптер Диапазон Состояние Редактировать Удалить":\n        - columnheader "SSID"\n        - columnheader "Адаптер"\n        - columnheader "Диапазон"\n        - columnheader "Состояние"\n        - columnheader "Редактировать"\n        - columnheader "Удалить"\n    - rowgroup:\n      - row "Нет данных":\n        - cell "Нет данных"\n  - region "Виртуальные подключения":\n    - heading "Виртуальные подключения" [level=2]\n    - button "Обновить состояния"\n    - button "Добавить"\n    - table "Виртуальные подключения":\n      - rowgroup:\n        - row "Название подключения Тип подключения Доступность Подключается через Редактировать Удалить":\n          - columnheader "Название подключения"\n          - columnheader "Тип подключения"\n          - columnheader "Доступность"\n          - columnheader "Подключается через"\n          - columnheader "Редактировать"\n          - columnheader "Удалить"\n      - rowgroup:\n        - row "existing AmneziaWG Доступно Любое интернет-подключение Редактировать профиль existing Удалить подключение existing":\n          - rowheader "existing"\n          - cell "AmneziaWG"\n          - cell "Доступно"\n          - cell "Любое интернет-подключение"\n          - cell "Редактировать профиль existing":\n            - button "Редактировать профиль existing"\n          - cell "Удалить подключение existing":\n            - button "Удалить подключение existing"' }
+  }
+
+test at tests/browser/profile-import.mjs:616:1
+✖ renaming an Ethernet connection updates its row and survives a reload (30287.643958ms)
+  locator.click: Timeout 30000ms exceeded.
+  Call log:
+  [2m  - waiting for getByRole('table', { name: 'Ethernet', exact: true }).getByRole('row').filter({ has: getByRole('cell', { name: 'eth0', exact: true }) }).getByRole('button', { name: 'Редактировать подключение wan-a', exact: true })[22m
+  
+      at TestContext.<anonymous> (/Users/artikman/Documents/projects/hestia/frontend/tests/browser/profile-import.mjs:634:6) {
+    name: 'TimeoutError',
+    log: [ "  - waiting for getByRole('table', { name: 'Ethernet', exact: true }).getByRole('row').filter({ has: getByRole('cell', { name: 'eth0', exact: true }) }).getByRole('button', { name: 'Редактировать подключение wan-a', exact: true })" ]
+  }
+
+test at tests/browser/profile-import.mjs:679:1
+✖ manual Wi-Fi setup uses the selected radio, band, SSID and password, and lists only public fields (30276.1435ms)
+  locator.click: Timeout 30000ms exceeded.
+  Call log:
+  [2m  - waiting for getByRole('button', { name: 'Добавить Wi-Fi', exact: true })[22m
+  [2m    - locator resolved to <button pc19="" disabled pbutton="" type="button" data-pc-name="button" data-pc-section="root" class="save p-button p-component"> Добавить Wi-Fi </button>[22m
+  [2m  - attempting click action[22m
+  [2m    2 × waiting for element to be visible, enabled and stable[22m
+  [2m      - element is not enabled[22m
+  [2m    - retrying click action[22m
+  [2m    - waiting 20ms[22m
+  [2m    2 × waiting for element to be visible, enabled and stable[22m
+  [2m      - element is not enabled[22m
+  [2m    - retrying click action[22m
+  [2m      - waiting 100ms[22m
+  [2m    58 × waiting for element to be visible, enabled and stable[22m
+  [2m       - element is not enabled[22m
+  [2m     - retrying click action[22m
+  [2m       - waiting 500ms[22m
+  
+      at TestContext.<anonymous> (/Users/artikman/Documents/projects/hestia/frontend/tests/browser/profile-import.mjs:692:8) {
+    name: 'TimeoutError',
+    log: [ "  - waiting for getByRole('button', { name: 'Добавить Wi-Fi', exact: true })", '    - locator resolved to <button pc19="" disabled pbutton="" type="button" data-pc-name="button" data-pc-section="root" class="save p-button p-component"> Добавить Wi-Fi </button>', '  - attempting click action', '    2 × waiting for element to be visible, enabled and stable', '      - element is not enabled', '    - retrying click action', '    - waiting 20ms', '    2 × waiting for element to be visible, enabled and stable', '      - element is not enabled', '    - retrying click action', '      - waiting 100ms', '    58 × waiting for element to be visible, enabled and stable', '       - element is not enabled', '     - retrying click action', '       - waiting 500ms' ]
+  }
+
+test at tests/browser/profile-import.mjs:752:1
+✖ Wi-Fi setup cannot be submitted when a gateway has no radio (30279.043ms)
+  locator.waitFor: Timeout 30000ms exceeded.
+  Call log:
+  [2m  - waiting for getByText('Wi-Fi-адаптеры не обнаружены', { exact: true }) to be visible[22m
+  
+      at TestContext.<anonymous> (/Users/artikman/Documents/projects/hestia/frontend/tests/browser/profile-import.mjs:764:8) {
+    name: 'TimeoutError',
+    log: [ "  - waiting for getByText('Wi-Fi-адаптеры не обнаружены', { exact: true }) to be visible" ]
+  }

@@ -123,3 +123,75 @@ LIMA_HOME="$HOME/.lima" /private/tmp/hestia-vm-run/bin/limactl shell hestia-dev 
 Воспроизведение локальной регрессии: `python3 -B -m unittest discover -s scripts/deploy`; общие проверки — `make fmt && make check` с закреплёнными инструментами. Сборка — `make build`; повторное обновление требует отдельного разрешения владельца и выполняется `make deploy-prod BUNDLE=/абсолютный/путь/linux-arm64`. Полный нагрузочный или сетевой прогон на prod не проводился; результат не подтверждает работу физических портов или внешнюю доставку клиентского трафика.
 
 Независимая приёмка установленной версии прошла: хеши трёх бинарников, двух вспомогательных файлов и полного состава панели совпали с комплектом; контроллер, панель и sing-box активны. Исходное отсутствие наблюдателя записано в резервной копии, полный хеш конфигурации не изменился, снимки маршрутов до/после и текущее состояние совпали с учётом допустимого порядка. Панель вернула HTTP 200 с HTML, все 11 GET-проверок API прошли. [Свидетельство независимой проверки](evidence/deploy-prod-20261106-2033/independent-verification.txt).
+
+## Linux-сборка и тестирование на dev 7 ноября 2026 года
+
+Вопрос: собирается ли текущее рабочее дерево для Linux ARM64, проходит ли полный `test-source` и можно ли поставить и проверить комплект на dev? Среда — macOS с Go 1.27.3, Node.js 26.8.2 и закреплёнными `shfmt` 3.11.0 / ShellCheck 0.11.0, существующая Debian ARM64 `hestia-dev` для установки и Linux-проверок. Сборка и установка используют ветку `codex/keenetic-rci-client`, revision `5dd5889e639ba7d923f1ea9545a4ff95f464efa7`; manifest отмечает `dirty=true`, поэтому результаты относятся к фактическим хешам рабочего дерева. Prod, client, Keenetic и управление питанием ВМ не использовались.
+
+`make test-source` завершился с кодом 0. Прошли `make check`, API reproducibility, frontend format/lint, unit и browser-тесты, frontend build и Go race. Browser suite запускается последовательно, чтобы не превышать тайм-аут ожидания ответов при параллельном запуске Chromium. [Полный отчёт test-source](evidence/source-20261107-100515-77493/summary.txt).
+
+Исправлены причины прежних отказов. `physical-inventory` сравнивал ответ без обязательного `carrierState`, хотя поле входит в [согласованный контракт Ethernet-инвентаря](../../docs/features/physical-connections.md); fixture теперь формирует и проверяет состояния `up`, `down` и `unknown`. Browser fixtures также получили это обязательное поле и ожидают текущую подпись UI «Линк не поднят». Временная API-копия теперь включает неигнорируемые untracked-файлы backend, необходимые для компиляции dirty worktree, при этом по-прежнему отклоняет symlink. Для browser suite убран флаки от параллельной нагрузки.
+
+`make build` завершился с кодом 0. Собраны Linux и экспериментальный Keenetic комплекты версии `20261107-100738-5dd5889e639b`; Angular production bundle включён. Linux-комплект установлен на `hestia-dev`, `make deploy-dev` завершился PASS. [Манифест Linux-комплекта](../../dist/artifacts/20261107-100738-5dd5889e639b/linux-arm64/manifest.json), [журнал поставки](evidence/deploy-20261107-100809/deploy-existing.log).
+
+Полный `make test-dev` завершился кодом 0. Прошли начальный снимок, read-only/isolated acceptance, все 13 сетевых сценариев, финальная проверка и сбор журналов. В частности, `physical-inventory` теперь PASS. После теста хеши установленных файлов совпали с комплектом; конфигурация, основные маршруты, policy rules и namespaces сохранены. Сетевые сценарии выполнены только в приватных лабораторных пространствах имён; физические интерфейсы проверялись на виртуальном `eth0`. [Полный отчёт test-dev](evidence/installed-20261107-100824-78943/summary.txt), [сводка всех сценариев](evidence/installed-20261107-100824-78943/installed-isolated-network.log), [финальная проверка](evidence/installed-20261107-100824-78943/installed-final-invariants.log).
+
+Воспроизведение на этой машине:
+
+```sh
+PATH=/tmp/hestia-tools/bin:/tmp/hestia-lab-tests/bin:$PATH \
+GOCACHE=/tmp/hestia-go-cache \
+SHFMT=/tmp/hestia-tools/bin/shfmt \
+SHELLCHECK=/tmp/hestia-tools/bin/shellcheck \
+python3 scripts/test-source/run.py
+GOCACHE=/tmp/hestia-go-cache make build
+GOCACHE=/tmp/hestia-go-cache make deploy-dev \
+  BUNDLE=/Users/artikman/Documents/projects/hestia/dist/artifacts/20261107-100738-5dd5889e639b/linux-arm64
+GOCACHE=/tmp/hestia-go-cache make test-dev
+```
+
+## Обновление prod и сверка с Keenetic — 7 ноября 2026 года
+
+**Вопрос и ожидание.** Product Owner попросил собрать актуальный коммит и установить его на рабочую `hestia-prod`, затем сравнить развёрнутую версию с KN-1012. Ожидалось обновить приложения без изменения профиля и основных маршрутов; после установки службы и панель должны оставаться доступны.
+
+**Среда и версия.** Ветка `codex/keenetic-rci-client-prod`, коммит `0a84238` (`fix(keenetic): restore panel connection inventory`). Целевой prod — ARM64 Lima `hestia-prod`, IP `192.168.1.133`; сравнение — физический Keenetic Giga KN-1012. Применён штатный `bash deploy/stage1-awg-update.sh` без `--fresh`.
+
+**Результат установки.** Сборка и применение завершились успешно. Штатный сценарий сверил маршруты default до/после. Резервная копия заменённых файлов и состояния создана в `/var/backups/hestia-stage1-awg-20261107T124112Z`. WG, sing-box, Hestia и панель активны; панель и `/api/groups-and-rules` отвечают HTTP 200. Повторная компиляция Linux ARM64 из `0a84238` дала те же SHA-256, что и установленные `hestia` и `hestia-panel`.
+
+**Сверка с Keenetic.** Метаданные `opkg` на KN-1012 показывают `20261107-123735-f9fea441ebfd`, однако обе установленные Keenetic-tagged Go-службы побайтно совпадают с повторной сборкой из актуального `0a84238`. Сверка всего frontend asset tree показала совпадение 20 файлов по SHA-256, включая DNS lazy chunk; в пакете Keenetic дополнительно есть `3rdpartylicenses.txt`. Таким образом, исполняемый код и пользовательские страницы совпадают, хотя Linux/keenetic Go-бинарники закономерно различаются по хешам и package version label Keenetic старше. Состав конфигурации неодинаков: prod возвращает две группы, два списка и по три выхода в каждой; KN-1012 — пустую `default`-группу без exits/lists. `/api/physical-connections` на prod отвечает 503 (адаптер физического управления там недоступен), а на Keenetic отвечает 200 с двумя kernel-интерфейсами и пятью RCI-портами.
+
+**Границы.** Проверены поставка приложения, службы, панель, read-only API, побайтное соответствие пересборке и сохранность default routes. Сетевой dataplane, VPN-связность, DNS и клиентский трафик в этом прогоне не испытывались; маршрутизатор и его настройки не менялись. Подробные хеши и ответы API: [свидетельство сверки](evidence/prod-compare-20261107-124112/check.txt).
+
+**Воспроизведение.** Из корня репозитория на ветке с коммитом `0a84238` выполнить `LIMA_HOME=/private/tmp/hestia-vm-run/lima-state LIMACTL=/private/tmp/hestia-vm-run/bin/limactl bash deploy/stage1-awg-update.sh`. Скрипт сам проверяет имя и IP целевой ВМ, состояние служб, контрольные суммы конфигурации и маршруты, затем проверяет HTTP панели. Хеши повторной сборки сравнивались командами `GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -trimpath -buildvcs=false` и, для Keenetic-варианта, теми же параметрами с `-tags keenetic`.
+
+## Поставка VPN API на prod — 7 ноября 2026 года
+
+**Вопрос.** Product Owner запросил установить текущую поддержку VPN-профилей на prod и Keenetic. Проверялись Linux-prod поставка и готовность Keenetic IPK из одного коммита.
+
+**Среда и версия.** `codex/panel-platform-version`, коммит `2bf46144bcb4b06bc65eed809839cfad0ce282f3`; clean build `20261107-225942-2bf46144bcb4`. Linux target — `hestia-prod` ARM64, `192.168.1.133:8080`; router target — KN-1012 `192.168.1.1`.
+
+**Результат.** `bash deploy/stage1-awg-update.sh` завершился с кодом 0; резервная копия создана в `/var/backups/hestia-stage1-awg-20261107T200054Z`. Хеши установленных `hestia` и `hestia-panel` совпали с clean Linux bundle. Все три systemd-службы активны; панельный unit слушает частный адрес и включает `-enable-hysteria2`. `/api/groups-and-rules`, `/api/awg`, `/api/hysteria2` и `/api/physical-connections` вернули HTTP 200. Штатный сценарий подтвердил неизменность managed-конфигурации и default routes.
+
+Keenetic IPK собран и установлен: `hestia_20261107-225942-2bf46144bcb4_aarch64-3.10.ipk`, SHA-256 `185712644fd6d7910f65452dfb3190e6d69a11941f500e1885628aab4dfd9b00`. Сначала SSH на стандартном порту потребовал пароль; затем найденный в документации Entware SSH endpoint с ключом на TCP 222 сработал. `opkg` обновил пакет, preflight успешно прочитал и проверил RCI identity, readiness supervisor прошла, LAN GET endpoints ответили HTTP 200, а хеши default IPv4/IPv6 routes совпали до и после. Конфигурация и предыдущий IPK сохранены в root-only каталоге `/opt/tmp/hestia-upgrade-20261107-225942-2bf46144bcb4/` для ручного восстановления.
+
+**Границы.** На prod проверены службы, API, бинарные хеши, конфигурация и default routes. На KN-1012 проверены package lifecycle, RCI preflight, readiness, GET API и совпадение default route hashes. Реальное создание/изменение VPN-профиля, интернет-путь клиентского трафика и VPN dataplane этим обновлением не проверялись. Панель не имеет авторизации, поэтому порт `8080` должен оставаться доступен только из доверенной LAN. [Prod свидетельство](evidence/prod-deploy-20261107-225942/check.txt) и [Keenetic свидетельство](../keenetic-ipk-packaging/evidence/install-20261107-225942/check.txt).
+
+## Поставка проверенного комплекта на prod 7 ноября 2026 года
+
+По прямому поручению владельца версия `20261107-100738-5dd5889e639b` (`linux-arm64`) поставлена на существующую `hestia-prod`. Этот же комплект до поставки прошёл полный `test-source`, был установлен на `hestia-dev` и прошёл там все 13 сетевых сценариев и финальную проверку сохранности. Manifest содержит `dirty=true`; хеши комплекта описывают фактическое рабочее дерево.
+
+`make deploy-prod BUNDLE=dist/artifacts/20261107-100738-5dd5889e639b/linux-arm64` завершился PASS. Штатная проверка обновления подтвердила `sing-box 1.14.4`, сохранение конфигурации и основных маршрутов. Резервная копия: `/var/backups/hestia-deploy.S7lFNT57`. Управление питанием, Keenetic и отдельный полный `test-prod` в рамках поставки не выполнялись. [Журнал обновления](evidence/deploy-20261107-102358/deploy-existing.log), [сводка операции](evidence/deploy-20261107-102358/summary.txt).
+
+## Ошибка инвентаря подключений на prod — 7 ноября 2026 года
+
+**Вопрос и ожидание.** После обновления владелец сообщил об ошибке «Не удалось обновить список физических подключений» и пропаже интернет-маршрутизации через Hestia. Ожидалось восстановить Linux-инвентарь без изменения настроек подключений и основных маршрутов.
+
+**Среда и версия.** Рабочая Linux ARM64 Lima `hestia-prod`, `192.168.1.133`. Установлен комплект текущей ветки `20261107-160847-bb7c3856ca40`, revision `bb7c3856ca4007d062a134eb67d6e952c632fb8e`; manifest содержит `dirty=true` и хеши фактического дерева.
+
+**Причина и исправление.** `/api/physical-connections` возвращал 503, потому что Linux unit не передавал `-enable-physical` после выделения read-only инвентаризации в отдельный gate. Сам Linux helper `-physical-list` исправно возвращал два интерфейса. Флаг добавлен в `deploy/systemd/hestia-panel.service.in` и применён на prod с резервной копией unit. После рестарта API вернул HTTP 200 и два интерфейса с `carrierState=up`; панель и все четыре службы активны. Сборка и обновление штатным `make deploy-prod` завершились PASS, сохранили конфигурацию и основные маршруты ([журнал](evidence/deploy-20261107-160923/deploy-existing.log), [результат](evidence/deploy-20261107-160923/results.json)). Этот updater сохраняет существующие systemd unit, поэтому для немедленного ремонта unit применён отдельно; подробности и команды — в [свидетельстве](evidence/incident-20261107-physical-connections/check.txt).
+
+**Границы.** До изменения data plane WireGuard handshake был свежим, выбранные выходы отмечались доступными, а quality checks показывали 83–96% успеха. Эти наблюдения не подтверждают доставку пользовательского трафика. Лабораторная `hestia-client` использует прямой шлюз `192.168.1.1`, не путь через prod; жалобу на клиентский интернет воспроизвести не удалось. Keenetic не менялся. Поэтому исправлена ошибка физического списка, но сквозное восстановление интернета через Hestia не подтверждено и требует трафика, фактически направленного через prod.
+
+## Неполная source-проверка рабочей ветки — 9 ноября 2026 года
+
+`make test-source` запустился на текущем рабочем дереве, но завершился на обязательной проверке зависимостей до запуска фаз: на хосте отсутствует ShellCheck. Свидетельство содержит `dirty=true` и список source hashes: [source-20261109-124619-90290](evidence/source-20261109-124619-90290/). Для целевой сборки и установленного Keenetic IPK выполнили отдельные доступные build, workflow, профильные, frontend и Go-проверки; их результаты и ограничение preflight записаны в [отчёте KN-1012](../keenetic-ipk-packaging/README.md#обновление-hestia-на-kn-1012--9-ноября-2026-года).

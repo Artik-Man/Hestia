@@ -24,14 +24,18 @@ func TestApplyPreservesArguments(t *testing.T) {
 		{RenameGroup, []string{"--rename-group", "source", "stage", "id", "name"}},
 		{DeleteGroup, []string{"--delete-group", "source", "stage", "id"}},
 		{Compile, []string{"stage/profile.json", "stage", "stage", "source"}},
+		{KeeneticIngress, []string{"--keenetic-ingress", "source", "stage", "disable"}},
 	}
 	for _, c := range cases {
 		r := Request{Operation: c.op, Source: "source", Stage: "stage", ID: "id", Target: "target", Name: "name", ExpectedGroup: "old", Priority: 4, PreserveWireguard: true}
 		called := false
 		adapter := Installed{Run: func(_ context.Context, name string, args ...string) error {
 			called = true
-			expected := append([]string{"-I", "/usr/local/lib/hestia/profile.py"}, c.args...)
-			if name != "/usr/bin/python3" || !reflect.DeepEqual(args, expected) {
+			expected := append([]string{"-I", Compiler}, c.args...)
+			if c.op == Compile || c.op == KeeneticIngress {
+				expected = appendPlatformCompileFlag(expected)
+			}
+			if name != Python || !reflect.DeepEqual(args, expected) {
 				t.Fatalf("operation %d got %s %v", c.op, name, args)
 			}
 			return nil
@@ -47,6 +51,26 @@ func TestInvalidOperationCannotExecute(t *testing.T) {
 	adapter := Installed{Run: func(context.Context, string, ...string) error { t.Fatal("unexpected execution"); return nil }}
 	if adapter.Apply(context.Background(), Request{}) == nil {
 		t.Fatal("unknown operation accepted")
+	}
+}
+
+// TestKeeneticIngressActionSelectsEnableOrDisable checks the platform compiler receives the requested migration direction.
+func TestKeeneticIngressActionSelectsEnableOrDisable(t *testing.T) {
+	for _, enabled := range []bool{false, true} {
+		adapter := Installed{Run: func(_ context.Context, _ string, args ...string) error {
+			action := "disable"
+			if enabled {
+				action = "enable"
+			}
+			expected := append([]string{"-I", Compiler, "--keenetic-ingress", "source", "stage", action}, appendPlatformCompileFlag(nil)...)
+			if !reflect.DeepEqual(args, expected) {
+				t.Fatalf("unexpected ingress compiler arguments: %v", args)
+			}
+			return nil
+		}}
+		if err := adapter.Apply(context.Background(), Request{Operation: KeeneticIngress, Source: "source", Stage: "stage", Enabled: enabled}); err != nil {
+			t.Fatalf("enabled=%t: %v", enabled, err)
+		}
 	}
 }
 

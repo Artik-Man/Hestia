@@ -10,6 +10,7 @@ import json
 import os
 import re
 import stat
+import subprocess
 import sys
 import unicodedata
 from pathlib import Path
@@ -226,7 +227,7 @@ def compile_inbound(item: dict) -> dict:
         identifier(item["tag"])
         require(
             isinstance(item["interface_name"], str)
-            and re.fullmatch(r"[A-Za-z0-9_.-]{1,15}", item["interface_name"]),
+            and re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_.-]{0,14}", item["interface_name"]),
             "invalid TUN interface name",
         )
         require(
@@ -477,14 +478,30 @@ def export_paths(backend: dict, directory: Path, source: os.stat_result | None =
     os.replace(stream.name, directory / "paths.json")
 
 
-GEOIP_DIRECTORY = Path("/usr/share/hestia/geoip")
-GEOIP_OVERRIDES = Path("/var/lib/hestia-geoip-overrides")
+def geoip_directories(script_path: Path = Path(__file__)) -> tuple[Path, Path]:
+    """Resolve immutable GeoIP data and writable override paths for the installed platform layout."""
+    if script_path.resolve().parents[2] == Path("/opt"):
+        return Path("/opt/share/hestia/geoip"), Path("/opt/var/lib/hestia-geoip-overrides")
+    return Path("/usr/share/hestia/geoip"), Path("/var/lib/hestia-geoip-overrides")
+
+
+GEOIP_DIRECTORY, GEOIP_OVERRIDES = geoip_directories()
+GEOIP_BINARY = GEOIP_DIRECTORY == Path("/opt/share/hestia/geoip")
+KEENETIC_INGRESS_INBOUND = {
+    "type": "tun",
+    "tag": "hestia-keenetic-ingress",
+    "interface_name": "opkgtun0",
+    "address": ["172.31.250.2/30"],
+    "mtu": 1500,
+    "auto_route": False,
+    "stack": "gvisor",
+}
 
 
 def client_route(
     profile: dict, final: str, domain_rules: list[dict], pinned: list[dict]
 ) -> dict:
-    """Build ordered client rules after private listener pins, defaulting unknown IPs to the first group."""
+    """Build pinned, OpkgTun-to-AmneziaWG, domain and default routes in precedence order."""
     rules = list(pinned)
     inbound_tags = [
         item["tag"]
@@ -493,6 +510,19 @@ def client_route(
     ]
     if inbound_tags and domain_rules:
         rules.append({"inbound": inbound_tags, "action": "sniff", "timeout": "300ms"})
+    ingress_group = keenetic_ingress_group(profile)
+    if ingress_group is not None:
+        rules.append({
+            "inbound": [KEENETIC_INGRESS_INBOUND["tag"]],
+            "action": "route",
+            "outbound": ingress_group,
+        })
+    elif any(item.get("tag") == KEENETIC_INGRESS_INBOUND["tag"] for item in profile.get("inbounds", [])):
+        rules.append({
+            "inbound": [KEENETIC_INGRESS_INBOUND["tag"]],
+            "action": "route",
+            "outbound": "deny",
+        })
     rules.extend(domain_rules)
     route = {"final": final}
     policy = profile.get("countryMap")
@@ -537,12 +567,13 @@ def client_route(
                     if prefix == "geoip" and group == final:
                         continue
                     tag = prefix + "-" + code
+                    binary = prefix == "geoip" and GEOIP_BINARY
                     local_sets.append(
                         {
                             "type": "local",
                             "tag": tag,
-                            "format": "source",
-                            "path": str(directory / (code + ".json")),
+                            "format": "binary" if binary else "source",
+                            "path": str(directory / (code + (".srs" if binary else ".json"))),
                         }
                     )
                     by_group.setdefault(group, []).append(tag)
@@ -554,6 +585,98 @@ def client_route(
     if rules:
         route["rules"] = rules
     return route
+
+
+def normalize_stale_ingress_route(
+    actual: dict, expected: dict, groups: list[dict]
+) -> None:
+    """Normalize one exact stale Keenetic ingress target before a managed transaction."""
+    actual_rules = actual.get("rules", [])
+    expected_rules = expected.get("rules", [])
+    if (
+        not isinstance(actual_rules, list)
+        or not isinstance(expected_rules, list)
+        or len(actual_rules) != len(expected_rules)
+    ):
+        return
+    differences = [
+        index
+        for index, (current, wanted) in enumerate(zip(actual_rules, expected_rules))
+        if current != wanted
+    ]
+    if len(differences) != 1:
+        return
+    index = differences[0]
+    wanted = expected_rules[index]
+    current = actual_rules[index]
+    ingress_route = {
+        "inbound": [KEENETIC_INGRESS_INBOUND["tag"]],
+        "action": "route",
+    }
+    if (
+        not isinstance(wanted, dict)
+        or {key: wanted.get(key) for key in ingress_route} != ingress_route
+        or set(wanted) != {*ingress_route, "outbound"}
+        or not isinstance(current, dict)
+        or current.get("inbound") != wanted["inbound"]
+        or current.get("action") != wanted["action"]
+        or set(current) != {*ingress_route, "outbound"}
+    ):
+        return
+
+    wanted_outbound = wanted["outbound"]
+    current_outbound = current["outbound"]
+    stale_to_empty_group = (
+        wanted_outbound == "deny"
+        and any(
+            group["id"] == current_outbound and not group["exits"]
+            for group in groups
+        )
+    )
+    stale_deny = wanted_outbound != "deny" and current_outbound == "deny"
+    if stale_to_empty_group or stale_deny:
+        actual_rules[index] = wanted
+
+
+def keenetic_ingress_group(profile: dict) -> str | None:
+    """Resolve the unique AWG-anchored VPN group without recursive OpkgTun transports."""
+    if not any(
+        item.get("type") == "tun" and item.get("tag") == KEENETIC_INGRESS_INBOUND["tag"]
+        for item in profile.get("inbounds", [])
+    ):
+        return None
+    connectors = {
+        item["id"]: item
+        for item in profile.get("connectors", [])
+        if item.get("type") == "amneziawg" and item.get("status") == "ready"
+    }
+    hysteria2 = {item["id"]: item for item in profile.get("hysteria2", [])}
+    allowed_exits = {*connectors, *hysteria2}
+    transports = {
+        item["id"]: item.get("underlays", [item.get("underlay")] if item.get("underlay") else [])
+        for item in [*profile.get("connectors", []), *profile.get("hysteria2", [])]
+    }
+
+    def depends_on_opkgtun(identifier: str, visited: set[str]) -> bool:
+        """Detect direct or transitive OpkgTun transport dependencies that would recurse through ingress."""
+        if identifier == "keenetic-opkgtun":
+            return True
+        if identifier in visited:
+            return False
+        visited.add(identifier)
+        return any(depends_on_opkgtun(item, visited) for item in transports.get(identifier, []))
+
+    candidates = [
+        group
+        for group in profile.get("groups", [])
+        if group.get("exits")
+        and any(member in connectors for member in group["exits"])
+        and group.get("defaultExit", "deny") in {"deny", *group["exits"]}
+        and all(member in allowed_exits for member in group["exits"])
+        and all(not depends_on_opkgtun(member, set()) for member in group["exits"])
+    ]
+    require(len(candidates) <= 1, "Keenetic ingress requires at most one safe AWG-anchored VPN group")
+    return candidates[0]["id"] if candidates else None
 
 
 def replace_domain_routes(
@@ -700,7 +823,7 @@ def compile_profile(profile: dict, directory: Path, committed: dict | None = Non
             tag = identifier(interface["id"])
             require(
                 isinstance(interface["bind_interface"], str)
-                and re.fullmatch(r"[A-Za-z0-9_.-]{1,15}", interface["bind_interface"]),
+                and re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_.-]{0,14}", interface["bind_interface"]),
                 "invalid direct interface binding",
             )
             endpoint, server = None, None
@@ -780,7 +903,29 @@ def compile_profile(profile: dict, directory: Path, committed: dict | None = Non
             )
             assigned.add(member)
         outbounds.append(selector(group, default_exit))
-    require(assigned == exits, "each interface must belong to one group")
+    opkgtun_interfaces = [
+        item for item in profile["interfaces"] if item["id"] == "keenetic-opkgtun"
+    ]
+    require(
+        not opkgtun_interfaces
+        or opkgtun_interfaces == [{"id": "keenetic-opkgtun", "type": "direct", "bind_interface": "opkgtun0"}],
+        "invalid managed OpkgTun interface",
+    )
+    opkgtun_inbounds = [
+        item for item in profile.get("inbounds", [])
+        if item.get("tag") == KEENETIC_INGRESS_INBOUND["tag"]
+    ]
+    require(
+        not opkgtun_interfaces or opkgtun_inbounds == [KEENETIC_INGRESS_INBOUND],
+        "OpkgTun underlay requires its exact managed inbound",
+    )
+    require(
+        not opkgtun_inbounds or opkgtun_inbounds == [KEENETIC_INGRESS_INBOUND],
+        "invalid managed OpkgTun inbound",
+    )
+    opkgtun_interface_ids = {item["id"] for item in opkgtun_interfaces}
+    require(not (assigned & opkgtun_interface_ids), "OpkgTun underlay cannot be a group exit")
+    require(assigned == exits - opkgtun_interface_ids, "each interface must belong to one group")
     require(
         isinstance(health, dict)
         and all(k in exits and type(v) is bool for k, v in health.items()),
@@ -949,6 +1094,7 @@ def managed_profile(base: Path) -> tuple[dict, dict, dict]:
             previous_route["rules"] = previous_rules
         if backend["route"] == previous_route:
             backend["route"] = expected_route
+    normalize_stale_ingress_route(backend["route"], expected_route, groups)
     require(
         backend["route"]
         == expected_route,
@@ -1021,6 +1167,94 @@ def stage_generation(stage: Path, profile: dict, snapshot: dict, backend: dict) 
             )
 
 
+def stage_keenetic_ingress(base: Path, stage: Path, enabled: bool) -> None:
+    """Stage the OpkgTun input and missing default-group output while preserving existing routes and VPN data."""
+    profile, snapshot, backend = managed_profile(base)
+    inbounds = profile.get("inbounds")
+    if enabled:
+        if profile["version"] == 1 or inbounds is None:
+            socks_port = profile.pop("socks_port", None)
+            profile["version"] = 2
+            profile.setdefault("connectors", [])
+            profile["inbounds"] = []
+            if socks_port is not None:
+                profile["inbounds"].append(
+                    {"type": "socks", "tag": "hestia-local-socks", "listen": "127.0.0.1", "listen_port": socks_port}
+                )
+            for group in profile["groups"]:
+                group.setdefault("defaultExit", "deny")
+            inbounds = profile["inbounds"]
+        ensure_keenetic_default_output(profile, keenetic_default_route_device())
+        matches = [item for item in inbounds if item.get("tag") == KEENETIC_INGRESS_INBOUND["tag"]]
+        require(not matches or matches == [KEENETIC_INGRESS_INBOUND], "Keenetic ingress tag is already in use")
+        if not matches:
+            inbounds.append(dict(KEENETIC_INGRESS_INBOUND))
+    else:
+        opkgtun_underlay_users = [
+            item["id"]
+            for item in [*profile.get("connectors", []), *profile.get("hysteria2", [])]
+            if "keenetic-opkgtun" in item.get("underlays", [item.get("underlay")] if item.get("underlay") else [])
+        ]
+        require(not opkgtun_underlay_users, "cannot disable OpkgTun while a VPN connection uses it as underlay")
+        require(
+            not any("keenetic-opkgtun" in group.get("exits", []) for group in profile["groups"]),
+            "OpkgTun underlay cannot be a group exit",
+        )
+        profile["interfaces"] = [
+            item for item in profile["interfaces"] if item.get("id") != "keenetic-opkgtun"
+        ]
+        if inbounds is None:
+            stage_generation(stage, profile, snapshot, backend)
+            return
+        matches = [item for item in inbounds if item.get("tag") == KEENETIC_INGRESS_INBOUND["tag"]]
+        require(not matches or matches == [KEENETIC_INGRESS_INBOUND], "Keenetic ingress inbound identity differs")
+        if matches:
+            profile["inbounds"] = [item for item in inbounds if item.get("tag") != KEENETIC_INGRESS_INBOUND["tag"]]
+    candidate_snapshot, candidate_backend = compile_profile(profile, base, backend)
+    stage_generation(stage, profile, candidate_snapshot, candidate_backend)
+
+
+def keenetic_interface_extension(previous: list[dict], candidate: list[dict], device: str) -> bool:
+    """Allow connector transactions to add only the managed current Keenetic uplink interface."""
+    if previous == candidate:
+        return True
+    if len(candidate) != len(previous) + 1 or candidate[:-1] != previous:
+        return False
+    return candidate[-1] == {"id": "keenetic-uplink", "type": "direct", "bind_interface": device}
+
+
+def keenetic_default_route_device() -> str:
+    """Return one verified default-route device on Keenetic, rejecting ambiguous or unavailable routing."""
+    try:
+        result = subprocess.run(
+            ["/opt/sbin/ip", "-4", "route", "show", "default"],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=2,
+        )
+    except (OSError, subprocess.SubprocessError):
+        raise ValueError("cannot verify Keenetic default route") from None
+    best_device, best_metric = "", None
+    ambiguous = False
+    for line in result.stdout.splitlines():
+        if not line.startswith("default "):
+            continue
+        devices = re.findall(r"(?:^|\s)dev\s+([A-Za-z0-9_][A-Za-z0-9_.-]{0,14})(?=\s|$)", line)
+        metric = re.search(r"(?:^|\s)metric\s+(\d+)(?:\s|$)", line)
+        if len(devices) != 1:
+            if devices:
+                ambiguous = True
+            continue
+        route_metric = int(metric.group(1)) if metric is not None else 0
+        if best_metric is None or route_metric < best_metric:
+            best_device, best_metric, ambiguous = devices[0], route_metric, False
+        elif route_metric == best_metric and devices[0] != best_device:
+            ambiguous = True
+    require(best_device and not ambiguous, "cannot verify one Keenetic default route device")
+    return best_device
+
+
 def stage_list_routes(stage: Path, profile: dict, snapshot: dict, backend: dict) -> None:
     """Compile current list bindings and write a complete generation, omitting empty sing-box rule tables."""
     groups = profile["groups"]
@@ -1028,6 +1262,27 @@ def stage_list_routes(stage: Path, profile: dict, snapshot: dict, backend: dict)
     replace_domain_routes(backend, profile, groups[0]["id"], rules)
     snapshot["lists"] = profile["lists"]
     stage_generation(stage, profile, snapshot, backend)
+
+
+def ensure_keenetic_default_output(profile: dict, device: str) -> None:
+    """Install the verified Keenetic WAN as a default-group output without changing the selected default exit."""
+    require(device and len(device) <= 15, "invalid Keenetic WAN device")
+    groups = profile.get("groups")
+    interfaces = profile.get("interfaces")
+    require(isinstance(groups, list) and groups, "Keenetic profile has no default group")
+    require(isinstance(interfaces, list), "Keenetic profile has no interface catalog")
+    current = [item for item in interfaces if item.get("id") == "keenetic-uplink"]
+    expected = {"id": "keenetic-uplink", "type": "direct", "bind_interface": device}
+    require(not current or current == [expected], "managed Keenetic output identity differs")
+    if not current:
+        interfaces.append(expected)
+    owners = [group for group in groups if "keenetic-uplink" in group.get("exits", [])]
+    require(len(owners) <= 1, "Keenetic output is assigned to multiple groups")
+    if not owners:
+        default_group = groups[0]
+        exits = default_group.get("exits")
+        require(isinstance(exits, list), "default group exits are invalid")
+        exits.append("keenetic-uplink")
 
 
 def stage_domain_list(base: Path, stage: Path, list_id: str, values: dict) -> None:
@@ -1179,15 +1434,54 @@ def stage_move_exit(base: Path, stage: Path, exit_id: str, expected_group: str, 
         outbounds[outbounds.index(old_selector)] = selector(group, group.get("defaultExit", "deny"))
     synchronize_connector_assignments(profile, groups, stage)
     snapshot["groups"] = [snapshot_group(group) for group in groups]
+    rules = domain_routes(
+        profile["lists"], {group["id"]: index for index, group in enumerate(groups)}
+    )
+    replace_domain_routes(backend, profile, groups[0]["id"], rules)
     stage_generation(stage, profile, snapshot, backend)
 
 
-def stage_order(base: Path, stage: Path, groups: list[dict]) -> None:
-    """Apply complete group and exit placement to selector order, tie-breaking rules and the default route."""
+def stage_order(
+    base: Path, stage: Path, groups: list[dict], uplink_device: str = "", keenetic: bool = False
+) -> None:
+    """Apply group placement and optionally add one RCI-verified Keenetic uplink without changing its default exit."""
     profile, snapshot, backend = managed_profile(base)
     old = profile["groups"]
     members = {group["id"] for group in old}
     exits = {exit_id for group in old for exit_id in group["exits"]}
+    platform_id = "keenetic-uplink" if keenetic and uplink_device else ""
+    added_platform_exit = False
+    if uplink_device:
+        require(
+            keenetic
+            and platform_id
+            and re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_.-]{0,14}", uplink_device)
+            and keenetic_default_route_device() == uplink_device,
+            "Keenetic uplink changed during group update",
+        )
+        require(
+            all(item["id"] != platform_id for item in profile["interfaces"])
+            and platform_id not in exits,
+            "Keenetic uplink already exists in the profile",
+        )
+        profile["interfaces"].append(
+            {"id": platform_id, "type": "direct", "bind_interface": uplink_device}
+        )
+        profile["healthy"][platform_id] = True
+        snapshot["healthy"][platform_id] = True
+        exits.add(platform_id)
+        added_platform_exit = True
+    elif not keenetic and any(
+        "keenetic-direct" in group.get("exits", []) for group in groups
+    ) and "keenetic-direct" not in exits:
+        direct = [item for item in profile["interfaces"] if item.get("id") == "keenetic-direct"]
+        require(
+            direct and all(item.get("type") == "direct" for item in direct),
+            "Linux direct output is not configured",
+        )
+        platform_id = "keenetic-direct"
+        exits.add(platform_id)
+        added_platform_exit = True
     require(
         isinstance(groups, list) and len(groups) == len(old), "incomplete group order"
     )
@@ -1201,13 +1495,18 @@ def stage_order(base: Path, stage: Path, groups: list[dict]) -> None:
         members.remove(group_id)
         for exit_id in group["exits"]:
             require(connection_id(exit_id) in exits, "unknown or repeated exit")
-            exits.remove(exit_id)
+            if exit_id == platform_id and added_platform_exit:
+                added_platform_exit = False
+                exits.remove(exit_id)
+            else:
+                exits.remove(exit_id)
     require(not exits, "missing exit")
     desired_groups = []
     for group in groups:
         previous = next(item for item in old if item["id"] == group["id"])
         default = previous.get("defaultExit", "deny")
-        if (default != "deny" and default not in group["exits"]) or not previous["exits"]:
+        only_new_platform_exit = platform_id and platform_id in group["exits"] and not previous["exits"]
+        if (default != "deny" and default not in group["exits"]) or (not previous["exits"] and not only_new_platform_exit):
             default = group["exits"][0] if "inbounds" in profile and group["exits"] else "deny"
         desired = dict(previous, exits=group["exits"])
         if "inbounds" in profile:
@@ -1223,17 +1522,24 @@ def stage_order(base: Path, stage: Path, groups: list[dict]) -> None:
         for item in profile["interfaces"]
         if item["type"] == "direct"
     ]
+    previous_direct_routes = [
+        {"type": "direct", "tag": item["id"], "bind_interface": item["bind_interface"]}
+        for item in profile["interfaces"]
+        if item["type"] == "direct" and item["id"] != platform_id
+    ]
     if UNDERLAY_DNS in backend.get("dns", {}).get("servers", []):
         for outbound in direct_routes:
+            outbound["domain_resolver"] = UNDERLAY_DNS["tag"]
+        for outbound in previous_direct_routes:
             outbound["domain_resolver"] = UNDERLAY_DNS["tag"]
     connector_routes, _ = connector_outbounds(profile.get("connectors", []), base)
     connector_routes.extend(hysteria_outbounds(profile))
     require(
         backend["outbounds"]
         == (
-            [*(selector(g, g.get("defaultExit", "deny")) for g in old), *direct_routes, *connector_routes, deny]
-            if "inbounds" in profile and direct_routes
-            else [deny, *(selector(g, g.get("defaultExit", "deny")) for g in old), *direct_routes, *connector_routes]
+            [*(selector(g, g.get("defaultExit", "deny")) for g in old), *previous_direct_routes, *connector_routes, deny]
+            if "inbounds" in profile and previous_direct_routes
+            else [deny, *(selector(g, g.get("defaultExit", "deny")) for g in old), *previous_direct_routes, *connector_routes]
         ),
         "unexpected selector topology",
     )
@@ -1254,6 +1560,9 @@ def stage_order(base: Path, stage: Path, groups: list[dict]) -> None:
 
 def main() -> None:
     """Write both validated configurations to new files inside the private staging directory."""
+    keenetic_compile = len(sys.argv) >= 2 and sys.argv[-1] == "--keenetic"
+    if keenetic_compile:
+        sys.argv.pop()
     if len(sys.argv) == 4 and sys.argv[1] in {"--quality-paths", "--dns-paths"}:
         with Path(sys.argv[2]).open("rb") as stream:
             source = os.fstat(stream.fileno()) if sys.argv[1] == "--dns-paths" else None
@@ -1289,6 +1598,11 @@ def main() -> None:
     if len(sys.argv) == 3 and sys.argv[1] == "--validate-managed":
         managed_profile(Path(sys.argv[2]))
         return
+    if len(sys.argv) == 5 and sys.argv[1] == "--keenetic-ingress":
+        require(keenetic_compile, "Keenetic ingress changes require the Keenetic platform build")
+        require(sys.argv[4] in {"enable", "disable"}, "invalid Keenetic ingress action")
+        stage_keenetic_ingress(Path(sys.argv[2]), Path(sys.argv[3]), sys.argv[4] == "enable")
+        return
     if len(sys.argv) == 4 and sys.argv[1] == "--country-map":
         base, stage = Path(sys.argv[2]), Path(sys.argv[3])
         profile, snapshot, backend = managed_profile(base)
@@ -1319,20 +1633,35 @@ def main() -> None:
     if len(sys.argv) == 8 and sys.argv[1] == "--move-exit":
         stage_move_exit(Path(sys.argv[2]), Path(sys.argv[3]), *sys.argv[4:7], int(sys.argv[7]))
         return
-    if len(sys.argv) == 4 and sys.argv[1] == "--reorder":
+    if len(sys.argv) in (4, 5) and sys.argv[1] == "--reorder":
         stage = Path(sys.argv[3])
         groups = json.loads(
             (stage / "desired-order.json").read_bytes(), object_pairs_hook=unique
         )
-        stage_order(Path(sys.argv[2]), stage, groups)
+        stage_order(Path(sys.argv[2]), stage, groups, sys.argv[4] if len(sys.argv) == 5 else "", keenetic_compile)
         return
     profile, destination = map(Path, sys.argv[1:3])
     directory = Path(sys.argv[3]) if len(sys.argv) >= 4 else profile.parent
     candidate = json.loads(profile.read_text(), object_pairs_hook=unique)
+    if keenetic_compile and any(
+        "keenetic-uplink" in (connector.get("underlays") or [])
+        for connector in candidate.get("connectors", [])
+    ):
+        active_device = keenetic_default_route_device()
+        require(
+            any(item.get("id") == "keenetic-uplink" and item.get("bind_interface") == active_device for item in candidate.get("interfaces", [])),
+            "Keenetic uplink changed during connector update",
+        )
+    else:
+        active_device = ""
     committed = None
     if len(sys.argv) == 5:
         prior_profile, _, committed = managed_profile(Path(sys.argv[4]))
-        require(prior_profile["interfaces"] == candidate["interfaces"], "native interface change in connector transaction")
+        unchanged = prior_profile["interfaces"] == candidate["interfaces"]
+        managed_uplink = keenetic_compile and keenetic_interface_extension(
+            prior_profile["interfaces"], candidate["interfaces"], active_device or keenetic_default_route_device()
+        )
+        require(unchanged or managed_uplink, "native interface change in connector transaction")
     snapshot, backend = compile_profile(candidate, directory, committed)
     os.umask(0o077)
     for name, data in (("snapshot", snapshot), ("sing-box", backend)):

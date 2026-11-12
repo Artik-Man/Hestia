@@ -10,6 +10,15 @@
     >
       Обновить
     </button>
+    <button
+      pButton
+      type="button"
+      severity="secondary"
+      [disabled]="busy()"
+      (click)="reset()"
+    >
+      Сбросить
+    </button>
   </div>
 </header>
 @if (failed()) {

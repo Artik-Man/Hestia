@@ -1,0 +1,21 @@
+Контролируемый прогон AmneziaWG на KN-1012 — 8 ноября 2026
+
+Среда
+- Устройство: KN-1012, KeeneticOS 5.2 Beta 3, Entware aarch64-3.10.
+- Установленный пакет: 20261108-131732-46ed33ac8d30.
+- SHA-256 IPK: 80392594f52ecadf45db11b27c9dfa1d79f021e23d11c7c6f5c3558449f3ad9e.
+- Профиль: AmneziaWG-debug; конфигурация, адреса DNS и ключи не записаны.
+
+Процедура и результат
+1. До обновления сохранены root-only копии `/opt/etc/hestia`, статуса opkg и IPv4/IPv6 route tables.
+2. IPK установлен; opkg сообщил `install user installed`, maintenance marker очистился, supervisor стал ready.
+3. WAN default до и после: `default via 10.40.154.1 dev eth3 metric 1000`.
+4. Профиль повторно сохранён в UI; панель показала «Подключение «AmneziaWG-debug» сохранено».
+5. Публичный `-awg-list` сообщил статус `error`; интерфейс `awg0` отсутствовал, таблица 202 содержала `unreachable default metric 32767`.
+6. В журнале runtime появилась санитизированная строка: `AWG runtime health probe failed: DNS (handshake=recent, transfer=changed)`.
+7. Два read-only снимка с интервалом 18 секунд оба показали остановленный интерфейс, `error` и fail-closed table 202.
+
+Вывод и ограничения
+- Health tick наблюдал свежий handshake и изменение как минимум одного transfer-счётчика в период DNS-отказа. Старая диагностическая версия не разделяла RX и TX и не делала отдельный HTTPS probe при отказе DNS.
+- Этот результат не показывает, ответил ли DNS-сервер, в какую сторону изменились счётчики, или доступен ли HTTPS-egress через туннель.
+- Передача клиентского трафика из группы «Весь мир» не проверена.

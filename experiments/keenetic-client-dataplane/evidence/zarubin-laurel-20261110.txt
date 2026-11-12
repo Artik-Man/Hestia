@@ -1,0 +1,40 @@
+# Zarubin and Laurel in Rest of World — 10 November 2026
+
+## Environment
+
+- Device: Keenetic Giga KN-1012, KeeneticOS `5.02.B.3.0-2`, Entware `aarch64-3.10`.
+- Package: `20261110-205949-d9a573386528`.
+- Target access: pinned private SSH alias `keenetic-hestia`; no profile credentials or keys were recorded.
+- Root-only backup and staging: `/opt/tmp/hestia-zarubin-laurel-20261110-205949-d9a573386528/`.
+
+## Change
+
+The owner clarified that both Zarubin AmneziaWG and Laurel Hysteria2 must be in `Остальной мир`. The ingress safety predicate now accepts a group containing at least one ready AmneziaWG and Hysteria2 exits whose full underlay chains do not depend on `keenetic-opkgtun`. It rejects direct WAN/other exit types, an unsafe Hysteria2 chain, and ambiguous safe groups. The feature spec documents these acceptance criteria.
+
+The built IPK was `hestia_20261110-205949-d9a573386528_aarch64-3.10.ipk`; local SHA-256 was `098ae0027c1b13b8b62f35a6bb637f7bcc342c0fc7edc98416b0577440f6e630`. The previous known-good package was staged for recovery; its SHA-256 matched local `ddd888e483ea67c2b7f537b2eda6ae74ffed32f5b3bbc869345147e783fbd526`. Before installation the current profile, controller snapshot, sing-box config and supervisor readiness all passed; backup included `/opt/etc/hestia`, opkg status, and default-route snapshots.
+
+## Installation and recovery
+
+The first `opkg install` unpacked the new package but `postinst` returned 1 with `Hestia supervisor did not become ready`. The package was left `install user unpacked`; no rollback or profile edit was attempted. Read-only managed-profile validation, controller check and sing-box check all passed with the new installed helper. The documented `opkg configure hestia` recovery then completed with exit 0. The package reports `install user installed`, `-service-supervisor-ready` returns 0, and `/opt/var/run/hestia/package-maintenance` is absent.
+
+## Final state
+
+The panel transaction moved Laurel to `Остальной мир` at priority 2; Zarubin remains there at priority 1. The UI showed the success notice `Порядок применён шлюзом`. After refreshing the UI, both exits showed `Доступен`. A sanitized Hysteria2 list confirmed Laurel's group ID `g-78311245-9f72-414e-a426-5cac78d7f707`, priority 2, and `activeUnderlay=keenetic-uplink`. The controller health snapshot reported `healthy=true` for both Zarubin and Laurel. Managed profile, controller snapshot and sing-box config validations passed.
+
+IPv4 default route SHA-256 before and after was `f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871`. IPv6 default route was absent both times (empty-output SHA-256 `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`).
+
+## Limits and reproduction
+
+This confirms package readiness, profile validity and both VPN health indicators. No client TCP/UDP flow, external address/geo, reply path, or WAN leak test was run.
+
+On the target, these read-only checks reproduce the state without printing secrets:
+
+```sh
+/opt/bin/python3 -I /opt/lib/hestia/profile.py --validate-managed /opt/etc/hestia
+/opt/bin/hestia -check -config /opt/etc/hestia/snapshot.json
+/opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia \
+  /opt/lib/hestia/sing-box check -c /opt/etc/hestia/sing-box.json
+/opt/bin/hestia -service-supervisor-ready
+```
+
+The browser showed both named exits inside `Остальной мир` after reloading the groups page. The route and sanitized state are recorded above; full profile contents, credentials, RCI token and peer keys are intentionally excluded.

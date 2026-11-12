@@ -8,6 +8,7 @@ import {
   signal,
 } from "@angular/core";
 import { Tooltip } from "primeng/tooltip";
+import { isUserSelectableUnderlay } from "../../models/awg-connection";
 import { ConnectionCatalog } from "../../services/connection-catalog.service";
 
 /** UnderlayPicker edits an ordered list of candidate connections, restoring automatic routing when the list is empty. */
@@ -24,16 +25,27 @@ export class UnderlayPicker {
   protected readonly choicesOpen = signal(false);
   protected readonly catalog = inject(ConnectionCatalog);
   protected readonly loadingCandidates = this.catalog.loading;
-  protected readonly underlayChoices = computed(() =>
-    [
-      ...new Set([...this.underlays(), ...this.catalog.entries().keys()]),
-    ].filter((id) => id !== this.target()),
-  );
-  protected readonly underlaySummary = computed(() =>
-    this.underlays()
-      .map((id) => this.catalog.name(id))
-      .join(" → "),
-  );
+  protected readonly underlayChoices = computed(() => {
+    const candidates = this.catalog.entries();
+    return [...new Set([...this.underlays(), ...candidates.keys()])].filter(
+      (id) =>
+        id !== this.target() &&
+        isUserSelectableUnderlay(id, candidates.get(id)),
+    );
+  });
+  protected readonly underlaySummary = computed(() => {
+    const candidates = this.catalog.entries();
+    const selected = this.underlays();
+    const visible = selected.filter((id) =>
+      isUserSelectableUnderlay(id, candidates.get(id)),
+    );
+    return (
+      visible.map((id) => this.catalog.name(id)).join(" → ") ||
+      (selected.some((id) => !isUserSelectableUnderlay(id, candidates.get(id)))
+        ? "Системный маршрут"
+        : "")
+    );
+  });
 
   /** toggleChoices refreshes the available transports whenever the chooser opens. */
   protected toggleChoices(): void {

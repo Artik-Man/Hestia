@@ -36,7 +36,7 @@ func TestHysteria2API(t *testing.T) {
 		{"GET", hysteriaPath + "/" + id, "", "-hysteria2-read", 200},
 	} {
 		mode := ""
-		h := panelHandler("", "", nil, panelWrites{physical: func(_ context.Context, op string, in, out any) error {
+		h := panelHandler("", "", nil, panelWrites{hysteria2: func(_ context.Context, op string, in, out any) error {
 			mode = op
 			if op == "-hysteria2-read" {
 				if in.(panelmodel.AWGIDRequest).ID != id {

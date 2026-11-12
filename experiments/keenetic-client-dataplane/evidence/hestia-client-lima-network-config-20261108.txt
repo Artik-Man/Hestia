@@ -1,0 +1,23 @@
+Read-only host configuration inspection, 2026-11-08 18:47 MSK.
+
+Selected VM: hestia-client
+LIMA_HOME: /private/tmp/hestia-vm-run/lima-state
+VM type: vz, aarch64
+
+Sanitized facts from lima.yaml:
+- The explicit Lima network entry is `lima: bridged` with MAC `52:55:55:a7:20:ba`.
+
+Sanitized facts from cloud-config.yaml:
+- cloud-init maps MAC `52:55:55:97:03:dc` to guest interface `eth0`.
+- cloud-init maps MAC `52:55:55:a7:20:ba` to guest interface `lima0`.
+
+Sanitized facts from _config/networks.yaml:
+- Lima's `bridged` network mode is configured on host interface `en0`.
+
+The earlier guest route snapshot showed `eth0` at `192.168.5.15/24` with a DHCP default gateway `192.168.5.2`, and `lima0` at `192.168.1.124/24` with default gateway `192.168.1.1`. This host-side configuration confirms that `eth0` is a Lima-provisioned guest NIC; `lima0` is the explicitly configured bridged NIC. The precise host-side forwarding path for DHCP gateway `192.168.5.2` was not inspected, and no traffic probes were sent.
+
+Commands used:
+- `LIMA_HOME=/private/tmp/hestia-vm-run/lima-state /private/tmp/hestia-vm-run/bin/limactl list` (inventory only; Lima reported `Broken` because sandbox access to boot-session IDs was denied)
+- Read `hestia-client/lima.yaml`, `hestia-client/cloud-config.yaml`, and `_config/networks.yaml` under the configured LIMA_HOME.
+
+No VM was started, stopped, or modified. No Keenetic access or network probe occurred.

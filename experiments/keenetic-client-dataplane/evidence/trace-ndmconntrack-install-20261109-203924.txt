@@ -1,0 +1,47 @@
+NDM conntrack trace install and synchronized probe — KN-1012, 9 November 2026
+
+## Package recovery and installation
+
+- Device: Keenetic-G-8919 / KN-1012, KeeneticOS `5.02.B.3.0-2`, kernel `4.9-ndm-5`, Entware `aarch64-3.10`.
+- New package: `20261109-203924-db76edb7f3e1`, IPK SHA-256 `797a6ce14589a5b0d95c7e64437fe9048598922e08a6e6bcae21430385ab20b9`.
+- The first `opkg install` left status `install user unpacked`; one `opkg configure hestia` failed because supervisor did not become ready. Initial evidence is in [partial attempt](install-20261109-203924-partial.txt).
+- The user approved recovery including Hestia-managed routes. Before rollback, the saved `172910` IPK SHA-256 matched `ca6eea559f1e68da4bd35c6914551ed62a0d6395c88486da93c9f32dbb3d7116`; package transaction markers were absent and `-service-check-idle` passed.
+- Rollback command: `/opt/bin/opkg install --force-downgrade --force-reinstall /opt/tmp/hestia-deploy-20261109-2045-ndmconntrack/backup/rollback-172910.ipk`. Its `prerm` warned that it would not remove `OpkgTun0` while a Keenetic policy allowed it; `opkg` nevertheless downgraded and configured `172910`. Read-only checks then showed `install user installed`, supervisor ready, valid profile/controller/sing-box config, API HTTP 200, and the expected active TUN plus unreachable fallback in table 32732. Main default-route hashes stayed IPv4 `f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871`, IPv6 empty `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+- A second install from the same hash-verified staging IPK exited 0. Final status: `Version: 20261109-203924-db76edb7f3e1`, `Status: install user installed`, architecture `aarch64-3.10`. Supervisor readiness, managed profile validation, controller snapshot validation, sing-box check, and GET `/`, `/api/traffic?limit=1`, `/api/groups-and-rules` passed. Main default-route hashes remained unchanged.
+
+## Concurrent route observation during the successful retry
+
+A bounded, read-only route-netlink sampler ran for at most 120 seconds and printed only changes in reserved Hestia tables `30000..34095`. It observed:
+
+- Before package lifecycle: table 32732 had default `opkgtun0`, protocol 253, metric 1000, plus unreachable fallback metric 32767; both had flags 0.
+- During package quiescence: only the protocol-253 unreachable floor guard remained (implicit metric 0).
+- During/after startup: default `opkgtun0` and fallback returned. The active route's `flags` alternated between `16` and `0`; route identity, protocol, metric and output interface stayed the same.
+- Supervisor log entries at `2026-11-09T18:52:16Z` and `18:52:18Z` reported `Hestia ingress table contains an unowned route`; sampler snapshots at those same seconds showed active-route `flags=16`. Local `IngressPolicy.inspectRoutes` rejects every nonzero route `Flags` value. This is a strong temporal correlation and a plausible explanation for the earlier readiness failure, but is not yet a controlled proof that this flag alone caused that failure. The flag's KeeneticOS 4.9-specific semantics have not been established; do not loosen route identity validation until reviewed.
+
+## Synchronized client probe
+
+- Tuple: TCP `192.168.1.124:49335 → 1.1.1.1:443`; trace duration 15 seconds.
+- Router trace began `2026-11-09T18:54:46.012004274Z`; configuration snapshot timestamp `2026-11-09T18:54:45.883548755Z`.
+- Client `lima0` captured two matching SYNs at local `21:54:49.873911` and `21:54:50.878801` (UTC+3); no reverse packet was observed. Curl exited 28 after timeout.
+- Trace observed two matching headers on `br0`; no match was observed on `opkgtun0` or in sing-box inbound/rule/group/outbound/block logs.
+- Read-only NDM conntrack lookup found the exact tuple: `originalPackets=2`, `originalBytes=120`, no reply packets/bytes, `mark=0x0ffffaac`, `ndmmark=0`, `ifl=33` (`br0`), `ifw=674` (`opkgtun0`), flags `[UNREPLIED, FASTNAT]`.
+- Trace records Policy2, permitted `OpkgTun0`, priority-7/8 rules, rule order, and table-32732 routes as `configured_expectation`. `policy_mark` remains unavailable because conntrack mark is not a direct read of `skb->mark` at RPDB.
+- GET `/api/traffic?limit=100` returned a matching event for source port `49335`, kind `unconfirmed`, reason `opt-in flow trace summary`; the persisted NDM conntrack and stage fields matched CLI output.
+
+## Conclusion and limits
+
+The update is installed and ready. This trace proves NDM has an exact conntrack record with a policy-valued connection mark and `ifw` equal to `opkgtun0`'s ifindex while the trace sees the tuple on `br0`. It still does not prove a packet's `skb->mark`, an RPDB lookup, delivery to the TUN file descriptor, or the reason no AF_PACKET/sing-box event appeared. `not_observed` is not a drop verdict; `[FASTNAT]` and `/proc/sys/net/hwnat/ppe_enabled=1` remain relevant caveats. Neither the trace nor this package install proves VPN egress or the return path. `hestia-prod` and VM power/configuration were not accessed.
+
+## Exact reproduction commands
+
+Router trace:
+
+```sh
+printf '%s' '{"protocol":"TCP","source":"192.168.1.124","sourcePort":49335,"destination":"1.1.1.1","destinationPort":443,"durationSeconds":15}' | /opt/bin/hestia -traffic-trace
+```
+
+Client capture/probe (run after the router trace starts):
+
+```sh
+sudo -n timeout 15 tcpdump -nn -l -i lima0 '(src host 192.168.1.124 and src port 49335 and dst host 1.1.1.1 and dst port 443) or (src host 1.1.1.1 and src port 443 and dst host 192.168.1.124 and dst port 49335)' & capture_pid=$!; sleep 1; curl -4 --interface 192.168.1.124 --local-port 49335 --connect-timeout 3 --max-time 5 --resolve one.one.one.one:443:1.1.1.1 -sS -o /dev/null https://one.one.one.one/cdn-cgi/trace; curl_status=$?; wait "$capture_pid" || true; echo curl_exit=$curl_status
+```

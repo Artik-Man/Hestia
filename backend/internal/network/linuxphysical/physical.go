@@ -59,14 +59,29 @@ func (m Manager) nm(ctx context.Context, args ...string) (string, error) {
 	return strings.TrimSpace(string(output)), nil
 }
 
-// CarrierAt reports whether Linux currently detects a link on the named device.
-// A removed or disabled device, including an unreadable carrier attribute, is offline.
-func CarrierAt(sysfs, name string) bool {
+// CarrierStateAt returns the observed Linux carrier state for a validated kernel device name.
+// It reports unknown when the device name or sysfs observation is unavailable or malformed.
+func CarrierStateAt(sysfs, name string) panelmodel.CarrierState {
 	if !deviceName.MatchString(name) {
-		return false
+		return panelmodel.CarrierUnknown
 	}
 	data, err := os.ReadFile(filepath.Join(sysfs, name, "carrier"))
-	return err == nil && strings.TrimSpace(string(data)) == "1"
+	if err != nil {
+		return panelmodel.CarrierUnknown
+	}
+	switch strings.TrimSpace(string(data)) {
+	case "1":
+		return panelmodel.CarrierUp
+	case "0":
+		return panelmodel.CarrierDown
+	default:
+		return panelmodel.CarrierUnknown
+	}
+}
+
+// CarrierAt reports true only when Linux explicitly reports an active link on the named device.
+func CarrierAt(sysfs, name string) bool {
+	return CarrierStateAt(sysfs, name) == panelmodel.CarrierUp
 }
 
 // interfaces reports only Ethernet-type kernel interfaces with backing hardware; unplugged devices remain visible.
@@ -97,9 +112,15 @@ func (m Manager) interfaces() ([]panelmodel.PhysicalInterface, error) {
 				break
 			}
 		}
-		list = append(list, panelmodel.PhysicalInterface{InterfaceName: name, Kind: kind, Present: true, Online: CarrierAt(sys, name), ExitIDs: []string{}})
+		carrier := CarrierStateAt(sys, name)
+		list = append(list, panelmodel.PhysicalInterface{InterfaceName: name, Kind: kind, Present: true, CarrierState: carrier, Online: carrier == panelmodel.CarrierUp, ExitIDs: []string{}})
 	}
 	return list, nil
+}
+
+// KernelInventory returns physical Linux network devices without consulting NetworkManager or loading saved profiles.
+func (m Manager) KernelInventory() ([]panelmodel.PhysicalInterface, error) {
+	return m.interfaces()
 }
 
 // active returns active UUIDs keyed by kernel interface; an empty mapping distinguishes a free adapter from a failed NM query.
@@ -158,8 +179,14 @@ func (m Manager) Inventory(ctx context.Context) (panelmodel.PhysicalInventory, e
 // wifiFilename returns the fixed path component for an already validated profile UUID.
 func wifiFilename(id string) string { return "hestia-wifi-" + id + ".nmconnection" }
 
-// Online observes the selected platform's link state, treating unreadable links as offline.
+// Online returns true only when sysfs explicitly confirms an active link for the kernel device name.
 func (m Manager) Online(device string) bool { sys, _ := m.paths(); return CarrierAt(sys, device) }
+
+// State returns the sysfs link observation without collapsing an unreadable carrier into link down.
+func (m Manager) State(device string) panelmodel.CarrierState {
+	sys, _ := m.paths()
+	return CarrierStateAt(sys, device)
+}
 
 var _ network.Physical = Manager{}
 var _ network.Carrier = Manager{}

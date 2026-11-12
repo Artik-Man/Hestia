@@ -1,0 +1,19 @@
+KN-1012 filtered AF_PACKET capability probe — 9 November 2026
+
+Environment: KN-1012 / KeeneticOS `5.02.B.3.0-2`, kernel `4.9-ndm-5`; Hestia package `20261109-130906-db76edb7f3e1`; client VM `hestia-client` at `192.168.1.124`. The test client was already assigned to the Hestia policy. No configuration, policy, route, package or saved setting was changed.
+
+Read-only preflight confirmed root SSH, `br0` ifindex 33/type 1 (Ethernet), and `opkgtun0` ifindex 674/type 65534 (L3/TUN). `tcpdump` is not installed on the router. A temporary ARM64 program opened root AF_PACKET sockets on both interfaces and attached classic-BPF `SO_ATTACH_FILTER` programs. On `br0`, the kernel filter required IPv4/TCP and the exact tuple in either direction: `192.168.1.124:49321 ↔ 1.1.1.1:443`. On `opkgtun0` it applied the equivalent L3 offsets. The BPF return snap lengths were 54 bytes (Ethernet + minimum IPv4 + minimum TCP header) and 40 bytes (minimum IPv4 + TCP header), so no TCP payload was returned to user space. The program printed only tuple, TCP flags, interface and captured length; no payload or packet file was written.
+
+One six-second client probe used:
+
+```sh
+curl -4 --interface 192.168.1.124 --local-port 49321 --connect-timeout 3 --max-time 5 \
+  --resolve one.one.one.one:443:1.1.1.1 -sS -o /dev/null \
+  https://one.one.one.one/cdn-cgi/trace
+```
+
+Observed: both sockets opened and accepted their kernel filters. The curl timed out with exit 28. The filtered capture returned two SYN headers at `br0` (`192.168.1.124:49321 → 1.1.1.1:443`, `captured_bytes=54`) and zero matching packets at `opkgtun0`. This demonstrates that filtered AF_PACKET can observe this exact flow at `br0` on the target; absence at OpkgTun during the sample is “not observed”, not proof of a block or a specific cause.
+
+A second six-second probe used source port 49322 and also opened filtered sockets on `br0`, `opkgtun0` and WAN `eth3`. The two first interfaces had exact tuple filters; `eth3` used an IPv4/TCP SYN filter scoped to destination `1.1.1.1:443` because NAT may rewrite the source tuple. The client curl timed out with exit 28. The capture reported zero matches on all three interfaces. A subsequent header-only capture on `hestia-client:lima0` confirmed two SYNs for the exact source port and target, both with TCP sequence `4250235856`, and no response. Thus the router probe did not match a flow known to leave the VM; its zero count is inconclusive and cannot prove absence of egress or failure at a particular interface. The second filter variant is not independently validated; WAN TCP sequence correlation remains unestablished.
+
+Temporary router binaries and local capture output were removed immediately after each probe. The capture program did not retain packet payloads. Reproduce only during an authorized test window with a temporary root AF_PACKET classic-BPF program, six-second maximum duration, the fixed client/source tuple, and the same header-only snap lengths. Do not treat a zero-event sample as proof of blocking; `br0`/OpkgTun results prove only observation at those interfaces.

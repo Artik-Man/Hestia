@@ -1,0 +1,5 @@
+{
+  "scope": "source",
+  "host": "darwin",
+  "limitation": "Host Go tests may skip Linux-only raw socket and offline NetworkManager cases. scripts/test checks copied installed runtimes in isolated networking fixtures, not Linux Go unit/offline NetworkManager coverage."
+}

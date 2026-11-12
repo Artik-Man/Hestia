@@ -27,10 +27,12 @@ missing = 'hst-missing'
 if (Path('/sys/class/net') / missing).exists():
     raise RuntimeError('synthetic missing-interface name already exists')
 try:
-    online = (ports[0] / 'carrier').read_text().strip() == '1'
+    carrier = (ports[0] / 'carrier').read_text().strip()
+    carrier_state = {'1': 'up', '0': 'down'}.get(carrier, 'unknown')
 except OSError:
-    online = False
-Path('/run/expected.json').write_text(json.dumps({'name': name, 'online': online, 'missing': missing}))
+    carrier_state = 'unknown'
+online = carrier_state == 'up'
+Path('/run/expected.json').write_text(json.dumps({'name': name, 'carrierState': carrier_state, 'online': online, 'missing': missing}))
 Path('/etc/hestia/profile.json').write_text(json.dumps({'version': 2, 'interfaces': [
     {'id': 'bench-ethernet', 'type': 'direct', 'bind_interface': name},
     {'id': 'bench-absent', 'type': 'direct', 'bind_interface': missing}]}))
@@ -44,8 +46,8 @@ inventory = json.loads(Path("/run/inventory.json").read_text())
 interfaces = {item["interfaceName"]: item for item in inventory["interfaces"]}
 expected = json.loads(Path('/run/expected.json').read_text())
 name, missing = expected['name'], expected['missing']
-assert interfaces[name] == dict(interfaceName=name, kind="ethernet", present=True, online=expected['online'], exitIds=["bench-ethernet"])
-assert interfaces[missing] == dict(interfaceName=missing, kind="ethernet", present=False, online=False, exitIds=["bench-absent"])
+assert interfaces[name] == dict(interfaceName=name, kind="ethernet", present=True, carrierState=expected['carrierState'], online=expected['online'], exitIds=["bench-ethernet"])
+assert interfaces[missing] == dict(interfaceName=missing, kind="ethernet", present=False, carrierState="unknown", online=False, exitIds=["bench-absent"])
 assert isinstance(inventory["wifiAvailable"], bool) and inventory["wifiProfiles"] == []
 print(json.dumps(inventory, ensure_ascii=False, sort_keys=True))
 PY

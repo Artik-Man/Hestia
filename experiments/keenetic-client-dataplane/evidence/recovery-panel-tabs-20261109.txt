@@ -1,0 +1,101 @@
+Failed panel-tabs update and package recovery — KN-1012, 9 November 2026
+
+## Scope
+
+Device: Keenetic KN-1012, KeeneticOS `5.02.B.3.0-2`, kernel `4.9-ndm-5`. SSH alias: `keenetic-hestia` from `private/keenetic/ssh/config`. The user had authorized SSH and installation work. This record contains only a bounded read-only follow-up after the package install/rollback attempts. No client policy, profile, firewall, or route was manually changed.
+
+## Package transaction
+
+- New IPK: `20261109-222606-db76edb7f3e1`, SHA-256 `ae072d33f2d805beea654883de2ebe9df67c916fd831d9837fe74590c7360bed`.
+- `postinst` refused to start Hestia: `Hestia profile is missing or invalid; refusing to start services`.
+- A fixed-reason, no-output-content validator diagnostic identified `backend routes differ from the installed profile`.
+- Forced reinstall/downgrade of the staged prior IPK `20261109-203924-db76edb7f3e1` did not recover services. Its lifecycle hooks reported OpkgTun removal refusal while policy still permits it, then profile validation failure. No policy was changed to get past the OpkgTun guard.
+- Final `/opt/bin/opkg status hestia`: version `20261109-203924-db76edb7f3e1`, status `install user unpacked`.
+
+## Read-only final target state
+
+Commands were run through the authorized SSH alias:
+
+```sh
+ssh -F private/keenetic/ssh/config keenetic-hestia '...
+```
+
+Observed:
+
+- `/opt/bin/hestia -service-check-idle`: exit 0.
+- `/opt/bin/hestia -service-supervisor-ready`: exit 1.
+- `/opt/var/run/hestia/package-maintenance` present; `supervisor.ready` and `supervisor.pid` absent.
+- No `hestia`, `sing-box`, or `amneziawg` processes appeared in the filtered `ps` output.
+- `wget http://127.0.0.1:8080/api/traffic?limit=1` was refused; the panel endpoints were not available for recheck after shutdown.
+- Main default route hashes match the pre-install baseline: IPv4 `f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871`; IPv6 empty `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+- RPDB priorities 7 and 8 remain the Hestia mark/iif lookup and unreachable guard. `ip -4 route show table all` showed only `unreachable default table 32732`; no OpkgTun default route was present. BusyBox rejected `ip -4 route show table 32732` directly.
+- Existing profile, profile checksum, backend, backend checksum and snapshot hashes matched their root-only pre-install backup copies:
+  - `profile.json`: `bcf6dfa03c60c408f327071af44d3d64fa64ab7d21dfa5d470bc98c189f66f0c`
+  - `profile-source.sha256`: `9f0feed3eb4018995217e1b5c6f3e9165b576de01b3ec42f31b4dc7aec03dff4`
+  - `sing-box.json`: `1d59e96e93790faaa0751124206d298be1eda4ce92a85926613e18e21cfca866`
+  - `profile-backend.sha256`: `56a48363aac1a1b813e6a9c906fd307bda0b036f7eafa5233f895559fd41fa08`
+  - `snapshot.json`: `11a86f561d704f629c22e00670e15c59cc8fc4d1a13cb78a237c7cfcdb0a6cb1`
+
+## Route mismatch localization
+
+A hash-verified `profile.py` from the staged/archived `203924` package was executed through SSH stdin in read-only diagnostic mode. It reported the same fixed validator reason. A structural comparison recomputed the expected route and emitted only hashes and changed JSON paths, not route values, domains, names, or secrets:
+
+```text
+route_equal=False
+actual_sha256=a785577c356339c28b1d6da93bffa4575871183bcf6dbadd34338d459c98a5e2
+expected_sha256=e71e44de3d7975b2dd6161ab9800f25313c25330b99e95adfd52ffde54e7f519
+actual_final_matches_expected=True
+actual_rules=11 expected_rules=11
+route.rules[4].outbound: values differ
+```
+
+This narrows the inconsistency to the outbound selected by one existing route rule. It does not identify which value is intended or authorize regenerating the managed profile/backend, because that could change routing behavior. The pre-install backup hashes show the package attempts did not modify those files.
+
+The compiler's read-only ingress safety predicate was then evaluated without printing group or connector names. `safe_ingress_group_present=False`. Group 0 has one exit and zero ready AmneziaWG exits; group 1 has two exits, one ready AmneziaWG exit and one non-ready exit. Neither group has an OpkgTun-dependent exit and both default-exit values are allowed. Since the ingress compiler requires every exit in its selected group to be a ready AmneziaWG connector, the expected `route.rules[4].outbound` is `deny`; the saved backend currently points that rule to group index 1. The lifecycle refusal is consistent with the current safety predicate: the installed backend would send Keenetic ingress to a group that no longer qualifies as a safe AWG-only ingress group. This is a configuration-generation mismatch and safety guard, not proof about the earlier observed SYN's packet verdict.
+
+After the owner approved a Zarubin-only ingress group, a read-only profile mapping identified the current arrangement: group `default` / `Россия` has `keenetic-uplink` at priority 1 and `defaultExit=deny`; group `g-78311245-9f72-414e-a426-5cac78d7f707` / `Остальной мир` has Laurel (Hysteria2) at priority 1 and Zarubin (AmneziaWG, ready) at priority 2, with Zarubin as its `defaultExit`. The intended minimal membership change is to move Laurel to `default` at priority 2, preserving the current default-group priority and keeping only Zarubin in `Остальной мир`.
+
+The normal `MoveExit` transaction cannot currently be run safely: its implementation validates the current managed generation before preparing a staged profile and requires the binding watcher/service verification. The current generation fails that validation, and the supervisor/watcher are stopped. An archived earlier validator was also tested via SSH stdin without writing files and reports the same route mismatch. No group/profile change has been applied. Recovery needs a reviewed offline transaction/bootstrap path that can validate the intended candidate before atomically publishing it; do not hand-edit profile/backend files or bypass service validation.
+
+## Conclusion and next safe step
+
+The earlier probe for TCP `192.168.1.124:49336 → 1.1.1.1:443` timed out while the user reports other traffic is working through Zarubin AWG. That probe established no exit for `1.1.1.1`; it did not establish a general AWG failure. The panel's initial country-map and DNS errors were diagnosed as missing country-map state-directory creation and the omitted `-dns-policy` argument, but those fixes are not active because the package transaction failed.
+
+Do not repeat `opkg configure`, package install/rollback, manually edit the profile, or alter policy/routes until the route mismatch is resolved. The owner has specified Zarubin AWG only. The target group/exit mapping and intended Laurel move are known, but the installed profile transaction cannot run while the current generation fails validation and services are stopped. The next safe step is a reviewed offline transaction/bootstrap recovery, followed by package lifecycle recovery and API verification. Preserve the current fail-closed guard and collect a fresh route-netlink snapshot during recovery. `not_observed` on the prior flow remains no drop verdict.
+
+## Superseding follow-up after owner approval — 9 November 2026
+
+The owner explicitly approved leaving only Zarubin AWG in the ingress group. Using a root-only stage at `/opt/tmp/hestia-zarubin-ingress-20261109/candidate`, the exact preconditions were checked and a candidate moved Laurel to `default` at priority 2; Zarubin became the sole exit in `Остальной мир` at priority 1. The candidate was validated with the managed-profile validator, Hestia controller snapshot checker, and sing-box checker before publication. A root-only full backup was created at `/opt/tmp/hestia-zarubin-ingress-20261109/before`. The six atomically published files were the profile, profile checksum, backend, backend checksum, snapshot, and Zarubin AWG metadata. Post-publication all three validators passed and Hestia remained idle. New profile/backend/snapshot SHA-256 values are respectively `d844b6b8b37484f5903604f256d6b827bda6e1aa45effce0047668535b08ff37`, `47602ac0e7323a10dc61cac7cb800d3439ee957a0264adad8c1aaf9d43fc64ec`, and `8bc0176e150ae2259356a62027f7eaa5f3c27d0fe5df5495c1dcca93451ed2a0`.
+
+The staged `20261109-222606-db76edb7f3e1` package hash was rechecked, and profile, snapshot, sing-box, package-idle preflight passed. `opkg install` unpacked the IPK but exited 255 in postinst: `managed service operation failed: smoke`; `-enable-keenetic-ingress` reported the same smoke failure and postinst stopped Hestia. A subsequent normal `/opt/etc/init.d/S99hestia start` also failed readiness and its cleanup stopped the supervisor. Current package state is `222606`, `install user unpacked`; maintenance marker is absent, supervisor pid/ready are absent, service idle is confirmed, and panel access is unavailable. The three active profile validators pass after the approved move. IPv4/IPv6 default-route hashes remain unchanged.
+
+Read-only route-netlink inspection now gives exact table 32732 entries:
+
+```text
+default: protocol=253 scope=0 type=unicast flags=16 metric=1000 oif=opkgtun0 attrs=TABLE,PRIORITY,OIF
+fallback: protocol=253 scope=0 type=unreachable flags=0 metric=32767 attrs=TABLE,PRIORITY
+```
+
+`/sys/class/net/opkgtun0` reports ifindex `674`, flags `0x1091`, `operstate=down`, and `carrier=0`. Read-only NDM `show interface OpkgTun0` reports `state: up`, `global: yes`, `mtu: 1500`, but `link: down`. Hestia source accepts only zero route flags at `ingress_policy.go:352`; startup waits for the ingress lifecycle to signal ready before starting the sing-box router at `ipc.go:131-147`. The likely issue is a startup ordering cycle: the kernel exposes the OpkgTun route as link-down while no userspace TUN reader is attached, the reconciler rejects its nonzero route flags, and the supervisor has not yet started sing-box to attach. This is an inference from the observed state plus source ordering; it needs code-level verification. Do not clear or rewrite the route flags manually.
+
+The original flow remains separate: `192.168.1.124:49336 → 1.1.1.1:443` timed out before this recovery, and its actual exit was not confirmed. Router log tail contains generic ingress events from other periods, without exact tuple fields; it does not establish the requested flow. The user reports other traffic uses Zarubin AWG, but no matching-flow egress or return-path trace was run during this recovery.
+
+Next step is to fix and verify the startup ordering/route ownership handling in Hestia, then build and install a corrected IPK. Do not re-run `opkg configure`, restart Hestia, or change routes until that fix is reviewed; current route table has only the guarded target and fallback with link-down TUN.
+
+## Panel outage recovery follow-up — 9 November 2026
+
+The owner reported that `http://192.168.1.1:8080/#/connections` refused connections after the failed install. The first read-only SSH check confirmed package `20261109-222606-db76edb7f3e1` was `install user unpacked`, Hestia processes were absent, `-service-supervisor-ready` failed, and the panel port was unavailable. Main IPv4/IPv6 default-route hashes were unchanged.
+
+Three startup blockers were found and corrected in source:
+
+1. The route dump marks the exact Hestia default route via `opkgtun0` with flag 16 while its link is down. `inspectRoutes` rejected it. The ownership check now accepts flag 16 only for that exact unicast/default/tunnel/metric route.
+2. `DeactivateIPv4` attempted to remove that route as a zero-flag route while TUN was down. It now keeps the route behind the metric-0 unreachable guard until the TUN is ready.
+3. A stale `.binding-pending` journal made boot wait for the binding watcher while the watcher's online recovery needed Router first. Hashes for current and journal `previous` profile/backend/snapshot files matched. Supervisor startup now applies the ingress guard, starts Router and Controller, waits for binding recovery, and starts Panel only after recovery.
+
+Build `20261109-234853-db76edb7f3e1` was checksum verified. Its daemon binary SHA-256 is `5f35de434f5dd4a04b58ad4a47696250af67121f5cca766b9f519e14ee3e3961`; IPK SHA-256 is `e787aca2c15a538e17c8b9e8222800abb5d67fe42db70340bec105d74ec95e1a`. The first regular upgrade attempt could not pass the previous `prerm`; after the reviewed bootstrap replacement, standard `configure-package` completed and cleared `.binding-pending`. A later `opkg install` unpacked `234853` but postinst failed at `managed service operation failed: smoke`, then stopped Hestia. `opkg status` remains `install user unpacked`. The five managed conffiles were preserved as `*-opkg` sidecars; active profile/backend/snapshot hashes did not change.
+
+The standard `configure-package` recovery was run again after validating the active profile, snapshot, and sing-box config. The owner-visible Connections page then loaded at the requested URL with populated tables. UI state showed PAKT available, Laurel/Hysteria 2 available via PAKT, Zarubin/AmneziaWG unavailable, and no available Zarubin exit. This confirms the panel/API shell is reachable; it does not confirm AWG service health or the client dataplane.
+
+Final read-only target checks: supervisor-ready exit 0, maintenance marker absent, `.binding-pending` absent, managed profile/snapshot/sing-box validators exit 0, default IPv4/IPv6 route hashes unchanged (`f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871` / empty-route hash `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`). The supervisor still logs `cannot install Hestia TUN route`; table 32732 exposes the default `opkgtun0` route and unreachable fallback. Do not claim ingress forwarding or an exit for the earlier `1.1.1.1` flow. The package is partially installed despite the panel being back.
+
+The panel was verified in a fresh browser tab at `http://192.168.1.1:8080/#/connections`; loaded UI included the Hestia navigation and connection tables. The failed package upgrade and successful `configure-package` recovery are not equivalent to a successful package transaction. Next work is to diagnose the exact smoke mismatch and link-down route activation without accepting `.opkg` sidecars or altering the confirmed active profile.

@@ -24,7 +24,7 @@ func privateDirectory(path string) error {
 // Candidate files are staged privately. Installed snapshots alone grant read access to the installer's snapshot group.
 func (e Engine) managedInfo(dir, name string, installed bool) (os.FileInfo, error) {
 	mode, gid := os.FileMode(0600), os.Getegid()
-	if installed && name == "snapshot.json" {
+	if installed && name == "snapshot.json" && e.snapshotGID >= 0 {
 		mode, gid = 0640, e.snapshotGID
 	}
 	info, err := os.Lstat(filepath.Join(dir, name))

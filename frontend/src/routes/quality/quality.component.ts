@@ -75,6 +75,29 @@ export class QualityScreen {
       });
   }
 
+  /** reset clears the gateway's accumulated probe history and waits for its next snapshot. */
+  protected reset(): void {
+    this.request?.unsubscribe();
+    this.busy.set(true);
+    this.request = this.api.resetQualityResults().subscribe({
+      next: () => {
+        this.busy.set(false);
+        this.failed.set(false);
+        this.report.set(null);
+        timer(1000)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe(() => this.reload());
+      },
+      error: () => {
+        this.busy.set(false);
+        this.notifications.show(
+          "error",
+          "Не удалось сбросить результаты проверок.",
+        );
+      },
+    });
+  }
+
   /** readFailure announces the first failed refresh while keeping the last report available for comparison. */
   private readFailure(): void {
     if (!this.failed())

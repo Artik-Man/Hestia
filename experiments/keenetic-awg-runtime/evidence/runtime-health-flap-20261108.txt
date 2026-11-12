@@ -1,0 +1,23 @@
+# Long-lived AWG start and periodic egress failure — 2026-11-08
+
+## Environment
+
+- Device: KN-1012, KeeneticOS 5.2 Beta 3, Entware `aarch64-3.10`.
+- Hestia IPK before: `20261108-122003-46ed33ac8d30`.
+- Hestia IPK used for the retry: `20261108-125012-46ed33ac8d30`.
+- Local and device IPK SHA-256: `fc22ee6d0918a11f634a747d343ccc9aa4c141b0fc476572bb86fa5951b18fc8`.
+- Profile: `AmneziaWG-debug`; secret configuration omitted.
+
+## Procedure and result
+
+1. A root-only backup of `/opt/etc/hestia`, the installed package status and IPv4/IPv6 route dumps was created on the router before installation.
+2. The new IPK installed successfully, opkg reported `install user installed`, supervisor readiness passed, and the package-maintenance marker cleared. The saved profile and group assignment remained present.
+3. Re-saving the unchanged profile through the panel now launched the named runtime service and `amneziawg-go -f awg0`.
+4. While the service was running, `/sys/class/net/awg0` existed and IPv4 table 202 temporarily contained `default dev awg0 scope link metric 100`; the separate unreachable fallback remained installed. By source execution order, runtime reaches this route only after its handshake and initial marked DNS plus HTTPS probes return successfully.
+5. A later health interval failed. The service log recorded `AWG runtime health probe failed`, the process and interface exited, and table 202 returned to its unreachable IPv4/IPv6 defaults. The ordinary IPv4 default route remained `default via 10.40.154.1 dev eth3 metric 1000`. Public status remained `error` and no health marker remained.
+
+## Interpretation and limits
+
+The explicit re-save retry fix worked: it caused a new persistent runtime attempt for unchanged profile bytes. The saved peer completed the service's initial handshake and egress path sufficiently for the tunnel route to be activated. The periodic probe then failed, but this build logged only a generic health error, so the failing DNS/HTTPS stage is not yet known. The package was updated to a diagnostic build that logs only a fixed, sanitized failure category; target verification remains pending.
+
+The UI profile save and runtime attempt did not change the router's ordinary default route. The user-visible profile remains unavailable and client traffic through the tunnel has not been verified.

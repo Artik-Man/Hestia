@@ -1,0 +1,10 @@
+{
+  "stand": "dev",
+  "hostname": "lima-hestia-dev",
+  "platform": "linux-arm64",
+  "scope": "installed read-only + copied-runtime private fixtures",
+  "historical": [
+    "partial-loss prototype"
+  ],
+  "source_helper": "quality measurement fixture"
+}

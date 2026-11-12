@@ -1,9 +1,10 @@
-//go:build linux
+//go:build linux && !keenetic
 
 package awg
 
 import (
 	"github.com/Artik-Man/Hestia/internal/awgruntime"
+	"github.com/Artik-Man/Hestia/internal/network/linuxroute"
 	"github.com/Artik-Man/Hestia/internal/services"
 	"github.com/Artik-Man/Hestia/internal/services/systemd"
 )
@@ -12,4 +13,5 @@ import (
 var (
 	runtimeDriver   awgruntime.Driver = awgruntime.Linux{}
 	offlineVerifier services.Offline  = systemd.OfflineVerifier{}
+	routeRunner     RouteRunner       = linuxroute.ExecRouteRunner{}
 )

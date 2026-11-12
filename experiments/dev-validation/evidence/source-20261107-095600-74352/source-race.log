@@ -1,0 +1,11 @@
+ok  	github.com/Artik-Man/Hestia/internal/binding	17.365s
+ok  	github.com/Artik-Man/Hestia/internal/controller	1.746s
+ok  	github.com/Artik-Man/Hestia/internal/dnsresolver	2.196s
+ok  	github.com/Artik-Man/Hestia/internal/dnsservice	12.804s
+ok  	github.com/Artik-Man/Hestia/internal/quality	1.830s
+ok  	github.com/Artik-Man/Hestia/internal/storage	1.618s
+?   	github.com/Artik-Man/Hestia/internal/network	[no test files]
+?   	github.com/Artik-Man/Hestia/internal/network/keeneticphysical	[no test files]
+ok  	github.com/Artik-Man/Hestia/internal/network/linuxphysical	1.894s
+ok  	github.com/Artik-Man/Hestia/internal/network/linuxroute	1.639s
+ok  	github.com/Artik-Man/Hestia/internal/network/socket	1.616s

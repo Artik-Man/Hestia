@@ -12,6 +12,31 @@ import (
 	"time"
 )
 
+// TestTransactionFailureCodeExposesOnlyFixedRouteCategory ensures route diagnostics remain useful without exposing raw device data.
+func TestTransactionFailureCodeExposesOnlyFixedRouteCategory(t *testing.T) {
+	err := transactionStageError{
+		stage: "activation-and-rollback",
+		cause: errors.Join(errors.New("activation failed"), errors.New("AWG route table contains an unowned IPv6 route; refusing teardown: private-route-data")),
+	}
+	if got := TransactionFailureCode(err); got != "route-table-unowned-ipv6" {
+		t.Fatalf("TransactionFailureCode() = %q, want route-table-unowned-ipv6", got)
+	}
+	if got := TransactionFailureCode(errors.New("unwrapped")); got != "" {
+		t.Fatalf("unwrapped TransactionFailureCode() = %q, want empty", got)
+	}
+}
+
+// TestTransactionFailureStageExposesFixedStage verifies migration failures expose only the fixed internal stage label.
+func TestTransactionFailureStageExposesFixedStage(t *testing.T) {
+	err := transactionStageError{stage: "candidate-backend-check", cause: errors.New("backend validator failed")}
+	if got := TransactionFailureStage(err); got != "candidate-backend-check" {
+		t.Fatalf("TransactionFailureStage() = %q, want candidate-backend-check", got)
+	}
+	if got := TransactionFailureStage(errors.New("unwrapped")); got != "" {
+		t.Fatalf("unwrapped TransactionFailureStage() = %q, want empty", got)
+	}
+}
+
 // TestBindingTransaction exercises stale writes, failed live confirmation, rollback and a first confirmed change.
 func TestBindingTransaction(t *testing.T) {
 	e := testEngine(t)
@@ -138,6 +163,19 @@ func testEngine(t *testing.T) Engine {
 		return nil
 	}
 	return e
+}
+
+// TestManagedInfoAcceptsPrivateSnapshotWithoutSnapshotGroup checks the root-only snapshot layout used by Keenetic.
+func TestManagedInfoAcceptsPrivateSnapshotWithoutSnapshotGroup(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "snapshot.json")
+	if err := os.WriteFile(path, []byte(`{"groups":[],"lists":[],"healthy":{}}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	e := Engine{dir: dir, snapshotGID: -1}
+	if _, err := e.managedInfo(dir, "snapshot.json", true); err != nil {
+		t.Fatalf("root-only installed snapshot was rejected: %v", err)
+	}
 }
 
 // TestInterruptedBinding checks that candidate files stay hidden until offline restoration succeeds.

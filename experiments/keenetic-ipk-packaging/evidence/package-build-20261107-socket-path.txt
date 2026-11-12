@@ -1,0 +1,24 @@
+Дата: 2026-11-07
+Вопрос: отклоняет ли общий Linux/Keenetic socket binder некорректные или несогласованные параметры до системных socket options?
+
+Перед выполнением callback проверяются kernel interface name из ASCII allowlist длиной 1–15 (первый символ — буква, цифра или `_`), mark в диапазоне uint32 и согласованность режима: `DeviceOnly` запрещает mark, `DeviceThenMark` принимает optional mark, `MarkAndDevice` требует ненулевой mark. Некорректный путь отклоняется до вызова `SO_BINDTODEVICE`/`SO_MARK`; корректный путь сохраняет прежний порядок и обработку ошибок socket options.
+
+Проверки:
+
+- Обычный `go vet ./...` — успешно.
+- `GOOS=linux GOARCH=arm64 go vet -tags keenetic ./...` — успешно.
+- `GOOS=linux GOARCH=arm64 go build -tags keenetic ./cmd/hestia ./cmd/hestia-panel` — успешно.
+- `make fmt-check SHFMT=/private/tmp/hestia-tools/shfmt` — успешно.
+- `make docs-check SHFMT=/private/tmp/hestia-tools/shfmt` — успешно.
+- `git diff --check` — успешно.
+- `GOCACHE=/private/tmp/hestia-go-cache bash scripts/build/run.sh --output /private/tmp/hestia-socket-path` — успешно; Go приложения, frontend и IPK собраны.
+
+IPK: `/private/tmp/hestia-socket-final2/20261107-080644-5dd5889e639b/keenetic-arm64-experimental/hestia_20261107-080644-5dd5889e639b_aarch64-3.10.ipk`.
+
+- SHA-256: `3ef4a3e2d28502311e2d2bc56068aa3d7d213bcd2592ba5abef10dfbfbf4a772`.
+- Размер: 58,989,707 байт.
+- Manifest: 552 source inputs, 145 packaged files.
+- `backend/internal/network/socket/socket.go`: `281bdeb41a6a1bee0ec3c9f39e7d788f5081c63e51cb10fc2444b762670082c7`.
+- Existing option-order fixture `backend/internal/network/socket/socket_test.go` now supplies valid devices: `d63324b93c602e3e782537b6a0f3d7a23450afd676778505d537f4f88045525e`.
+
+Границы: тесты не добавлялись и не запускались, socket options и пакеты на KN-1012 не проверялись. Кодовая валидация не доказывает права процесса, поддержку или фактическое действие `SO_BINDTODEVICE`/`SO_MARK` на Keenetic.

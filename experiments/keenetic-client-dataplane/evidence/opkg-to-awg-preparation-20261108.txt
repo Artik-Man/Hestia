@@ -1,0 +1,38 @@
+Вопрос: подготовлена ли локальная маршрутизация `OpkgTun0` → AmneziaWG и безопасно ли начинать подключение на KN-1012?
+Дата: 2026-11-08 UTC; время целевого read-only снимка около 20:08 UTC.
+Устройство: Keenetic Giga KN-1012; KeeneticOS 5.2 Beta 3; kernel 4.9-ndm-5; aarch64.
+Локальная ветка: `codex/keenetic-opkgtun-ingress`, исходный revision `e523f5481e66` плюс dirty source changes.
+
+Условия и наблюдения на KN-1012 (read-only):
+
+- `keen-mvp 0.1.0-2` установлен и сообщает `OpkgTun0 is present`; Hestia package отсутствует.
+- NDM продолжает показывать `OpkgTun0` типа `OpkgTun` с описанием `Keen-MVP`.
+- Runtime policy `Hestia MVP 2` имеет `Policy3`, mark `ffffaaf`, table `4103`. В выборке `show ip policy` видны destination routes через `Wireguard1`; фильтр для `0.0.0.0/0` и интерфейса `OpkgTun0` не вернул совпадений. Чтение этого runtime представления не подтверждает клиентский dataplane или фактический policy permit list.
+- Product Owner подтвердил, что временно вернул `hestia-client` к прежней policy. Внешние пользовательские/тестовые пакеты не отправлялись.
+- Системный IPv4 default остался `default via 10.40.154.1 dev eth3 metric 1000`.
+
+Локальная подготовка:
+
+- `deploy/profile.py` требует для включения Keenetic ingress ровно одну группу, содержащую только готовые коннекторы типа `amneziawg`; её `defaultExit` должен быть `deny` или одним из этих AWG-коннекторов. Для inbound `hestia-keenetic-ingress` добавляется явное route rule в эту группу до domain/country routes и `route.final`.
+- Профильное действие можно выполнить транзакционно через root CLI `/opt/bin/hestia -enable-keenetic-ingress` или `-disable-keenetic-ingress`; `binding.Engine` сохраняет штатную проверку backend, journal и rollback.
+- `keen-mvp 0.1.0-3` перестаёт открывать `/dev/net/tun`, оставляя NDM объект для FD sing-box. IPK собран локально, SHA-256 `c72817fe213d5e1dbd7e84d1bd8452b442859b5e99234212f45ec4080aa265cc`; на роутер не загружался в момент подготовки этой записи.
+- Локальные два профильных unit tests прошли; `python3 -m py_compile profile.py test_profile.py`, `make build-go` и полная `make build` прошли. Keenetic artifact: `dist/artifacts/20261108-230721-e523f5481e66/keenetic-arm64-experimental`.
+- `make fmt` отформатировал Go и остановился на отсутствии `shfmt` при Bash-части. `SHFMT=/private/tmp/hestia-shfmt make docs-check` и `git diff --check` прошли; изменённых Bash-файлов нет.
+
+Ожидаемое состояние до handoff: только `keen-mvp` владеет OpkgTun NDM объектом; ни клиент, ни внешний поток не направлен в неё. Далее обновить MVP до `0.1.0-3`, проверить отсутствие его TUN FD и неизменность main default, установить собранный Hestia IPK, включить ingress транзакционно и проверить guard/readiness/правило AWG на устройстве. Только после этого Product Owner может снова назначить `hestia-client`; перед отправкой TCP/UDP маркеров отдельно доказать lookup, обратный путь, отсутствие WAN leak и блокировку при отказе.
+
+Предел вывода на момент создания: этой локальной проверкой не были доказаны RCI policy selection, установка всех guard routes/rules на Keenetic, TUN handoff, работа amneziawg-go, клиентский трафик, возвратный путь или fail-closed на устройстве.
+
+Целевое продолжение — 2026-11-08, около 20:20 UTC:
+
+- Product Owner подтвердил возврат `hestia-client` к прежней policy. После этого read-only снимок снова показал сохранённую policy `Hestia MVP 2`, `Policy3`, table `4103`, mark `ffffaaf`; основной маршрут остался через `eth3`.
+- `keen-mvp 0.1.0-3` установлен через `opkg` поверх `0.1.0-2`. Init подтвердил `OpkgTun0 is present; TUN is available for Hestia`; process FD scan подтвердил `keen-mvp-tun-fd=no`. NDM объект сохранился с состоянием `up`, `global yes`, `defaultgw no`; системный IPv4 default не изменился. Linux `opkgtun0` link существует как NDM объект без carrier до подключения Hestia, поэтому наличие sysfs link само по себе не означает занятый FD.
+- Hestia IPK `20261108-230721-e523f5481e66` прошёл target preflight и установлен через `opkg`. Существующие profile/backend/snapshot conffiles сохранены, а defaults пакета появились как `*-opkg`. Supervisor и sing-box запущены. Первый `-awg-list` показывал `error`, а сервис был inactive; root-only supervisor IPC запустил только сохранённый connector ID `7f02067a-ca17-4c38-ae26-7c7fb21ca06a`. Повторный list показал `ready`, процесс `amneziawg-go` существует, `awg0` поднят с `10.8.1.5/32`. Main default остался через `eth3`. Этот запуск проверяет handshake/runtime AWG и не использовал клиентский трафик.
+- Запуск `/opt/bin/hestia -enable-keenetic-ingress` завершился `candidate preparation failed: python3 failed` до публикации новой генерации. Чтение только безопасных полей профиля установило причину: единственная AWG-группа имеет `defaultExit` равный собственному AmneziaWG connector, тогда как первая локальная версия compiler чрезмерно требовала `deny`. Managed profile validation проходит; active inbound по-прежнему только `dev-local`, journal/профиль не изменены, AWG runtime остаётся поднятым.
+- В локальном compiler это условие ослаблено до `deny` или AWG member из той же AWG-only группы; любой direct/не-AWG fallback остаётся запрещён. Два профильных теста после правки прошли. Новый Hestia IPK ещё собирается и не загружался. Ingress/guard на устройстве ещё не установлены.
+
+Следующий пробный вызов enable с новой compiler версией отказался на штатном `SmokeCurrent`, до профильно́й транзакции: установленный smoke считал все AWG exits `unhealthy`, хотя тот же свежий readiness heartbeat отображался как connector `ready`. Поэтому smoke ошибочно ожидал selector `deny` вместо текущего выбранного AWG. Проверка readiness вынесена в общий пакет `internal/awghealth`, которым пользуются controller и Entware smoke: передаваемый exit считается healthy только при свежем root-owned heartbeat с ожидаемым mode/status. Это сохраняет отказ при устаревшем или отсутствующем marker и устраняет несогласованность проверок.
+
+После этой правки: `GOPROXY=off go test ./internal/awghealth` прошёл на host, два Keenetic profile tests прошли, тестовые бинарники `internal/awghealth`, `internal/services/entware` и `internal/controller` успешно cross-compiled для Linux ARM64 + `keenetic`, `make build-go` и полная `make build` прошли. Новый artifact: `dist/artifacts/20261108-233419-e523f5481e66/keenetic-arm64-experimental`; содержит общий heartbeat reader, smoke health fix, AWG-only inbound route rule и CLI enable/disable. Он ещё не устанавливался на роутер.
+
+Клиент остаётся на прежней policy. До повторного запуска enable дождаться нового Keenetic IPK, установить его через opkg, повторно поднять сохранённый AWG connector через root-only supervisor, затем выполнить транзакционное включение. После этого read-only проверить активный inbound-specific route, NDM/TUN состояния, policy mark guard rules/routes и main route; клиент не назначать до этих проверок.

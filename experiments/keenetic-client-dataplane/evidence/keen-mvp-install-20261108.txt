@@ -1,0 +1,29 @@
+Вопрос: создаёт ли отдельный Entware IPK `keen-mvp` принадлежащий ему NDM `OpkgTun0` и Linux TUN link `opkgtun0` на KN-1012 без изменения основного IPv4 default route?
+
+Дата: 2026-11-08 UTC.
+Устройство: Keenetic Giga KN-1012; KeeneticOS `5.02.B.3.0-2` / 5.2 Beta 3; kernel `4.9-ndm-5`; AArch64, Entware `aarch64-3.10`.
+Исходная ревизия: `e523f54` (dirty рабочее дерево; пакет собран из текущих локальных файлов).
+Первый пакет: `keen-mvp_0.1.0-1_aarch64-3.10.ipk`; SHA-256 `9977570fc4bbbb4760016cb9c9aa317f550cce909a7d88af86e14863f0b5c05b`.
+
+Условия и ожидание: перед установкой read-only проверка показала, что имя `OpkgTun0` не занято, адрес `172.31.250.1/32` не назначен, а hash основного IPv4 default route равен `f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871`. Ожидалось, что `postinst` запустит сервис, NDM создаст интерфейс с адресом `/32` и MTU 1500, процесс откроет `/dev/net/tun` с именем `opkgtun0`, а основной default route останется прежним.
+
+Фактический результат: `opkg install` завершился успешно, `opkg status` показывает `keen-mvp` `0.1.0-1`. `/opt/etc/init.d/S52keen-mvp status` вернул `OpkgTun0 is present`; Linux link `opkgtun0` существует. После установки hash основного IPv4 default route остался `f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871`, совпадая с исходным. Временная копия IPK удалена из `/opt/tmp`; пакет и сервис оставлены установленными, чтобы Product Owner мог проверить интерфейс.
+
+Команды воспроизведения:
+
+```sh
+python3 keen-mvp/build.py
+scp -O -F private/keenetic/ssh/config keen-mvp/dist/keen-mvp_0.1.0-1_aarch64-3.10.ipk keenetic-hestia:/opt/tmp/keen-mvp_0.1.0-1_aarch64-3.10.ipk
+ssh -F private/keenetic/ssh/config keenetic-hestia 'opkg install /opt/tmp/keen-mvp_0.1.0-1_aarch64-3.10.ipk'
+ssh -F private/keenetic/ssh/config keenetic-hestia '/opt/etc/init.d/S52keen-mvp status'
+ssh -F private/keenetic/ssh/config keenetic-hestia '/opt/sbin/ip link show dev opkgtun0'
+ssh -F private/keenetic/ssh/config keenetic-hestia '/opt/sbin/ip -4 route show default | sha256sum'
+```
+
+Ограничения: WebUI не проверялся визуально; подтверждены NDM CLI inventory parser и Linux link. Не проверялись выбор интерфейса в policy, policy table/default route, RPDB, обработка TUN-пакетов, клиентский трафик, IPv6, fail-closed, reboot, аварийная остановка и удаление IPK. Политика и назначение `hestia-client` не менялись, внешние пробы не выполнялись, `system configuration save` не запускался. Сервис не читает TUN-пакеты и не маршрутизирует их; отсутствие изменения main default route не означает, что трафик клиента через будущую policy будет безопасно заблокирован.
+
+Ошибка доставки: обычный `scp` завершился отказом, так как на Entware нет `/opt/libexec/sftp-server`; повторная передача через legacy mode `scp -O` прошла. Локальная сборка, `go vet`, shell syntax checks, docs-check и `git diff --check` прошли; ShellCheck в окружении отсутствует.
+
+**Повтор после замечания о пустом WebUI.** Read-only блок `OpkgTun0` показывал `global: no`. В руководстве AWG-Go команда `interface OpkgTun0 ip global auto` назначена для отображения статуса/счётчиков. Команда применена к созданному интерфейсу; Keenetic сообщил `Global priority recalculated`, а read-back показал `global: yes` и `defaultgw: no`. Hash main IPv4 default route остался тем же. Первая попытка обновления IPK на `0.1.0-2` остановила процесс, но старый init script вернул ошибку после отправки TERM; opkg отменил обновление, пакет остался `0.1.0-1`, интерфейс временно исчез. В stop script исправлено распознавание завершённого/zombie процесса; повторное обновление прошло. Финальная версия `keen-mvp 0.1.0-2` включает `ip global auto` при старте и эту остановку; SHA-256 IPK `960de851e7d8384ae01beff9fcc8084ff5f31c2191938443615e6994217a8c84`. После обновления сервис сообщает `OpkgTun0 is present`, NDM показывает `global: yes`, `defaultgw: no`, Linux link присутствует, hash main IPv4 default route неизменен. WebUI визуально ещё не проверен владельцем.
+
+Product Owner подтвердил WebUI отображение: страница `http://192.168.1.1/otherConnections` показывает `Keen-MVP`, `connection-type.OpkgTun`, «Резервное соединение». В policy интерфейс ещё не выбирался.

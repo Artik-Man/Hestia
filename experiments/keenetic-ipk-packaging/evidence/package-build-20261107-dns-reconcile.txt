@@ -1,0 +1,24 @@
+Дата: 2026-11-07
+Вопрос: сохраняется ли доступность optional DNS-службы после смены конфигурации или её собственного завершения в Entware supervisor?
+
+Supervisor теперь примерно раз в секунду сравнивает hash защищённого DNS JSON и состояние процесса. Изменение файла останавливает только DNS worker, затем строятся новые confined egress paths и запускается новый worker. Завершение DNS при изменении поколения sing-box также приводит к повторному запуску. Удаление/небезопасный файл останавливает worker. Неуспешный запуск повторяется с backoff 1, 2, 4, 8, 16, до 30 секунд; остальные Hestia службы остаются активны. После 10 секунд стабильной работы backoff сбрасывается.
+
+Проверки:
+
+- Обычный `go vet ./...` — успешно.
+- `GOOS=linux GOARCH=arm64 go vet -tags keenetic ./...` — успешно.
+- `GOOS=linux GOARCH=arm64 go build -tags keenetic ./cmd/hestia ./cmd/hestia-panel` — успешно.
+- `make fmt-check SHFMT=/private/tmp/hestia-tools/shfmt` — успешно.
+- `make docs-check SHFMT=/private/tmp/hestia-tools/shfmt` — успешно.
+- `git diff --check` — успешно.
+- `GOCACHE=/private/tmp/hestia-go-cache bash scripts/build/run.sh --output /private/tmp/hestia-dns-reconcile` — успешно; собраны Linux/Keenetic ARM64 приложения, frontend и IPK.
+
+IPK: `/private/tmp/hestia-dns-reconcile/20261107-075642-5dd5889e639b/keenetic-arm64-experimental/hestia_20261107-075642-5dd5889e639b_aarch64-3.10.ipk`.
+
+- SHA-256: `9df289d5690260c7af5b52f5be74635d3c7fa76f6dc7b80cafc87d2aa8b19d41`.
+- Размер: 58,986,881 байт.
+- Manifest: 552 source inputs, 145 packaged files.
+- `backend/internal/services/entware/ipc.go`: `336cd4d21b2f7fa44dc92cbfb3678fed210ac649cb79b29737ba5500a83b6daf`.
+- `backend/internal/services/entware/process.go`: `5cc5cf2675a9c4ba520b97661ef0112b37c0eb0a41885b500fb27f37bb9c5814`.
+
+Границы: тесты не запускались, процессное восстановление и DNS не проверялись на KN-1012. Политика DNS, сокеты и фактический клиентский трафик остаются непроверенными; маршрутизаторские настройки DNS не меняются.

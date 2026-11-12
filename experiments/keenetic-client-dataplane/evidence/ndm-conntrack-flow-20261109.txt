@@ -1,0 +1,70 @@
+KN-1012 exact-tuple NDM conntrack observation — 9 November 2026
+
+## Question
+
+Can an already-supported, read-only KN-1012 interface expose a per-flow NDM mark/interface association for the client packet that appears on `br0` but not on the Hestia TUN capture?
+
+## Environment and bounds
+
+- Target: KN-1012, KeeneticOS `5.02.B.3.0-2`, kernel `4.9-ndm-5`.
+- Installed Hestia package: `20261109-172910-db76edb7f3e1`.
+- Test flow: TCP `192.168.1.124:49334 → 1.1.1.1:443` from the existing `hestia-client` VM.
+- One synchronized Hestia trace was limited to 15 seconds. During this probe, the conntrack query was filtered on the router by the exact test tuple before returning its output. No policy, firewall, module, route, persistent file, VM power, or SSH-key state was changed. `hestia-prod` was not accessed.
+
+## Observations
+
+- The Hestia trace ran from `2026-11-09T15:29:41.796107312Z` for 15 seconds. Its same-window configuration snapshot reported active explicit `Policy2`, configured mark `0xffffaac`, NDM table `4100`, Hestia table `32732`; the RCI/RPDB/FIB fields remained `configured_expectation`.
+- `hestia-client:lima0` captured three SYN packets for the exact tuple. Hestia's AF_PACKET trace reported `br0 observed count=3`, `opkgtun0 not_observed`, and no exact-tuple sing-box inbound. HTTPS connect timed out with curl exit 28.
+- During the trace, read-only `ndmc -c "show ip conntrack"` returned this exact matching record (MAC omitted):
+
+```text
+TCP 6 src=192.168.1.124 dst=1.1.1.1 sport=49334 dport=443 packets=3 bytes=180 src=1.1.1.1 dst=172.31.250.1 sport=443 dport=49334 packets=0 bytes=0 [UNREPLIED] [FASTNAT] mark=0x0ffffaac ndmmark=0x00 unclass sc=0 ifl=33 ifw=674
+```
+
+- Read-only sysfs reads returned `br0 ifindex=33` and `opkgtun0 ifindex=674`. `/proc/sys/net/hwnat/ppe_enabled` returned `1`.
+- The same exact conntrack entry remained present immediately after the probe. Its original-direction packet count increased from 1 to 3 while the client retransmitted SYNs.
+
+## Exact commands
+
+Router trace:
+
+```sh
+printf '%s' '{"protocol":"TCP","source":"192.168.1.124","sourcePort":49334,"destination":"1.1.1.1","destinationPort":443,"durationSeconds":15}' | /opt/bin/hestia -traffic-trace
+```
+
+Router conntrack filter and interface mapping (filtering happens on the router, before any output crosses SSH):
+
+```sh
+ndmc -c "show ip conntrack" 2>/dev/null | grep -F "src=192.168.1.124 dst=1.1.1.1 sport=49334 dport=443"
+cat /sys/class/net/br0/ifindex
+cat /sys/class/net/opkgtun0/ifindex
+cat /proc/sys/net/hwnat/ppe_enabled
+```
+
+Client capture and probe:
+
+```sh
+sudo -n timeout 15 tcpdump -nn -l -i lima0 \
+  '(src host 192.168.1.124 and src port 49334 and dst host 1.1.1.1 and dst port 443) or (src host 1.1.1.1 and src port 443 and dst host 192.168.1.124 and dst port 49334)' \
+  > /tmp/hestia-client-trace-49334.log 2>&1 &
+capture_pid=$!
+sleep 1
+curl -4 --interface 192.168.1.124 --local-port 49334 \
+  --connect-timeout 4 --max-time 7 \
+  --resolve one.one.one.one:443:1.1.1.1 -sS -o /dev/null \
+  https://one.one.one.one/cdn-cgi/trace
+curl_status=$?
+wait "$capture_pid" || true
+cat /tmp/hestia-client-trace-49334.log
+echo "curl_exit=$curl_status"
+```
+
+## Interpretation and limits
+
+This proves that NDM conntrack exposed an exact flow record with `mark=0x0ffffaac`, matching the configured Policy2 mark, and `ifw=674`, numerically equal to the current `opkgtun0` ifindex. It also reports `ifl=33`, matching `br0`, and a reply tuple whose destination is `172.31.250.1`. This is strong packet-associated evidence that NDM tracked/classified the connection and associated it with the OpkgTun interface. The `ifw` label's precise vendor semantics were not independently documented here; keep it recorded as the NDM-reported interface index associated with the connection.
+
+The output is a conntrack record. `mark` here must be labelled as the observed connection mark; this is not a direct read of `skb->mark` at the priority-7 RPDB rule and does not show a route lookup invocation. The record does not prove that a packet was delivered to the TUN FD. The apparent disagreement (`ifw=674`, but no AF_PACKET event on `opkgtun0`) remains open. `[FASTNAT]` and `ppe_enabled=1` make the packet-interface observation boundary a material limitation. `[UNREPLIED]` and the client timeout mean no reply was observed in this flow, not that a specific device or rule dropped it. Never convert the trace's `not_observed` stage into a drop verdict.
+
+## Smallest next step
+
+Extend the existing opt-in trace to take one or two read-only `ndmc show ip conntrack` snapshots during the 15-second window, retain only the exact five-tuple, and persist only allowlisted fields: packet/byte counts, flags, connection mark, `ndmmark`, `ifl`, and `ifw`. Report the connection mark and NDM interface index as separate packet-associated observations; keep direct skb mark, RPDB hit, TUN-FD delivery, Hestia ingress, and Internet egress unconfirmed. No kernel module, rule, route, policy, or firewall change is needed.

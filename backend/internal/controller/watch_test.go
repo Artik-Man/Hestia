@@ -11,7 +11,8 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
-	"time"
+
+	"github.com/Artik-Man/Hestia/internal/panelmodel"
 )
 
 // TestWatcherReconcilesOnlyDivergentSelectors checks that retries repair FI
@@ -139,32 +140,18 @@ func (transport *selectorTransport) RoundTrip(request *http.Request) (*http.Resp
 	return &http.Response{StatusCode: status, Header: make(http.Header), Body: io.NopCloser(bytes.NewReader(payload)), Request: request}, nil
 }
 
-// TestAWGHealthRecordFreshness rejects wrong connector IDs, stale times and future-dated heartbeats.
-func TestAWGHealthRecordFreshness(t *testing.T) {
-	now := time.Date(2026, 11, 4, 12, 0, 0, 0, time.UTC)
-	base := awgHealthRecord{ID: "awg-test", UpdatedAt: now.Add(-time.Second), Status: "ready"}
-	if !validAWGHealthRecord(base, "awg-test", now) {
-		t.Fatal("fresh valid record rejected")
-	}
-	for _, record := range []awgHealthRecord{
-		{ID: "other", UpdatedAt: now, Status: "ready"},
-		{ID: "awg-test", UpdatedAt: now.Add(-awgHealthMaxAge - time.Second), Status: "ready"},
-		{ID: "awg-test", UpdatedAt: now.Add(2 * time.Second), Status: "ready"},
-		{ID: "awg-test", UpdatedAt: now, Status: "failed"},
-	} {
-		if validAWGHealthRecord(record, "awg-test", now) {
-			t.Fatalf("invalid record accepted: %+v", record)
-		}
-	}
-}
-
 // TestWatcherCarrierFailover reads the link state every reconciliation and recovers without a config rewrite.
 func TestWatcherCarrierFailover(t *testing.T) {
 	tr := &selectorTransport{selected: "direct-test"}
 	w := newWatcher(&http.Client{Transport: tr}, "http://gateway.test")
 	w.devices = map[string]string{"direct-test": "eth0", "awg-test": "awg0"}
 	links := map[string]bool{"eth0": true, "awg0": true}
-	w.carrier = func(name string) bool { return links[name] }
+	w.carrier = func(name string) panelmodel.CarrierState {
+		if links[name] {
+			return panelmodel.CarrierUp
+		}
+		return panelmodel.CarrierDown
+	}
 	w.healthyAWG = func(string) bool { return true }
 	snapshot := []byte(`{"groups":[{"id":"default","exits":["direct-test","awg-test"]}],"lists":[],"healthy":{"direct-test":true,"awg-test":true},"connectorKinds":{"awg-test":"awg"}}`)
 	for _, phase := range []struct {

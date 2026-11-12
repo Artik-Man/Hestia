@@ -1,0 +1,27 @@
+# Локальная сборка платформенных вариантов Hestia — 9 ноября 2026 года
+
+## Вопрос и среда
+
+Проверить, что изменение платформенного входа упаковывается одновременно для Linux/VM ARM64 и экспериментального Keenetic ARM64, не удаляя Linux-вариант.
+
+- Репозиторий: `/Users/artikman/Documents/projects/hestia`.
+- Исходное дерево было изменено; manifest помечает обе сборки как `dirty: true`.
+- Revision: `e523f5481e66b977deb4fbff43008bb0dd274b4b`.
+- Команда: `python3 scripts/build/run.py --output /tmp/hestia-platform-build-final`.
+
+## Ожидаемый и фактический результат
+
+Ожидалось завершение Linux/VM и Keenetic ARM64 сборок, включая Keenetic IPK.
+
+Команда завершилась с кодом 0. Артефакты сохранены в:
+
+- `/tmp/hestia-platform-build-final/20261109-094953-e523f5481e66/linux-arm64` — manifest, binaries, helpers, browser, scripts, `sing.tgz`.
+- `/tmp/hestia-platform-build-final/20261109-094953-e523f5481e66/keenetic-arm64-experimental` — те же компоненты и `hestia_20261109-094953-e523f5481e66_aarch64-3.10.ipk`.
+
+SHA-256 IPK: `5ded4eb43f724d7c8dec665a02db46db688fae13a935253a4f7f5f7d915a6a36`.
+
+Оба manifest включают исходники `backend/internal/platform/opkgtun_keenetic.go`, `deploy/profile.py` и `scripts/deploy/default-profile-keenetic.json`. Сборка подтверждает компиляцию и упаковку этой версии исходников.
+
+## Границы вывода
+
+IPK не устанавливался на Keenetic. Не проверялись NDM lifecycle этой сборки, выбор OpkgTun в policy, назначение клиента, сквозной dataplane, возвратный путь и fail-closed. Результат не доказывает совместимость поведения на роутере. Тесты в этом прогоне не запускались.

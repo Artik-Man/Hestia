@@ -108,6 +108,29 @@ export class GroupsState {
     this.movement.set(this.catalog.name(id) + " — позиция " + priority + ".");
   }
 
+  /** addDirectExit stages a catalogued direct platform exit in a group without saving or activating a VPN profile. */
+  addDirectExit(id: string, groupId: string): void {
+    const draft = this.draft();
+    const candidate = this.catalog.entries().get(id);
+    const group = draft.order.find((item) => item.id === groupId);
+    if (
+      this.pending() ||
+      draft.changedSource ||
+      !candidate ||
+      candidate.type !== "direct" ||
+      !group ||
+      draft.order.some((item) => item.exits.includes(id))
+    )
+      return;
+    const order = draft.order.map((item) =>
+      item.id === groupId ? { ...item, exits: [...item.exits, id] } : item,
+    );
+    this.working.set({ ...draft, order });
+    this.movement.set(
+      this.catalog.name(id) + " добавлено в группу «" + groupId + "».",
+    );
+  }
+
   /** reset discards this tab's unsaved proposal and returns to the latest snapshot order. */
   reset(): void {
     if (this.pending()) return;

@@ -100,12 +100,29 @@ test("domain lists persist after reload and compare edits against their original
     const controls = await dialog
       .locator("button, input, textarea, [tabindex]")
       .count();
-    for (let step = 0; step <= controls; step++) {
+    const initialFocus = await page.evaluateHandle(
+      () => document.activeElement,
+    );
+    let closeNoticeFocused = false;
+    for (let step = 0; step < controls * 2; step++) {
       await page.keyboard.press("Tab");
-      if (await closeNotice.evaluate((button) => button.matches(":focus")))
+      if (await closeNotice.evaluate((button) => button.matches(":focus"))) {
+        closeNoticeFocused = true;
         break;
+      }
+      if (
+        await page.evaluate(
+          (start) => document.activeElement === start,
+          initialFocus,
+        )
+      ) {
+        break;
+      }
     }
-    assert.ok(await closeNotice.evaluate((button) => button.matches(":focus")));
+    assert.ok(
+      closeNoticeFocused,
+      "Toast close button must be reachable by keyboard inside the editor dialog",
+    );
     await page.keyboard.press("Enter");
     await closeNotice.waitFor({ state: "hidden" });
     assert.equal(await name.inputValue(), "Новые примеры");

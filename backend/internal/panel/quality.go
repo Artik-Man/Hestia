@@ -7,8 +7,10 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"reflect"
 	"slices"
+	"strconv"
 	"sync"
 	"time"
 
@@ -83,6 +85,20 @@ func registerQuality(api huma.API, snapshot string, files qualityFiles) {
 		return &qualityReportOutput{Body: report}, nil
 	})
 	huma.Register(api, huma.Operation{
+		OperationID: "resetQualityResults", Tags: []string{"Panel"}, Method: http.MethodPost, Path: "/api/quality/reset",
+		Summary: "Сбросить накопленные результаты проверок связи", DefaultStatus: http.StatusNoContent,
+		Errors: []int{http.StatusServiceUnavailable},
+	}, func(_ context.Context, _ *struct{}) (*struct{}, error) {
+		if files.settings == "" {
+			return nil, huma.Error503ServiceUnavailable("Файл настроек проверок не настроен")
+		}
+		if err := writeQualityReset(files.settings+".reset", time.Now().UnixNano()); err != nil {
+			log.Printf("reset quality results: %v", err)
+			return nil, huma.Error503ServiceUnavailable("Не удалось сбросить результаты проверок")
+		}
+		return &struct{}{}, nil
+	})
+	huma.Register(api, huma.Operation{
 		OperationID: "updateQualitySettings", Tags: []string{"Panel"}, Method: http.MethodPut, Path: "/api/quality/settings",
 		Summary: "Сохранить общие для всех выходов параметры проверок связи", Description: qualityTargetInputDescription, MaxBodyBytes: 8192,
 		Errors: []int{http.StatusRequestEntityTooLarge, http.StatusUnprocessableEntity, http.StatusServiceUnavailable},
@@ -132,6 +148,27 @@ func registerQuality(api huma.API, snapshot string, files qualityFiles) {
 	})
 }
 
+// writeQualityReset atomically publishes a timestamped reset request for the probe worker.
+func writeQualityReset(path string, timestamp int64) error {
+	temporary, err := os.CreateTemp(filepath.Dir(path), ".quality-reset-")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(temporary.Name())
+	if _, err := temporary.WriteString(strconv.FormatInt(timestamp, 10)); err != nil {
+		_ = temporary.Close()
+		return err
+	}
+	if err := temporary.Chmod(0600); err != nil {
+		_ = temporary.Close()
+		return err
+	}
+	if err := temporary.Close(); err != nil {
+		return err
+	}
+	return os.Rename(temporary.Name(), path)
+}
+
 // readReport returns a matching recent worker report, or topology with unknown scores until one arrives.
 func (files qualityFiles) readReport(snapshot string) (panelmodel.QualityReport, error) {
 	settings := quality.DefaultSettings()
@@ -149,6 +186,22 @@ func (files qualityFiles) readReport(snapshot string) (panelmodel.QualityReport,
 	report, err := readFreshQualityReport(files.report, snapshot, topology.Groups)
 	if err != nil {
 		return panelmodel.QualityReport{}, err
+	}
+	if report != nil && files.settings != "" {
+		reset, readErr := os.ReadFile(files.settings + ".reset")
+		if readErr != nil && !errors.Is(readErr, os.ErrNotExist) {
+			return panelmodel.QualityReport{}, readErr
+		}
+		if readErr == nil {
+			resetAt, parseErr := strconv.ParseInt(string(reset), 10, 64)
+			capturedAt, timeErr := time.Parse(time.RFC3339Nano, report.CapturedAt)
+			if parseErr != nil || timeErr != nil {
+				return panelmodel.QualityReport{}, errors.Join(parseErr, timeErr)
+			}
+			if capturedAt.UnixNano() <= resetAt {
+				report = nil
+			}
+		}
 	}
 	if report != nil && reflect.DeepEqual(settings, report.Settings) {
 		return *report, nil

@@ -1,4 +1,5 @@
 /dist/
+/references/*/
 /stand.local/
 /private/
 /.agent-memory/

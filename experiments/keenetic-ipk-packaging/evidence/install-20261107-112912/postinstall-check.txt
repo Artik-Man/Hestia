@@ -1,0 +1,8 @@
+architecture=aarch64
+package-status=Version: 20261107-112912-f9fea441ebfd Status: install user installed Architecture: aarch64-3.10
+unicode-module=ok
+managed-profile=valid
+controller-config=valid
+supervisor-ipc=ready
+panel-http=200
+listeners=5220/hestia-panel;5160/ld-linux-aarch;5160/ld-linux-aarch;

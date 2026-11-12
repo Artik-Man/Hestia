@@ -1,0 +1,175 @@
+find deploy tests/lab scripts -type f -name '*.sh' -exec /tmp/hestia-tools/bin/shfmt -i 4 -ci -d {} +
+go -C backend vet ./cmd/... ./internal/... ./pkg/... ./tools/...
+find deploy tests/lab scripts -type f -name '*.sh' -exec /tmp/hestia-tools/bin/shellcheck -x -P SCRIPTDIR -s bash {} +
+go -C backend test ./cmd/... ./internal/... ./pkg/... ./tools/...
+?   	github.com/Artik-Man/Hestia/cmd/keenetic-preflight	[no test files]
+?   	github.com/Artik-Man/Hestia/cmd/keenetic-rci-ethernet	[no test files]
+?   	github.com/Artik-Man/Hestia/cmd/keenetic-rci-interface-schema	[no test files]
+?   	github.com/Artik-Man/Hestia/cmd/keenetic-rci-survey-schema	[no test files]
+?   	github.com/Artik-Man/Hestia/cmd/keenetic-rci-wisp-status	[no test files]
+ok  	github.com/Artik-Man/Hestia/internal/awg	(cached)
+ok  	github.com/Artik-Man/Hestia/internal/awgruntime	(cached)
+ok  	github.com/Artik-Man/Hestia/internal/binding	15.204s
+?   	github.com/Artik-Man/Hestia/internal/connectionid	[no test files]
+ok  	github.com/Artik-Man/Hestia/internal/controller	(cached)
+ok  	github.com/Artik-Man/Hestia/internal/dnspolicy	(cached)
+ok  	github.com/Artik-Man/Hestia/internal/dnsresolver	(cached)
+ok  	github.com/Artik-Man/Hestia/internal/dnsservice	(cached)
+ok  	github.com/Artik-Man/Hestia/internal/geoip	(cached)
+ok  	github.com/Artik-Man/Hestia/internal/keeneticdiagnostics	(cached)
+?   	github.com/Artik-Man/Hestia/internal/netaddress	[no test files]
+?   	github.com/Artik-Man/Hestia/internal/network	[no test files]
+?   	github.com/Artik-Man/Hestia/internal/network/keeneticphysical	[no test files]
+ok  	github.com/Artik-Man/Hestia/internal/network/linuxphysical	(cached)
+ok  	github.com/Artik-Man/Hestia/internal/network/linuxroute	(cached)
+ok  	github.com/Artik-Man/Hestia/internal/network/socket	(cached)
+ok  	github.com/Artik-Man/Hestia/internal/observer	(cached)
+ok  	github.com/Artik-Man/Hestia/internal/panel	(cached)
+ok  	github.com/Artik-Man/Hestia/internal/panelmodel	(cached)
+?   	github.com/Artik-Man/Hestia/internal/physical	[no test files]
+?   	github.com/Artik-Man/Hestia/internal/platform	[no test files]
+ok  	github.com/Artik-Man/Hestia/internal/platformhelper	(cached)
+ok  	github.com/Artik-Man/Hestia/internal/profileexec	(cached)
+ok  	github.com/Artik-Man/Hestia/internal/quality	(cached)
+ok  	github.com/Artik-Man/Hestia/internal/routing	(cached)
+?   	github.com/Artik-Man/Hestia/internal/services	[no test files]
+?   	github.com/Artik-Man/Hestia/internal/services/entware	[no test files]
+ok  	github.com/Artik-Man/Hestia/internal/services/systemd	0.268s
+ok  	github.com/Artik-Man/Hestia/internal/storage	(cached)
+ok  	github.com/Artik-Man/Hestia/internal/traffic	(cached)
+ok  	github.com/Artik-Man/Hestia/internal/trafficcapture	(cached)
+?   	github.com/Artik-Man/Hestia/pkg/keeneticrci	[no test files]
+?   	github.com/Artik-Man/Hestia/tools/doccheck	[no test files]
+?   	github.com/Artik-Man/Hestia/tools/openapi	[no test files]
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s deploy
+...sssssss...............................
+----------------------------------------------------------------------
+Ran 41 tests in 0.342s
+
+OK (skipped=7)
+bash -n deploy/install.sh
+bash -n deploy/build-installer.sh
+python3 -B -m unittest discover -s tools -p 'test_*.py'
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.251s
+
+OK
+python3 -B tools/run_lab_tests.py
+Running tests/lab/dev-validation/test_acceptance.py
+...PASS GET /api/navigation
+PASS GET /api/groups-and-rules
+PASS GET /api/awg
+PASS GET /api/awg-underlays
+PASS GET /api/hysteria2
+PASS GET /api/physical-connections
+PASS GET /api/quality
+PASS GET /api/traffic
+PASS GET /api/traffic/settings
+PASS GET /api/country-map
+PASS GET /api/dns/policy
+.PASS GET /api/navigation
+PASS GET /api/groups-and-rules
+PASS GET /api/awg
+PASS GET /api/awg-underlays
+PASS GET /api/hysteria2
+PASS GET /api/physical-connections
+PASS GET /api/quality
+PASS GET /api/traffic
+PASS GET /api/traffic/settings
+PASS GET /api/country-map
+PASS GET /api/dns/policy
+..
+----------------------------------------------------------------------
+Ran 6 tests in 0.005s
+
+OK
+Running tests/lab/dns-restart/test_verify.py
+E
+======================================================================
+ERROR: test_verify (unittest.loader._FailedTest.test_verify)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_verify
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/loader.py", line 141, in loadTestsFromName
+    module = __import__(module_name)
+  File "/Users/artikman/Documents/projects/hestia/tests/lab/dns-restart/test_verify.py", line 7, in <module>
+    from verify import RU_A, audit_ru
+  File "/Users/artikman/Documents/projects/hestia/tests/lab/dns-restart/verify.py", line 12, in <module>
+    packet = importlib.import_module("dns-split-warm.verify")
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/artikman/Documents/projects/hestia/tests/lab/dns-split-warm/verify.py", line 9, in <module>
+    from authority import FI_A, RU_A, RU_B, TTLS, peer
+  File "/Users/artikman/Documents/projects/hestia/tests/lab/dns-split-warm/authority.py", line 9, in <module>
+    import dns.flags
+ModuleNotFoundError: No module named 'dns'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)
+Running tests/lab/dns-rotation/test_cache.py
+E
+======================================================================
+ERROR: test_cache (unittest.loader._FailedTest.test_cache)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_cache
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/loader.py", line 141, in loadTestsFromName
+    module = __import__(module_name)
+  File "/Users/artikman/Documents/projects/hestia/tests/lab/dns-rotation/test_cache.py", line 9, in <module>
+    import dns.message
+ModuleNotFoundError: No module named 'dns'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)
+Running tests/lab/dns-stale/test_stale.py
+E
+======================================================================
+ERROR: test_stale (unittest.loader._FailedTest.test_stale)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_stale
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/loader.py", line 141, in loadTestsFromName
+    module = __import__(module_name)
+  File "/Users/artikman/Documents/projects/hestia/tests/lab/dns-stale/test_stale.py", line 9, in <module>
+    import dns.edns
+ModuleNotFoundError: No module named 'dns'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)
+Running tests/lab/dns-warm/test_warm.py
+E
+======================================================================
+ERROR: test_warm (unittest.loader._FailedTest.test_warm)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_warm
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/loader.py", line 141, in loadTestsFromName
+    module = __import__(module_name)
+  File "/Users/artikman/Documents/projects/hestia/tests/lab/dns-warm/test_warm.py", line 9, in <module>
+    import dns.message
+ModuleNotFoundError: No module named 'dns'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)
+Running tests/lab/partial-loss/test_policy.py
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.001s
+
+OK
+Failed lab modules: tests/lab/dns-restart/test_verify.py, tests/lab/dns-rotation/test_cache.py, tests/lab/dns-stale/test_stale.py, tests/lab/dns-warm/test_warm.py
+make: *** [test-lab] Error 1

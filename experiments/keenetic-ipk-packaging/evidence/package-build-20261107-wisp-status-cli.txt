@@ -1,0 +1,19 @@
+Дата: 2026-11-07
+Вопрос: можно ли проверить WISP status reader на KN-1012 одной Go-командой, не раскрывающей RCI профильные секреты?
+
+Добавлена `backend/cmd/keenetic-rci-wisp-status`: one-shot read-only исследовательская команда вызывает общий `keeneticrci.WISPConnector` и печатает только typed interface ID/status и redacted transport metadata. Ошибка transport/schema кодируется стабильным общим статусом; токен, сырое RCI тело, SSID, description, credentials и адреса не печатаются. Команда включена в Linux ARM64 и Keenetic ARM64 research build, но не в runtime IPK payload.
+
+Проверки:
+
+- Linux и Keenetic ARM64 `go vet ./...` — успешно.
+- `GOCACHE=/private/tmp/hestia-go-cache make build-go` — успешно; обе конфигурации и research-команды скомпилированы.
+- `make fmt-check SHFMT=/private/tmp/hestia-tools/shfmt` — успешно.
+- `make docs-check SHFMT=/private/tmp/hestia-tools/shfmt` — успешно.
+- `git diff --check` — успешно.
+- Полная Linux/Keenetic ARM64, frontend и IPK сборка завершилась с кодом 0.
+
+Исследовательский бинарник Keenetic ARM64: `dist/go/keenetic-arm64-experimental/research/keenetic-rci-wisp-status`, размер 9 463 490 байт, SHA-256 `d7cbf1ff7976689f992bae33072a1fd870a8507283fa644a78f9672b96632d3a`. Source hash `backend/cmd/keenetic-rci-wisp-status/main.go`: `0799443cae6acd50fae5c0f26be234cecf852975ba50a5f6ceed6848f63851a7`.
+
+IPK: `/private/tmp/hestia-wisp-status/20261107-083007-5dd5889e639b/keenetic-arm64-experimental/hestia_20261107-083007-5dd5889e639b_aarch64-3.10.ipk`, размер 58 991 817 байт, SHA-256 `e5894675e1f10d490f1d429ee08283aeba9160f1b7943d3d401bd804effbc2ec`. Его manifest содержит 554 source inputs и 145 файлов, включая source hash исследовательской команды и `scripts/build/run.py`.
+
+Границы: тесты не запускались. Команда не запускалась против KN-1012; HTTP JSON schema WISP остаётся неизвестной. Запуск выполняет read-only RCI запрос и требует отдельного разрешённого прогона; он не меняет конфигурацию и не сканирует радио.

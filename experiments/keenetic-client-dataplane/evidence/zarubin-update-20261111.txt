@@ -1,0 +1,35 @@
+# KN-1012 Zarubin update evidence — 11 November 2026
+
+## Build and regression checks
+
+- Branch: `codex/keenetic-opkgtun-ingress`; dirty working tree contained the active project changes.
+- Target package: `20261111-103248-d9a573386528`, architecture `aarch64-3.10`.
+- IPK SHA-256, local and staged copy: `7351ecd795ec1f655761c14ffa8579f794a17f90e90d404c4f840182a7988053`.
+- `make build`: exit 0; bundle manifest verification returned the expected version.
+- `python3 -m unittest test_profile` from `deploy/`: 35 tests passed.
+- Keenetic-tagged binding test binary was cross-compiled for Linux ARM64 and executed on `hestia-dev`: `TestKeeneticIngressSnapshotAllowsOnlyManagedDefaultOutput` passed.
+- The full binding test binary was also invoked on `hestia-dev`; runtime-dependent cases could not pass there because the VM has no installed Entware supervisor and does not contain the repository-relative guest fixtures. This run is not counted as a passing full binding suite.
+
+## Installation and target state
+
+- Owner reported that `OpkgTun0` had been removed from all policies; no policy changes were made during this run.
+- `/opt/bin/opkg install` completed with exit 0 after the target preflight passed.
+- `opkg status hestia`: version `20261111-103248-d9a573386528`, architecture `aarch64-3.10`, status `install user installed`.
+- `/opt/bin/hestia -service-supervisor-ready`: exit 0; readiness marker exists; maintenance marker absent.
+- `/opt/bin/python3 /opt/lib/hestia/profile.py --validate-managed /opt/etc/hestia`: exit 0.
+- `/opt/bin/hestia -check -config /opt/etc/hestia/snapshot.json`: exit 0.
+- sing-box `check -c /opt/etc/hestia/sing-box.json` via the installed Entware loader: exit 0.
+- `ip -o link show dev awg0`: interface exists and is `UP,LOWER_UP`.
+- IPv4 default-route SHA-256 before and after: `f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871`.
+- IPv6 default-route SHA-256 before and after: `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` (empty route output).
+- GET `/api/awg`, `/api/hysteria2`, `/api/quality`, `/api/groups-and-rules`: HTTP 200.
+- Public connection inventory reports Zarubin AmneziaWG as `ready` and Laurel Hysteria2. Both share group `Остальной мир`.
+- Fresh quality report captured `2026-11-11T07:39:53.899501026Z`: Zarubin available, UDP 10/12 and TCP 10/12, overall 83.3%; Laurel available, UDP 10/12 and TCP 10/10, overall 91.7%. Laurel is active; Zarubin is available as a reserve.
+
+## Reproduction
+
+From the repository root, run `make build`, then verify the generated Keenetic bundle with `scripts/shared/common.py::verify_bundle`. Run the profile regression suite from `deploy/` with `python3 -m unittest test_profile`. Cross-compile the binding test from `backend/` using `GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go test -c -tags keenetic -o /tmp/hestia-binding-keenetic.test ./internal/binding`; execute only the focused test on `hestia-dev` with `/tmp/hestia-binding-keenetic.test -test.run '^TestKeeneticIngressSnapshotAllowsOnlyManagedDefaultOutput$' -test.v`.
+
+## Limits
+
+This run verified supervisor readiness, AWG startup and the built-in quality probes. It did not send separate client traffic through `OpkgTun0`; client-side forwarding, return routing and leak/fail-closed behavior remain unverified.

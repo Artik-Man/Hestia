@@ -7,6 +7,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { TraceEvidence } from './traceEvidence';
 
 
 export interface TrafficEvent { 
@@ -34,6 +35,7 @@ export interface TrafficEvent {
     protocol: TrafficEvent.ProtocolEnum;
     reason?: string;
     time: string;
+    trace?: TraceEvidence;
 }
 export namespace TrafficEvent {
     export const KindEnum = {

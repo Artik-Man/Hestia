@@ -100,6 +100,16 @@ func (e *Engine) ApplySettings(s Settings) error {
 	return nil
 }
 
+// Reset clears all completed probe history and starts a fresh round for each configured protocol.
+func (e *Engine) Reset() {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.history = make(map[seriesKey]*windowSeries)
+	for _, protocol := range protocols {
+		e.epochs[protocol]++
+	}
+}
+
 // apply discards obsolete observations and invalidates in-flight rounds whenever a check changes.
 func (e *Engine) apply(s Settings) {
 	if reflect.DeepEqual(e.settings, s) {

@@ -16,6 +16,7 @@ func TestLinuxLayout(t *testing.T) {
 		{layout.AWGReady, "/run/hestia-awg/ready"},
 		{layout.AWGHealth, "/run/hestia-awg/health.json"},
 		{layout.AWGRoutes, "/run/hestia-awg/routes.json"},
+		{layout.IngressRuleState, "/var/lib/hestia-ingress/rules.json"},
 		{layout.CountryPolicy, "/var/lib/hestia-country-map/policy.json"},
 		{layout.QualitySettings, "/var/lib/hestia-quality-settings/settings.json"},
 		{layout.QualityRuntime, "/run/hestia-quality"},

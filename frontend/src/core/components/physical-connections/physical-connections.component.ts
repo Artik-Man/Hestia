@@ -8,7 +8,6 @@ import {
   effect,
   inject,
   input,
-  output,
   signal,
 } from "@angular/core";
 import { FormsModule } from "@angular/forms";
@@ -16,10 +15,8 @@ import { ButtonDirective } from "primeng/button";
 import { InputText } from "primeng/inputtext";
 import { firstValueFrom } from "rxjs";
 import { PanelService } from "../../services/api/generated/api/panel.service";
-import { ConnectionCatalog } from "../../services/connection-catalog.service";
 import { Notifications } from "../../services/notifications.service";
 
-import type { AWGUnderlayCandidate } from "../../services/api/generated/model/aWGUnderlayCandidate";
 import type { PhysicalInventory as Inventory } from "../../services/api/generated/model/physicalInventory";
 import type { WifiConnection as WifiProfile } from "../../services/api/generated/model/wifiConnection";
 type Band = WifiProfile["band"];
@@ -45,10 +42,20 @@ function validInventory(value: unknown): value is Inventory {
         typeof a === "object" &&
         "interfaceName" in a &&
         typeof a.interfaceName === "string" &&
+        (!("providerName" in a) ||
+          (typeof a.providerName === "string" &&
+            a.providerName.trim().length > 0 &&
+            a.providerName.length <= 80 &&
+            !/\p{Cc}/u.test(a.providerName))) &&
         "kind" in a &&
         (a.kind === "ethernet" || a.kind === "wifi") &&
+        "carrierState" in a &&
+        (a.carrierState === "up" ||
+          a.carrierState === "down" ||
+          a.carrierState === "unknown") &&
         "online" in a &&
         typeof a.online === "boolean" &&
+        a.online === (a.carrierState === "up") &&
         "present" in a &&
         typeof a.present === "boolean" &&
         "exitIds" in a &&
@@ -75,7 +82,7 @@ function validInventory(value: unknown): value is Inventory {
   );
 }
 
-/** PhysicalConnections discovers Ethernet ports and manages explicitly configured wireless client profiles. */
+/** PhysicalConnections manages Hestia wireless client profiles and radio inventory. */
 @Component({
   selector: "hestia-physical-connections",
   imports: [Tooltip, Toast, FormsModule, ButtonDirective, InputText],
@@ -84,8 +91,6 @@ function validInventory(value: unknown): value is Inventory {
 })
 export class PhysicalConnections {
   readonly revision = input(0);
-  readonly rename = output<AWGUnderlayCandidate>();
-  protected readonly catalog = inject(ConnectionCatalog);
   private readonly api = inject(PanelService);
   private readonly notifications = inject(Notifications);
   private readonly destroy = inject(DestroyRef);
@@ -94,17 +99,6 @@ export class PhysicalConnections {
   protected readonly busy = signal(false);
   protected readonly reading = signal(false);
   protected readonly editing = signal<WifiProfile | null>(null);
-  protected readonly ethernet = computed(
-    () =>
-      this.inventory()
-        ?.interfaces.filter((a) => a.kind === "ethernet")
-        .flatMap((a) =>
-          (a.exitIds.length ? a.exitIds : [""]).map((id) => ({
-            adapter: a,
-            id,
-          })),
-        ) ?? [],
-  );
   protected readonly radios = computed(
     () =>
       this.inventory()?.interfaces.filter(

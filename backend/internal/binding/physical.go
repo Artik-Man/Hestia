@@ -36,6 +36,17 @@ func (e Engine) PhysicalConnections(ctx context.Context, manager PhysicalManager
 		return inventory, err
 	}
 	index := map[string]int{}
+	nativeIndex := map[string]int{}
+	if inventory.NativeEthernetPorts == nil {
+		inventory.NativeEthernetPorts = []panelmodel.NativeEthernetPort{}
+	}
+	for i := range inventory.NativeEthernetPorts {
+		port := &inventory.NativeEthernetPorts[i]
+		if port.ExitIDs == nil {
+			port.ExitIDs = []string{}
+		}
+		nativeIndex[port.ID] = i
+	}
 	for i := range inventory.Interfaces {
 		device := &inventory.Interfaces[i]
 		if device.ExitIDs == nil {
@@ -47,6 +58,13 @@ func (e Engine) PhysicalConnections(ctx context.Context, manager PhysicalManager
 		if item.Type != "direct" || item.BindInterface == "" {
 			continue
 		}
+		if i, ok := nativeIndex[item.BindInterface]; ok {
+			inventory.NativeEthernetPorts[i].ExitIDs = append(inventory.NativeEthernetPorts[i].ExitIDs, item.ID)
+			continue
+		}
+		if len(item.BindInterface) > 15 {
+			continue
+		}
 		i, ok := index[item.BindInterface]
 		if !ok {
 			i = len(inventory.Interfaces)
@@ -55,7 +73,7 @@ func (e Engine) PhysicalConnections(ctx context.Context, manager PhysicalManager
 			if slices.ContainsFunc(inventory.WifiProfiles, func(p panelmodel.WifiConnection) bool { return p.InterfaceName == item.BindInterface }) {
 				kind = "wifi"
 			}
-			inventory.Interfaces = append(inventory.Interfaces, panelmodel.PhysicalInterface{InterfaceName: item.BindInterface, Kind: kind})
+			inventory.Interfaces = append(inventory.Interfaces, panelmodel.PhysicalInterface{InterfaceName: item.BindInterface, Kind: kind, CarrierState: panelmodel.CarrierUnknown})
 		}
 		inventory.Interfaces[i].ExitIDs = append(inventory.Interfaces[i].ExitIDs, item.ID)
 	}

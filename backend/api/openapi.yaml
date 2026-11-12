@@ -136,6 +136,12 @@ components:
         name:
           maxLength: 80
           type: string
+        role:
+          description: Платформенная роль канала; UI не должен выводить внутренний тип интерфейса
+          enum:
+            - input
+            - output
+          type: string
         type:
           enum:
             - direct
@@ -763,6 +769,110 @@ components:
         - server
         - port
       type: object
+    NDMConntrackEvidence:
+      additionalProperties: false
+      properties:
+        detail:
+          maxLength: 160
+          type: string
+        flags:
+          description: Allowlisted conntrack flags only
+          items:
+            type: string
+          maxItems: 4
+          nullable: true
+          type: array
+        ifl:
+          description: Raw NDM conntrack ifl interface index
+          format: int32
+          minimum: 0
+          type: integer
+        iflName:
+          enum:
+            - br0
+            - opkgtun0
+          type: string
+        ifw:
+          description: Raw NDM conntrack ifw interface index
+          format: int32
+          minimum: 0
+          type: integer
+        ifwName:
+          enum:
+            - br0
+            - opkgtun0
+          type: string
+        mark:
+          description: Observed uint32 conntrack mark; not direct skb->mark or RPDB lookup evidence
+          format: int64
+          maximum: 4294967295
+          minimum: 0
+          type: integer
+        ndmMark:
+          format: int64
+          maximum: 4294967295
+          minimum: 0
+          type: integer
+        observedAt:
+          format: date-time
+          type: string
+        originalBytes:
+          format: int64
+          minimum: 0
+          type: integer
+        originalPackets:
+          format: int64
+          minimum: 0
+          type: integer
+        replyBytes:
+          format: int64
+          minimum: 0
+          type: integer
+        replyPackets:
+          format: int64
+          minimum: 0
+          type: integer
+        status:
+          enum:
+            - observed
+            - not_observed
+            - unavailable
+            - truncated
+          type: string
+      required:
+        - status
+        - observedAt
+      type: object
+    NativeEthernetPort:
+      additionalProperties: false
+      properties:
+        duplex:
+          enum:
+            - half
+            - full
+          type: string
+        exitIds:
+          items:
+            type: string
+          type: array
+        id:
+          maxLength: 64
+          minLength: 1
+          type: string
+        link:
+          enum:
+            - up
+            - down
+          type: string
+        speedMbps:
+          format: int32
+          minimum: 0
+          type: integer
+      required:
+        - id
+        - link
+        - exitIds
+      type: object
     Navigation:
       additionalProperties: false
       properties:
@@ -789,6 +899,12 @@ components:
     PhysicalInterface:
       additionalProperties: false
       properties:
+        carrierState:
+          enum:
+            - up
+            - down
+            - unknown
+          type: string
         exitIds:
           items:
             type: string
@@ -806,10 +922,15 @@ components:
           type: boolean
         present:
           type: boolean
+        providerName:
+          maxLength: 80
+          minLength: 1
+          type: string
       required:
         - interfaceName
         - kind
         - present
+        - carrierState
         - online
         - exitIds
       type: object
@@ -819,6 +940,10 @@ components:
         interfaces:
           items:
             $ref: "#/components/schemas/PhysicalInterface"
+          type: array
+        nativeEthernetPorts:
+          items:
+            $ref: "#/components/schemas/NativeEthernetPort"
           type: array
         wifiAvailable:
           type: boolean
@@ -1063,6 +1188,99 @@ components:
         - dnsErrors
         - score
       type: object
+    TraceEvidence:
+      additionalProperties: false
+      properties:
+        configurationObservedAt:
+          description: UTC-время начала read-only снимка назначения клиента, policy, RPDB и маршрутов перед сбором tuple
+          format: date-time
+          type: string
+        configuredMark:
+          description: Mark из read-only RCI snapshot выбранной политики
+          format: int32
+          maximum: 268435455
+          minimum: 0
+          type: integer
+        destination:
+          type: string
+        destinationPort:
+          format: int64
+          type: integer
+        durationMs:
+          format: int64
+          type: integer
+        hestiaTable:
+          description: Таблица Hestia, рассчитанная из mark; наличие объектов подтверждают отдельные стадии
+          format: int32
+          maximum: 65535
+          minimum: 0
+          type: integer
+        ndmConntrack:
+          $ref: "#/components/schemas/NDMConntrackEvidence"
+          description: Bounded exact-tuple read-only NDM conntrack observation; mark is the connection mark, not a packet mark verdict
+        ndmTable:
+          description: Таблица NDM из read-only RCI snapshot
+          format: int32
+          maximum: 65535
+          minimum: 0
+          type: integer
+        policyKey:
+          description: Явная per-client policy, разрешённая из read-only client inventory и configuration snapshot
+          maxLength: 16
+          minLength: 7
+          pattern: ^Policy[0-9]{1,10}$
+          type: string
+        sessionId:
+          type: string
+        source:
+          type: string
+        sourcePort:
+          format: int64
+          type: integer
+        stages:
+          items:
+            $ref: "#/components/schemas/TraceStage"
+          maxItems: 16
+          nullable: true
+          type: array
+        startedAt:
+          format: date-time
+          type: string
+      required:
+        - sessionId
+        - startedAt
+        - durationMs
+        - source
+        - sourcePort
+        - destination
+        - destinationPort
+        - stages
+      type: object
+    TraceStage:
+      additionalProperties: false
+      properties:
+        count:
+          format: int64
+          type: integer
+        detail:
+          type: string
+        name:
+          type: string
+        reverseCount:
+          format: int64
+          type: integer
+        status:
+          enum:
+            - observed
+            - not_observed
+            - configured_expectation
+            - unavailable
+            - truncated
+          type: string
+      required:
+        - name
+        - status
+      type: object
     TrafficEvent:
       additionalProperties: false
       properties:
@@ -1117,6 +1335,8 @@ components:
         time:
           format: date-time
           type: string
+        trace:
+          $ref: "#/components/schemas/TraceEvidence"
       required:
         - id
         - time
@@ -2786,6 +3006,27 @@ paths:
                 $ref: "#/components/schemas/ErrorModel"
           description: Service Unavailable
       summary: Добавить или изменить одну проверку связи
+      tags:
+        - Panel
+  /api/quality/reset:
+    post:
+      operationId: resetQualityResults
+      responses:
+        "204":
+          description: No Content
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Сбросить накопленные результаты проверок связи
       tags:
         - Panel
   /api/quality/settings:

@@ -23,6 +23,7 @@
 - [Локальный DNS sing-box по UDP/TCP](keenetic-dns-local/README.md).
 - [Совместимость awg-tools на Keenetic](keenetic-awg-runtime/README.md).
 - [Создание и очистка TUN на Keenetic](keenetic-tun/README.md).
+- [TUN-вход Hestia через OpkgTun на Keenetic](keenetic-client-dataplane/README.md) — A/B sing-box stack на KN-1012 подтвердил восстановление клиентского TCP при `gvisor`; исправление установлено Hestia `0.1.7`, default route сохранился. PPE/FASTNAT и длительная нагрузка отдельно не проверялись.
 - [Проверка возможностей RCI/CLI только для чтения на KN-1012](keenetic-rci-readonly/README.md) — выборочная проверка команд `show`.
 - [Незавершённая инвентаризация Netfilter](keenetic-netfilter-readonly/README.md).
 - [Незавершённая проверка атомарного хранения](keenetic-storage-atomic/README.md).
@@ -30,6 +31,7 @@
 - [IPv6 SOCKS TCP/UDP и блокировка sing-box на Keenetic](keenetic-ipv6-loopback/README.md).
 
 - [Подготовка диагностики Keenetic](keenetic-capabilities/README.md) — локальная сборка и матрица ещё не выполненных аппаратных проверок.
+- [Локальная сборка Keenetic IPK](keenetic-ipk-packaging/README.md) — сборка и структурная проверка Entware IPK; установка и opkg lifecycle на KN-1012 не проверялись.
 - `tests/lab/` — поддерживаемые инструменты проверки, тестовые прототипы и их fixtures. Команда `make test-lab` запускает только модульные тесты, без доступа к ВМ.
 - `experiments/<опыт>/README.md` — отчёт конкретного опыта: вопрос, среда и версия кода, ожидание и результат, ограничения и воспроизведение.
 - `experiments/<опыт>/evidence/` — неизменённые исходные журналы, конфигурации прогонов и захваты. Исторические пути и имена ВМ внутри них сохраняются.

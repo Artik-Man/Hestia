@@ -1,0 +1,75 @@
+Bounded hestia-client TCP probe and panel API diagnosis — KN-1012, 9 November 2026
+
+## Scope and target
+
+- Device: KN-1012 / KeeneticOS `5.02.B.3.0-2`, kernel `4.9-ndm-5`.
+- Client: existing `hestia-client`, `192.168.1.124` on `lima0`.
+- Probe: TCP `192.168.1.124:49336 → 1.1.1.1:443`; one source-bound HTTPS request, maximum 6 seconds, inside a 15-second Hestia trace.
+- No policy, package, route, DNS configuration, VM power, or VM configuration was changed during the probe or API checks.
+
+## Client probe result
+
+The client capture saw two SYN packets and no reply. Curl exited 28 after a connection timeout. The same-window Hestia trace started at `2026-11-09T19:14:48.665133003Z` and reported:
+
+- two exact tuple matches on `br0`;
+- no matching packet observed on `opkgtun0` and no exact-tuple sing-box inbound, route, group, outbound, or block event;
+- exact NDM conntrack record with original packets `2`, bytes `120`, zero reply packets/bytes, `mark=0x0ffffaac`, `ndmmark=0`, `ifl=33` (`br0`), `ifw=674` (`opkgtun0`), flags `[UNREPLIED, FASTNAT]`;
+- `Policy2`, OpkgTun permission, Hestia RPDB rules, order, and routes reported as `configured_expectation`; `policy_mark` remained `unavailable`.
+
+The exact trace event was read back from `/api/traffic?limit=100` and matched the CLI summary. `ifw=674` is an NDM-reported connection interface index, not proof of TUN FD delivery. The connection mark is not a direct sample of `skb->mark` at the Hestia RPDB rule. `not_observed` is not a drop verdict. WAN egress, the AWG peer path, and the return path were not established by this probe.
+
+The Product Owner reports that other traffic is currently working through Zarubin AmneziaWG. That broader traffic was not independently captured in this probe; this evidence establishes only the timeout for the exact `1.1.1.1:443` tuple.
+
+## Panel API result
+
+Read-only GETs from the LAN returned:
+
+| Endpoint | Result |
+|---|---|
+| `/api/groups-and-rules` | HTTP 200 |
+| `/api/country-map` | HTTP 503, `Не удалось прочитать или сохранить маршруты по странам` |
+| `/api/dns/policy` | HTTP 503, `Хранилище настроек DNS не настроено.` |
+| `/api/dns/warm` | HTTP 503, `Наблюдения службы DNS недоступны.` |
+| `/api/dns/geoip` | HTTP 503, `Настройки GeoIP недоступны` |
+
+The running panel command line was `/opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json` plus feature flags. It omitted `-dns-policy`.
+
+Read-only filesystem metadata showed `/opt/var/lib/hestia` exists as root-owned mode `0700`, but `/opt/var/lib/hestia/country-map`, `/opt/var/lib/hestia/dns-policy`, `/opt/var/run/hestia/dns/report.json`, and `/opt/etc/hestia/dns.json` were absent. The optional DNS worker therefore has no installed configuration/report. The country-map reader cannot create its first lock file while the country-map directory is absent.
+
+Local diagnosis: `serviceSpec` for the panel did not pass the installed DNS policy path even though `runPanel` defaults it to empty and returns 503 in that case. Passing the fixed path allows the existing store to return documented first-install defaults when the policy file is absent; the independent warm report can remain unavailable until the optional DNS worker is configured. For country routing, the exact state directory must exist before the GET can initialize default assignments.
+
+## Reproduction commands
+
+Router trace:
+
+```sh
+printf '%s' '{"protocol":"TCP","source":"192.168.1.124","sourcePort":49336,"destination":"1.1.1.1","destinationPort":443,"durationSeconds":15}' | /opt/bin/hestia -traffic-trace
+```
+
+Client capture/probe, run after the router trace starts:
+
+```sh
+sudo -n timeout 15 tcpdump -nn -l -i lima0 '(src host 192.168.1.124 and src port 49336 and dst host 1.1.1.1 and dst port 443) or (src host 1.1.1.1 and src port 443 and dst host 192.168.1.124 and dst port 49336)' & capture_pid=$!; sleep 1; curl -4 --interface 192.168.1.124 --local-port 49336 --connect-timeout 3 --max-time 6 --resolve one.one.one.one:443:1.1.1.1 -sS -o /dev/null https://one.one.one.one/cdn-cgi/trace; curl_status=$?; wait "$capture_pid" || true; cat /tmp/hestia-client-trace-49336.log; echo curl_exit=$curl_status
+```
+
+Read-only API checks:
+
+```sh
+for path in api/country-map api/groups-and-rules api/dns/policy api/dns/warm api/dns/geoip; do
+    curl -sS --max-time 8 -o /tmp/hestia-api-check.json -w "$path HTTP %{http_code} bytes=%{size_download}\n" "http://192.168.1.1:8080/$path"
+done
+```
+
+## Corrective changes prepared locally, not yet installed
+
+- The Entware panel service spec now passes `-dns-policy` with the fixed installed DNS-policy path.
+- IPK `postinst` now creates the missing country-map state directory with mode `0700`, refusing symlink/non-directory path components.
+- This does not enable the optional DNS worker or alter DNS config, policy, routes, or current connection selection. The package has not yet been rebuilt successfully or installed; after installation `/api/dns/warm` may still report unavailable while the DNS worker remains unconfigured.
+
+## Superseding package-install result — 9 November 2026
+
+The corrective local changes were built as IPK `20261109-222606-db76edb7f3e1` (SHA-256 `ae072d33f2d805beea654883de2ebe9df67c916fd831d9837fe74590c7360bed`) and staged with a hash-verified rollback IPK `20261109-203924-db76edb7f3e1`. The new install failed in `postinst` because `S99hestia` rejected the saved managed profile. A forced rollback then also failed its service recovery for the same profile/backend route validation error. No profile, client assignment, or policy was edited.
+
+Final read-only target state: `opkg status hestia` reports `203924`, `install user unpacked`; `-service-check-idle` exits 0; `-service-supervisor-ready` exits 1; `/opt/var/run/hestia/package-maintenance` is present; supervisor pid/ready files are absent; local panel API port 8080 refuses connections. The old profile validator reports `backend routes differ from the installed profile`; a value-redacted structural comparison localizes this to `route.rules[4].outbound` (route final and rule count both match). Active profile, backend, checksum and snapshot hashes match the root-only pre-install backup. This is a semantic inconsistency in the saved generation, not evidence of a corrupted package payload; its intended outbound cannot be chosen safely without resolving profile-vs-backend ownership.
+
+RPDB still has priority 7 mark/iif lookup and priority 8 unreachable guard. `ip -4 route show table all` shows only `unreachable default table 32732` in the Hestia ingress table, with no OpkgTun default route, consistent with fail-closed guarded state while Hestia is stopped. The default route hashes remain the recorded IPv4 `f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871` and empty IPv6 `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`. The BusyBox `ip` frontend rejected `ip route show table 32732`; use `table all` or route-netlink for this target. No panel endpoint was rechecked after shutdown. Exact command/result record: [failed update recovery](recovery-panel-tabs-20261109.txt).

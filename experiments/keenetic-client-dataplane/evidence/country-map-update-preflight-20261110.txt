@@ -1,0 +1,58 @@
+# Country-map panel update preflight — 10 November 2026
+
+## Local candidate
+
+- Source revision: `e2ca76b` plus the uncommitted country-map save timeout change and its documentation update.
+- Builder: `bash scripts/build/run.sh --output /tmp/hestia-country-map-update-20261110`.
+- Bundle verification: `verify_bundle` accepted version `20261110-094102-e2ca76bd1fc4`.
+- Keenetic IPK: `hestia_20261110-094102-e2ca76bd1fc4_aarch64-3.10.ipk`.
+- SHA-256: `ddd888e483ea67c2b7f537b2eda6ae74ffed32f5b3bbc869345147e783fbd526`.
+- Build completed successfully. The artifact and rollback IPK were copied into the root-only target staging directory after the configuration/status/route backup. Both remote SHA-256 values matched the local artifacts.
+
+## Read-only target checks
+
+Access used the configured `keenetic-hestia` SSH alias after the owner requested an update. No package, service, profile, route or policy writes were performed.
+
+- Remote UID: `0`.
+- Installed package: `20261109-234853-db76edb7f3e1`, architecture `aarch64-3.10`, status `install user unpacked`.
+- `/opt/bin/hestia -service-supervisor-ready`: exit 0; readiness marker present; maintenance marker absent.
+- `/opt/bin/hestia -check -config /opt/etc/hestia/snapshot.json`: exit 0.
+- Default route hashes matched the recorded baseline: IPv4 `f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871`; IPv6 empty-route hash `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+- Supervisor log still contained `cannot install Hestia TUN route` (last occurrence shown at `2026/11/09 20:50:14`).
+- Target BusyBox `ip` rejected `table 32732`; `curl` is not installed, so this check did not obtain current API status or a route-table snapshot.
+
+## Installation result
+
+The requested `/opt/bin/opkg install` was attempted after the owner confirmed the install request, preflight, backup and hash checks. It returned exit 255. `postinst` reported `Hestia profile is missing or invalid; refusing to start services`; opkg left version `20261110-094102-e2ca76bd1fc4` at `install user unpacked` and the supervisor/panel stopped.
+
+Post-failure read-only checks: supervisor-ready exit 1; supervisor readiness and PID markers absent; maintenance marker absent; `/opt/bin/hestia -check -config /opt/etc/hestia/snapshot.json` exit 0; IPv4/IPv6 default-route hashes unchanged. No panel listener was found. The newest supervisor log entry was `2026/11/10 06:57:36 Keenetic ingress reconciliation failed; retaining guarded state: cannot confirm Keenetic ingress policy snapshot`. This differs from the previous `cannot install Hestia TUN route` message; the exact startup failure is not yet isolated.
+
+Following the documented partial-install procedure, no `opkg configure`, restart, profile edit, route change or rollback was attempted. Both IPKs and the root-only backup remain on the router under `/opt/tmp/hestia-deploy-20261110-094102-e2ca76bd1fc4/`. The next step is to isolate the ingress snapshot mismatch and agree a recovery transaction before changing package state again.
+
+## Follow-up after reported Internet trouble
+
+On 10 November, after the owner reported Internet trouble and asked to continue installation, further read-only checks found:
+
+- `/opt/bin/python3 -I /opt/lib/hestia/profile.py --validate-managed /opt/etc/hestia` exits 1 with `Invalid deployment profile: check fields, addresses, file references and keys`.
+- `apcli1` reports `operstate=up` and `carrier=1`; the IPv4 default route remains `via 172.20.10.1 dev apcli1 metric 1000`, and route lookup for `1.1.1.1` selects that WAN path.
+- Package status remains `install user unpacked`; supervisor readiness is exit 1; readiness and maintenance markers are absent.
+- These local checks confirm a selected WAN route, not end-to-end Internet connectivity. No external probe was sent.
+
+The installation procedure explicitly prohibits retrying configure/install when managed-profile validation fails. No package, service, profile, route or policy state was changed during this follow-up. Installation is blocked until the invalid profile is diagnosed and a recovery transaction is established.
+
+Read-only SHA-256 comparison of active managed files against the root-only pre-install copy showed identical values for `profile.json`, `.installer-managed`, `profile-backend.sha256`, `snapshot.json`, and `sing-box.json`. The `*-opkg` files were already present in the pre-install backup and remain present after the failed install. This establishes that the failed package transaction did not alter those active profile/configuration files; it does not establish why the current validator rejects them. No file contents or secrets were displayed.
+
+A final read-only diagnostic called `managed_profile()` in memory and exposed the validator's specific reason: `ValueError: backend routes differ from the installed profile`. The local validator computes the expected backend route from the profile and rejects the installed backend route when they differ. No route values were printed or changed. The exact differing route entry remains to be isolated before any recovery transaction.
+
+An additional read-only comparison computed the expected route from the active profile and compared it with the installed backend. It found one differing JSON path, `/rules/4/outbound`; values were intentionally not printed. This localizes the mismatch to the outbound selected by route rule 4. No configuration or route state was changed.
+
+## Current mobile-WISP path check
+
+After the owner explained that the former primary WAN is broken and the router is currently using a mobile hotspot, a final read-only check showed:
+
+- IPv4 default route: `via 172.20.10.1 dev apcli1 metric 1000`.
+- The active backend's route rule 4 points to a group, while the route computed by the profile validator expects `deny`.
+- The stored `keenetic-uplink` direct interface is still bound to `eth3`.
+- Package remains `install user unpacked`.
+
+No profile or route edits, package configure/reinstall, restart, or external Internet probes were performed. This confirms that reinstalling the staged IPK unchanged would not address either the managed route inconsistency or the stale direct-uplink binding. A recovery/update candidate must resolve the fail-closed ingress route and explicitly account for the active WISP path before deployment.

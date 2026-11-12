@@ -128,6 +128,11 @@ func (e Engine) SaveHysteria2(ctx context.Context, id string, req panelmodel.Hys
 			item.ProbeSecret = hex.EncodeToString(random[:])
 			current.Hysteria2 = append(current.Hysteria2, item)
 		}
+		if slices.Contains(item.EffectiveUnderlays(), keeneticOpkgTunUnderlayID) {
+			if err := ensureOpkgTunUnderlay(&current); err != nil {
+				return err
+			}
+		}
 		if !validUnderlayGraph(current) {
 			return ErrInvalidConnector
 		}

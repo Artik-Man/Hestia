@@ -70,6 +70,97 @@ func TestAWGEngineCreateUpdateDelete(t *testing.T) {
 	}
 }
 
+// TestAWGCreateKeepsUnconfirmedProfileInactive persists a valid new profile after rollback without making it a route.
+func TestAWGCreateKeepsUnconfirmedProfileInactive(t *testing.T) {
+	e := managedConnectorTestEngine(t)
+	request := panelmodel.AWGSaveRequest{Name: "Недоступный peer", ID: "12345678-1234-4abc-8123-456789abcdef", Group: "default", Priority: 2, Profile: connectorTestConfig}
+	e.readyWait = func(context.Context, string) error { return errors.New("peer readiness unavailable") }
+	if err := e.ApplyAWG(context.Background(), request, false); err != nil {
+		t.Fatalf("save unconfirmed profile as configured: %v", err)
+	}
+	profile, err := readStoredProfile(e.dir)
+	if err != nil || len(profile.Connectors) != 1 || profile.Connectors[0].Status != "configured" || profile.Healthy[request.ID] {
+		t.Fatalf("unconfirmed profile was not stored inactive: %#v, %v", profile, err)
+	}
+	if !slices.Contains(profile.Groups[0].Exits, request.ID) || profile.Groups[0].DefaultExit == request.ID {
+		t.Fatalf("inactive profile changed route selection: %#v", profile.Groups[0])
+	}
+	var backend struct {
+		Outbounds []struct {
+			Tag  string `json:"tag"`
+			Type string `json:"type"`
+		} `json:"outbounds"`
+	}
+	if err := json.Unmarshal(mustReadTestFile(t, filepath.Join(e.dir, "sing-box.json")), &backend); err != nil {
+		t.Fatal(err)
+	}
+	var outboundType string
+	for _, outbound := range backend.Outbounds {
+		if outbound.Tag == request.ID {
+			outboundType = outbound.Type
+		}
+	}
+	if outboundType != "block" {
+		t.Fatalf("inactive connector outbound must fail closed, got %q", outboundType)
+	}
+	metadata, _, err := readAWGDirectory(filepath.Join(e.dir, awgTreeName, request.ID), request.ID, new(int64))
+	if err != nil || metadata.Status != "configured" {
+		t.Fatalf("inactive profile metadata is inconsistent: %#v, %v", metadata, err)
+	}
+	if _, err := os.Lstat(awgReady + "." + request.ID); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("inactive profile published a ready marker: %v", err)
+	}
+	e.readyWait = func(context.Context, string) error { return nil }
+	if err := e.ApplyAWG(context.Background(), request, true); err != nil {
+		t.Fatalf("retry profile activation after peer becomes ready: %v", err)
+	}
+	profile, err = readStoredProfile(e.dir)
+	if err != nil || profile.Connectors[0].Status != "ready" || !profile.Healthy[request.ID] {
+		t.Fatalf("confirmed retry did not activate the profile: %#v, %v", profile, err)
+	}
+}
+
+// TestAWGCreateKeepsProfileAfterOtherActivationRollback saves an inactive profile when another activation step fails.
+func TestAWGCreateKeepsProfileAfterOtherActivationRollback(t *testing.T) {
+	e := managedConnectorTestEngine(t)
+	request := panelmodel.AWGSaveRequest{Name: "Отложенная активация", ID: "12345678-1234-4abc-8123-456789abcdef", Group: "default", Priority: 1, Profile: connectorTestConfig}
+	baseRun := e.run
+	controllerStarts := 0
+	e.run = func(ctx context.Context, name string, args ...string) error {
+		if name == systemctl && len(args) > 2 && args[0] == "start" && slices.Contains(args, "hestia.service") {
+			controllerStarts++
+			if controllerStarts == 2 {
+				return errors.New("simulated controller activation failure")
+			}
+		}
+		return baseRun(ctx, name, args...)
+	}
+	if err := e.ApplyAWG(context.Background(), request, false); err != nil {
+		t.Fatalf("save profile after confirmed activation rollback: %v", err)
+	}
+	profile, err := readStoredProfile(e.dir)
+	if err != nil || len(profile.Connectors) != 1 || profile.Connectors[0].Status != "configured" || profile.Healthy[request.ID] {
+		t.Fatalf("profile was not committed inactive after activation rollback: %#v, %v", profile, err)
+	}
+}
+
+// TestAWGCreateSupportsRootPrivateSnapshot verifies Keenetic's root-only snapshot layout through a complete create.
+func TestAWGCreateSupportsRootPrivateSnapshot(t *testing.T) {
+	e := connectorTestEngine(t)
+	e.snapshotGID = -1
+	if err := os.Chmod(filepath.Join(e.dir, "snapshot.json"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	request := panelmodel.AWGSaveRequest{Name: "Keenetic snapshot", ID: "12345678-1234-4abc-8123-456789abcdef", Group: "fi", Priority: 1, Profile: connectorTestConfig}
+	if err := e.ApplyAWG(context.Background(), request, false); err != nil {
+		t.Fatalf("create with root-only snapshot: %v", err)
+	}
+	profile, err := readStoredProfile(e.dir)
+	if err != nil || len(profile.Connectors) != 1 || profile.Connectors[0].Status != "ready" {
+		t.Fatalf("root-only snapshot create did not become ready: %#v, %v", profile, err)
+	}
+}
+
 // TestAWGOmittedPosition reads the latest order under the transaction lock and appends new members.
 func TestAWGOmittedPosition(t *testing.T) {
 	e := connectorTestEngine(t)
@@ -480,7 +571,7 @@ func TestAWGRollbackAfterPartialPublication(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err := stageAWGChange(ctx, e, stage, two, parsed, true); err != nil {
+			if err := stageAWGChange(ctx, e, stage, two, parsed, true, connectorReady, ""); err != nil {
 				t.Fatal(err)
 			}
 			if err := e.publishJournal(stage); err != nil {
@@ -709,7 +800,8 @@ func TestDirectConnectionNames(t *testing.T) {
 		t.Fatal(err)
 	}
 	catalog, err := e.UnderlayCandidates()
-	if err != nil || len(catalog) != 2 || catalog[0].Name != "" {
+	expectedCount := 2 + len(platformUnderlayCandidates())
+	if err != nil || len(catalog) != expectedCount || catalog[0].Name != "" {
 		t.Fatalf("legacy catalog: %v %v", catalog, err)
 	}
 	lock, err := e.acquire(false)
@@ -734,7 +826,7 @@ func TestDirectConnectionNames(t *testing.T) {
 			t.Fatal(err)
 		}
 		items, err := e.UnderlayCandidates()
-		if err != nil || len(items) != 2 || items[0].Name != name || items[1].Name != "" {
+		if err != nil || len(items) != expectedCount || items[0].Name != name || items[1].Name != "" {
 			t.Fatalf("catalog: %v %v", items, err)
 		}
 	}

@@ -1,0 +1,11 @@
+Вопрос: можно ли использовать `FRA_PROTOCOL` как уникальную метку RPDB rules для безопасного определения принадлежности Hestia на KN-1012?
+
+Среда: KN-1012, KeeneticOS 5.02.B.3.0-2 (5.2 Beta 3), kernel `4.9-ndm-5`, aarch64. До опыта идентификаторы временного правила были уникальны: priority 32090, mark `0xf1234567/0xffffffff`, table 39999, input interface `hestia-probe` (не существует), protocol 253. Никакая пользовательская policy или активное соединение не выбирали этот selector.
+
+Ожидалось: неподдерживаемый attribute будет отклонён либо kernel подтвердит его поддержку; если правило будет принято, exact rule сразу удаляется.
+
+Фактический результат: RTM_NEWRULE с `FRA_PROTOCOL=253` получил ACK 0; RTM_DELRULE с тем же payload получил ACK 0. В текущем `ip rule show` нет совпадения по probe interface, mark или table. Upstream Linux v4.9 UAPI определяет enum только до `FRA_L3MDEV` (19); `FRA_PROTOCOL` отсутствует: [fib_rules.h v4.9](https://raw.githubusercontent.com/torvalds/linux/v4.9/include/uapi/linux/fib_rules.h). Следовательно, ACK не доказывает поддержку атрибута: целевое ядро приняло операцию, игнорируя неизвестное поле либо не сохраняя его. `FRA_PROTOCOL` нельзя использовать как ownership marker для RPDB rules на этой прошивке.
+
+После пробы: IPv4 route-all SHA-256 `44f846066c5fa571f5d50b7aeed3e700ac02370798a6315f68f3d3d092f68891`, IPv4 rules `2af45981a6919d24e0acd1e23cbcfb07a1ef80488b9dadf792580dfa39953430`, IPv6 route-all `cf38dc8583837d8aa12b996d5cd7f324f72d8dd5c7bce43420e54912e38fde18`, IPv6 rules `0c651f61a467ac7398c5d475d8d996ab59c9aaf8d0ac99074b186126b1be1b05`; совпадают с исходным baseline. Временный исполняемый файл и тестовый каталог удалены.
+
+Граница вывода: probe устанавливает только, что на этом target нельзя считать ACK наличием protocol marker. Перед установкой IPK нужен отдельный persistent ownership record или другой проверенный способ исключить adoption/deletion чужого точного RPDB rule.

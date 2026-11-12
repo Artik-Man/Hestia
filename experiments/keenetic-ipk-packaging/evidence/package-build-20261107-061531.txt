@@ -1,0 +1,59 @@
+Local Keenetic package build evidence
+=====================================
+
+Question
+--------
+Can the current working tree produce both ARM64 application bundles and a structurally valid experimental Entware IPK without accessing a router, VM, or network stand?
+
+Environment
+-----------
+Date: 2026-11-07
+Host: macOS ARM64
+Go: 1.27.3
+Frontend dependencies: installed in the repository
+Source revision: 5dd5889e639ba7d923f1ea9545a4ff95f464efa7
+Working tree: dirty; 550 source inputs recorded by the build manifest
+Runtime inputs: dist/runtime, all checked against scripts/build/runtime-lock.json
+
+Command
+-------
+    GOCACHE=/private/tmp/hestia-go-cache python3 scripts/build/run.py \
+      --runtime-dir dist/runtime \
+      --output /private/tmp/hestia-full-build
+
+The first attempt inherited the protected user Go cache and stopped before compilation. The command above was rerun with GOCACHE under writable /private/tmp and completed with exit code 0. No test command was run.
+
+Output
+------
+Bundle root: /private/tmp/hestia-full-build/20261107-061531-5dd5889e639b
+Platforms: linux-arm64 and keenetic-arm64-experimental
+Frontend: Angular production build completed
+Manifest source inputs: 550
+Manifest bundle files: 145
+Keenetic package: hestia_20261107-061531-5dd5889e639b_aarch64-3.10.ipk
+IPK size: 58,972,932 bytes
+IPK SHA-256: 67028625c0e2f4bd9d5d4d8cecb61e1c9ff92e6d3636a19a65f975ef4bca0f10
+Manifest source hashes include the shared RCI client, typed Ethernet/version connectors, Keenetic composition, Entware process manager, and Keenetic route runner. Packaged files include `/opt/bin/hestia`, `/opt/bin/hestia-panel`, and `/opt/lib/hestia/sing-box`.
+
+Independent structural inspection
+----------------------------------
+Outer IPK archive has ./debian-binary, ./control.tar.gz, and ./data.tar.gz.
+Control archive has conffiles, control metadata, keenetic-preflight, postinst, postrm, preinst, and prerm.
+Payload archive has 47 members; every member path starts with ./opt.
+Registered conffiles are /opt/etc/hestia/.installer-managed, profile.json, profile-source.sha256, profile-backend.sha256, snapshot.json, and sing-box.json.
+Architecture is aarch64-3.10; dependencies are python3-light, busybox, and libc.
+
+Expected and actual result
+--------------------------
+Expected: distinct Linux and Keenetic bundles, plus an IPK with only /opt payload, lifecycle control files, and reproducible source/runtime hashes.
+Actual: build returned 0; manifest verification succeeded inside the builder; independent archive inspection matched the expected IPK structure and payload boundary.
+
+Limits
+------
+No KN-1012, VM, or network stand was accessed. No opkg script, supervisor, router process, RCI request, route, firewall, DNS setting, Wi-Fi/WISP profile, or VPN runtime was executed. In particular, this build does not prove installation, rollback, dataplane, DNS integration, AWG operation, or client traffic on Keenetic.
+
+Post-build checks
+-----------------
+`SHFMT=/private/tmp/hestia-tools/shfmt make docs-check` completed with exit code 0.
+`git diff --check` completed with exit code 0.
+Go tests were not run.

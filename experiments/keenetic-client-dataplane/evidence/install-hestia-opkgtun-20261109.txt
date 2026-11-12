@@ -1,0 +1,42 @@
+# Установка Hestia с OpkgTun на KN-1012 — 9 ноября 2026 года
+
+## Вопрос и среда
+
+Проверить установку Keenetic-сборки, в которой пакет Hestia владеет NDM `OpkgTun0` и Linux TUN `opkgtun0`.
+
+- Устройство: Keenetic Giga KN-1012, KeeneticOS `5.02.B.3.0-2` (5.2 Beta 3), AArch64/Entware `aarch64-3.10`.
+- Новый IPK: `hestia_20261109-094953-e523f5481e66_aarch64-3.10.ipk`.
+- SHA-256: `5ded4eb43f724d7c8dec665a02db46db688fae13a935253a4f7f5f7d915a6a36`.
+- Предыдущая Hestia версия: `20261108-233419-e523f5481e66`.
+- Перед заменой сохранена копия `/opt/etc/hestia` в `/opt/tmp/hestia-deploy-20261109/hestia` с root-only каталогом.
+- IPv4 default route SHA-256 до установки: `f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871`.
+- IPv6 default route отсутствовал до установки; SHA-256 пустого вывода: `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+
+## Подготовка и условия
+
+Перед установкой read-only RCI GET снимок связал 4 policy config/runtime; ни одна не разрешала `OpkgTun0`, ни одна не имела статического маршрута через него. Сохранённый профиль Hestia не содержал `keenetic-opkgtun` в VPN underlay. Policy, client lists и клиентские назначения не менялись. Установленный `keen-mvp 0.1.0-3` удалён штатным `opkg remove keen-mvp`, так как оба пакета не могут одновременно владеть одним NDM-интерфейсом. Его служба остановилась штатно, затем `OpkgTun0` исчез. Для возможного восстановления пакеты Hestia до/после обновления и `keen-mvp 0.1.0-3` были временно переданы в root-only каталог на роутере.
+
+## Ожидаемый и фактический результат
+
+Ожидалось, что `opkg install` завершит postinst, поднимет supervisor и создаст OpkgTun с `global yes`, `defaultgw no`, не меняя системный default route.
+
+Первая команда `opkg install <new-ipk>` распаковала пакет, но завершилась кодом 255: postinst сообщил `Hestia supervisor did not become ready`, статус пакета остался `install user unpacked`. В supervisor log во время этой попытки наблюдались `managed Hestia process remains active` и отменённые операции (`context canceled`). После завершения opkg транзакции read-only проверки показали отсутствие активных Hestia процессов, успешную валидацию сохранённого managed profile и успешный `sing-box check`. Повторный `/opt/bin/opkg configure hestia` завершился с кодом 0. Это восстановило postinst без отката на предыдущую версию.
+
+Финальное состояние:
+
+- `opkg status hestia`: версия `20261109-094953-e523f5481e66`, `Status: install user installed`.
+- `/opt/bin/hestia -service-supervisor-ready`: успешно; maintenance marker отсутствует.
+- `keen-mvp` и `/opt/etc/init.d/S52keen-mvp`: отсутствуют.
+- NDM `OpkgTun0`: `type OpkgTun`, описание `Hestia`, link/state up, MTU 1500, address `172.31.250.1`, `global: yes`, `defaultgw: no`.
+- LAN GET `/`, `/api/groups-and-rules`, `/api/physical-connections` и `/api/awg-underlays`: HTTP 200. Ответ `/api/awg-underlays` содержит кандидат `keenetic-opkgtun` (всего 3 кандидата).
+- После установки RCI всё ещё показывает 4 policy, `OpkgTun0` не разрешён ни в одной policy и не выбран ни в одном configured static route.
+- IPv4 default route SHA-256 после установки совпал с исходным: `f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871`.
+- IPv6 default route по-прежнему отсутствует; пустой вывод имеет hash `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+
+## Причина отказа и границы
+
+Непосредственная причина первой неудачи — supervisor не достиг readiness в пределах postinst; его журнал показывал, что проверка обнаруживала ещё активный managed Hestia process. После окончания установки и очистки процессов повторный configure прошёл. Сохранённый профиль и sing-box конфигурация валидны. Это указывает на временное пересечение завершения старого дерева процессов и запуска нового supervisor; сама package transaction не повторяет configure автоматически.
+
+На устройстве `/opt/bin/wget` завершался с segmentation fault на локальных GET smoke requests. Для проверки HTTP API использованы read-only GET запросы с Mac по LAN; сам пакет установлен и работает независимо от этой утилиты.
+
+Не запускались внешние TCP/UDP/DNS запросы и не назначались клиенты. Не подтверждены выбор OpkgTun в UI Keenetic, реальная передача клиентских пакетов, обратный путь, AWG/Hysteria egress и fail-closed при отказе выхода. IPv6 клиентская маршрутизация не проверялась. Команды установки: `opkg remove keen-mvp`, `opkg install <new-ipk>`, после первого отказа — `opkg configure hestia`.

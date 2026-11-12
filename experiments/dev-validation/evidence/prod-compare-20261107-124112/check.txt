@@ -1,0 +1,32 @@
+Hestia prod deployment and Keenetic comparison — 2026-11-07 12:41 UTC
+Source branch: codex/keenetic-rci-client-prod
+Source commit deployed to prod: 0a84238 (fix(keenetic): restore panel connection inventory)
+
+Deployment target:
+- Lima instance: hestia-prod, hostname lima-hestia-prod
+- lima0: 192.168.1.133/24
+- Installed with the documented `bash deploy/stage1-awg-update.sh` procedure.
+- Update completed successfully; backup: /var/backups/hestia-stage1-awg-20261107T124112Z
+- The updater's pre/post default-route comparison passed.
+- wg-quick@wg-keenetic, hestia-sing-box, hestia, hestia-panel: active
+- Panel HTTP: 200
+- /api/groups-and-rules: HTTP 200; 2 groups, 2 lists, 3 exits in each group.
+- /api/physical-connections: HTTP 503, "Управление интерфейсами недоступно" (Linux prod platform does not expose this adapter API).
+
+Linux ARM64 deployed binary hashes:
+- hestia: a1dda128c7b653d0a06cb45ad1410b68117666c7f0ff5731c0e71b46d0260316
+- hestia-panel: df6f1fa4be8a44d7be3763549bc7fa0affaf654a5c4db469493d6a115c20142b
+A repeat build from commit 0a84238 with the update script's Go build flags produced the same two hashes.
+
+Keenetic comparison:
+- Device: Keenetic Giga KN-1012, package status install user installed, architecture aarch64-3.10.
+- opkg version metadata: 20261107-123735-f9fea441ebfd.
+- Installed Keenetic-tagged binaries:
+  hestia: 62ee7f3c7eee768491a1680a14007ec0d26879c2fd84bbee7570a2221dfc4ae8
+  hestia-panel: 3cb917df8e855804cfca06765a0ee997a942699ce54a2adb6378b3f3dcd69c51
+- A repeat `GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -trimpath -buildvcs=false -tags keenetic` from commit 0a84238 produced these exact hashes. Thus the installed Keenetic binaries match the current source build despite older package version metadata.
+- Full panel asset-tree comparison: all 20 Linux-prod files match the corresponding Keenetic files by SHA-256. Keenetic has one additional file, `3rdpartylicenses.txt`; it is absent on prod. Shared index.html SHA-256: aa6154fa18708ddf0e5a56073995162ac133b397623c29bdd34905a9cb2db9a8. Shared main-BSUQXRCE.js SHA-256: 23eb3c50afecbf2536000a2456542899dc8677c5da069a769e156475f15fb988. The edited DNS lazy chunk is among the identical assets.
+- Keenetic /api/groups-and-rules: HTTP 200; only default group with zero exits and zero lists.
+- Keenetic /api/physical-connections: HTTP 200; two kernel interfaces and five native RCI Ethernet ports; Wi-Fi unavailable.
+
+Limits: this was an application upgrade and read-only comparison, not a client dataplane/network acceptance run. The update restarted Hestia services. The prod physical-connections API remains unsupported/unavailable; the Keenetic RCI inventory is available. No route, DNS, VPN, or router settings were changed by this procedure.

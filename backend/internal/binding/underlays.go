@@ -86,7 +86,7 @@ func (e Engine) UnderlayCandidates() ([]panelmodel.AWGUnderlayCandidate, error) 
 	return e.connectionCatalog()
 }
 
-// connectionCatalog reads typed public exits and display names while the caller holds the installer lock.
+// connectionCatalog reads typed exits and platform-neutral channel roles while the caller holds the installer lock.
 func (e Engine) connectionCatalog() ([]panelmodel.AWGUnderlayCandidate, error) {
 	if err := e.validateInstallation(); err != nil {
 		return nil, err
@@ -113,8 +113,15 @@ func (e Engine) connectionCatalog() ([]panelmodel.AWGUnderlayCandidate, error) {
 		name := ""
 		if item.Type == "direct" {
 			name = names[item.ID]
+			if item.ID == keeneticOpkgTunUnderlayID && name == "" {
+				name = "OpkgTun"
+			}
 		}
-		candidates = append(candidates, panelmodel.AWGUnderlayCandidate{ID: item.ID, Type: item.Type, Name: name})
+		role := platformChannelRole(item.ID)
+		if role != "" {
+			name = channelRoleLabel(role)
+		}
+		candidates = append(candidates, panelmodel.AWGUnderlayCandidate{ID: item.ID, Type: item.Type, Name: name, Role: role})
 	}
 	for _, item := range profile.Connectors {
 		if !awg.ValidConnectionID(item.ID) || (item.Name != "" && ValidateGroupName(item.Name) != nil) || (item.Type != "wireguard" && item.Type != "amneziawg") {
@@ -132,7 +139,38 @@ func (e Engine) connectionCatalog() ([]panelmodel.AWGUnderlayCandidate, error) {
 		}
 		candidates = append(candidates, panelmodel.AWGUnderlayCandidate{ID: item.ID, Type: "hysteria2", Name: item.Name})
 	}
+	for _, candidate := range platformUnderlayCandidates() {
+		candidate.Role = platformChannelRole(candidate.ID)
+		if candidate.Role != "" {
+			candidate.Name = channelRoleLabel(candidate.Role)
+		}
+		if candidate.Type == "direct" && names[candidate.ID] != "" {
+			if candidate.Role == "" {
+				candidate.Name = names[candidate.ID]
+			}
+		}
+		if !slices.ContainsFunc(candidates, func(item panelmodel.AWGUnderlayCandidate) bool { return item.ID == candidate.ID }) {
+			candidates = append(candidates, candidate)
+		}
+	}
 	return candidates, nil
+}
+
+// channelRoleLabel returns the fixed user-facing label for a platform channel role.
+func channelRoleLabel(role panelmodel.ChannelRole) string {
+	switch role {
+	case panelmodel.ChannelRoleInput:
+		return "Вход"
+	case panelmodel.ChannelRoleOutput:
+		return "Выход"
+	default:
+		return ""
+	}
+}
+
+// PlatformChannelRole exposes only the stable role assigned by this build to a platform endpoint.
+func PlatformChannelRole(id string) panelmodel.ChannelRole {
+	return platformChannelRole(id)
 }
 
 const directNamesFile = "direct-connection-names.json"
@@ -160,9 +198,12 @@ func (e Engine) directNames() (map[string]string, error) {
 	return names, nil
 }
 
-// RenameDirectConnection verifies the current exit type under the installer lock and durably replaces display metadata only.
+// RenameDirectConnection replaces a user-managed direct label and rejects platform channels with fixed role labels.
 func (e Engine) RenameDirectConnection(id, name string) error {
 	if !awgID(id) || ValidateGroupName(name) != nil {
+		return ErrInvalidOrder
+	}
+	if platformChannelRole(id) != "" {
 		return ErrInvalidOrder
 	}
 	lock, err := e.acquire(true)

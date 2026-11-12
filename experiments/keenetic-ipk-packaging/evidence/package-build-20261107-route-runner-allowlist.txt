@@ -1,0 +1,23 @@
+Дата: 2026-11-07
+Вопрос: ограничен ли Keenetic route runner только командами, которые нужны Hestia AWG policy?
+
+`keeneticroute.ExecRouteRunner` теперь отклоняет любые команды, кроме read-only `rule show`, чтения маршрутов в зарезервированных таблицах и чтения link inventory. Изменения разрешены только для точных IPv4/IPv6 unreachable guards, slot-bound IPv4 AWG default routes и mark rules, соответствующих зарезервированным table/mark/priority/device allocation. `show` переводится в BusyBox `list` только после проверки аргументов. `flush`, main table, чужие устройства, произвольные marks и таблицы отклоняются до исполнения.
+
+Проверки:
+
+- Обычный `go vet ./...` — успешно.
+- `GOOS=linux GOARCH=arm64 go vet -tags keenetic ./...` — успешно.
+- `GOOS=linux GOARCH=arm64 go build -tags keenetic ./cmd/hestia ./cmd/hestia-panel` — успешно.
+- `make fmt-check SHFMT=/private/tmp/hestia-tools/shfmt` — успешно.
+- `make docs-check SHFMT=/private/tmp/hestia-tools/shfmt` — успешно.
+- `git diff --check` — успешно.
+- Полная команда `GOCACHE=/private/tmp/hestia-go-cache bash scripts/build/run.sh --output /private/tmp/hestia-route-runner` — успешно; Linux/Keenetic Go binaries, frontend и IPK собраны.
+
+IPK: `/private/tmp/hestia-route-runner/20261107-074915-5dd5889e639b/keenetic-arm64-experimental/hestia_20261107-074915-5dd5889e639b_aarch64-3.10.ipk`.
+
+- SHA-256: `e96d1d2b240a3a95a7f860e0cdfe965b4134717285df2e6b83af81592fc297a7`.
+- Размер: 58,981,979 байт.
+- Manifest: 552 source inputs, 145 packaged files.
+- `backend/internal/network/keeneticroute/exec_linux.go`: `df5c9d84f6e304a5cc328d49d00cbb828b032e184dc6befc8e0c76f4fd552acc`.
+
+Границы вывода: тесты не добавлялись и не запускались; route commands не исполнялись на устройстве. Это подтверждает компиляцию/пакетирование и статический allowlist-контракт, но не подтверждает поддержку BusyBox синтаксиса, маршрутизацию, owned state, fail-closed или восстановление на KN-1012. AWG runtime остаётся отключён.

@@ -1,0 +1,19 @@
+Question: does the current Keenetic source tree still build both ARM64 bundles and an IPK after the route-command normalization and RCI Ethernet JSON-walk limits?
+
+Environment: macOS ARM64, Go 1.27.3, frontend dependencies already installed. Runtime input files came from dist/runtime and were checked by scripts/build/runtime-lock.json. No router, VM, or network stand was accessed.
+
+Command:
+GOCACHE=/private/tmp/hestia-go-build-cache python3 scripts/build/run.py --runtime-dir dist/runtime --output /private/tmp/hestia-connector-build
+
+Result: exit 0. Frontend production build and Linux ARM64/Keenetic ARM64 Go builds completed. The generated manifest includes these exact current source hashes:
+- backend/internal/network/keeneticroute/exec_linux.go: 13cbdad10bb33fdb5ccece0a528e4e4cc0c4d27c4e45c074d8ef6e54c287a192
+- backend/pkg/keeneticrci/ethernet.go: 94c7a0e376ebd0e0643382cb3a17c0e45c4c5757bd4653a0e1de45d32ec0cdb9
+
+Artifact directory:
+/private/tmp/hestia-connector-build/20261107-055034-5dd5889e639b/keenetic-arm64-experimental
+
+IPK:
+hestia_20261107-055034-5dd5889e639b_aarch64-3.10.ipk
+SHA-256: 186264776a31d591cd770f8dd8a0b605be9844cdce6c42057c4995b76a182c40
+
+The artifact manifest was generated and its source entries were checked against the working files. `go vet` for the Keenetic ARM64 app and RCI package, docs check with pinned shfmt, and `git diff --check` passed separately. No tests ran. This build verifies packaging/compilation only; it does not verify the IPK on Entware or any router behavior.

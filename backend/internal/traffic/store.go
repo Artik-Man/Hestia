@@ -243,6 +243,29 @@ func validateEvent(event TrafficEvent) error {
 	if len(event.Connection) > 500 || len(event.Domain) > 255 {
 		return errors.New("traffic identifier too long")
 	}
+	if event.Trace != nil {
+		trace := event.Trace
+		source, sourceErr := netip.ParseAddr(trace.Source)
+		destination, destinationErr := netip.ParseAddr(trace.Destination)
+		policyDigits := strings.TrimPrefix(trace.PolicyKey, "Policy")
+		validPolicyKey := trace.PolicyKey == "" || len(trace.PolicyKey) >= 7 && len(trace.PolicyKey) <= 16 && policyDigits != trace.PolicyKey && policyDigits != ""
+		for _, digit := range policyDigits {
+			validPolicyKey = validPolicyKey && digit >= '0' && digit <= '9'
+		}
+		if sourceErr != nil || destinationErr != nil || !source.Is4() || !destination.Is4() || trace.DurationMs < 0 || trace.DurationMs > 15000 || trace.SourcePort < 1 || trace.SourcePort > 65535 || trace.DestinationPort < 1 || trace.DestinationPort > 65535 || len(trace.SessionID) > 64 || !validPolicyKey || trace.ConfiguredMark > 0x0fffffff || trace.NDMTable > 65535 || trace.HestiaTable > 65535 || len(trace.Stages) > MaxTraceStages {
+			return errors.New("invalid traffic trace summary")
+		}
+		for _, stage := range trace.Stages {
+			if len(stage.Name) > 32 || len(stage.Detail) > 160 || stage.Count < 0 || stage.ReverseCount < 0 || (stage.Status != "observed" && stage.Status != "not_observed" && stage.Status != "configured_expectation" && stage.Status != "unavailable" && stage.Status != "truncated") {
+				return errors.New("invalid traffic trace stage")
+			}
+		}
+		if trace.NDMConntrack != nil {
+			if err := validateTraceNDMConntrack(trace.NDMConntrack); err != nil {
+				return err
+			}
+		}
+	}
 	if event.Kind != Observed && event.NetworkInterface != "" {
 		return errors.New("unconfirmed traffic interface")
 	}
@@ -258,6 +281,44 @@ func validateEvent(event TrafficEvent) error {
 	case Unconfirmed:
 	default:
 		return errors.New("invalid traffic result")
+	}
+	return nil
+}
+
+// validateTraceNDMConntrack accepts only sanitized states and allowlisted fields from one exact NDM conntrack record.
+func validateTraceNDMConntrack(evidence *NDMConntrackEvidence) error {
+	if evidence == nil || evidence.ObservedAt.IsZero() || len(evidence.Detail) > 160 || len(evidence.Flags) > 4 {
+		return errors.New("invalid NDM conntrack trace evidence")
+	}
+	if (evidence.Mark != nil && *evidence.Mark > 0xffffffff) || (evidence.NDMMark != nil && *evidence.NDMMark > 0xffffffff) {
+		return errors.New("NDM conntrack mark exceeds uint32")
+	}
+	switch evidence.Status {
+	case "observed":
+		if evidence.OriginalPackets == nil || evidence.OriginalBytes == nil {
+			return errors.New("incomplete NDM conntrack trace evidence")
+		}
+	case "not_observed", "unavailable", "truncated":
+		if evidence.OriginalPackets != nil || evidence.OriginalBytes != nil || evidence.ReplyPackets != nil || evidence.ReplyBytes != nil || evidence.Mark != nil || evidence.NDMMark != nil || evidence.IFL != nil || evidence.IFW != nil || evidence.IFLName != "" || evidence.IFWName != "" || len(evidence.Flags) != 0 {
+			return errors.New("non-observed NDM conntrack stage contains flow fields")
+		}
+	default:
+		return errors.New("invalid NDM conntrack trace status")
+	}
+	for _, name := range []string{evidence.IFLName, evidence.IFWName} {
+		if name != "" && name != "br0" && name != "opkgtun0" {
+			return errors.New("invalid NDM conntrack interface name")
+		}
+	}
+	seenFlags := make(map[string]struct{}, len(evidence.Flags))
+	for _, flag := range evidence.Flags {
+		if flag != "ASSURED" && flag != "UNREPLIED" && flag != "SEEN_REPLY" && flag != "FASTNAT" {
+			return errors.New("invalid NDM conntrack flag")
+		}
+		if _, exists := seenFlags[flag]; exists {
+			return errors.New("duplicate NDM conntrack flag")
+		}
+		seenFlags[flag] = struct{}{}
 	}
 	return nil
 }

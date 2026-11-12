@@ -1,0 +1,14 @@
+Инцидент prod: ошибка списка физических подключений — 7 ноября 2026 года
+
+Среда: существующая Lima `hestia-prod`, hostname `lima-hestia-prod`, Linux ARM64, адрес панели `192.168.1.133:8080`.
+Сборка приложения: `20261107-160847-bb7c3856ca40`, revision `bb7c3856ca4007d062a134eb67d6e952c632fb8e`, `manifest.dirty=true`; фактические входы зафиксированы в манифесте сборки.
+
+Наблюдение до исправления: `/api/physical-connections` возвращал HTTP 503. В установленном `hestia-panel.service` отсутствовал `-enable-physical`; эта опция стала отдельным gate после разделения read-only инвентаризации и Wi-Fi mutations. Linux helper `/usr/local/bin/hestia -physical-list` работал напрямую от root и возвращал два интерфейса (`eth0`, `lima0`).
+
+Изменение: в `deploy/systemd/hestia-panel.service.in` добавлен `-enable-physical`. `make deploy-prod BUNDLE=/private/tmp/hestia-artifacts-prod-physical-fix/20261107-160847-bb7c3856ca40/linux-arm64` завершился PASS: `/var/backups/hestia-deploy.jjIcFi8c`, конфигурация и основные маршруты сохранены. Этот updater не заменяет systemd unit, поэтому шаблон установлен отдельно с резервной копией `/var/backups/hestia-panel.service.before-physical-20261107`. При первой проверке запрос отправился сразу после рестарта до готовности listener; предыдущий unit был автоматически восстановлен. Повтор с ограниченным ожиданием readiness прошёл.
+
+Фактический результат после исправления: `GET /api/physical-connections` — HTTP 200, два Linux-интерфейса, оба `carrierState=up`; панель — HTTP 200; `wg-quick@wg-keenetic`, `hestia-sing-box`, `hestia`, `hestia-panel` — active. `hestia-panel.service` содержит `-enable-physical`. IPv4 default routes после обновления: `via 192.168.1.1 dev lima0` и резервный `via 192.168.5.2 dev eth0`.
+
+Границы вывода: read-only инвентаризация восстановлена. До изменения data plane Hestia был активен, WireGuard handshake свежий, quality report отмечал выбранные выходы доступными с общими оценками 83–96%; это не подтверждает сквозной пользовательский трафик. `hestia-client` имеет прямой default gateway `192.168.1.1` и не туннелирует запросы через prod, поэтому жалоба на клиентский интернет в этом опыте не воспроизведена. Keenetic и его настройки не менялись.
+
+Воспроизведение итоговой проверки: прочитать `systemctl show hestia-panel.service -p ExecStart --value`, затем выполнить `GET http://192.168.1.133:8080/api/physical-connections`; для проверки сохранности маршрутов — `ip -4 route show default`. Полная клиентская проверка требует источника трафика, маршрут которого действительно проходит через prod.

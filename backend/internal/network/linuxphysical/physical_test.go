@@ -15,6 +15,29 @@ import (
 
 const sampleID = "aabbccdd-1122-4455-8899-aabbccddeeff"
 
+// TestMainDefaultRouteDeviceSelectsBestMetric verifies that dynamic uplink discovery follows the kernel's preferred route.
+func TestMainDefaultRouteDeviceSelectsBestMetric(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "route")
+	contents := "Iface Destination Gateway Flags RefCnt Use Metric Mask MTU Window IRTT\n" +
+		"wan8 00000000 0100000A 0003 0 0 200 00000000 0 0 0\n" +
+		"wan9 00000000 0100000A 0003 0 0 100 00000000 0 0 0\n"
+	if err := os.WriteFile(path, []byte(contents), 0600); err != nil {
+		t.Fatal(err)
+	}
+	device, err := mainDefaultRouteDeviceAt(path)
+	if err != nil || device != "wan9" {
+		t.Fatalf("expected preferred uplink wan9, got %q: %v", device, err)
+	}
+	contents = strings.Replace(contents, "wan8 00000000 0100000A 0003 0 0 200", "wan8 00000000 0100000A 0003 0 0 100", 1)
+	if err := os.WriteFile(path, []byte(contents), 0600); err != nil {
+		t.Fatal(err)
+	}
+	device, err = mainDefaultRouteDeviceAt(path)
+	if err != nil || device != "" {
+		t.Fatalf("equal-metric uplinks should remain ambiguous, got %q: %v", device, err)
+	}
+}
+
 // fixtureManager supplies a disconnected wireless device, a down Ethernet port, and a virtual bridge that must be ignored.
 func fixtureManager(t *testing.T) Manager {
 	t.Helper()

@@ -1,0 +1,30 @@
+Question: Can the country-based group-selection switch be enabled and saved through the Keenetic panel?
+Date: 2026-11-11
+Target: http://192.168.1.1:8080/#/country-map
+Panel version shown in UI: 0.1.1-keenetic
+
+Initial UI state:
+- "Выбирать группу по стране назначения" was off.
+- The "Сохранить" button was disabled.
+- All countries were assigned to "Россия".
+
+Procedure and observation:
+1. Clicked the country-routing switch. It became on, the save button became enabled, and the UI displayed "Есть изменения".
+2. Clicked "Сохранить".
+3. The UI displayed "Сохраняем…" and kept the switch and country assignment controls disabled. A later accessibility observation reported no state change; the screenshot still showed "Сохраняем…".
+4. No success notification or confirmed persisted state was observed. No additional controls or settings were changed.
+
+Result: The save attempt did not receive visible confirmation during the observation. The UI remained in a pending state; this does not establish whether the device eventually committed the policy.
+
+Boundary: This was a panel interaction only. No client traffic, route, or network reachability probes were performed. A separate earlier API attempt reported the missing `/proc/sys/net/ipv4/conf/all/src_valid_mark` path; its association with this UI request has not been verified against the exact installed source revision.
+
+Follow-up API replay after Product Owner authorized executing the request and reading its result:
+- A read-only `GET /api/country-map` returned HTTP 200, `enabled=false`, 249 assignments, and version `MN2MOIZ7YRAKU6MMDNYHGEPMVS`.
+- The attached PUT body had the same version, so it was replayed unchanged once. It returned HTTP 503 after approximately 14 seconds with `{ "title": "Service Unavailable", "detail": "Применение изменения не подтверждено" }`.
+- A second read-only GET returned HTTP 200 with `enabled=false`, the same 249 assignments and the same version. The failed transaction did not persist the requested change.
+- No routes, services or other router settings were modified by the inspection. The panel maps helper failures to this generic response; the matching panel log was read under separate authorization, as recorded below.
+- With separate authorization, the matching `service-7.log` entry was read. Immediately before `2026/11/11 07:48:37 routing helper failed: exit status 1`, the helper emitted `managed service operation failed: smoke` twice. In the country-map transaction path, `Engine.apply` runs `SmokeCurrent` before publishing the candidate; this log therefore places the failure at current-generation smoke, before the country-map generation is committed. The smoke implementation deliberately collapses its internal reason to the role-level error, so the precise failed smoke condition is not present in this log excerpt.
+- A first attempt to read the device-wide log with `logread` found that command unavailable. No broader system logs were read.
+- After Product Owner approved scoped read-only diagnostics, `/api/groups-and-rules` confirmed selectors `default` and `g-78311245-9f72-414e-a426-5cac78d7f707`. A temporary SSH port-forward was used only to GET those two sing-box selector endpoints. Both matched the installed group membership and current quality target at inspection time.
+- The last controller events around the panel failure were `2026-11-11T07:48:38.054976376Z`: `default` selected `keenetic-uplink`; `2026-11-11T07:48:38.062758719Z`: the other group briefly selected `deny`; and `2026-11-11T07:48:39.036871564Z`: that group selected healthy exit `774e80e1-f166-4dbb-ada6-280609be20e3`. A later read-only `/api/quality` at `2026-11-11T08:01:11.026723749Z` marked that exit active and available. Together these observations support a brief selector convergence race at the `SmokeCurrent` precondition; they do not establish a persistent routing fault.
+- Local source fix: the Entware smoke check now retries exact selector-state comparisons for up to five seconds, then still fails if the installed selector target or membership remains wrong. Linux ARM64 package tests passed in the isolated `hestia-dev` VM, including convergence and persistent-drift cases. The device package was not changed or redeployed.

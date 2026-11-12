@@ -7,13 +7,14 @@ import (
 	"github.com/Artik-Man/Hestia/internal/profileexec"
 	"os"
 	"path/filepath"
+	"reflect"
 	"slices"
 
 	"github.com/Artik-Man/Hestia/internal/controller"
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
 )
 
-// ErrInvalidOrder rejects incomplete orders, duplicate IDs and unknown groups or exits.
+// ErrInvalidOrder rejects incomplete orders, duplicate IDs, unknown members and unsupported exit additions.
 var ErrInvalidOrder = errors.New("requested order must permute every existing group and its exits")
 
 // sameOrder compares only the group and per-group exit sequences.
@@ -35,7 +36,7 @@ func members(groups []panelmodel.OrderedGroup) (map[string]map[string]bool, erro
 		seen[group.ID] = true
 		exits := make(map[string]bool, len(group.Exits))
 		for _, id := range group.Exits {
-			if id == "" || seen[id] {
+			if id == "" || seen[id] || PlatformChannelRole(id) == panelmodel.ChannelRoleInput {
 				return nil, ErrInvalidOrder
 			}
 			seen[id] = true
@@ -46,7 +47,7 @@ func members(groups []panelmodel.OrderedGroup) (map[string]map[string]bool, erro
 	return topology, nil
 }
 
-// ValidateOrder requires exactly the same sets of group and exit IDs on both sides of an edit.
+// ValidateOrder preserves every group and existing exit, allowing only one new platform-reserved exit.
 func ValidateOrder(change panelmodel.GroupOrderChange) error {
 	expected, err := members(change.Expected)
 	if err != nil {
@@ -62,13 +63,18 @@ func ValidateOrder(change panelmodel.GroupOrderChange) error {
 			allExits[id] = true
 		}
 	}
+	addedPlatformExit := false
 	for group, exits := range desired {
 		if _, ok := expected[group]; !ok {
 			return ErrInvalidOrder
 		}
 		for id := range exits {
 			if !allExits[id] {
-				return ErrInvalidOrder
+				if PlatformOutputID() == "" || id != PlatformOutputID() || addedPlatformExit {
+					return ErrInvalidOrder
+				}
+				addedPlatformExit = true
+				continue
 			}
 			delete(allExits, id)
 		}
@@ -79,10 +85,22 @@ func ValidateOrder(change panelmodel.GroupOrderChange) error {
 	return nil
 }
 
-// ApplyOrder accepts only a permutation of the installed topology and confirms it via the same transaction as list bindings.
+// ApplyOrder applies a validated reorder without adding a platform exit and confirms it through the managed transaction.
 func (e Engine) ApplyOrder(ctx context.Context, change panelmodel.GroupOrderChange) error {
+	return e.ApplyOrderWithUplink(ctx, change, "")
+}
+
+// ApplyOrderWithUplink permits one platform output to be added while preserving the group's selected default.
+func (e Engine) ApplyOrderWithUplink(ctx context.Context, change panelmodel.GroupOrderChange, uplinkDevice string) error {
 	if err := ValidateOrder(change); err != nil {
 		return err
+	}
+	addsPlatformExit := orderAddsPlatformExit(change)
+	if addsPlatformExit && platformOutputNeedsDeviceBinding() != (uplinkDevice != "") {
+		return ErrInvalidOrder
+	}
+	if !addsPlatformExit && uplinkDevice != "" {
+		return ErrInvalidOrder
 	}
 	data, err := json.Marshal(change.Groups)
 	if err != nil {
@@ -112,10 +130,57 @@ func (e Engine) ApplyOrder(ctx context.Context, change panelmodel.GroupOrderChan
 		if err := os.WriteFile(request, data, 0600); err != nil {
 			return err
 		}
-		if err := e.profileCompiler().Apply(ctx, profileexec.Request{Operation: profileexec.Reorder, Source: e.dir, Stage: dir}); err != nil {
+		if err := e.profileCompiler().Apply(ctx, profileexec.Request{Operation: profileexec.Reorder, Source: e.dir, Stage: dir, UplinkDevice: uplinkDevice}); err != nil {
 			return err
 		}
 		return os.Remove(request)
 	}
-	return e.apply(ctx, stageOrder, check, sameOrder(change.Expected, change.Groups))
+	return e.applyWithNoChangeCheck(ctx, stageOrder, check, sameOrder(change.Expected, change.Groups), func(stage string) (bool, error) {
+		return sameBackendRoute(e.dir, stage)
+	})
+}
+
+// sameBackendRoute confirms an unchanged order is a true no-op only when current and staged routes match.
+func sameBackendRoute(currentDir, stagedDir string) (bool, error) {
+	readRoute := func(directory string) (any, error) {
+		data, err := os.ReadFile(filepath.Join(directory, "sing-box.json"))
+		if err != nil {
+			return nil, ErrUnavailable
+		}
+		var backend struct {
+			Route any `json:"route"`
+		}
+		if err := json.Unmarshal(data, &backend); err != nil || backend.Route == nil {
+			return nil, ErrUnavailable
+		}
+		return backend.Route, nil
+	}
+	current, err := readRoute(currentDir)
+	if err != nil {
+		return false, err
+	}
+	staged, err := readRoute(stagedDir)
+	if err != nil {
+		return false, err
+	}
+	return reflect.DeepEqual(current, staged), nil
+}
+
+// orderAddsPlatformExit reports whether the desired topology introduces the platform's reserved direct output.
+func orderAddsPlatformExit(change panelmodel.GroupOrderChange) bool {
+	id := PlatformOutputID()
+	if id == "" {
+		return false
+	}
+	for _, group := range change.Expected {
+		if slices.Contains(group.Exits, id) {
+			return false
+		}
+	}
+	for _, group := range change.Groups {
+		if slices.Contains(group.Exits, id) {
+			return true
+		}
+	}
+	return false
 }

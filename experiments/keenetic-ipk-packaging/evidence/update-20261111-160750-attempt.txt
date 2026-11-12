@@ -1,0 +1,62 @@
+# KN-1012 update attempt, 11 November 2026
+
+## Question and environment
+
+Could the rebuilt package complete postinst on the KN-1012 after increasing the
+init readiness window to match the supervisor boot-recovery bound? Device:
+Keenetic Giga KN-1012, KeeneticOS 5.2 Beta 3, Entware `aarch64-3.10`.
+
+## Artifact and delivery
+
+- Bundle: `20261111-160750-77d6f73ccf3d`
+- IPK SHA-256: `30f6b8395fd91f1c0cbd9d1a0dd0cb1eb7ba68e02bec741395dae165b6b033b5`
+- Source manifest: 634 inputs; `backend/internal/binding/command_timeout.go` is
+  included; bundle verifier passed.
+- Upload used the configured `hestia-cli` token from `private`; the token value
+  is not recorded. Local and device IPK hashes matched.
+- Root-only backup from the preceding attempt and rollback IPK were present;
+  rollback IPK hash matched `7351ecd795ec1f655761c14ffa8579f794a17f90e90d404c4f840182a7988053`.
+
+## Observed result
+
+`opkg install` passed target preflight. The supervisor started, restored the
+committed AWG runtime, published readiness, and launched the panel. The package
+then failed in the expected OpkgTun migration at
+`candidate-backend-check`: `backend-validator timed out after 2m1.532s`. The
+configured backend validation bound was two minutes, while the command limit
+was five minutes. The migration reported failure, stopped Hestia services, and
+left package status `install user unpacked` with the package-maintenance marker
+present. No blind `opkg configure` or rollback was run.
+
+At the post-failure read-only check, main IPv4 and IPv6 route snapshots still
+matched the root-only pre-install snapshots. Policy rule snapshots differed by
+the two Hestia guard rules associated with mark `0xffffaac`; these were observed
+after supervisor startup/shutdown and have not been manually removed. Exact
+rules and private config are retained only on the router backup, not copied
+into this report. The hestia-cli server remained available.
+
+## Conclusion and limits
+
+The longer init wait fixed the first failure: the supervisor reached readiness.
+The next blocker is the inner candidate backend-validation timeout, conclusively
+identified by its fixed two-minute duration. The backend timeout and enclosing
+Keenetic-ingress command timeout have now been raised to bounded ten- and
+fifteen-minute windows respectively. A rebuilt package and another controlled
+installation are still required to verify that this second fix completes the
+migration. Client traffic, policy behavior, and rollback have not been tested.
+
+## Follow-up attempt with longer bounded timeouts
+
+A further package, `20261111-162047-77d6f73ccf3d` (IPK SHA-256
+`89e54841f239b6b86d94887e2f791d48e285d1586bc362976ffa1819ebd396ae`), passed
+preflight and reached supervisor readiness. Candidate backend validation
+finished with the ten-minute bound, but activation returned
+`managed service operation failed: smoke`. The migration rolled its config
+back and postinst stopped the services; package status remains unpacked. Main
+IPv4/IPv6 route hashes still match the saved snapshot. The detailed smoke
+failure is intentionally hidden by the service IPC error boundary.
+
+`git blame` traces the five-second selector convergence window to commit
+`880c07c`. It was raised to 30 seconds with a regression test as a bounded,
+reasoned correction; confirmation requires another target install. Do not treat
+this hypothesis as verified until that attempt succeeds.

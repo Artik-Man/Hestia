@@ -1,0 +1,33 @@
+npm notice run hestia-panel@0.1.1 test
+npm notice run node --test tests/*.test.mjs
+✔ canonicalizes exact ASCII domains and prevents ambiguous list input (0.773416ms)
+✔ acknowledges only the desired policy and enforces stale retention (0.171625ms)
+✔ separates valid empty telemetry from unavailable or malformed observations (6.410666ms)
+✔ accepts optional client UDP counts without accepting corrupt retry rates (0.231583ms)
+✔ country map accepts a complete versioned response (0.936791ms)
+✔ country map rejects corrupt assignments, versions and switches (0.710417ms)
+✔ confirmation checks all group IDs and every exit in order (0.595959ms)
+✔ loading and health-only changes keep unsaved working order and CAS baseline (0.187ms)
+✔ concurrent changes pin the expected revision and require review; observed proposal is clean (0.851541ms)
+✔ out-of-range keyboard moves preserve order (0.100333ms)
+✔ import preserves quoted credentials and requests the referenced certificate (4.060625ms)
+✔ incompatible profiles report the relevant option without including credential values (1.7375ms)
+✔ malformed repeated PEM envelopes are rejected within bounded processing time (0.636875ms)
+✔ host input normalizes bracketed IPv6 while preserving the API's absolute DNS names (1.621958ms)
+✔ exit identifiers reject reserved or path characters in any position (0.528041ms)
+✔ IPv6 hosts require matching brackets and cannot include a port (0.515708ms)
+✔ editing checks supports deletion and rejects duplicate protocols or malformed UDP targets (1.586042ms)
+✔ accepts a measured zero score and rejects inconsistent counters or counterfeit no-data scores (0.269667ms)
+✔ validates optional DNS response-code counters against the per-target error total (0.252083ms)
+✔ validates ICMP, resolver and TLS service check fields independently (0.225791ms)
+✔ raw TCP targets are accepted only on input, including when TCP is the second saved check (0.081875ms)
+✔ traffic page validates the window and the source before accepting observations (0.675375ms)
+✔ journal settings require bounded positive whole numbers (0.09275ms)
+ℹ tests 23
+ℹ suites 0
+ℹ pass 23
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 146.735583

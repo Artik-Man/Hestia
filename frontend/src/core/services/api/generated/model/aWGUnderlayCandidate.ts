@@ -12,9 +12,18 @@
 export interface AWGUnderlayCandidate { 
     id: string;
     name?: string;
+    /**
+     * Платформенная роль канала; UI не должен выводить внутренний тип интерфейса
+     */
+    role?: AWGUnderlayCandidate.RoleEnum;
     type: AWGUnderlayCandidate.TypeEnum;
 }
 export namespace AWGUnderlayCandidate {
+    export const RoleEnum = {
+        Input: 'input',
+        Output: 'output'
+    } as const;
+    export type RoleEnum = typeof RoleEnum[keyof typeof RoleEnum];
     export const TypeEnum = {
         Direct: 'direct',
         Wireguard: 'wireguard',

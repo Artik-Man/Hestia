@@ -1,0 +1,15 @@
+{
+  "time_utc": "2026-11-06T22:09:44Z",
+  "operation": "GET /rci/show/interface",
+  "http_status": 200,
+  "content_type": "application/json",
+  "response_bytes": 34930,
+  "response_sha256": "f5e0dc8b36024472665d7737245abf9ce1ea3717089ebef84a1a63c69eb52d1c",
+  "host_key_fingerprint_sha256": "SHA256:u5mFSUOHtvmfjURyMmAe8N2BVONvSiTAoV7OLn2Czoo",
+  "ndmc_binary_sha256": "6e6b0bee69e1270160a16711b6a64f4e036b9b984d8eb80acdf76403c243121e",
+  "token_value": "redacted",
+  "raw_response_saved": false,
+  "sanitizer_result": "rejected: duplicate port rows and non-Ethernet interface identifiers appeared in schema metadata",
+  "router_state_change": "none observed",
+  "rci_contract_status": "endpoint and token auth confirmed for one read-only interface query; normalized physical-port mapping pending"
+}

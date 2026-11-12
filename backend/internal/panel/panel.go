@@ -197,11 +197,11 @@ func registerPanelAPI(mux *http.ServeMux, snapshot, grafanaURL string, writes pa
 	registerGroupCreate(api, writes.createGroup)
 	registerGroupRename(api, writes.renameGroup)
 	registerDirectRename(api, writes.renameDirect)
-	registerPhysical(api, writes.physical)
+	registerPhysical(api, writes.physicalInventory, writes.physical)
 	registerGroupDelete(api, writes.deleteGroup)
 	registerMoveExit(api, writes.moveExit)
 	registerAWG(api, writes.awg)
-	registerHysteria2(api, writes.physical)
+	registerHysteria2(api, writes.hysteria2)
 	registerQuality(api, snapshot, writes.quality)
 	registerTraffic(api, writes.traffic, writes.trafficCountries, writes.enrichment)
 	registerGeoIP(api, writes.enrichment)
@@ -312,7 +312,9 @@ func runPanel() error {
 	enableGroupCreate := flag.Bool("enable-group-create", false, "enable confirmed creation and naming of connection groups on the installed gateway")
 	enableOrder := flag.Bool("enable-group-order", false, "enable confirmed group and exit ordering on the installed gateway")
 	enableBindings := flag.Bool("enable-bindings", false, "enable confirmed list binding changes on the installed gateway")
+	enablePhysical := flag.Bool("enable-physical", false, "enable read-only physical interface inventory through the installed helper")
 	enableAWG := flag.Bool("enable-awg", false, "enable privileged AmneziaWG profile management on the installed gateway")
+	enableHysteria2 := flag.Bool("enable-hysteria2", false, "enable Hysteria 2 profile management through the installed sing-box runtime")
 	dnsReport := flag.String("dns-report", storage.Installed().DNSReport, "path to the DNS worker heartbeat and automatic membership report")
 	dnsPolicy := flag.String("dns-policy", "", "path to the panel-owned durable DNS policy; setting this path enables policy management")
 	countryMap := flag.String("country-map", "", "durable country assignments file for a custom snapshot")
@@ -359,6 +361,9 @@ func runPanel() error {
 	if *trafficCapture && *trafficDir == "" {
 		return errors.New("traffic-capture requires traffic-dir or a managed gateway")
 	}
+	if *enablePhysical && !managed {
+		return errors.New("physical inventory requires the installed gateway")
+	}
 	if *dnsPolicy != "" {
 		rulesDir := ""
 		if managed {
@@ -395,7 +400,7 @@ func runPanel() error {
 			writes.quality.report = storage.Installed().QualityReport
 		}
 	}
-	if (*enableDomainLists || *enableGroupDelete || *enableExitMove || *enableBindings || *enableOrder || *enableGroupCreate || *enableAWG) && *snapshot != installedSnapshot {
+	if (*enableDomainLists || *enableGroupDelete || *enableExitMove || *enableBindings || *enableOrder || *enableGroupCreate || *enablePhysical || *enableAWG || *enableHysteria2) && *snapshot != installedSnapshot {
 		return errors.New("routing changes require /etc/hestia/snapshot.json")
 	}
 	if *enableDomainLists {
@@ -419,10 +424,15 @@ func runPanel() error {
 	if *enableOrder {
 		writes.order = applyInstalledOrder
 	}
+	if *enablePhysical {
+		writes.physicalInventory = runAWGHelper
+	}
 	if *enableAWG {
 		writes.awg = installedAWGWriter{}
 		writes.renameDirect = renameInstalledDirect
-		writes.physical = runAWGHelper
+	}
+	if *enableHysteria2 {
+		writes.hysteria2 = runAWGHelper
 	}
 	h, err := localHandler(*listen, panelHandler(*snapshot, *grafanaURL, bundle, writes))
 	if err != nil {

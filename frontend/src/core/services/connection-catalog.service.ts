@@ -3,10 +3,7 @@ import type { Hysteria2Connection } from "./api/generated/model/hysteria2Connect
 import { Injectable, inject, signal } from "@angular/core";
 import { PanelService } from "./api/generated/api/panel.service";
 import type { AWGUnderlayCandidate } from "./api/generated/model/aWGUnderlayCandidate";
-import {
-  isConnectionUUID,
-  isUnderlayCandidate,
-} from "../models/awg-connection";
+import { isUnderlayCandidate } from "../models/awg-connection";
 import { Subject, catchError, map, of, switchMap, timeout } from "rxjs";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 
@@ -86,12 +83,12 @@ export class ConnectionCatalog {
     this.requests.next();
   }
 
-  /** name resolves public labels and hides technical UUIDs even when the catalog is unavailable. */
+  /** name resolves backend-provided labels and never exposes an unresolved routing identifier to the panel. */
   name(id: string): string {
     return (
       this.entries().get(id)?.name ??
       this.hysteriaRows().get(id)?.name ??
-      (isConnectionUUID(id) ? "Название недоступно" : id)
+      "Подключение недоступно"
     );
   }
 

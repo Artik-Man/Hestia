@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"time"
+	"slices"
 
 	"github.com/Artik-Man/Hestia/internal/binding"
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
@@ -23,14 +23,7 @@ func runBindingCommand(mode string, input io.Reader, output io.Writer) int {
 		fmt.Fprintln(os.Stderr, "binding helper requires root")
 		return 1
 	}
-	limit := 2 * time.Minute
-	if mode == "-recover-bindings" {
-		limit = binding.AWGActivationLimit
-	} else if mode == "-watch-pending-binding" {
-		// Allow the active writer to finish its deadline and rollback before taking the lock.
-		limit = 3*binding.AWGActivationLimit + time.Minute
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), limit)
+	ctx, cancel := context.WithTimeout(context.Background(), binding.CommandTimeout(mode))
 	defer cancel()
 	engine := binding.Installed()
 	var err error
@@ -124,12 +117,21 @@ func runBindingCommand(mode string, input io.Reader, output io.Writer) int {
 		if decodeChange(input, 1<<20, &change) != nil {
 			err = binding.ErrInvalidOrder
 		} else {
-			err = engine.ApplyOrder(ctx, change)
+			uplinkDevice := ""
+			platformID := binding.PlatformUnderlayID()
+			if platformID != "" && !orderContainsExit(change.Expected, platformID) && orderContainsExit(change.Groups, platformID) {
+				uplinkDevice, _, err = keeneticUplink(ctx)
+			}
+			if err == nil {
+				err = engine.ApplyOrderWithUplink(ctx, change, uplinkDevice)
+			}
 		}
 	case "-recover-bindings":
 		err = engine.Recover(ctx)
 	case "-watch-pending-binding":
 		err = engine.WatchPending(ctx)
+	case "-enable-keenetic-ingress", "-disable-keenetic-ingress":
+		err = runKeeneticIngress(ctx, mode == "-enable-keenetic-ingress")
 	default:
 		var change panelmodel.BindingChange
 		change, err = readBindingChange(input)
@@ -138,7 +140,7 @@ func runBindingCommand(mode string, input io.Reader, output io.Writer) int {
 		}
 	}
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		writeBindingFailure(os.Stderr, binding.TransactionFailureStage(err), err)
 		if errors.Is(err, binding.ErrInvalidCountryMap) || errors.Is(err, binding.ErrInvalidOrder) || errors.Is(err, binding.ErrInvalidDomainList) {
 			return 42
 		}
@@ -151,6 +153,25 @@ func runBindingCommand(mode string, input io.Reader, output io.Writer) int {
 		return 1
 	}
 	return 0
+}
+
+// writeBindingFailure prints a safe fixed transaction stage beside the bounded operation error.
+func writeBindingFailure(output io.Writer, stage string, err error) {
+	if stage != "" {
+		fmt.Fprintf(output, "Hestia transaction failed at %s: %v\n", stage, err)
+		return
+	}
+	fmt.Fprintln(output, err)
+}
+
+// orderContainsExit reports whether a requested group order contains the given exit ID.
+func orderContainsExit(groups []panelmodel.OrderedGroup, id string) bool {
+	for _, group := range groups {
+		if slices.Contains(group.Exits, id) {
+			return true
+		}
+	}
+	return false
 }
 
 // readBindingChange accepts exactly one bounded request with all three strings present.

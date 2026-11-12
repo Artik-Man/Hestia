@@ -1,0 +1,23 @@
+Production deployment — 7 November 2026
+
+Source commit: 2bf46144bcb4b06bc65eed809839cfad0ce282f3 (codex/panel-platform-version).
+Build: 20261107-225942-2bf46144bcb4; Linux manifest dirty=false.
+Target: existing Lima hestia-prod, panel 192.168.1.133:8080.
+Command: LIMA_HOME=/private/tmp/hestia-vm-run/lima-state LIMACTL=/private/tmp/hestia-vm-run/bin/limactl bash deploy/stage1-awg-update.sh
+Result: exit 0. Backup: /var/backups/hestia-stage1-awg-20261107T200054Z.
+
+Installed binary SHA-256:
+49c2c64e5464626ddcdc0793a89ae2bf407c80a8b5cd1a178d1a2e6f223be27c  /usr/local/bin/hestia
+f8aaba13e7eff6fa9667a2b205ff3a794417055a2590cd03189c9a1a407d7dcb  /usr/local/bin/hestia-panel
+
+These match the clean Linux bundle binaries. hestia.service, hestia-sing-box.service, and hestia-panel.service are active. The installed panel unit has the private listener 192.168.1.133:8080 and -enable-hysteria2. HTTP 200: /api/groups-and-rules, /api/awg, /api/hysteria2, /api/physical-connections. The updater completed its default-route and managed-configuration comparisons.
+
+Keenetic package prepared and installed from the same commit:
+hestia_20261107-225942-2bf46144bcb4_aarch64-3.10.ipk
+SHA-256: 185712644fd6d7910f65452dfb3190e6d69a11941f500e1885628aab4dfd9b00
+
+Strict-host-key SSH to port 22 required password authentication. The documented Entware SSH endpoint was then used: root@192.168.1.1 port 222, key ~/.ssh/hestia_keenetic, pinned known_hosts. The local RCI token file was present with mode 0600; the package preflight authenticated to RCI from the router without exposing the token.
+
+KN-1012 opkg reports the new package as `install user installed`; supervisor readiness passed and LAN API endpoints returned HTTP 200. IPv4 and IPv6 default route hashes matched before and after. A root-only backup and previous package remain on the router under `/opt/tmp/hestia-upgrade-20261107-225942-2bf46144bcb4/`. Detailed installation evidence: [Keenetic install check](../../keenetic-ipk-packaging/evidence/install-20261107-225942/check.txt).
+
+Boundary: Linux services, route/config invariants, binary hashes and panel API reachability were checked. On KN-1012, package lifecycle, preflight, readiness, GET API availability and default route preservation were checked. No VPN profile was created or exercised; end-to-end client internet traffic and VPN dataplane were not tested.

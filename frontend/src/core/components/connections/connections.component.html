@@ -1,7 +1,70 @@
-<hestia-physical-connections
-  [revision]="revision()"
-  (rename)="openDirect(nameDialog, $event)"
-/>
+<section aria-labelledby="direct-connections-heading">
+  <div class="section-heading">
+    <h2 id="direct-connections-heading">Вход и выход</h2>
+  </div>
+  <div class="list-wrap">
+    <table aria-label="Вход и выход">
+      <thead>
+        <tr>
+          <th scope="col">Канал</th>
+          <th scope="col">Назначение</th>
+          <th scope="col">Доступность</th>
+          <th scope="col">Настройка</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of directTransports(); track row.id) {
+          <tr>
+            <th scope="row">{{ row.name }}</th>
+            <td>{{ row.purpose }}</td>
+            <td>
+              <span class="health" [class.up]="row.available"
+                ><span class="dot"></span
+                >{{
+                  row.available === undefined
+                    ? "Нет данных"
+                    : row.available
+                      ? "Доступно"
+                      : "Недоступно"
+                }}</span
+              >
+            </td>
+            <td>
+              @if (row.role) {
+                —
+              } @else {
+                <button
+                  pButton
+                  type="button"
+                  class="icon-action"
+                  [attr.aria-label]="'Редактировать подключение ' + row.name"
+                  (click)="openDirect(nameDialog, row)"
+                  [pTooltip]="'Редактировать подключение ' + row.name"
+                  tooltipEvent="both"
+                >
+                  <span class="edit-icon" aria-hidden="true"></span>
+                </button>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="4">
+              {{
+                catalog.loading()
+                  ? "Загрузка прямых подключений…"
+                  : catalog.failed()
+                    ? "Нет данных"
+                    : "Прямые подключения не обнаружены"
+              }}
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
+<hestia-physical-connections [revision]="revision()" />
 <section aria-labelledby="connections-heading">
   <div class="section-heading profile-toolbar">
     <h2 id="connections-heading">Виртуальные подключения</h2>
@@ -140,9 +203,7 @@
               {{
                 loadingProfiles()
                   ? "Загрузка подключений…"
-                  : catalog.hysteriaFailed()
-                    ? "Данные о подключениях Hysteria 2 недоступны."
-                    : "Нет подключений"
+                  : "Нет ни одного добавленного VPN-подключения"
               }}
             </td>
           </tr>

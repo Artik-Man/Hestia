@@ -50,7 +50,7 @@ func candidateSamples(ctx context.Context, client *http.Client, ids []string) []
 }
 
 // superviseManualTransport probes candidates, routes encrypted transport and publishes readiness only after actual inner DNS and HTTPS succeed.
-func (p RoutePolicy) superviseManualTransport(ctx context.Context, relay *underlayRelay, metadata Metadata, readyPath, healthPath string) error {
+func (p RoutePolicy) superviseManualTransport(ctx context.Context, relay *underlayRelay, metadata Metadata, dnsServers []string, readyPath, healthPath string) error {
 	if err := p.ActivateIPv4(ctx); err != nil {
 		return err
 	}
@@ -99,7 +99,8 @@ func (p RoutePolicy) superviseManualTransport(ctx context.Context, relay *underl
 				confirmed = p.challengePreferred(ctx, relay, metadata.DNSIPv4)
 			}
 			probe, cancel := context.WithTimeout(ctx, 3*time.Second)
-			healthy = p.probeMarkedEgress(probe, metadata.DNSIPv4) == nil
+			_, probeErr := p.probeMarkedEgress(probe, dnsServers)
+			healthy = probeErr == nil
 			cancel()
 			if !healthy {
 				quality[next].peerSuccess = 0

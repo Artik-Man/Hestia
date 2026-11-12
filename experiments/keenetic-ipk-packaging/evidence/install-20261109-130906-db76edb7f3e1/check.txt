@@ -1,0 +1,43 @@
+KN-1012 Hestia IPK update — 9 November 2026
+
+Build
+- Branch: codex/keenetic-opkgtun-ingress
+- Revision: 73d934b9f36a66f8a701a68248b29486d9abef76; dirty working tree.
+- Command: GOCACHE=/private/tmp/hestia-go-cache-task make build
+- Bundle: dist/artifacts/20261109-130906-db76edb7f3e1/keenetic-arm64-experimental
+- Package: hestia_20261109-130906-db76edb7f3e1_aarch64-3.10.ipk
+- SHA-256: 79a219edddee1605cc60ef875ca2f82daa7f55ebd7575462ea0a2a28ee18e348
+- verify_bundle passed. The package manifest identifies the same test-profile source as the final worktree.
+
+Local verification
+- python3 -m unittest discover -s scripts/build: 14 tests passed.
+- make test-workflows: 8 modules passed.
+- python3 -m unittest discover -s deploy -p 'test_profile.py': 33 tests passed after correcting a platform-route stub and fail-closed assertions in the test harness.
+- go test ./internal/binding ./internal/panel ./internal/panelmodel: passed with loopback-enabled test execution.
+- npm run format:check, npm run lint, npm test: passed; 23 frontend tests passed.
+- make docs-check and git diff --check passed before this report was appended.
+- make test-source stopped at prerequisite preflight because ShellCheck is unavailable. Its evidence is experiments/dev-validation/evidence/source-20261109-124619-90290/; it is not a complete source-validation pass.
+
+Device diagnosis and recovery
+- Device: Keenetic Giga KN-1012, KeeneticOS 5.2 Beta 3, Entware aarch64-3.10.
+- Before repair, opkg status was install user unpacked (20261109-094953-e523f5481e66), supervisor readiness failed, and managed-profile validation rejected a mismatch between the saved profile and sing-box routes.
+- Read-only reconstruction found one route difference: the stored OpkgTun inbound route targeted deny while the current profile compiler derived the configured safe AmneziaWG group. The derived snapshot matched the saved snapshot, and replacing only that route made the complete managed-profile validator pass on a private temporary copy.
+- Root-only backup of /opt/etc/hestia, opkg status, and the previous IPK is retained on the device at /opt/tmp/hestia-profile-repair-20261109-1249/. The previous IPK SHA-256 matched the trusted project evidence: 5ded4eb43f724d7c8dec665a02db46db688fae13a935253a4f7f5f7d915a6a36.
+- Repaired only /opt/etc/hestia/sing-box.json and /opt/etc/hestia/profile-backend.sha256. profile.json and snapshot.json were unchanged. The updated managed profile, snapshot, and sing-box config checks passed.
+- Owner detached hestia-client from its Keenetic policy during this work. Read-only RCI still showed Policy2 permitting OpkgTun0; no policy or client assignment was changed by this update.
+
+Installation and post-install verification
+- New IPK was delivered using the configured host-key-pinned SSH alias and legacy SCP. Local and device SHA-256 matched.
+- First opkg install unpacked the package but postinst returned 255 during the ingress migration smoke. No repeat install was run blindly. The package profile remained valid; Hestia was restarted using its init script, then `/opt/bin/opkg configure hestia` completed with exit 0.
+- Final `opkg status hestia`: Version 20261109-130906-db76edb7f3e1, Status install user installed, Architecture aarch64-3.10.
+- Supervisor readiness passed; readiness marker is a regular file; package-maintenance marker is absent.
+- Managed profile validation, controller snapshot check, and sing-box config check passed.
+- GET /, /api/groups-and-rules, /api/physical-connections, and /api/awg-underlays each returned HTTP 200.
+- IPv4 default-route SHA-256 before and after: f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871. IPv6 default-route output was empty before and after (SHA-256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855).
+- Hestia ingress table 32732 currently contains default dev opkgtun0, protocol 253, metric 1000 and the unreachable fallback default, protocol 253, metric 32767. The main default route remains unchanged.
+- opkg preserved the user's existing conffiles and placed new package defaults into root-only `*-opkg` sidecars. These were not removed.
+
+Boundaries
+- This confirms package installation, supervisor readiness, local configs, GET APIs, the managed ingress route state, and preservation of IPv4/IPv6 default routes. It does not confirm TCP/UDP client traffic, VPN egress, return path, DNS, IPv6 client forwarding, reboot recovery, or fail-closed under policy changes. The owner left hestia-client detached from the policy; no client traffic was generated.
+- The supervisor log retains an ingress reconciliation warning from before `/opt/bin/opkg configure hestia` completed. The final route table now contains the active Hestia TUN route and fallback guard; no newer warning was present at final inspection.
+- No commit or push was made.

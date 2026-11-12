@@ -1,0 +1,27 @@
+Question: What are the current addresses and kernel routes on the authorized test client before any policy switch?
+Observed at: 2026-11-08 15:34 UTC (18:34 MSK)
+VM: hestia-client
+Access: read-only `limactl shell`; no traffic probe, Keenetic access, or configuration change.
+Command: `ip -brief address; ip route; ip -6 route`
+
+Output:
+
+```text
+lo               UNKNOWN        127.0.0.1/8 ::1/128
+eth0             UP             192.168.5.15/24 metric 200 fe80::5055:55ff:fe97:3dc/64
+lima0            UP             192.168.1.124/24 metric 100 fd2a:86f9:4a1b:0:5055:55ff:fea7:20ba/64 fe80::5055:55ff:fea7:20ba/64
+default via 192.168.1.1 dev lima0 proto dhcp src 192.168.1.124 metric 100
+default via 192.168.5.2 dev eth0 proto dhcp src 192.168.5.15 metric 200
+192.168.1.0/24 dev lima0 proto kernel scope link src 192.168.1.124 metric 100
+192.168.1.1 dev lima0 proto dhcp scope link src 192.168.1.124 metric 100
+192.168.5.0/24 dev eth0 proto kernel scope link src 192.168.5.15 metric 200
+192.168.5.2 dev eth0 proto dhcp scope link src 192.168.5.15 metric 200
+2001:2::c633:640b via fe80::52ff:20ff:fee1:2e11 dev lima0 proto ra metric 100 pref low
+fd2a:86f9:4a1b::/64 dev lima0 proto ra metric 100 expires 21474836sec pref medium
+fe80::/64 dev lima0 proto kernel metric 256 pref medium
+fe80::/64 dev eth0 proto kernel metric 256 pref medium
+```
+
+Interpretation: the client has two IPv4 defaults. `lima0`/`192.168.1.124` is preferred by metric and is the address previously associated with the Keenetic LAN. `eth0`/`192.168.5.15` has a secondary default through `192.168.5.2`, which is a potential alternate egress for any leak test. This snapshot does not establish actual external reachability or the identity of either gateway.
+
+Limitations: no connectivity test was sent, the owner-selected Keenetic policy was not inspected, and no route was changed.

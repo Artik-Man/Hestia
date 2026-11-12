@@ -44,9 +44,9 @@ func NewSlotPolicy(runner RouteRunner, slot int) (RoutePolicy, error) {
 		return RoutePolicy{}, errors.New("invalid AWG runtime slot")
 	}
 	return RoutePolicy{
-		runner: runner, markValue: 0x202 + slot, priorityValue: 1002 + slot,
+		runner: runner, markValue: 0x202 + slot, priorityValue: network.MarkRulePriority(slot),
 		mark:  fmt.Sprintf("0x%x", 0x202+slot),
-		table: strconv.Itoa(202 + slot), priority: strconv.Itoa(1002 + slot),
+		table: strconv.Itoa(202 + slot), priority: strconv.Itoa(network.MarkRulePriority(slot)),
 		device: "awg" + strconv.Itoa(slot),
 	}, nil
 }
@@ -125,6 +125,93 @@ func (p RoutePolicy) InstallMarkRules(ctx context.Context) error {
 		}
 	}
 	return nil
+}
+
+// MigrateOwnedRulePriority moves a manifest-owned slot rule to a new priority while retaining its fail-closed route table.
+func (p RoutePolicy) MigrateOwnedRulePriority(ctx context.Context, oldPriority string) error {
+	if oldPriority == p.priority {
+		return nil
+	}
+	if p.runner == nil || oldPriority == "" || oldPriority == "0" {
+		return errors.New("invalid legacy AWG rule priority")
+	}
+	if p.table != "" {
+		if err := p.verifyGuards(ctx); err != nil {
+			return err
+		}
+	}
+	oldValue, err := strconv.Atoi(oldPriority)
+	if err != nil || strconv.Itoa(oldValue) != oldPriority {
+		return errors.New("invalid legacy AWG rule priority")
+	}
+	present := make(map[string]map[string]bool, 2)
+	for _, family := range []string{"-4", "-6"} {
+		rules, err := p.runner.Run(ctx, family, "rule", "show")
+		if err != nil {
+			return errors.New("cannot inspect AWG routing rules during migration")
+		}
+		present[family] = map[string]bool{"old": false, "new": false}
+		for _, line := range strings.Split(string(rules), "\n") {
+			fields := strings.Fields(line)
+			if len(fields) == 0 {
+				continue
+			}
+			priority := strings.TrimSuffix(fields[0], ":")
+			if priority != oldPriority && priority != p.priority {
+				continue
+			}
+			expected := p.ruleAtPriority(priority, line)
+			if !expected {
+				return errors.New("AWG rule priority contains an unowned rule; refusing migration")
+			}
+			key := "old"
+			if priority == p.priority {
+				key = "new"
+			}
+			if present[family][key] {
+				return errors.New("duplicate AWG rule prevents priority migration")
+			}
+			present[family][key] = true
+		}
+	}
+	for _, family := range []string{"-4", "-6"} {
+		if present[family]["new"] {
+			continue
+		}
+		addArgs := append([]string{family, "rule", "add", "priority", p.priority, "fwmark", p.mark + "/0xffffffff"}, p.ruleAction()...)
+		if _, err := p.runner.Run(ctx, addArgs...); err != nil {
+			return errors.New("cannot install migrated AWG rule")
+		}
+	}
+	for _, family := range []string{"-4", "-6"} {
+		if !present[family]["old"] {
+			continue
+		}
+		delOldArgs := append([]string{family, "rule", "del", "priority", oldPriority, "fwmark", p.mark + "/0xffffffff"}, p.ruleAction()...)
+		if _, err := p.runner.Run(ctx, delOldArgs...); err != nil {
+			return errors.New("cannot retire legacy AWG rule")
+		}
+	}
+	return nil
+}
+
+// ruleAtPriority recognizes only this policy's exact mark and table or terminal action at one priority.
+func (p RoutePolicy) ruleAtPriority(priority, line string) bool {
+	prefix := priority + ": from all fwmark " + p.mark
+	normalized := strings.Join(strings.Fields(line), " ")
+	if p.table == "" {
+		return normalized == prefix+" unreachable" || normalized == prefix+" lookup unspec blackhole"
+	}
+	lookup := " lookup " + p.table
+	return normalized == prefix+lookup || normalized == prefix+"/0xffffffff"+lookup
+}
+
+// ruleAction returns the action arguments for this slot's routing mark.
+func (p RoutePolicy) ruleAction() []string {
+	if p.table == "" {
+		return []string{"unreachable"}
+	}
+	return []string{"lookup", p.table}
 }
 
 // AdoptOwnedState validates route/table state against an external root-only ownership manifest before restart recovery.
@@ -283,7 +370,7 @@ func (p RoutePolicy) inspectOwnedRoutes(routes, family string, allowTunnel bool)
 		switch line {
 		case "unreachable default metric 32767":
 			owned["guard"] = true
-		case "unreachable default dev lo metric 32767":
+		case "unreachable default dev lo metric 32767", "unreachable default dev lo metric 32767 error -113":
 			if family != "-6" {
 				return nil, errors.New("unexpected IPv4 AWG guard device")
 			}
@@ -294,7 +381,11 @@ func (p RoutePolicy) inspectOwnedRoutes(routes, family string, allowTunnel bool)
 			}
 			owned["tunnel"] = true
 		default:
-			return nil, errors.New("AWG route table contains an unowned route; refusing teardown")
+			familyName := "IPv4"
+			if family == "-6" {
+				familyName = "IPv6"
+			}
+			return nil, fmt.Errorf("AWG route table contains an unowned %s route; refusing teardown", familyName)
 		}
 	}
 	return owned, nil
@@ -379,10 +470,10 @@ func safeEarlierRule(fields []string, hasMark bool) bool {
 func (p RoutePolicy) hasExpectedRule(line string) bool {
 	prefix := p.priority + ": from all fwmark " + p.mark
 	lookup := " lookup " + p.table
-	if p.table == "" {
-		lookup = " unreachable"
-	}
 	normalized := strings.Join(strings.Fields(line), " ")
+	if p.table == "" {
+		return normalized == prefix+" unreachable" || normalized == prefix+" lookup unspec blackhole"
+	}
 	return normalized == prefix+lookup || normalized == prefix+"/0xffffffff"+lookup
 }
 
@@ -410,7 +501,7 @@ func NewOuterPolicy(runner RouteRunner, slot int) (RoutePolicy, error) {
 	if slot < 0 || slot >= network.SlotCount {
 		return RoutePolicy{}, errors.New("invalid AWG runtime slot")
 	}
-	return RoutePolicy{runner: runner, markValue: 0x51000 + slot, mark: fmt.Sprintf("0x%x", 0x51000+slot), priorityValue: 1100 + slot, priority: strconv.Itoa(1100 + slot), device: "lo"}, nil
+	return RoutePolicy{runner: runner, markValue: 0x51000 + slot, mark: fmt.Sprintf("0x%x", 0x51000+slot), priorityValue: network.OuterRulePriority(slot), priority: strconv.Itoa(network.OuterRulePriority(slot)), device: "lo"}, nil
 }
 
 // OuterBarrier verifies ownership before publishing a record and changing only this slot's terminal rules.
