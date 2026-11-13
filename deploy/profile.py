@@ -750,6 +750,17 @@ def connector_kinds(profile: dict) -> dict:
             **{item["id"]: "hysteria2" for item in profile.get("hysteria2", [])}}
 
 
+def diagnostic_options(profile: dict, managed_v2: bool) -> dict:
+    """Expose CPU profiling only on the fixed loopback listener in managed v2 profiles."""
+    diagnostics = profile.get("diagnostics")
+    if diagnostics is None:
+        return {}
+    require(managed_v2, "CPU profiling requires a managed v2 profile")
+    fields(diagnostics, "cpuPprof")
+    require(type(diagnostics["cpuPprof"]) is bool, "invalid CPU profiling setting")
+    return {"debug": {"listen": "127.0.0.1:6060"}} if diagnostics["cpuPprof"] else {}
+
+
 def committed_wireguard(interface: dict, backend: dict) -> tuple[dict, dict]:
     """Recover an unchanged native WG endpoint and scoped DNS from a digest-verified installed backend."""
     tag = identifier(interface["id"])
@@ -769,9 +780,7 @@ def compile_profile(profile: dict, directory: Path, committed: dict | None = Non
         return (
             {"groups": [{"id": "bootstrap", "exits": []}], "lists": [], "healthy": {}},
             {
-                "experimental": {
-                    "clash_api": {"external_controller": "127.0.0.1:9090"}
-                },
+                "experimental": {"clash_api": {"external_controller": "127.0.0.1:9090"}},
                 "inbounds": [],
                 "outbounds": [
                     {
@@ -798,7 +807,7 @@ def compile_profile(profile: dict, directory: Path, committed: dict | None = Non
     else:
         managed_v2 = "inbounds" in profile
         if managed_v2:
-            fields(profile, "version interfaces connectors groups lists healthy inbounds" + (" hysteria2" if "hysteria2" in profile else "") + (" countryMap" if "countryMap" in profile else ""))
+            fields(profile, "version interfaces connectors groups lists healthy inbounds" + (" hysteria2" if "hysteria2" in profile else "") + (" countryMap" if "countryMap" in profile else "") + (" diagnostics" if "diagnostics" in profile else ""))
         else:
             fields(profile, "version interfaces connectors groups lists healthy socks_port" + (" hysteria2" if "hysteria2" in profile else "") + (" countryMap" if "countryMap" in profile else ""))
         connectors = profile["connectors"]
@@ -957,8 +966,10 @@ def compile_profile(profile: dict, directory: Path, committed: dict | None = Non
         "duplicate inbound tag",
     )
     route = client_route(profile, groups[0]["id"], routes, transport_rules + quality_rules)
+    experimental = {"clash_api": {"external_controller": "127.0.0.1:9090"}}
+    experimental.update(diagnostic_options(profile, managed_v2))
     backend = {
-        "experimental": {"clash_api": {"external_controller": "127.0.0.1:9090"}},
+        "experimental": experimental,
         "inbounds": inbounds,
         "outbounds": [*outbounds, *direct_outbounds, *awg_outbounds, *hysteria],
         "route": route,
@@ -1034,7 +1045,7 @@ def managed_profile(base: Path) -> tuple[dict, dict, dict]:
     else:
         managed_v2 = "inbounds" in profile
         if managed_v2:
-            fields(profile, "version interfaces connectors groups lists healthy inbounds" + (" hysteria2" if "hysteria2" in profile else "") + (" countryMap" if "countryMap" in profile else ""))
+            fields(profile, "version interfaces connectors groups lists healthy inbounds" + (" hysteria2" if "hysteria2" in profile else "") + (" countryMap" if "countryMap" in profile else "") + (" diagnostics" if "diagnostics" in profile else ""))
         else:
             fields(profile, "version interfaces connectors groups lists healthy socks_port" + (" hysteria2" if "hysteria2" in profile else "") + (" countryMap" if "countryMap" in profile else ""))
         connectors = profile["connectors"]

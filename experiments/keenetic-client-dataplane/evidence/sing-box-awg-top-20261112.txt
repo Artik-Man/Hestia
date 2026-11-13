@@ -1,0 +1,845 @@
+CPU: 31.5% usr 21.0% sys  0.0% nic  0.0% idle 36.8% io  0.0% irq 10.5% sirq
+32386 32297 root     S    1361m279.7   1 31.5 /opt/bin/amneziawg-go -f awg1
+ 1833 32220 root     S    2156m443.1   1  5.2 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32384 32303 root     S    1297m266.5   0  5.2 /opt/bin/amneziawg-go -f awg2
+32297 32220 root     S    1244m255.7   0  5.2 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32220     1 root     S    1244m255.7   1  5.2 /opt/bin/hestia -service-supervisor
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+ 1853 32220 root     S    1245m255.8   1  0.0 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+ 6457  6455 root     S     3372  0.6   0  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+CPU: 16.5% usr 13.6% sys  0.0% nic  3.9% idle 57.0% io  1.4% irq  7.3% sirq
+32386 32297 root     S    1361m279.7   1  8.2 /opt/bin/amneziawg-go -f awg1
+ 1833 32220 root     S    2156m443.1   0  6.3 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32220     1 root     S    1244m255.7   1  2.9 /opt/bin/hestia -service-supervisor
+ 1853 32220 root     S    1245m255.8   1  1.4 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32384 32303 root     S    1297m266.5   0  0.4 /opt/bin/amneziawg-go -f awg2
+32647 32220 root     S    1253m257.5   1  0.4 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32303 32220 root     S    1244m255.7   0  0.4 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32376 32296 root     S    1232m253.2   1  0.4 /opt/bin/amneziawg-go -f awg0
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+ 6457  6455 root     S     3372  0.6   1  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+CPU: 50.2% usr 20.8% sys  0.0% nic  3.4% idle  8.9% io  2.4% irq 13.9% sirq
+ 1853 32220 root     S    1245m255.8   1 25.8 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+ 1833 32220 root     S    2156m443.1   1 15.4 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1361m279.7   1 15.4 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  2.9 /opt/bin/hestia -service-supervisor
+32384 32303 root     S    1297m266.5   0  0.5 /opt/bin/amneziawg-go -f awg2
+32376 32296 root     S    1232m253.2   1  0.5 /opt/bin/amneziawg-go -f awg0
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+ 6457  6455 root     S     3372  0.6   1  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+CPU: 26.7% usr 26.7% sys  0.0% nic 21.7% idle  5.4% io  2.9% irq 16.3% sirq
+ 1833 32220 root     S    2156m443.1   0 18.2 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1361m279.7   1 16.7 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  2.9 /opt/bin/hestia -service-supervisor
+32296 32220 root     S    1244m255.7   1  1.4 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32647 32220 root     S    1253m257.5   1  0.4 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+ 1853 32220 root     S    1245m255.8   1  0.4 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32376 32296 root     S    1232m253.2   1  0.4 /opt/bin/amneziawg-go -f awg0
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+ 6457  6455 root     S     3372  0.6   0  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+CPU: 38.1% usr 27.2% sys  0.0% nic  7.4% idle  0.0% io  3.4% irq 23.7% sirq
+ 1833 32220 root     R    2156m443.1   1 26.1 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1361m279.7   1 21.7 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  2.4 /opt/bin/hestia -service-supervisor
+ 1853 32220 root     S    1245m255.8   1  1.4 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32647 32220 root     S    1253m257.5   1  0.4 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32296 32220 root     S    1244m255.7   1  0.4 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32376 32296 root     S    1232m253.2   1  0.4 /opt/bin/amneziawg-go -f awg0
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+ 6457  6455 root     S     3372  0.6   0  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+CPU: 34.2% usr 23.1% sys  0.0% nic  7.2% idle 12.0% io  3.3% irq 19.8% sirq
+ 1833 32220 root     D    2156m443.1   1 22.2 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1361m279.7   1 19.3 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  3.3 /opt/bin/hestia -service-supervisor
+32296 32220 root     S    1244m255.7   1  1.9 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+ 1853 32220 root     S    1245m255.8   1  0.4 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32376 32296 root     S    1232m253.2   1  0.4 /opt/bin/amneziawg-go -f awg0
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+ 6457  6455 root     S     3372  0.6   0  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+CPU: 37.2% usr 30.8% sys  0.0% nic  0.9% idle  0.4% io  3.9% irq 26.4% sirq
+32386 32297 root     S    1361m279.7   1 26.4 /opt/bin/amneziawg-go -f awg1
+ 1833 32220 root     S    2156m443.1   0 25.4 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32220     1 root     S    1244m255.7   1  2.9 /opt/bin/hestia -service-supervisor
+32376 32296 root     S    1232m253.2   1  0.4 /opt/bin/amneziawg-go -f awg0
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+ 1853 32220 root     S    1245m255.8   1  0.0 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+ 6457  6455 root     S     3372  0.6   1  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+CPU: 33.4% usr 34.4% sys  0.0% nic  0.0% idle  0.4% io  3.9% irq 27.5% sirq
+ 1833 32220 root     R    2156m443.1   1 25.1 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1361m279.7   1 24.1 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  3.9 /opt/bin/hestia -service-supervisor
+32647 32220 root     S    1253m257.5   1  0.4 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+ 1853 32220 root     S    1245m255.8   1  0.0 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+ 6457  6455 root     S     3372  0.6   0  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+CPU: 35.6% usr 33.1% sys  0.0% nic  0.0% idle  0.0% io  3.9% irq 27.3% sirq
+ 1833 32220 root     R    2156m443.1   1 26.3 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1361m279.7   1 23.4 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  2.9 /opt/bin/hestia -service-supervisor
+32296 32220 root     S    1244m255.7   1  1.9 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+ 1853 32220 root     S    1245m255.8   1  0.9 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32384 32303 root     S    1297m266.5   0  0.4 /opt/bin/amneziawg-go -f awg2
+32376 32296 root     S    1232m253.2   1  0.4 /opt/bin/amneziawg-go -f awg0
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+ 6457  6455 root     S     3372  0.6   1  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+CPU: 38.6% usr 28.5% sys  0.0% nic  0.4% idle  0.0% io  3.8% irq 28.5% sirq
+ 1833 32220 root     R    2156m443.1   1 26.5 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1361m279.7   1 24.6 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  2.4 /opt/bin/hestia -service-supervisor
+ 1853 32220 root     S    1245m255.8   1  0.4 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+ 6457  6455 root     S     3372  0.6   1  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+CPU: 36.6% usr 32.1% sys  0.0% nic  0.0% idle  0.0% io  3.9% irq 27.2% sirq
+ 1833 32220 root     R    2156m443.1   1 26.1 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1361m279.7   1 25.1 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  3.9 /opt/bin/hestia -service-supervisor
+32647 32220 root     S    1253m257.5   1  0.4 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+ 1853 32220 root     S    1245m255.8   1  0.0 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+ 6457  6455 root     S     3372  0.6   0  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+CPU: 36.5% usr 32.6% sys  0.0% nic  0.4% idle  0.0% io  3.8% irq 26.4% sirq
+ 1833 32220 root     R    2156m443.1   1 27.3 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1361m279.7   1 22.5 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  2.8 /opt/bin/hestia -service-supervisor
+32296 32220 root     S    1244m255.7   1  1.9 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+ 1853 32220 root     S    1245m255.8   1  0.9 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32376 32296 root     S    1232m253.2   1  0.9 /opt/bin/amneziawg-go -f awg0
+32647 32220 root     S    1253m257.5   1  0.4 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+ 6457  6455 root     S     3372  0.6   0  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+CPU: 36.2% usr 31.8% sys  0.0% nic  0.0% idle  0.0% io  3.8% irq 28.0% sirq
+ 1833 32220 root     R    2156m443.1   1 26.0 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1361m279.7   1 23.6 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  3.8 /opt/bin/hestia -service-supervisor
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+ 1853 32220 root     S    1245m255.8   1  0.0 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+ 6457  6455 root     S     3372  0.6   0  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+CPU: 35.3% usr 31.3% sys  0.0% nic  1.9% idle  0.0% io  3.9% irq 27.3% sirq
+ 1833 32220 root     R    2156m443.1   0 24.8 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1361m279.7   1 24.8 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  3.4 /opt/bin/hestia -service-supervisor
+ 1853 32220 root     S    1245m255.8   1  0.5 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+ 6457  6455 root     S     3372  0.6   0  0.5 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 39.8% usr 31.0% sys  0.0% nic  0.0% idle  0.0% io  3.8% irq 25.2% sirq
+ 1833 32220 root     R    2156m443.1   0 24.7 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1361m279.7   1 24.7 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  3.3 /opt/bin/hestia -service-supervisor
+32296 32220 root     S    1244m255.7   1  1.9 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32376 32296 root     S    1232m253.2   1  0.9 /opt/bin/amneziawg-go -f awg0
+ 1853 32220 root     S    1245m255.8   1  0.4 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+ 6457  6455 root     S     3372  0.6   1  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 40.1% usr 29.9% sys  0.0% nic  0.4% idle  0.0% io  3.9% irq 25.4% sirq
+ 1833 32220 root     S    2156m443.1   1 27.3 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1361m279.7   1 23.9 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  3.4 /opt/bin/hestia -service-supervisor
+32297 32220 root     D    1244m255.7   0  1.4 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32303 32220 root     S    1244m255.7   0  1.4 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32384 32303 root     S    1297m266.5   0  0.4 /opt/bin/amneziawg-go -f awg2
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+ 1853 32220 root     S    1245m255.8   1  0.0 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   1  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 32.3% usr 25.7% sys  0.0% nic 20.4% idle  0.4% io  2.8% irq 18.0% sirq
+ 1833 32220 root     S    2156m443.1   1 17.5 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1361m279.7   1 16.6 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  5.2 /opt/bin/hestia -service-supervisor
+ 1853 32220 root     S    1245m255.8   1  0.4 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   0  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 30.5% usr 22.8% sys  0.0% nic 25.2% idle  0.0% io  2.9% irq 18.4% sirq
+ 1833 32220 root     S    2156m443.1   1 20.3 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1361m279.7   1 17.4 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  2.4 /opt/bin/hestia -service-supervisor
+32296 32220 root     S    1244m255.7   1  1.4 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32376 32296 root     S    1232m253.2   1  0.4 /opt/bin/amneziawg-go -f awg0
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+ 1853 32220 root     S    1245m255.8   1  0.0 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+ 6457  6455 root     S     3372  0.6   0  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 27.8% usr 21.9% sys  0.0% nic 27.3% idle  2.9% io  2.4% irq 17.5% sirq
+ 1833 32220 root     S    2156m443.1   1 18.5 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1361m279.7   1 16.5 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  2.4 /opt/bin/hestia -service-supervisor
+32647 32220 root     S    1253m257.5   1  0.9 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+ 1853 32220 root     S    1245m255.8   1  0.9 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   1  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 28.2% usr 20.4% sys  0.0% nic 20.4% idle 10.2% io  2.9% irq 17.5% sirq
+ 1833 32220 root     R    2156m443.1   0 20.4 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1361m279.7   1 14.6 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  2.9 /opt/bin/hestia -service-supervisor
+ 1853 32220 root     S    1245m255.8   1  0.4 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   0  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 27.8% usr 22.8% sys  0.0% nic  0.9% idle 29.8% io  2.4% irq 15.9% sirq
+ 1833 32220 root     R    2156m443.1   1 16.8 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1361m279.7   1 16.8 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  2.4 /opt/bin/hestia -service-supervisor
+32296 32220 root     S    1244m255.7   1  1.9 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32647 32220 root     S    1253m257.5   1  0.9 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32376 32296 root     S    1232m253.2   1  0.9 /opt/bin/amneziawg-go -f awg0
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+ 1853 32220 root     S    1245m255.8   1  0.0 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+ 6457  6455 root     S     3372  0.6   0  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 27.4% usr 21.8% sys  0.0% nic 10.4% idle 22.2% io  2.3% irq 15.6% sirq
+ 1833 32220 root     R    2156m443.1   0 17.5 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1361m279.7   1 15.1 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  2.8 /opt/bin/hestia -service-supervisor
+ 1853 32220 root     S    1245m255.8   1  0.4 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   1  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 30.8% usr 23.5% sys  0.0% nic 12.7% idle 14.7% io  2.4% irq 15.6% sirq
+ 1833 32220 root     S    2156m443.1   1 20.5 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1361m279.7   1 16.1 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  2.4 /opt/bin/hestia -service-supervisor
+32296 32220 root     S    1244m255.7   1  1.4 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+ 1853 32220 root     S    1245m255.8   1  0.4 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   1  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 30.0% usr 23.8% sys  0.0% nic 15.7% idle  9.0% io  2.8% irq 18.5% sirq
+ 1833 32220 root     S    2156m443.1   1 17.5 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1361m279.7   1 17.1 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  2.3 /opt/bin/hestia -service-supervisor
+ 1853 32220 root     S    1245m255.8   1  0.4 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32296 32220 root     S    1244m255.7   1  0.4 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32376 32296 root     S    1232m253.2   1  0.4 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   1  0.4 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 30.3% usr 26.0% sys  0.0% nic 10.4% idle 10.4% io  2.8% irq 19.9% sirq
+ 1833 32220 root     S    2156m443.1   0 20.3 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1361m279.7   1 19.4 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  2.8 /opt/bin/hestia -service-supervisor
+32647 32220 root     S    1253m257.5   1  0.4 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+ 1853 32220 root     S    1245m255.8   1  0.0 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   0  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 34.6% usr 33.1% sys  0.0% nic  0.0% idle  0.0% io  4.3% irq 27.8% sirq
+ 1833 32220 root     S    2156m443.1   1 29.2 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1361m279.8   1 25.3 /opt/bin/amneziawg-go -f awg1
+32296 32220 root     S    1244m255.7   1  0.9 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32220     1 root     S    1244m255.7   1  0.9 /opt/bin/hestia -service-supervisor
+ 1853 32220 root     S    1245m255.8   1  0.4 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   0  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 34.3% usr 34.8% sys  0.0% nic  0.0% idle  0.0% io  3.9% irq 26.9% sirq
+ 1833 32220 root     S    2156m443.1   0 26.4 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1361m279.8   1 22.5 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  3.4 /opt/bin/hestia -service-supervisor
+32296 32220 root     S    1244m255.7   1  1.4 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32376 32296 root     S    1232m253.2   1  0.9 /opt/bin/amneziawg-go -f awg0
+32647 32220 root     S    1253m257.5   1  0.4 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+ 1853 32220 root     S    1245m255.8   1  0.0 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+ 6457  6455 root     S     3372  0.6   1  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 37.1% usr 30.9% sys  0.0% nic  0.0% idle  0.0% io  4.3% irq 27.5% sirq
+ 1833 32220 root     S    2156m443.1   0 25.1 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1361m279.8   1 25.1 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  2.9 /opt/bin/hestia -service-supervisor
+ 1853 32220 root     S    1245m255.8   1  0.9 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32384 32303 root     S    1297m266.5   0  0.4 /opt/bin/amneziawg-go -f awg2
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   1  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 40.0% usr 31.4% sys  0.0% nic  0.0% idle  0.0% io  3.8% irq 24.7% sirq
+ 1833 32220 root     S    2156m443.1   1 26.1 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1362m279.8   1 23.7 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  3.8 /opt/bin/hestia -service-supervisor
+32296 32220 root     S    1244m255.7   1  0.9 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32376 32296 root     S    1232m253.2   1  0.4 /opt/bin/amneziawg-go -f awg0
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+ 1853 32220 root     S    1245m255.8   1  0.0 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+ 6457  6455 root     S     3372  0.6   1  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 36.8% usr 32.5% sys  0.0% nic  0.0% idle  0.0% io  3.8% irq 26.6% sirq
+ 1833 32220 root     S    2156m443.1   0 25.1 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1362m279.8   1 24.2 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  3.8 /opt/bin/hestia -service-supervisor
+32296 32220 root     S    1244m255.7   1  0.9 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32303 32220 root     S    1244m255.7   0  0.9 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32384 32303 root     S    1297m266.5   0  0.4 /opt/bin/amneziawg-go -f awg2
+ 1853 32220 root     S    1245m255.8   1  0.4 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32376 32296 root     S    1232m253.2   1  0.4 /opt/bin/amneziawg-go -f awg0
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+ 6457  6455 root     S     3372  0.6   0  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 42.2% usr 30.5% sys  0.0% nic  0.4% idle  0.0% io  3.7% irq 23.0% sirq
+32386 32297 root     S    1362m279.8   1 20.1 /opt/bin/amneziawg-go -f awg1
+ 1833 32220 root     S    2156m443.1   0 19.6 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+ 1853 32220 root     S    1245m255.8   1 16.4 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32297 32220 root     S    1244m255.7   0  1.8 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32303 32220 root     S    1244m255.7   0  1.4 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32220     1 root     S    1244m255.7   1  1.4 /opt/bin/hestia -service-supervisor
+32647 32220 root     S    1253m257.5   1  0.9 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32384 32303 root     S    1297m266.5   0  0.4 /opt/bin/amneziawg-go -f awg2
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   1  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 40.0% usr 26.3% sys  0.0% nic 16.5% idle 11.2% io  0.9% irq  4.8% sirq
+ 1853 32220 root     S    1245m255.8   1 41.9 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32220     1 root     S    1244m255.7   1  5.3 /opt/bin/hestia -service-supervisor
+ 1833 32220 root     S    2156m443.1   1  4.3 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1362m279.8   1  4.3 /opt/bin/amneziawg-go -f awg1
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   0  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 40.8% usr 24.6% sys  0.0% nic  0.0% idle 33.4% io  0.4% irq  0.4% sirq
+ 1853 32220 root     S    1245m255.8   1 48.7 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32220     1 root     S    1244m255.7   1  2.9 /opt/bin/hestia -service-supervisor
+ 1833 32220 root     S    2156m443.1   1  0.4 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1362m279.8   1  0.4 /opt/bin/amneziawg-go -f awg1
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   1  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 56.7% usr 23.8% sys  0.0% nic  0.9% idle  6.4% io  2.4% irq  9.4% sirq
+ 1853 32220 root     S    1245m255.8   1 38.2 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+ 1833 32220 root     S    2156m443.1   0 15.4 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1362m279.8   1  8.9 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  2.9 /opt/bin/hestia -service-supervisor
+32296 32220 root     S    1244m255.7   1  1.9 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32647 32220 root     S    1253m257.5   1  1.4 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32376 32296 root     S    1232m253.2   1  0.9 /opt/bin/amneziawg-go -f awg0
+32384 32303 root     S    1297m266.5   0  0.5 /opt/bin/amneziawg-go -f awg2
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+ 6457  6455 root     S     3372  0.6   1  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 34.4% usr 32.0% sys  0.0% nic  0.0% idle 31.5% io  0.4% irq  1.4% sirq
+ 1833 32220 root     S    2156m443.1   1 46.2 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+ 1853 32220 root     S    1245m255.8   1  5.4 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32220     1 root     S    1244m255.7   1  2.9 /opt/bin/hestia -service-supervisor
+32384 32303 root     S    1297m266.5   0  0.9 /opt/bin/amneziawg-go -f awg2
+32386 32297 root     S    1362m279.8   1  0.4 /opt/bin/amneziawg-go -f awg1
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   1  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 24.5% usr 37.2% sys  0.0% nic  8.8% idle 28.4% io  0.4% irq  0.4% sirq
+ 1833 32220 root     S    2156m443.1   0 48.9 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32220     1 root     S    1244m255.7   1  2.9 /opt/bin/hestia -service-supervisor
+32386 32297 root     S    1362m279.8   1  0.4 /opt/bin/amneziawg-go -f awg1
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+ 1853 32220 root     S    1245m255.8   1  0.0 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   1  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 17.2% usr 16.7% sys  0.0% nic  4.0% idle 60.4% io  1.0% irq  0.5% sirq
+ 1833 32220 root     S    2156m443.1   1 19.7 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32220     1 root     S    1244m255.7   1  2.5 /opt/bin/hestia -service-supervisor
+32647 32220 root     S    1253m257.5   1  0.5 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32376 32296 root     S    1232m253.2   1  0.5 /opt/bin/amneziawg-go -f awg0
+32386 32297 root     S    1362m279.8   1  0.0 /opt/bin/amneziawg-go -f awg1
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+ 1853 32220 root     S    1245m255.8   1  0.0 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+ 6457  6455 root     S     3372  0.6   1  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 16.4% usr  9.4% sys  0.0% nic 32.8% idle 36.3% io  1.4% irq  3.4% sirq
+ 1833 32220 root     S    2156m443.1   1  7.4 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1362m279.8   1  3.4 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  3.4 /opt/bin/hestia -service-supervisor
+ 1853 32220 root     S    1245m255.8   1  0.5 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   0  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 11.6% usr  6.0% sys  0.0% nic 14.1% idle 66.1% io  0.5% irq  1.5% sirq
+ 1833 32220 root     S    2156m443.1   1  3.5 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32220     1 root     S    1244m255.7   1  2.5 /opt/bin/hestia -service-supervisor
+32386 32297 root     S    1362m279.8   1  1.5 /opt/bin/amneziawg-go -f awg1
+32647 32220 root     S    1253m257.5   1  1.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+ 1853 32220 root     S    1245m255.8   1  0.5 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   0  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 13.1% usr  6.8% sys  0.0% nic  0.4% idle 76.5% io  0.4% irq  2.4% sirq
+32220     1 root     S    1244m255.7   1  2.9 /opt/bin/hestia -service-supervisor
+32386 32297 root     S    1362m279.8   1  2.4 /opt/bin/amneziawg-go -f awg1
+ 1833 32220 root     S    2156m443.1   1  1.9 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+ 1853 32220 root     S    1245m255.8   1  0.9 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   0  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 16.1% usr 10.7% sys  0.0% nic 28.9% idle 38.7% io  0.9% irq  4.4% sirq
+ 1833 32220 root     S    2156m443.1   0  5.8 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1362m279.8   1  4.8 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  2.4 /opt/bin/hestia -service-supervisor
+32296 32220 root     S    1244m255.7   1  1.4 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32647 32220 root     S    1253m257.5   1  0.9 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+ 1853 32220 root     S    1245m255.8   1  0.0 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   1  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 24.0% usr 15.0% sys  0.0% nic  0.0% idle 48.0% io  2.0% irq 11.0% sirq
+32386 32297 root     S    1362m279.8   1 16.5 /opt/bin/amneziawg-go -f awg1
+ 1833 32220 root     S    2156m443.1   0  8.0 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32220     1 root     S    1244m255.7   1  3.5 /opt/bin/hestia -service-supervisor
+ 1853 32220 root     S    1245m255.8   1  0.5 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32376 32296 root     S    1232m253.2   1  0.5 /opt/bin/amneziawg-go -f awg0
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+ 6457  6455 root     S     3372  0.6   0  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 27.2% usr 23.7% sys  0.0% nic  4.9% idle 22.7% io  2.9% irq 18.3% sirq
+32386 32297 root     S    1362m279.8   1 21.7 /opt/bin/amneziawg-go -f awg1
+ 1833 32220 root     S    2156m443.1   1 15.8 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32220     1 root     S    1244m255.7   1  2.9 /opt/bin/hestia -service-supervisor
+ 1853 32220 root     S    1245m255.8   1  0.4 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   0  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 16.8% usr  8.4% sys  0.0% nic 30.1% idle 37.6% io  0.9% irq  5.9% sirq
+ 1833 32220 root     S    2156m443.1   1  7.9 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1362m279.8   1  4.4 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  2.4 /opt/bin/hestia -service-supervisor
+32296 32220 root     S    1244m255.7   1  0.4 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+ 1853 32220 root     S    1245m255.8   1  0.0 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   1  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 26.6% usr 16.7% sys  0.0% nic  4.4% idle 39.9% io  1.9% irq 10.3% sirq
+32386 32297 root     S    1362m279.8   1 10.3 /opt/bin/amneziawg-go -f awg1
+ 1833 32220 root     S    2156m443.1   1  9.3 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32220     1 root     S    1244m255.7   1  2.9 /opt/bin/hestia -service-supervisor
+32296 32220 root     S    1244m255.7   1  1.9 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32297 32220 root     S    1244m255.7   1  1.4 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32384 32303 root     S    1297m266.5   0  0.9 /opt/bin/amneziawg-go -f awg2
+32303 32220 root     S    1244m255.7   0  0.9 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32376 32296 root     S    1232m253.2   1  0.9 /opt/bin/amneziawg-go -f awg0
+ 1853 32220 root     S    1245m255.8   1  0.4 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+ 6457  6455 root     S     3372  0.6   1  0.4 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU:  9.8% usr  5.4% sys  0.0% nic  0.0% idle 83.2% io  0.9% irq  0.4% sirq
+32220     1 root     S    1244m255.7   1  2.4 /opt/bin/hestia -service-supervisor
+ 1833 32220 root     S    2156m443.1   1  1.4 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1362m279.8   1  0.4 /opt/bin/amneziawg-go -f awg1
+ 1853 32220 root     S    1245m255.8   1  0.4 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32297 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   0  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 10.0% usr  4.5% sys  0.0% nic  0.0% idle 82.9% io  1.5% irq  1.0% sirq
+32220     1 root     S    1244m255.7   1  3.0 /opt/bin/hestia -service-supervisor
+ 1833 32220 root     S    2156m443.1   1  1.0 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1362m279.8   1  0.5 /opt/bin/amneziawg-go -f awg1
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+ 1853 32220 root     S    1245m255.8   1  0.0 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32297 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   1  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 13.7% usr  7.8% sys  0.0% nic  4.9% idle 71.0% io  0.9% irq  1.4% sirq
+ 1833 32220 root     R    2156m443.1   0  5.3 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32220     1 root     S    1244m255.7   1  2.9 /opt/bin/hestia -service-supervisor
+32386 32297 root     S    1362m279.8   1  0.4 /opt/bin/amneziawg-go -f awg1
+32647 32220 root     S    1253m257.5   1  0.4 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32303 32220 root     S    1244m255.7   0  0.4 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+ 1853 32220 root     S    1245m255.8   1  0.0 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32297 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   1  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 22.2% usr 17.3% sys  0.0% nic 23.1% idle 23.1% io  1.9% irq 12.0% sirq
+ 1833 32220 root     S    2156m443.1   1 15.4 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1362m279.8   1 11.5 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  2.4 /opt/bin/hestia -service-supervisor
+32647 32220 root     S    1253m257.5   1  0.9 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+ 1853 32220 root     S    1245m255.8   1  0.9 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32296 32220 root     S    1244m255.7   1  0.4 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32376 32296 root     S    1232m253.2   1  0.4 /opt/bin/amneziawg-go -f awg0
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32297 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+ 6457  6455 root     S     3372  0.6   0  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 36.3% usr 33.0% sys  0.0% nic  0.0% idle  0.0% io  3.8% irq 26.7% sirq
+32386 32297 root     S    1362m279.8   1 24.8 /opt/bin/amneziawg-go -f awg1
+ 1833 32220 root     S    2156m443.1   1 23.9 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32220     1 root     S    1244m255.7   1  2.8 /opt/bin/hestia -service-supervisor
+32296 32220 root     S    1244m255.7   1  1.4 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32376 32296 root     S    1232m253.2   1  0.9 /opt/bin/amneziawg-go -f awg0
+32647 32220 root     S    1253m257.5   1  0.4 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+ 1853 32220 root     S    1245m255.8   1  0.0 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32297 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+ 6457  6455 root     S     3372  0.6   0  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 34.4% usr 34.4% sys  0.0% nic  0.0% idle  0.0% io  3.9% irq 27.0% sirq
+32386 32297 root     S    1362m279.8   1 27.0 /opt/bin/amneziawg-go -f awg1
+ 1833 32220 root     S    2156m443.1   1 25.1 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32220     1 root     S    1244m255.7   1  3.4 /opt/bin/hestia -service-supervisor
+ 1853 32220 root     S    1245m255.8   1  0.9 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32647 32220 root     S    1253m257.5   1  0.4 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32297 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   0  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 37.6% usr 32.3% sys  0.0% nic  0.0% idle  0.0% io  4.3% irq 25.6% sirq
+ 1833 32220 root     S    2156m443.1   1 26.0 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1362m279.8   1 24.1 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  3.3 /opt/bin/hestia -service-supervisor
+32296 32220 root     S    1244m255.7   1  1.4 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32647 32220 root     S    1253m257.5   1  0.4 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+ 1853 32220 root     S    1245m255.8   1  0.4 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32376 32296 root     S    1232m253.2   1  0.4 /opt/bin/amneziawg-go -f awg0
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32297 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+ 6457  6455 root     S     3372  0.6   0  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 28.9% usr 17.3% sys  0.0% nic 17.8% idle 22.2% io  2.4% irq 11.1% sirq
+32386 32297 root     S    1362m279.8   1 14.9 /opt/bin/amneziawg-go -f awg1
+ 1833 32220 root     S    2156m443.1   1  8.2 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32220     1 root     S    1244m255.7   1  5.3 /opt/bin/hestia -service-supervisor
+32296 32220 root     S    1244m255.7   1  0.4 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+ 1853 32220 root     S    1245m255.8   1  0.0 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32297 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   0  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 18.9% usr 18.9% sys  0.0% nic 23.8% idle 22.8% io  2.4% irq 12.9% sirq
+ 1833 32220 root     S    2156m443.1   0 16.4 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1362m279.8   1 12.9 /opt/bin/amneziawg-go -f awg1
+ 1853 32220 root     S    1245m255.8   1  0.5 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32220     1 root     S    1244m255.7   1  0.5 /opt/bin/hestia -service-supervisor
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32297 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   0  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 38.4% usr 32.2% sys  0.0% nic  0.0% idle  0.0% io  4.3% irq 25.0% sirq
+32386 32297 root     S    1362m279.8   1 24.4 /opt/bin/amneziawg-go -f awg1
+ 1833 32220 root     S    2156m443.1   1 23.0 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32220     1 root     S    1244m255.7   1  2.8 /opt/bin/hestia -service-supervisor
+32647 32220 root     S    1253m257.5   1  1.4 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+ 1853 32220 root     S    1245m255.8   1  0.9 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+ 6457  6455 root     S     3372  0.6   1  0.4 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32297 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 38.3% usr 30.5% sys  0.0% nic  0.0% idle  0.0% io  3.8% irq 27.1% sirq
+ 1833 32220 root     S    2156m443.1   1 26.6 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1362m279.8   1 24.7 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  3.3 /opt/bin/hestia -service-supervisor
+32647 32220 root     S    1253m257.5   1  0.4 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+ 1853 32220 root     S    1245m255.8   1  0.0 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32297 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   0  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 40.2% usr 30.3% sys  0.0% nic  0.9% idle  2.9% io  3.9% irq 21.3% sirq
+ 1833 32220 root     S    2156m443.1   1 24.3 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1362m279.8   1 20.8 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  4.9 /opt/bin/hestia -service-supervisor
+32647 32220 root     S    1253m257.5   1  1.9 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+ 1853 32220 root     S    1245m255.8   1  0.0 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32297 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   0  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 30.6% usr 21.7% sys  0.0% nic 26.2% idle  0.0% io  2.4% irq 18.8% sirq
+ 1833 32220 root     S    2156m443.1   1 19.7 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1362m279.8   1 18.2 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  3.4 /opt/bin/hestia -service-supervisor
+ 1853 32220 root     S    1245m255.8   1  0.4 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32297 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   0  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 26.9% usr 21.5% sys  0.0% nic 31.8% idle  0.0% io  2.4% irq 17.1% sirq
+32386 32297 root     S    1362m279.8   1 17.1 /opt/bin/amneziawg-go -f awg1
+ 1833 32220 root     S    2156m443.1   1 16.6 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32220     1 root     S    1244m255.7   1  2.4 /opt/bin/hestia -service-supervisor
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+ 1853 32220 root     S    1245m255.8   1  0.0 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32297 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   1  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 42.5% usr 20.5% sys  0.0% nic  6.2% idle 10.0% io  2.8% irq 17.7% sirq
+ 1853 32220 root     S    1245m255.8   1 15.7 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+ 1833 32220 root     S    2156m443.1   1 15.3 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1362m279.8   1 15.3 /opt/bin/amneziawg-go -f awg1
+32384 32303 root     S    1297m266.5   0  1.4 /opt/bin/amneziawg-go -f awg2
+32303 32220 root     S    1244m255.7   0  1.4 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32297 32220 root     S    1244m255.7   0  0.9 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32647 32220 root     S    1253m257.5   1  0.4 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32220     1 root     S    1244m255.7   1  0.4 /opt/bin/hestia -service-supervisor
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   0  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 18.7% usr 10.3% sys  0.0% nic  0.0% idle 65.5% io  0.9% irq  4.4% sirq
+ 1833 32220 root     S    2156m443.1   1  4.9 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32220     1 root     S    1244m255.7   1  4.9 /opt/bin/hestia -service-supervisor
+32386 32297 root     S    1362m279.8   1  3.9 /opt/bin/amneziawg-go -f awg1
+ 1853 32220 root     S    1245m255.8   1  3.4 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32384 32303 root     S    1297m266.5   0  0.4 /opt/bin/amneziawg-go -f awg2
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   1  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 14.8% usr  8.4% sys  0.0% nic  9.9% idle 62.3% io  0.9% irq  3.4% sirq
+ 1833 32220 root     S    2156m443.1   1  5.4 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32386 32297 root     S    1362m279.8   1  3.4 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  2.9 /opt/bin/hestia -service-supervisor
+ 1853 32220 root     S    1245m255.8   1  1.4 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32647 32220 root     S    1253m257.5   1  0.4 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32376 32296 root     S    1232m253.2   1  0.4 /opt/bin/amneziawg-go -f awg0
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32297 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+ 6457  6455 root     S     3372  0.6   1  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 25.8% usr 20.8% sys  0.0% nic  7.4% idle 27.8% io  2.4% irq 15.4% sirq
+32386 32297 root     S    1362m279.8   1 18.3 /opt/bin/amneziawg-go -f awg1
+ 1833 32220 root     S    2156m443.1   1 11.9 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+32220     1 root     S    1244m255.7   1  3.4 /opt/bin/hestia -service-supervisor
+32647 32220 root     S    1253m257.5   1  0.5 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+ 1853 32220 root     S    1245m255.8   1  0.5 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32296 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32297 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   1  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 34.0% usr 22.5% sys  0.0% nic 10.0% idle 15.5% io  2.5% irq 15.5% sirq
+32386 32297 root     S    1362m279.8   1 17.0 /opt/bin/amneziawg-go -f awg1
+ 1833 32220 root     S    2156m443.1   1 13.0 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+ 1853 32220 root     S    1245m255.8   1 12.5 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32220     1 root     S    1244m255.7   1  3.0 /opt/bin/hestia -service-supervisor
+32384 32303 root     S    1297m266.5   0  0.5 /opt/bin/amneziawg-go -f awg2
+32296 32220 root     S    1244m255.7   1  0.5 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32647 32220 root     S    1253m257.5   1  0.0 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32297 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+32376 32296 root     S    1232m253.2   1  0.0 /opt/bin/amneziawg-go -f awg0
+ 6457  6455 root     S     3372  0.6   1  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'
+CPU: 23.8% usr  9.6% sys  0.0% nic  1.0% idle 59.8% io  1.5% irq  4.0% sirq
+ 1833 32220 root     S    2156m443.1   1 10.1 /opt/lib/ld-linux-aarch64.so.1 --library-path /opt/lib:/opt/lib/hestia /opt/lib/hestia/sing-box run -c /opt/etc/hestia/sing-box.json
+ 1853 32220 root     S    1245m255.8   1  5.5 /opt/bin/hestia -watch -quality -config /opt/etc/hestia/snapshot.json -interval 1s
+32386 32297 root     S    1362m279.8   1  3.0 /opt/bin/amneziawg-go -f awg1
+32220     1 root     S    1244m255.7   1  2.5 /opt/bin/hestia -service-supervisor
+32296 32220 root     S    1244m255.7   1  1.0 /opt/bin/hestia -awg-runtime 2e26874b-e993-4249-b79b-bf547ed00841
+32376 32296 root     S    1232m253.2   1  1.0 /opt/bin/amneziawg-go -f awg0
+32647 32220 root     S    1253m257.5   1  0.5 /opt/bin/hestia-panel -listen 192.168.1.1:8080 -assets /opt/share/hestia-panel/current -snapshot /opt/etc/hestia/snapshot.json -dns-policy /opt/var/lib/hestia/dns-policy/policy.json -dns-report /opt/var/run/hestia/dns/report.json -geoip-index /opt/share/hestia/geoip/country.bin -quality-settings /opt/var/lib/hestia/quality/settings.json -quality-report /opt/var/run/hestia/quality/report.json -enab
+32384 32303 root     S    1297m266.5   0  0.0 /opt/bin/amneziawg-go -f awg2
+32303 32220 root     S    1244m255.7   0  0.0 /opt/bin/hestia -awg-runtime 3be6456a-b2d5-40eb-918a-4b04ee11100c
+32297 32220 root     S    1244m255.7   1  0.0 /opt/bin/hestia -awg-runtime 18061f94-c314-4685-a4ea-6c5b1e56e9ea
+ 6457  6455 root     S     3372  0.6   0  0.0 /opt/bin/busybox awk /^CPU:|sing-box|amneziawg-go|hestia {print}
+ 6455  6452 root     S     3372  0.6   0  0.0 sh -c /opt/bin/busybox top -b -d 1 -n 65 | /opt/bin/busybox awk '/^CPU:|sing-box|amneziawg-go|hestia/{print}'

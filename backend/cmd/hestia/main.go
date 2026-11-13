@@ -118,7 +118,7 @@ func main() {
 			os.Exit(runPhysicalCommand(os.Args[1], os.Stdin, os.Stdout))
 		}
 	}
-	if len(os.Args) == 2 && (os.Args[1] == "-apply-country-map" || os.Args[1] == "-migrate-country-map" || os.Args[1] == "-delete-domain-list" || os.Args[1] == "-create-domain-list" || os.Args[1] == "-update-domain-list" || os.Args[1] == "-delete-group" || os.Args[1] == "-move-exit" || os.Args[1] == "-create-group" || os.Args[1] == "-rename-group" || os.Args[1] == "-rename-direct" || os.Args[1] == "-apply-group-order" || os.Args[1] == "-apply-binding" || os.Args[1] == "-recover-bindings" || os.Args[1] == "-watch-pending-binding" || os.Args[1] == "-enable-keenetic-ingress" || os.Args[1] == "-disable-keenetic-ingress") {
+	if len(os.Args) == 2 && (os.Args[1] == "-apply-country-map" || os.Args[1] == "-migrate-country-map" || os.Args[1] == "-delete-domain-list" || os.Args[1] == "-create-domain-list" || os.Args[1] == "-update-domain-list" || os.Args[1] == "-delete-group" || os.Args[1] == "-move-exit" || os.Args[1] == "-create-group" || os.Args[1] == "-rename-group" || os.Args[1] == "-rename-direct" || os.Args[1] == "-apply-group-order" || os.Args[1] == "-apply-binding" || os.Args[1] == "-recover-bindings" || os.Args[1] == "-watch-pending-binding" || os.Args[1] == "-enable-keenetic-ingress" || os.Args[1] == "-disable-keenetic-ingress" || os.Args[1] == "-enable-cpu-profiling" || os.Args[1] == "-disable-cpu-profiling") {
 		os.Exit(runBindingCommand(os.Args[1], os.Stdin, os.Stdout))
 	}
 	if len(os.Args) == 4 && os.Args[1] == "-awg-guard" {

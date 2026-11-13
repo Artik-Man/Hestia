@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/Artik-Man/Hestia/internal/profileexec"
 	"os"
 	"path/filepath"
 	"slices"
@@ -15,6 +14,7 @@ import (
 	"github.com/Artik-Man/Hestia/internal/awg"
 	"github.com/Artik-Man/Hestia/internal/controller"
 	"github.com/Artik-Man/Hestia/internal/panelmodel"
+	"github.com/Artik-Man/Hestia/internal/profileexec"
 )
 
 var ErrInvalidConnector = errors.New("invalid WireGuard connector change")
@@ -46,6 +46,10 @@ type connectorGroup struct {
 	DefaultExit string   `json:"defaultExit,omitempty"`
 }
 
+type diagnosticProfile struct {
+	CPUPprof bool `json:"cpuPprof,omitempty"`
+}
+
 // storedInterface represents one installed direct or native WireGuard exit in the managed profile.
 type storedInterface struct {
 	ID             string `json:"id"`
@@ -56,13 +60,15 @@ type storedInterface struct {
 }
 
 type storedProfile struct {
-	Hysteria2  []storedHysteria2  `json:"hysteria2,omitempty"`
-	Version    int                `json:"version"`
-	Interfaces []storedInterface  `json:"interfaces"`
-	Inbounds   []json.RawMessage  `json:"inbounds,omitzero"`
-	Connectors []connectorProfile `json:"connectors"`
-	Groups     []connectorGroup   `json:"groups"`
-	Lists      []struct {
+	Hysteria2   []storedHysteria2      `json:"hysteria2,omitempty"`
+	Diagnostics *diagnosticProfile     `json:"diagnostics,omitempty"`
+	CountryMap  *panelmodel.CountryMap `json:"countryMap,omitempty"`
+	Version     int                    `json:"version"`
+	Interfaces  []storedInterface      `json:"interfaces"`
+	Inbounds    []json.RawMessage      `json:"inbounds,omitzero"`
+	Connectors  []connectorProfile     `json:"connectors"`
+	Groups      []connectorGroup       `json:"groups"`
+	Lists       []struct {
 		Name  string   `json:"name,omitempty"`
 		ID    string   `json:"id"`
 		Group string   `json:"group"`

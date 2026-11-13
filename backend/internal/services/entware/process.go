@@ -313,7 +313,7 @@ func managedServiceEnvironment(service services.Service) []string {
 		"HESTIA_MANAGED_SERVICE=" + managedServiceRole(service.Kind),
 	}
 	if service.Kind == services.Router {
-		environment = append(environment, "GOMEMLIMIT=90MiB", "GOGC=50")
+		environment = append(environment, "GOMEMLIMIT=140MiB", "GOGC=100")
 	}
 	return environment
 }

@@ -1,0 +1,30 @@
+worker=3 bytes=20000000 seconds=11.536587 speed_Bps=1733614 http=200
+cucrurll::  ((2288))  OOppeerraattiioonn  ttiimmeedd  oouutt  aafftteerr  2200000000  mmilillilsiesceocnodnsd sw iwtiht h1 91896818684736 8o uotu to fo f2 02000000000000 0b ybtyetse sr erceecievievde
+d
+worker=2 bytes=19888768 seconds=19.999658 speed_Bps=994455 http=200
+worker=1 bytes=19861643 seconds=20.000315 speed_Bps=993066 http=200
+curl: (28) Operation timed out after 20005 milliseconds with 15695836 out of 20000000 bytes received
+worker=0 bytes=15695836 seconds=20.005136 speed_Bps=784590 http=200
+worker=3 bytes=20000000 seconds=10.930401 speed_Bps=1829759 http=200
+worker=1 bytes=20000000 seconds=11.419355 speed_Bps=1751412 http=200
+curl: (28) Operation timed out after 20000 milliseconds with 12229854 out of 20000000 bytes received
+worker=2 bytes=12229854 seconds=20.000848 speed_Bps=611466 http=200
+curl: (28) Operation timed out after 20010 milliseconds with 10345802 out of 20000000 bytes received
+worker=0 bytes=10345802 seconds=20.010017 speed_Bps=517031 http=200
+curl: (28) Operation timed out after 20009 milliseconds with 9542932 out of 20000000 bytes received
+worker=3 bytes=9542932 seconds=20.009189 speed_Bps=476927 http=200
+curl: (28) Failed to connect to speed.cloudflare.com port 443 after 5011 ms: Timeout was reached
+worker=3 bytes=0 seconds=5.011117 speed_Bps=0 http=000
+curl: (7) Failed to connect to speed.cloudflare.com port 443 after 1599 ms: Couldn't connect to server
+worker=3 bytes=0 seconds=1.598936 speed_Bps=0 http=000
+curl: (28) Operation timed out after 20000 milliseconds with 5168503 out of 20000000 bytes received
+worker=1 bytes=5168503 seconds=19.999547 speed_Bps=258431 http=200
+curl: (28) Operation timed out after 20001 milliseconds with 14485688 out of 20000000 bytes received
+worker=2 bytes=14485688 seconds=20.001267 speed_Bps=724238 http=200
+curl: (28) Operation timed out after 20002 milliseconds with 14385125 out of 20000000 bytes received
+worker=0 bytes=14385125 seconds=20.002328 speed_Bps=719172 http=200
+worker=3 bytes=20000000 seconds=19.660102 speed_Bps=1017288 http=200
+curl: (28) Operation timed out after 20003 milliseconds with 16768150 out of 20000000 bytes received
+worker=1 bytes=16768150 seconds=20.003194 speed_Bps=838273 http=200
+worker=2 bytes=20000000 seconds=16.055226 speed_Bps=1245700 http=200
+worker=0 bytes=20000000 seconds=16.633055 speed_Bps=1202424 http=200

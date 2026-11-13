@@ -14,8 +14,8 @@ func CommandTimeout(mode string) time.Duration {
 	case "-watch-pending-binding":
 		// Allow the active writer to finish its deadline and rollback before taking the lock.
 		return 3*AWGActivationLimit + time.Minute
-	case "-enable-keenetic-ingress":
-		// Leave room for the ten-minute backend check plus staging and activation overhead.
+	case "-enable-keenetic-ingress", "-enable-cpu-profiling", "-disable-cpu-profiling":
+		// Leave room for the backend check plus staging and activation overhead.
 		return AWGActivationLimit
 	default:
 		return defaultCommandTimeout

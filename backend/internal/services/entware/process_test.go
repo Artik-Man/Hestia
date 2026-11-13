@@ -12,11 +12,11 @@ import (
 // TestManagedServiceEnvironmentLimitsGoMemoryForRouter verifies only the sing-box router receives the requested Go GC limits.
 func TestManagedServiceEnvironmentLimitsGoMemoryForRouter(t *testing.T) {
 	router := managedServiceEnvironment(services.Service{Kind: services.Router})
-	if !slices.Contains(router, "GOMEMLIMIT=90MiB") || !slices.Contains(router, "GOGC=50") {
+	if !slices.Contains(router, "GOMEMLIMIT=140MiB") || !slices.Contains(router, "GOGC=100") {
 		t.Fatalf("router environment lacks memory limits: %v", router)
 	}
 	controller := managedServiceEnvironment(services.Service{Kind: services.Controller})
-	if slices.Contains(controller, "GOMEMLIMIT=90MiB") || slices.Contains(controller, "GOGC=50") {
+	if slices.Contains(controller, "GOMEMLIMIT=140MiB") || slices.Contains(controller, "GOGC=100") {
 		t.Fatalf("controller unexpectedly received router memory limits: %v", controller)
 	}
 }

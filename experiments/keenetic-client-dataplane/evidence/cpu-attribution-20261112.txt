@@ -1,0 +1,88 @@
+# CPU attribution on KN-1012 under Hestia AWG load — 12 November 2026
+
+## Scope and build
+
+- Device: KN-1012, KeeneticOS 5.2 Beta 3, Entware `aarch64-3.10`.
+- Installed Hestia package: `0.1.10`, IPK SHA-256 `b73fe5409eb5bac7bbda28bff777b3553eabf88eb1d05019bbc07734841e1508`.
+- Prior rollback package `0.1.8` was copied into `/opt/tmp/hestia-deploy-cpu-profile-20261112/`; its SHA-256 matched `d81f9a228a3853848b02dbc930cacbce2eeadc1a6c642fe4a58286117dd35e6a`.
+- Runtime still used `GOGC=100` and `GOMEMLIMIT=140MiB`.
+- Hestia pprof was enabled transactionally with `/opt/bin/hestia -enable-cpu-profiling`. The listener was confirmed as `127.0.0.1:6060`, reached through SSH forwarding, and disabled after collection with `/opt/bin/hestia -disable-cpu-profiling`.
+- The sing-box CPU profile lasted 60.51 seconds and contains 21.41 CPU seconds (35.38% of one core for the process). Raw profile SHA-256: `01558e1105ec5e4aa078d043821fcb3a5f202be8ccf74a293f03c7c699d1957b`.
+
+## Actual path used
+
+`hestia-client` was not available in this session (`limactl list` showed only a broken `hestia-dev`); the internal browser safety gate blocked the Speedtest.net page. The host computer was connected to Keenetic on `en0` with source `192.168.1.106` and default gateway `192.168.1.1`. A test flow used `speed.cloudflare.com:443`, pinned to `172.66.0.218`.
+
+Hestia journal entries for this destination during the run reported `reason=match[5] inbound=hestia-keenetic-ingress` and connection ID `18061f94-c314-4685-a4ea-6c5b1e56e9ea`, named `Laurel (AWG3.1)` by `/api/awg`. The root-only AWG route ownership record for that ID says `device=awg1`. This identifies the selected Hestia exit as AmneziaWG on `awg1`; it was not Hysteria 2.
+
+An isolated 25,000,000-byte request returned HTTP 200 in 5.207 seconds (about 38.4 Mbit/s). Interface counters around that request were:
+
+| Interface | RX before | RX after | RX delta | TX before | TX after | TX delta |
+|---|---:|---:|---:|---:|---:|---:|
+| `awg1` | 465,622,940 | 491,883,679 | 26,260,739 | 44,987,775 | 45,297,106 | 309,331 |
+| `eth3` | 949,711,526 | 978,563,003 | 28,851,477 | 331,513,523 | 332,064,035 | 550,512 |
+
+The received-byte increase on `awg1` is close to the 25 MB client payload; `eth3` carried the corresponding outer WAN traffic. This counter delta corroborates the AWG route manifest and the Hestia journal.
+
+## Load and CPU observations
+
+Four concurrent curl workers ran for approximately 65 seconds. Each repeatedly requested 20,000,000 bytes with its own local-port range, binding to `192.168.1.106` and using the pinned Cloudflare address. The client logs record 18 requests with data, 258,372,301 received bytes in total (about 31.8 Mbit/s averaged over 65 seconds); six requests completed the full 20 MB. Some requests hit the 20-second per-request timeout or failed to connect, so this is a CPU attribution load, not a clean Ookla score.
+
+BusyBox `top` produced 65 one-second samples. Across those samples, aggregate user + system + IRQ + softirq CPU had a 73.5% median, ranged from 16.5% to 99.9%, and reported zero idle in 22 samples. Component medians were user 31.5%, system 23.7%, softirq 17.5%, IRQ 2.5%, idle 1.9%, and I/O wait 10.0%.
+
+| Process | Median CPU | 90th percentile | Maximum |
+|---|---:|---:|---:|
+| sing-box | 18.5% | 26.4% | 48.9% |
+| `amneziawg-go -f awg1` | 17.0% | 24.8% | 31.5% |
+| Hestia panel | 0.0% | 0.9% | 1.9% |
+| Hestia quality watcher | 0.4% | 5.5% | 48.7%* |
+
+\* One isolated watcher sample reached 48.7%; its median and 90th percentile remained low. The watcher spike should not be treated as steady-state cost.
+
+The sing-box pprof top entries were:
+
+| Function | Flat CPU | Cumulative CPU |
+|---|---:|---:|
+| `internal/runtime/syscall/linux.Syscall6` | 35.54% | 35.54% |
+| `github.com/sagernet/gvisor/pkg/tcpip/network/ipv4.(*endpoint).writePacketPostRouting` | 1.03% | 36.43% |
+| `github.com/sagernet/gvisor/pkg/tcpip/transport/tcp.(*sender).handleRcvdSegment` | 0.08% | 45.26% |
+| `github.com/sagernet/gvisor/pkg/tcpip/transport/tcp.(*sender).sendData` | 0.08% | 55.53% |
+
+Cumulative percentages overlap across call stacks and must not be added together. The sing-box profile points to syscall and gVisor TCP/IP packet handling as major costs. Separate router process samples show substantial CPU in `amneziawg-go` for the selected AWG tunnel. Kernel softirq is also material, but per-kernel-function sampling was unavailable: `perf` and `/proc/profile` were absent, `/proc/sys/kernel/perf_event_paranoid` was absent, and although debugfs was mounted, it had no tracing directory and tracefs was not listed. This run therefore cannot split softirq CPU by kernel function.
+
+## Trace limitation and cleanup
+
+Two attempts to save the exact tuple trace failed at the journal step (`database is locked (SQLITE_BUSY)` and `context deadline exceeded`). The trace command did not produce a persisted stage summary. The connection selection is instead corroborated by the Hestia traffic journal's ingress/outbound fields plus the per-connector route manifest and the before/after `awg1` interface counters.
+
+After profiling, the supervisor reported ready, package status remained `install user installed`, IPv4 default-route SHA-256 remained `f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871`, and the `127.0.0.1:6060` listener was absent. The current sing-box PID still had `GOGC=100` and `GOMEMLIMIT=140MiB`. No route or connector configuration was changed by the experiment.
+
+## Reproduction commands
+
+Enable and disable the transactional diagnostic setting:
+
+```sh
+/opt/bin/hestia -enable-cpu-profiling
+/opt/bin/hestia -disable-cpu-profiling
+```
+
+Collect the profile through a local SSH forward:
+
+```sh
+ssh -N -L 16060:127.0.0.1:6060 -F private/keenetic/ssh/config keenetic-hestia
+curl --disable --fail --max-time 90 \
+  'http://127.0.0.1:16060/debug/pprof/profile?seconds=60' \
+  -o experiments/keenetic-client-dataplane/evidence/sing-box-awg-cpu-20261112.pprof
+go tool pprof -top -nodecount=30 \
+  experiments/keenetic-client-dataplane/evidence/sing-box-awg-cpu-20261112.pprof
+```
+
+The load request pattern was:
+
+```sh
+curl --disable --silent --show-error --fail -4 \
+  --interface 192.168.1.106 --local-port 55000-55031 \
+  --resolve speed.cloudflare.com:443:172.66.0.218 --output /dev/null \
+  'https://speed.cloudflare.com/__down?bytes=20000000'
+```
+
+The four-worker run used separate local-port ranges beginning at `55000`, `55100`, `55200`, and `55300`; each worker repeated the request for approximately 65 seconds. Router process samples came from BusyBox `top -b -d 1 -n 65` filtered to CPU summary, sing-box, AWG, and Hestia process lines.

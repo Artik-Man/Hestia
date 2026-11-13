@@ -51,6 +51,25 @@ class ProfileTests(unittest.TestCase):
         """Compile the current test profile using only its temporary directory for secrets."""
         return compile_profile(self.profile, self.base)
 
+    def test_cpu_profiler_option_is_fixed_to_loopback_and_preserves_routing(self):
+        """Compile the opt-in pprof listener without changing the snapshot or any other backend option."""
+        profile = json.loads((Path(__file__).parent.parent / "scripts/deploy/default-profile-keenetic.json").read_text())
+        snapshot_before, backend_before = compile_profile(profile, self.base)
+        profile["diagnostics"] = {"cpuPprof": True}
+        snapshot_enabled, backend_enabled = compile_profile(profile, self.base)
+        self.assertEqual(snapshot_enabled, snapshot_before)
+        expected = {"debug": {"listen": "127.0.0.1:6060"}}
+        self.assertEqual(backend_enabled["experimental"]["debug"], expected["debug"])
+        backend_enabled["experimental"].pop("debug")
+        self.assertEqual(backend_enabled, backend_before)
+
+        profile["diagnostics"] = {"cpuPprof": False}
+        _, backend_disabled = compile_profile(profile, self.base)
+        self.assertNotIn("debug", backend_disabled["experimental"])
+        profile["diagnostics"] = {"cpuPprof": "0.0.0.0:6060"}
+        with self.assertRaisesRegex(ValueError, "invalid CPU profiling setting"):
+            compile_profile(profile, self.base)
+
     def install_managed_profile(self, base, profile):
         """Write one checksum-verified synthetic generation for managed profile transformation tests."""
         snapshot, backend = compile_profile(profile, base)

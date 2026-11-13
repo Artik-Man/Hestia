@@ -28,6 +28,8 @@ func runBindingCommand(mode string, input io.Reader, output io.Writer) int {
 	engine := binding.Installed()
 	var err error
 	switch mode {
+	case "-enable-cpu-profiling", "-disable-cpu-profiling":
+		err = engine.SetCPUProfiling(ctx, mode == "-enable-cpu-profiling")
 	case "-migrate-country-map":
 		err = engine.MigrateCountryMap(ctx)
 	case "-apply-country-map":
