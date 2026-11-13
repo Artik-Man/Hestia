@@ -7,11 +7,13 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { GroupSettings } from './groupSettings';
 import { QualityCheck } from './qualityCheck';
 
 
 export interface QualitySettings { 
     checks: Array<QualityCheck>;
+    groups: { [key: string]: GroupSettings; } | null;
     windowMinutes: number;
 }
 

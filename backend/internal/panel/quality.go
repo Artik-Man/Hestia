@@ -63,6 +63,7 @@ func (files qualityFiles) save(settings quality.Settings) (*qualitySettingsOutpu
 // registerQuality exposes the worker's ranking and validates complete setting replacements before persistence.
 func registerQuality(api huma.API, snapshot string, files qualityFiles) {
 	var writes sync.Mutex
+	registerGroupQuality(api, snapshot, files, &writes)
 	change := func(edit func(*quality.Settings)) (*qualitySettingsOutput, error) {
 		writes.Lock()
 		defer writes.Unlock()
@@ -77,6 +78,11 @@ func registerQuality(api huma.API, snapshot string, files qualityFiles) {
 		OperationID: "getQuality", Tags: []string{"Panel"}, Method: http.MethodGet, Path: "/api/quality",
 		Summary: "Прочитать настройки проверок и текущий порядок выходов всех групп", Errors: []int{http.StatusServiceUnavailable},
 	}, func(_ context.Context, _ *struct{}) (*qualityReportOutput, error) {
+		writes.Lock()
+		defer writes.Unlock()
+		if err := files.migrateGroupQuality(snapshot); err != nil {
+			return nil, huma.Error503ServiceUnavailable("Не удалось подготовить настройки групп")
+		}
 		report, err := files.readReport(snapshot)
 		if err != nil {
 			log.Printf("quality report: %v", err)
@@ -119,6 +125,12 @@ func registerQuality(api huma.API, snapshot string, files qualityFiles) {
 		}
 		writes.Lock()
 		defer writes.Unlock()
+		current, err := quality.LoadSettings(files.settings)
+		if err != nil {
+			return nil, huma.Error503ServiceUnavailable("Не удалось прочитать настройки проверок")
+		}
+		// Legacy clients may replace the migration seed, but cannot replace group schedules.
+		in.Body.Groups = current.Groups
 		return files.save(in.Body)
 	})
 	huma.Register(api, huma.Operation{OperationID: "putQualityCheck", Tags: []string{"Panel"}, Method: http.MethodPut, Path: "/api/quality/checks/{protocol}", Summary: "Добавить или изменить одну проверку связи", Description: qualityTargetInputDescription, MaxBodyBytes: 8192, Errors: []int{422, 503}}, func(ctx context.Context, in *qualityCheckInput) (*qualitySettingsOutput, error) {
@@ -208,9 +220,9 @@ func (files qualityFiles) readReport(snapshot string) (panelmodel.QualityReport,
 	}
 	view := panelmodel.QualityReport{Settings: settings, Groups: make([]panelmodel.QualityGroup, 0, len(topology.Groups))}
 	for _, group := range topology.Groups {
-		row := panelmodel.QualityGroup{ID: group.ID, Name: group.Name, Connections: make([]panelmodel.QualityConnection, 0, len(group.Exits))}
+		row := panelmodel.QualityGroup{ID: group.ID, Name: group.Name, Settings: settings.ForGroup(group.ID), Connections: make([]panelmodel.QualityConnection, 0, len(group.Exits))}
 		for _, exit := range group.Exits {
-			row.Connections = append(row.Connections, panelmodel.QualityConnection{ID: exit.ID, Available: exit.Available, Result: emptyQualityResult(settings)})
+			row.Connections = append(row.Connections, panelmodel.QualityConnection{ID: exit.ID, Available: exit.Available, Result: emptyQualityResult(quality.Settings{WindowMinutes: row.Settings.WindowMinutes, Checks: row.Settings.Checks})})
 		}
 		view.Groups = append(view.Groups, row)
 	}

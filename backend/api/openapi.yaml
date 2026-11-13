@@ -30,6 +30,8 @@ components:
       properties:
         activeUnderlay:
           type: string
+        enabled:
+          type: boolean
         group:
           minLength: 1
           type: string
@@ -59,6 +61,7 @@ components:
           maxItems: 64
           type: array
       required:
+        - enabled
         - name
         - id
         - group
@@ -130,6 +133,8 @@ components:
     AWGUnderlayCandidate:
       additionalProperties: false
       properties:
+        enabled:
+          type: boolean
         id:
           minLength: 1
           type: string
@@ -150,6 +155,7 @@ components:
             - hysteria2
           type: string
       required:
+        - enabled
         - id
         - type
       type: object
@@ -254,6 +260,27 @@ components:
         - localErrors
         - score
         - targets
+      type: object
+    ConnectionEnabled:
+      additionalProperties: false
+      properties:
+        enabled:
+          type: boolean
+        id:
+          maxLength: 63
+          minLength: 1
+          type: string
+      required:
+        - id
+        - enabled
+      type: object
+    ConnectionEnabledRequest:
+      additionalProperties: false
+      properties:
+        enabled:
+          type: boolean
+      required:
+        - enabled
       type: object
     CountryMap:
       additionalProperties: false
@@ -620,6 +647,24 @@ components:
         - expected
         - groups
       type: object
+    GroupSettings:
+      additionalProperties: false
+      properties:
+        checks:
+          items:
+            $ref: "#/components/schemas/QualityCheck"
+          maxItems: 6
+          minItems: 0
+          type: array
+        windowMinutes:
+          format: int64
+          maximum: 1440
+          minimum: 1
+          type: integer
+      required:
+        - windowMinutes
+        - checks
+      type: object
     Hysteria2Connection:
       additionalProperties: false
       properties:
@@ -628,6 +673,8 @@ components:
         certificatePEM:
           maxLength: 24576
           type: string
+        enabled:
+          type: boolean
         group:
           minLength: 1
           type: string
@@ -664,6 +711,7 @@ components:
           maxItems: 64
           type: array
       required:
+        - enabled
         - id
         - group
         - priority
@@ -679,6 +727,8 @@ components:
         certificatePEM:
           maxLength: 24576
           type: string
+        enabled:
+          type: boolean
         group:
           minLength: 1
           type: string
@@ -719,6 +769,7 @@ components:
           type: array
       required:
         - password
+        - enabled
         - id
         - group
         - priority
@@ -1050,9 +1101,12 @@ components:
           type: string
         name:
           type: string
+        settings:
+          $ref: "#/components/schemas/GroupSettings"
       required:
         - id
         - name
+        - settings
         - connections
       type: object
     QualityReport:
@@ -1081,12 +1135,18 @@ components:
           maxItems: 6
           minItems: 0
           type: array
+        groups:
+          additionalProperties:
+            $ref: "#/components/schemas/GroupSettings"
+          nullable: true
+          type: object
         windowMinutes:
           format: int64
           maximum: 1440
           minimum: 1
           type: integer
       required:
+        - groups
         - windowMinutes
         - checks
       type: object
@@ -1329,6 +1389,7 @@ components:
           enum:
             - TCP
             - UDP
+            - QUIC
           type: string
         reason:
           type: string
@@ -1772,6 +1833,63 @@ paths:
                 $ref: "#/components/schemas/ErrorModel"
           description: Service Unavailable
       summary: Обновить сохранённое подключение AmneziaWG
+      tags:
+        - Panel
+  /api/connections/{id}/enabled:
+    put:
+      operationId: setConnectionEnabled
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            maxLength: 63
+            minLength: 1
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConnectionEnabledRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionEnabled"
+          description: OK
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Not Found
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Conflict
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Включить или отключить виртуальное подключение
       tags:
         - Panel
   /api/connections/{id}/group:
@@ -3008,6 +3126,171 @@ paths:
       summary: Добавить или изменить одну проверку связи
       tags:
         - Panel
+  /api/quality/groups/{groupID}/checks/{protocol}:
+    delete:
+      operationId: deleteGroupQualityCheck
+      parameters:
+        - in: path
+          name: groupID
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: protocol
+          required: true
+          schema:
+            enum:
+              - UDP
+              - TCP
+              - ICMP
+              - DNS
+              - HTTPS
+              - HTTP3
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupSettings"
+          description: OK
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Not Found
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Удалить проверку группы
+      tags:
+        - Panel
+    put:
+      description: Цель TCP принимает IP-адрес или доменное имя с необязательным портом (по умолчанию 443). Сервер один раз запрашивает A-запись каждого имени, выбирает первый допустимый публичный IPv4 и возвращает сохранённые цели в формате IP:порт. Ошибка разрешения отклоняет весь запрос с HTTP 422.
+      operationId: putGroupQualityCheck
+      parameters:
+        - in: path
+          name: groupID
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: protocol
+          required: true
+          schema:
+            enum:
+              - UDP
+              - TCP
+              - ICMP
+              - DNS
+              - HTTPS
+              - HTTP3
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QualityCheck"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupSettings"
+          description: OK
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Not Found
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Добавить или изменить проверку группы
+      tags:
+        - Panel
+  /api/quality/groups/{groupID}/window:
+    put:
+      operationId: putGroupQualityWindow
+      parameters:
+        - in: path
+          name: groupID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QualityWindow"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupSettings"
+          description: OK
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Not Found
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Service Unavailable
+      summary: Изменить окно оценки группы
+      tags:
+        - Panel
   /api/quality/reset:
     post:
       operationId: resetQualityResults
@@ -3131,13 +3414,14 @@ paths:
             enum:
               - TCP
               - UDP
+              - QUIC
             type: string
-        - description: connection:<ID> для выбранного подключения, blocked или unconfirmed для результата
+        - description: connection:<ID> для выбранного подключения, blocked для блокировки или unknown для неопределённого решения
           explode: false
           in: query
           name: output
           schema:
-            description: connection:<ID> для выбранного подключения, blocked или unconfirmed для результата
+            description: connection:<ID> для выбранного подключения, blocked для блокировки или unknown для неопределённого решения
             maxLength: 512
             type: string
         - description: Начало периода включительно (RFC 3339)

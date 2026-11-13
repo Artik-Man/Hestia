@@ -60,15 +60,17 @@ type storedInterface struct {
 }
 
 type storedProfile struct {
-	Hysteria2   []storedHysteria2      `json:"hysteria2,omitempty"`
-	Diagnostics *diagnosticProfile     `json:"diagnostics,omitempty"`
-	CountryMap  *panelmodel.CountryMap `json:"countryMap,omitempty"`
-	Version     int                    `json:"version"`
-	Interfaces  []storedInterface      `json:"interfaces"`
-	Inbounds    []json.RawMessage      `json:"inbounds,omitzero"`
-	Connectors  []connectorProfile     `json:"connectors"`
-	Groups      []connectorGroup       `json:"groups"`
-	Lists       []struct {
+	DisabledConnections     []string                   `json:"disabled_connections,omitempty"`
+	DisabledNativeEndpoints map[string]json.RawMessage `json:"disabled_native_endpoints,omitempty"`
+	Hysteria2               []storedHysteria2          `json:"hysteria2,omitempty"`
+	Diagnostics             *diagnosticProfile         `json:"diagnostics,omitempty"`
+	CountryMap              *panelmodel.CountryMap     `json:"countryMap,omitempty"`
+	Version                 int                        `json:"version"`
+	Interfaces              []storedInterface          `json:"interfaces"`
+	Inbounds                []json.RawMessage          `json:"inbounds,omitzero"`
+	Connectors              []connectorProfile         `json:"connectors"`
+	Groups                  []connectorGroup           `json:"groups"`
+	Lists                   []struct {
 		Name  string   `json:"name,omitempty"`
 		ID    string   `json:"id"`
 		Group string   `json:"group"`
@@ -178,6 +180,8 @@ func (e Engine) DeleteAWG(ctx context.Context, id string) error {
 		}
 		current.Connectors = append(current.Connectors[:index], current.Connectors[index+1:]...)
 		delete(current.Healthy, id)
+		current.DisabledConnections = slices.DeleteFunc(current.DisabledConnections, func(value string) bool { return value == id })
+		delete(current.DisabledNativeEndpoints, id)
 		for i := range current.Connectors {
 			remaining := &current.Connectors[i]
 			group, priority := groupExitLocation(current.Groups, remaining.ID)

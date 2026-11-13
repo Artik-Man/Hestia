@@ -40,11 +40,7 @@
     <dd>
       @switch (item.kind) {
         @case ("observed") {
-          Подтверждён выход {{ catalog.name(item.connection || "") }} ·
-          @if (item.namespace) {
-            {{ item.namespace }} /
-          }
-          {{ item.networkInterface }}
+          {{ connectionName(item.connection || "") }}
         }
         @case ("blocked") {
           Заблокировано
@@ -54,12 +50,22 @@
         }
         @case ("unconfirmed") {
           @if (item.connection) {
-            Выбрано подключение {{ catalog.name(item.connection) }} ·
+            {{ connectionName(item.connection) }}
+          } @else {
+            Не определено
           }
-          Выход не подтверждён
         }
       }
     </dd>
+    @if (item.networkInterface) {
+      <dt>Фактический интерфейс</dt>
+      <dd>
+        @if (item.namespace) {
+          {{ item.namespace }} /
+        }
+        {{ item.networkInterface }}
+      </dd>
+    }
     <dt>Первый ответ</dt>
     <dd>
       {{

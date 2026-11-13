@@ -1,0 +1,14 @@
+Local macOS ARM64 validation, 2026-11-13, dirty working tree based on 03e710d41c31991bac3fad0d0d92cf86e82829a8
+No device access, probes to Keenetic, or deployment.
+PASS initial input-hiding regression red(2 ingress rows)->green(0), normal provider retained.
+PASS all Go tests (make test), go vet all packages.
+PASS deploy unittest63 (7 existing environment skips),4 independent native disable/restore/reorder/archive tests.
+PASS frontend lint,27 unit tests, production build.
+PASS quality Chromium: no Refresh button, automatic polling5s, group drafts retained.
+API/compiler independent review corrected disabled VPN group reorder and toggle HTTP timeout; no remaining findings.
+Compiler evidence: disabled public routes block, native endpoints/probes removed, managed runtimes excluded, Hysteria private variants blocked. Network packet capture on actual device not performed.
+make fmt/fmt-check/docs-check passed. Full make check still requires missing ShellCheck and unrelated DNS lab Python dns dependency.
+
+PASS Chromium profile-import suite14 scenarios after aligning obsolete Ethernet fixture assertions with documented direct table.
+PASS new ToggleSwitch scenarios WG/AWG/native/Hysteria off/on, unconfirmed/failed API rollback, disabled metadata edit.
+PASS connections polling3s: held requests survive two ticks without overlap; drafts and last-good rows retained during503; each recurring outage notified only once.

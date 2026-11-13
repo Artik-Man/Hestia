@@ -11,6 +11,7 @@
 
 export interface AWGConnection { 
     activeUnderlay?: string;
+    enabled: boolean;
     group: string;
     id: string;
     ipv6Blocked: boolean;

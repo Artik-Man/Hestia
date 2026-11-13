@@ -59,7 +59,7 @@ func (w *watcher) startQuality(ctx context.Context) error {
 		}
 		publicPaths = append(publicPaths, path)
 	}
-	engine, err := quality.NewEngine(qualitySettingsFile, publicPaths...)
+	engine, err := quality.NewGroupEngine(qualitySettingsFile, publicPaths...)
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,6 @@ func (w *watcher) startQuality(ctx context.Context) error {
 		w.relayReady[id] = ready
 		go w.monitorCandidates(ctx, id, paths, ready)
 	}
-	go engine.Run(ctx)
 	w.quality = engine
 	return nil
 }

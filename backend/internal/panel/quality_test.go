@@ -137,3 +137,86 @@ func TestIndependentQualityEdits(t *testing.T) {
 		t.Fatalf("delete changed unrelated settings: %+v %v", s, err)
 	}
 }
+
+// TestGroupQualityEdits preserves copied schedules and isolates each group's checks and scoring window.
+func TestGroupQualityEdits(t *testing.T) {
+	dir := t.TempDir()
+	snapshot := filepath.Join(dir, "snapshot.json")
+	if err := os.WriteFile(snapshot, []byte(sample), 0600); err != nil {
+		t.Fatal(err)
+	}
+	files := qualityFiles{settings: filepath.Join(dir, "quality.json")}
+	legacy := quality.DefaultSettings()
+	legacy.WindowMinutes = 75
+	if err := quality.SaveSettings(files.settings, legacy); err != nil {
+		t.Fatal(err)
+	}
+	handler := panelHandler(snapshot, "", nil, panelWrites{quality: files})
+	send := func(method, path string, body []byte) *httptest.ResponseRecorder {
+		t.Helper()
+		req := httptest.NewRequest(method, path, bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		resp := httptest.NewRecorder()
+		handler.ServeHTTP(resp, req)
+		return resp
+	}
+	read := send(http.MethodGet, "/api/quality", nil)
+	if read.Code != 200 {
+		t.Fatalf("read: %d %s", read.Code, read.Body)
+	}
+	var report panelmodel.QualityReport
+	if err := json.Unmarshal(read.Body.Bytes(), &report); err != nil {
+		t.Fatal(err)
+	}
+	first, second := report.Groups[0].ID, report.Groups[1].ID
+	for _, g := range report.Groups {
+		if g.Settings.WindowMinutes != 75 || len(g.Settings.Checks) != 2 {
+			t.Fatalf("migration: %+v", g)
+		}
+	}
+	response := send(http.MethodPut, "/api/quality/groups/"+first+"/window", []byte(`{"windowMinutes":25}`))
+	if response.Code != 200 {
+		t.Fatalf("window: %d %s", response.Code, response.Body)
+	}
+	dns := quality.Check{Protocol: quality.DNS, Targets: []string{"77.88.8.8:53"}, DNSName: "example.com", IntervalSeconds: 30, TimeoutSeconds: 3}
+	body, _ := json.Marshal(dns)
+	response = send(http.MethodPut, "/api/quality/groups/"+first+"/checks/DNS", body)
+	if response.Code != 200 {
+		t.Fatalf("DNS: %d %s", response.Code, response.Body)
+	}
+	settings, err := quality.LoadSettings(files.settings)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if settings.ForGroup(first).WindowMinutes != 25 || len(settings.ForGroup(first).Checks) != 3 || settings.ForGroup(second).WindowMinutes != 75 || len(settings.ForGroup(second).Checks) != 2 {
+		t.Fatalf("scoping failed: %+v", settings)
+	}
+	// An older client replacing global settings must not discard independently edited groups.
+	legacyBody, _ := json.Marshal(quality.DefaultSettings())
+	if resp := send(http.MethodPut, "/api/quality/settings", legacyBody); resp.Code != 200 {
+		t.Fatalf("legacy PUT: %d %s", resp.Code, resp.Body)
+	}
+	settings, _ = quality.LoadSettings(files.settings)
+	if settings.ForGroup(first).WindowMinutes != 25 || settings.ForGroup(second).WindowMinutes != 75 {
+		t.Fatal("legacy replacement discarded groups")
+	}
+	before, _ := os.ReadFile(files.settings)
+	if resp := send(http.MethodPut, "/api/quality/groups/unknown/window", []byte(`{"windowMinutes":12}`)); resp.Code != 404 {
+		t.Fatalf("unknown group: %d", resp.Code)
+	}
+	if resp := send(http.MethodPut, "/api/quality/groups/"+first+"/window", []byte(`{"windowMinutes":0}`)); resp.Code != 422 {
+		t.Fatalf("invalid window: %d", resp.Code)
+	}
+	after, _ := os.ReadFile(files.settings)
+	if !bytes.Equal(before, after) {
+		t.Fatal("invalid writes changed settings")
+	}
+	response = send(http.MethodDelete, "/api/quality/groups/"+first+"/checks/UDP", nil)
+	if response.Code != 200 {
+		t.Fatalf("delete: %d %s", response.Code, response.Body)
+	}
+	settings, _ = quality.LoadSettings(files.settings)
+	if len(settings.ForGroup(first).Checks) != 2 || len(settings.ForGroup(second).Checks) != 2 {
+		t.Fatal("delete escaped group")
+	}
+}

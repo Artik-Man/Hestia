@@ -12,9 +12,10 @@ type QualityConnection struct {
 
 // QualityGroup lists the group's connections in the order used by the selector.
 type QualityGroup struct {
-	ID          string              `json:"id"`
-	Name        string              `json:"name"`
-	Connections []QualityConnection `json:"connections" nullable:"false"`
+	ID          string                `json:"id"`
+	Name        string                `json:"name"`
+	Settings    quality.GroupSettings `json:"settings"`
+	Connections []QualityConnection   `json:"connections" nullable:"false"`
 }
 
 // QualityReport carries one controller observation with the settings that produced it.

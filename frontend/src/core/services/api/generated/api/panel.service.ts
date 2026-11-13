@@ -37,6 +37,10 @@ import { AppliedOrder } from '../model/appliedOrder';
 // @ts-ignore
 import { BindingChange } from '../model/bindingChange';
 // @ts-ignore
+import { ConnectionEnabled } from '../model/connectionEnabled';
+// @ts-ignore
+import { ConnectionEnabledRequest } from '../model/connectionEnabledRequest';
+// @ts-ignore
 import { CountryMap } from '../model/countryMap';
 // @ts-ignore
 import { DNSGeoIPSettings } from '../model/dNSGeoIPSettings';
@@ -66,6 +70,8 @@ import { GroupIdentifier } from '../model/groupIdentifier';
 import { GroupName } from '../model/groupName';
 // @ts-ignore
 import { GroupOrderChange } from '../model/groupOrderChange';
+// @ts-ignore
+import { GroupSettings } from '../model/groupSettings';
 // @ts-ignore
 import { Hysteria2Connection } from '../model/hysteria2Connection';
 // @ts-ignore
@@ -831,6 +837,67 @@ export class PanelService extends BaseService {
     }
 
     /**
+     * Удалить проверку группы
+     * @endpoint delete /api/quality/groups/{groupID}/checks/{protocol}
+     * @param groupID 
+     * @param protocol 
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public deleteGroupQualityCheck(groupID: string, protocol: 'UDP' | 'TCP' | 'ICMP' | 'DNS' | 'HTTPS' | 'HTTP3', observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<GroupSettings>;
+    public deleteGroupQualityCheck(groupID: string, protocol: 'UDP' | 'TCP' | 'ICMP' | 'DNS' | 'HTTPS' | 'HTTP3', observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<GroupSettings>>;
+    public deleteGroupQualityCheck(groupID: string, protocol: 'UDP' | 'TCP' | 'ICMP' | 'DNS' | 'HTTPS' | 'HTTP3', observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<GroupSettings>>;
+    public deleteGroupQualityCheck(groupID: string, protocol: 'UDP' | 'TCP' | 'ICMP' | 'DNS' | 'HTTPS' | 'HTTP3', observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (groupID === null || groupID === undefined) {
+            throw new Error('Required parameter groupID was null or undefined when calling deleteGroupQualityCheck.');
+        }
+        if (protocol === null || protocol === undefined) {
+            throw new Error('Required parameter protocol was null or undefined when calling deleteGroupQualityCheck.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/quality/groups/${this.configuration.encodeParam({name: "groupID", value: groupID, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}/checks/${this.configuration.encodeParam({name: "protocol", value: protocol, in: "path", style: "simple", explode: false, dataType: "'UDP' | 'TCP' | 'ICMP' | 'DNS' | 'HTTPS' | 'HTTP3'", dataFormat: undefined})}`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<GroupSettings>('delete', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
      * Удалить подключение Hysteria 2
      * @endpoint delete /api/hysteria2/{id}
      * @param id 
@@ -1489,7 +1556,7 @@ export class PanelService extends BaseService {
      * @endpoint get /api/traffic
      * @param query Подстрока домена или адреса назначения
      * @param protocol Протокол потока
-     * @param output connection:&lt;ID&gt; для выбранного подключения, blocked или unconfirmed для результата
+     * @param output connection:&lt;ID&gt; для выбранного подключения, blocked для блокировки или unknown для неопределённого решения
      * @param from Начало периода включительно (RFC 3339)
      * @param until Конец периода включительно (RFC 3339)
      * @param offset Число пропускаемых совпадений от начала выборки
@@ -1500,10 +1567,10 @@ export class PanelService extends BaseService {
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public getTraffic(query?: string, protocol?: 'TCP' | 'UDP', output?: string, from?: string, until?: string, offset?: number, limit?: number, snapshot?: string, country?: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<TrafficPage>;
-    public getTraffic(query?: string, protocol?: 'TCP' | 'UDP', output?: string, from?: string, until?: string, offset?: number, limit?: number, snapshot?: string, country?: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<TrafficPage>>;
-    public getTraffic(query?: string, protocol?: 'TCP' | 'UDP', output?: string, from?: string, until?: string, offset?: number, limit?: number, snapshot?: string, country?: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<TrafficPage>>;
-    public getTraffic(query?: string, protocol?: 'TCP' | 'UDP', output?: string, from?: string, until?: string, offset?: number, limit?: number, snapshot?: string, country?: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public getTraffic(query?: string, protocol?: 'TCP' | 'UDP' | 'QUIC', output?: string, from?: string, until?: string, offset?: number, limit?: number, snapshot?: string, country?: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<TrafficPage>;
+    public getTraffic(query?: string, protocol?: 'TCP' | 'UDP' | 'QUIC', output?: string, from?: string, until?: string, offset?: number, limit?: number, snapshot?: string, country?: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<TrafficPage>>;
+    public getTraffic(query?: string, protocol?: 'TCP' | 'UDP' | 'QUIC', output?: string, from?: string, until?: string, offset?: number, limit?: number, snapshot?: string, country?: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<TrafficPage>>;
+    public getTraffic(query?: string, protocol?: 'TCP' | 'UDP' | 'QUIC', output?: string, from?: string, until?: string, offset?: number, limit?: number, snapshot?: string, country?: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
 
         let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
 
@@ -1967,6 +2034,153 @@ export class PanelService extends BaseService {
     }
 
     /**
+     * Добавить или изменить проверку группы
+     * Цель TCP принимает IP-адрес или доменное имя с необязательным портом (по умолчанию 443). Сервер один раз запрашивает A-запись каждого имени, выбирает первый допустимый публичный IPv4 и возвращает сохранённые цели в формате IP:порт. Ошибка разрешения отклоняет весь запрос с HTTP 422.
+     * @endpoint put /api/quality/groups/{groupID}/checks/{protocol}
+     * @param groupID 
+     * @param protocol 
+     * @param qualityCheck 
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public putGroupQualityCheck(groupID: string, protocol: 'UDP' | 'TCP' | 'ICMP' | 'DNS' | 'HTTPS' | 'HTTP3', qualityCheck: QualityCheck, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<GroupSettings>;
+    public putGroupQualityCheck(groupID: string, protocol: 'UDP' | 'TCP' | 'ICMP' | 'DNS' | 'HTTPS' | 'HTTP3', qualityCheck: QualityCheck, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<GroupSettings>>;
+    public putGroupQualityCheck(groupID: string, protocol: 'UDP' | 'TCP' | 'ICMP' | 'DNS' | 'HTTPS' | 'HTTP3', qualityCheck: QualityCheck, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<GroupSettings>>;
+    public putGroupQualityCheck(groupID: string, protocol: 'UDP' | 'TCP' | 'ICMP' | 'DNS' | 'HTTPS' | 'HTTP3', qualityCheck: QualityCheck, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (groupID === null || groupID === undefined) {
+            throw new Error('Required parameter groupID was null or undefined when calling putGroupQualityCheck.');
+        }
+        if (protocol === null || protocol === undefined) {
+            throw new Error('Required parameter protocol was null or undefined when calling putGroupQualityCheck.');
+        }
+        if (qualityCheck === null || qualityCheck === undefined) {
+            throw new Error('Required parameter qualityCheck was null or undefined when calling putGroupQualityCheck.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/quality/groups/${this.configuration.encodeParam({name: "groupID", value: groupID, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}/checks/${this.configuration.encodeParam({name: "protocol", value: protocol, in: "path", style: "simple", explode: false, dataType: "'UDP' | 'TCP' | 'ICMP' | 'DNS' | 'HTTPS' | 'HTTP3'", dataFormat: undefined})}`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<GroupSettings>('put', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: qualityCheck,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Изменить окно оценки группы
+     * @endpoint put /api/quality/groups/{groupID}/window
+     * @param groupID 
+     * @param qualityWindow 
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public putGroupQualityWindow(groupID: string, qualityWindow: QualityWindow, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<GroupSettings>;
+    public putGroupQualityWindow(groupID: string, qualityWindow: QualityWindow, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<GroupSettings>>;
+    public putGroupQualityWindow(groupID: string, qualityWindow: QualityWindow, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<GroupSettings>>;
+    public putGroupQualityWindow(groupID: string, qualityWindow: QualityWindow, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (groupID === null || groupID === undefined) {
+            throw new Error('Required parameter groupID was null or undefined when calling putGroupQualityWindow.');
+        }
+        if (qualityWindow === null || qualityWindow === undefined) {
+            throw new Error('Required parameter qualityWindow was null or undefined when calling putGroupQualityWindow.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/quality/groups/${this.configuration.encodeParam({name: "groupID", value: groupID, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}/window`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<GroupSettings>('put', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: qualityWindow,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
      * Добавить или изменить одну проверку связи
      * Цель TCP принимает IP-адрес или доменное имя с необязательным портом (по умолчанию 443). Сервер один раз запрашивает A-запись каждого имени, выбирает первый допустимый публичный IPv4 и возвращает сохранённые цели в формате IP:порт. Ошибка разрешения отклоняет весь запрос с HTTP 422.
      * @endpoint put /api/quality/checks/{protocol}
@@ -2359,6 +2573,77 @@ export class PanelService extends BaseService {
             {
                 context: localVarHttpContext,
                 body: wifiConnectionSettings,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Включить или отключить виртуальное подключение
+     * @endpoint put /api/connections/{id}/enabled
+     * @param id 
+     * @param connectionEnabledRequest 
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public setConnectionEnabled(id: string, connectionEnabledRequest: ConnectionEnabledRequest, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<ConnectionEnabled>;
+    public setConnectionEnabled(id: string, connectionEnabledRequest: ConnectionEnabledRequest, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ConnectionEnabled>>;
+    public setConnectionEnabled(id: string, connectionEnabledRequest: ConnectionEnabledRequest, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ConnectionEnabled>>;
+    public setConnectionEnabled(id: string, connectionEnabledRequest: ConnectionEnabledRequest, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (id === null || id === undefined) {
+            throw new Error('Required parameter id was null or undefined when calling setConnectionEnabled.');
+        }
+        if (connectionEnabledRequest === null || connectionEnabledRequest === undefined) {
+            throw new Error('Required parameter connectionEnabledRequest was null or undefined when calling setConnectionEnabled.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/connections/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: undefined})}/enabled`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<ConnectionEnabled>('put', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: connectionEnabledRequest,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

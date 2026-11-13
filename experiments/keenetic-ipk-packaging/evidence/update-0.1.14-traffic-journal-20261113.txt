@@ -1,0 +1,87 @@
+Hestia 0.1.14 traffic journal deployment evidence
+Date: 2026-11-13
+
+Question
+--------
+Build and install the traffic journal outcome display and output=unknown API
+filter on the owner-authorized Keenetic router.
+
+Environment and artifact
+------------------------
+Device: Keenetic Giga KN-1012
+KeeneticOS: 5.02.B.3.0-2
+Entware architecture: aarch64-3.10
+Previous installed package: 0.1.13
+Installed package: 0.1.14
+Source revision: 03e710d41c31991bac3fad0d0d92cf86e82829a8
+Source tree at build: dirty (contains the implementation being deployed)
+Build command: make build
+Bundle verification: verify_bundle passed for 0.1.14 keenetic-arm64-experimental
+IPK: dist/artifacts/0.1.14/keenetic-arm64-experimental/hestia_0.1.14_aarch64-3.10.ipk
+IPK SHA-256: 34b931569debec80c11e2ce4add89c0c9dcd6210e221b7655ab1c142f88a95f7
+
+Pre-install state and recovery
+------------------------------
+Package 0.1.13 was installed before the update. A root-only backup was created
+at /opt/tmp/hestia-deploy-0.1.14-traffic-outcome-20261113. It contains the
+Hestia configuration, opkg status, Hestia status, IPv4/IPv6 default routes,
+configuration hashes, and rollback package 0.1.13. The rollback IPK SHA-256
+was verified as:
+078493f703a8dcea5dc0c0d26e1878a8020035dc6f6a46c6460abf2b21da43ab
+
+Pre-install configuration hashes:
+profile.json   b933203a0f64b2cab8b546ca486bde8a600224c3a640a8bbbd557763453c65e7
+snapshot.json  f6c8bb25132558bb8f4b33ae19e9af5333292573f8d40e638ed9614b6ee6ae20
+sing-box.json  a3680e9ba838d6517b502fd574377f74be8cdb5adb81b518425a33d8697b719e
+
+Install and post-install evidence
+---------------------------------
+opkg status hestia: Version 0.1.14; Status install user installed;
+Architecture aarch64-3.10.
+Hestia service supervisor readiness command: exit 0.
+Readiness marker present; package-maintenance marker absent.
+Managed profile validation: passed.
+Controller snapshot validation: passed.
+sing-box configuration validation: passed.
+Supervisor and sing-box processes: running.
+
+Post-install configuration hashes matched pre-install exactly:
+profile.json   b933203a0f64b2cab8b546ca486bde8a600224c3a640a8bbbd557763453c65e7
+snapshot.json  f6c8bb25132558bb8f4b33ae19e9af5333292573f8d40e638ed9614b6ee6ae20
+sing-box.json  a3680e9ba838d6517b502fd574377f74be8cdb5adb81b518425a33d8697b719e
+
+IPv4 default route hash before and after:
+f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871
+IPv6 default route was absent before and after (empty-file SHA-256:
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855).
+
+From hestia-client, these requests returned HTTP 200:
+GET http://192.168.1.1:8080/
+GET http://192.168.1.1:8080/api/groups-and-rules
+GET http://192.168.1.1:8080/api/physical-connections
+GET http://192.168.1.1:8080/api/traffic
+GET http://192.168.1.1:8080/api/traffic?output=unknown&limit=1
+
+The UI outcome labels and filter behavior were covered by the local frontend
+unit/browser regression checks before the package build. No new live traffic
+flow was generated during this installation check, so it does not prove the
+physical egress selected for a particular destination.
+
+Cleanup
+-------
+The temporary LAN-bound hestia-cli listener on 192.168.1.1:8081 was stopped,
+its temporary PID/log files were removed, and the uploaded new and rollback IPK
+copies were removed from the CLI inbox. The rollback IPK remains in the root-only
+backup directory. The pre-existing hestia-cli listener on 198.51.100.11:8081
+was left running and unchanged.
+
+Reproduction summary
+-------------------
+1. make build
+2. Verify the 0.1.14 bundle manifest and local IPK SHA-256.
+3. Upload the IPK to the Keenetic through the LAN-bound authenticated
+   hestia-cli server and compare the remote SHA-256.
+4. Save the root-only backup and verify its rollback package hash.
+5. Install with opkg, then inspect package status, readiness, managed profile,
+   snapshot, sing-box configuration, config hashes, and default-route hashes.
+6. From hestia-client, request the panel and APIs listed above.

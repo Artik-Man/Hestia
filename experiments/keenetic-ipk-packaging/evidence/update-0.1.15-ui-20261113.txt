@@ -1,0 +1,31 @@
+Hestia0.1.15 update of owner-authorized Keenetic KN-1012,2026-11-13
+Source: 03e710d41c31991bac3fad0d0d92cf86e82829a8 dirty working tree including this chat's changes.
+Build make build:PASS. verify_bundle:PASS.
+New IPK SHA256:36a2cb8cded0c8c636ae2a3f4f38d99d2468b85d27f9746b19c35ea193b71545
+Rollback0.1.14 SHA256:34b931569debec80c11e2ce4add89c0c9dcd6210e221b7655ab1c142f88a95f7
+Uploaded via authenticated hestia-cli LAN192.168.1.1:8081; all transfer hashes match.
+Root-only backup:/opt/tmp/hestia-deploy-0.1.15-20261113-ui; includes etc-hestia,opkg-status,state quality/dns-policy/country-map and rollback0.1.14.ipk.
+Initial package0.1.14 install user installed; supervisor ready.
+IPv4 default-route hash:f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871
+IPv6 default absent; empty SHA256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+New-package hardware preflight:PASS.
+Candidate new profile.py --validate-managed, staged --keenetic-ingress enable --keenetic, candidate hestia -check and installed sing-box check:PASS before stopping services.
+Install: opkg exit0; Version0.1.15; Status install user installed; Architecture aarch64-3.10.
+Opkg kept existing conffiles and wrote new default sidecars; no active config was overwritten.
+Post-install supervisor readiness:PASS; maintenance marker absent.
+Managed profile, controller snapshot, sing-box check:PASS.
+profile.json/snapshot.json/sing-box.json SHA256 match pre-install backup exactly.
+IPv4 and IPv6 default-route hashes unchanged.
+Installed binary hashes match verified bundle:
+hestia 63664a18bc84afde425567197ae84aa8f3c8db266a0a583c78c4282646a11cd5
+hestia-panel a6d02819d97cf24490a94582201422e5fefe68aff9f0a7494c11e723d134b660
+index.html d0c4a61babdbe1931d5e07e2f78971665206500bb21d472a6f497a4320b2011e
+LAN HTTP200: /,groups-and-rules,awg-underlays,awg,hysteria2,quality,traffic(limit1).
+Enabled fields valid:7 catalog candidates,3 managed WG/AWG,2 Hysteria.
+Quality reports2 groups with own settings and capturedAt. Both windows60min; all six protocol types retained. One group checks matches backup exactly; second differs only TCP targets when verified. No write operation was issued by the smoke scripts; that current group setting was not overwritten. Exact provenance of that target edit was not established.
+Read-only Chromium against installed192.168.1.1:8080 PASS:
+version0.1.15-keenetic; quality group modal and automatic requests/no manual refresh;
+connections input hidden/five switches/no refresh buttons/automatic requests;
+traffic auto button/default5m/no recovered/lost notices/QUIC option.
+Live VPNs were not toggled or subjected to extra dataplane probes; packet-level disable/QUIC identification on this installed revision remains covered by local regression evidence, not live capture.
+Uploaded IPKs/preflight/candidate helper copies removed. Root-only backup and rollback IPK retained. Temporary LAN CLI shutdown confirmed; existing198.51.100.11 listener left untouched. Final supervisor ready and route hashes unchanged.

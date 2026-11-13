@@ -20,7 +20,7 @@ type watcher struct {
 	relayReady   map[string]*atomic.Bool
 	devices      map[string]string
 	carrier      func(string) panelmodel.CarrierState
-	quality      *quality.Engine
+	quality      *quality.GroupEngine
 	qualityReset int64
 	client       *http.Client
 	base         string
@@ -104,16 +104,16 @@ func (w *watcher) sync(ctx context.Context) ([]Result, error) {
 		}
 	}
 	var observation panelmodel.QualityReport
-	var scores map[string]quality.Result
 	if w.quality != nil {
 		if err := w.refreshQuality(); err != nil {
 			failures = append(failures, err)
 		}
-		var ids []string
+		groups := make(map[string][]string, len(w.desired.Groups))
 		for _, group := range w.desired.Groups {
-			ids = append(ids, group.Exits...)
+			groups[group.ID] = group.Exits
 		}
-		observation.Settings, scores = w.quality.Snapshot(ids)
+		w.quality.Configure(ctx, groups)
+		observation.Settings = w.quality.Settings()
 		observation.CapturedAt = time.Now().UTC().Format(time.RFC3339Nano)
 		observation.Groups = []panelmodel.QualityGroup{}
 	}
@@ -123,12 +123,15 @@ func (w *watcher) sync(ctx context.Context) ([]Result, error) {
 		}
 		exit, outcome := routing.SelectExit(g, health)
 		var group panelmodel.QualityGroup
+		var scores map[string]quality.Result
+		var groupSettings quality.GroupSettings
 		reason := routing.MatchReason("availability_snapshot")
 		target := exit
 		if outcome == routing.Block {
 			target = deny
 		}
 		if w.quality != nil {
+			groupSettings, scores = w.quality.Snapshot(g.ID, g.Exits)
 			group = qualityOrder(g, health, "", scores)
 		}
 		requestCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
@@ -147,6 +150,7 @@ func (w *watcher) sync(ctx context.Context) ([]Result, error) {
 		})
 		cancel()
 		if w.quality != nil {
+			group.Settings = groupSettings
 			for i := range group.Connections {
 				group.Connections[i].Active = err == nil && group.Connections[i].ID == target
 			}

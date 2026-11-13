@@ -64,17 +64,29 @@ func NewEngine(path string, paths ...Path) (*Engine, error) {
 	if err != nil {
 		return nil, err
 	}
+	return newConfiguredEngine(s, paths...), nil
+}
+
+// newConfiguredEngine initializes independent observations for one validated schedule.
+func newConfiguredEngine(s Settings, paths ...Path) *Engine {
 	socksExits := make(map[string]bool)
 	for _, path := range paths {
 		if path.SocksAddress != "" {
 			socksExits[path.ID] = true
 		}
 	}
-	return &Engine{paths: slices.Clone(paths), socksExits: socksExits, settings: s, epochs: map[string]uint64{}, started: time.Now(), history: map[seriesKey]*windowSeries{}}, nil
+	return &Engine{paths: slices.Clone(paths), socksExits: socksExits, settings: s, epochs: map[string]uint64{}, started: time.Now(), history: map[seriesKey]*windowSeries{}}
 }
 
 // cloneSettings returns a deep copy so readers cannot mutate worker state.
 func cloneSettings(s Settings) Settings {
+	if s.Groups != nil {
+		groups := make(map[string]GroupSettings, len(s.Groups))
+		for id := range s.Groups {
+			groups[id] = s.ForGroup(id)
+		}
+		s.Groups = groups
+	}
 	s.Checks = slices.Clone(s.Checks)
 	for i := range s.Checks {
 		s.Checks[i].Targets = slices.Clone(s.Checks[i].Targets)

@@ -6,15 +6,6 @@
       type="button"
       severity="secondary"
       [disabled]="busy()"
-      (click)="reload(true)"
-    >
-      Обновить
-    </button>
-    <button
-      pButton
-      type="button"
-      severity="secondary"
-      [disabled]="busy()"
       (click)="reset()"
     >
       Сбросить
@@ -45,7 +36,20 @@
     @for (group of data.groups; track group.id) {
       @let confirmed = data.capturedAt && hasActive(group);
       <article class="quality-group">
-        <h3>{{ group.name || group.id }}</h3>
+        <div class="section-heading quality-group-heading">
+          <h3>{{ group.name || group.id }}</h3>
+          <button
+            pButton
+            type="button"
+            severity="secondary"
+            [attr.aria-label]="
+              'Настройки проверок группы ' + (group.name || group.id)
+            "
+            (click)="selectedGroupID.set(group.id)"
+          >
+            Настройки проверок
+          </button>
+        </div>
         <p-table
           [value]="group.connections"
           dataKey="id"
@@ -55,7 +59,7 @@
             <tr>
               <th scope="col">Подключение</th>
               <th scope="col">Статус</th>
-              @for (check of data.settings.checks; track check.protocol) {
+              @for (check of group.settings.checks; track check.protocol) {
                 <th scope="col">{{ label(check.protocol) }}</th>
               }
               <th scope="col">Качество связи</th>
@@ -79,7 +83,7 @@
                   }}</span
                 >
               </td>
-              @for (check of data.settings.checks; track check.protocol) {
+              @for (check of group.settings.checks; track check.protocol) {
                 @let item = result(row, check.protocol);
                 <td>
                   @if (item?.unsupported) {
@@ -129,7 +133,7 @@
           </ng-template>
           <ng-template #emptymessage
             ><tr>
-              <td [attr.colspan]="data.settings.checks.length + 3">
+              <td [attr.colspan]="group.settings.checks.length + 3">
                 В группе нет подключений
               </td>
             </tr></ng-template
@@ -140,7 +144,16 @@
       <p class="notice">Нет настроенных групп</p>
     }
   </section>
-  <hestia-quality-settings [settings]="data.settings" (saved)="reload()" />
 } @else if (!failed()) {
   <p class="notice" role="status">Загружаем проверки и результаты…</p>
+}
+
+@if (selectedGroup(); as group) {
+  <hestia-quality-settings
+    [groupID]="group.id"
+    [groupName]="group.name || group.id"
+    [settings]="group.settings"
+    (closed)="selectedGroupID.set(null)"
+    (saved)="reload()"
+  />
 }

@@ -197,6 +197,7 @@ func registerPanelAPI(mux *http.ServeMux, snapshot, grafanaURL string, writes pa
 	registerGroupCreate(api, writes.createGroup)
 	registerGroupRename(api, writes.renameGroup)
 	registerDirectRename(api, writes.renameDirect)
+	registerConnectionEnabled(api, writes.connectionEnabled)
 	registerPhysical(api, writes.physicalInventory, writes.physical)
 	registerGroupDelete(api, writes.deleteGroup)
 	registerMoveExit(api, writes.moveExit)
@@ -266,8 +267,10 @@ func localHandler(listen string, next http.Handler) (http.Handler, error) {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("Referrer-Policy", "no-referrer")
 		w.Header().Set("Content-Security-Policy", "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; object-src 'none'")
-		if (r.Method == http.MethodPost && r.URL.Path == "/api/awg") || (r.Method == http.MethodPut && strings.HasPrefix(r.URL.Path, "/api/awg/")) {
-			// Slow manual candidates can consume multiple full peer probes before a save commits or rolls back.
+		if (r.Method == http.MethodPost && r.URL.Path == "/api/awg") || (r.Method == http.MethodPut &&
+			(strings.HasPrefix(r.URL.Path, "/api/awg/") ||
+				(strings.HasPrefix(r.URL.Path, "/api/connections/") && strings.HasSuffix(r.URL.Path, "/enabled")))) {
+			// Saves and reactivation may probe every manual candidate before committing or rolling back.
 			_ = http.NewResponseController(w).SetWriteDeadline(time.Now().Add(2*binding.AWGActivationLimit + time.Minute))
 		}
 		next.ServeHTTP(w, r)
@@ -430,6 +433,9 @@ func runPanel() error {
 	if *enableAWG {
 		writes.awg = installedAWGWriter{}
 		writes.renameDirect = renameInstalledDirect
+	}
+	if *enableAWG || *enableHysteria2 {
+		writes.connectionEnabled = setInstalledConnectionEnabled
 	}
 	if *enableHysteria2 {
 		writes.hysteria2 = runAWGHelper

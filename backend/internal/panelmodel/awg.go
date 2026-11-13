@@ -21,6 +21,7 @@ func (ids *UnderlayIDs) UnmarshalJSON(data []byte) error {
 
 // AWGConnection contains public AmneziaWG metadata and never includes profile or key material.
 type AWGConnection struct {
+	Enabled        bool        `json:"enabled"`
 	Name           string      `json:"name" minLength:"1" maxLength:"80"`
 	Underlays      UnderlayIDs `json:"underlays,omitzero" maxItems:"64" nullable:"false"`
 	ActiveUnderlay string      `json:"activeUnderlay,omitempty"`
@@ -98,10 +99,11 @@ const (
 
 // AWGUnderlayCandidate identifies an existing route and its platform-neutral role for connection editors.
 type AWGUnderlayCandidate struct {
-	Name string      `json:"name,omitempty" maxLength:"80"`
-	ID   string      `json:"id" minLength:"1"`
-	Type string      `json:"type" enum:"direct,wireguard,amneziawg,hysteria2"`
-	Role ChannelRole `json:"role,omitempty" enum:"input,output" doc:"Платформенная роль канала; UI не должен выводить внутренний тип интерфейса"`
+	Enabled bool        `json:"enabled"`
+	Name    string      `json:"name,omitempty" maxLength:"80"`
+	ID      string      `json:"id" minLength:"1"`
+	Type    string      `json:"type" enum:"direct,wireguard,amneziawg,hysteria2"`
+	Role    ChannelRole `json:"role,omitempty" enum:"input,output" doc:"Платформенная роль канала; UI не должен выводить внутренний тип интерфейса"`
 }
 
 // AWGPriority uses zero internally for an omitted position and rejects explicit nonpositive positions.

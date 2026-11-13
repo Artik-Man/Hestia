@@ -27,13 +27,21 @@ func TestTrafficHTTP(t *testing.T) {
 	if err = store.Append(t.Context(), traceEvent); err != nil {
 		t.Fatal(err)
 	}
+	unknownEvent := traffic.TrafficEvent{Time: time.Now().UTC(), Address: "203.0.113.4", Protocol: "TCP", Port: 443, Kind: traffic.Unconfirmed}
+	if err = store.Append(t.Context(), unknownEvent); err != nil {
+		t.Fatal(err)
+	}
 	h := panelHandler("", "", nil, panelWrites{traffic: store})
 	res := dnsRequest(t, h, http.MethodGet, "/api/traffic?query=db8&protocol=UDP&output=connection%3Aold-fi&limit=1", nil, "")
 	var page traffic.TrafficPage
 	if err = json.Unmarshal(res.Body.Bytes(), &page); err != nil || res.Code != 200 || page.Total != 1 || len(page.Events) != 1 || page.Events[0].Port != 443 || page.SourceAvailable || page.Events[0].Trace == nil || page.Events[0].Trace.SourcePort != 49322 || len(page.Events[0].Trace.Stages) != 2 || page.Events[0].Trace.Stages[0].ReverseCount != 1 {
 		t.Fatalf("status %d: %s err=%v", res.Code, res.Body.String(), err)
 	}
-	for _, query := range []string{"?limit=501", "?from=invalid", "?protocol=ICMP", "?output=unknown", "?snapshot=future"} {
+	res = dnsRequest(t, h, http.MethodGet, "/api/traffic?output=unknown&limit=1", nil, "")
+	if err = json.Unmarshal(res.Body.Bytes(), &page); err != nil || res.Code != 200 || page.Total != 1 || len(page.Events) != 1 || page.Events[0].Address != "203.0.113.4" {
+		t.Fatalf("unknown output: %d %s err=%v", res.Code, res.Body.String(), err)
+	}
+	for _, query := range []string{"?limit=501", "?from=invalid", "?protocol=ICMP", "?output=invalid", "?snapshot=future"} {
 		if res = dnsRequest(t, h, http.MethodGet, "/api/traffic"+query, nil, ""); res.Code != 422 {
 			t.Errorf("query %s: %d", query, res.Code)
 		}
@@ -56,7 +64,7 @@ func TestTrafficHTTP(t *testing.T) {
 		t.Fatalf("stale update: %d %s", res.Code, res.Body.String())
 	}
 	res = dnsRequest(t, h, http.MethodGet, "/api/traffic", nil, "")
-	if err = json.Unmarshal(res.Body.Bytes(), &page); err != nil || page.Total != 1 {
+	if err = json.Unmarshal(res.Body.Bytes(), &page); err != nil || page.Total != 2 {
 		t.Fatalf("stale update pruned history: %s err=%v", res.Body.String(), err)
 	}
 	if res = dnsRequest(t, h, http.MethodPut, settings, map[string]int{"maxMB": 0, "retentionHours": 1}, ""); res.Code != 422 {
@@ -173,5 +181,25 @@ func TestGeoIPJournalAPI(t *testing.T) {
 	h.ServeHTTP(malformed, req)
 	if malformed.Code < 400 || strings.Contains(malformed.Body.String(), secret) {
 		t.Fatalf("malformed JSON leaked or accepted: %d", malformed.Code)
+	}
+}
+
+// TestTrafficQUICHTTP accepts the generated protocol filter and returns only confirmed QUIC events.
+func TestTrafficQUICHTTP(t *testing.T) {
+	store, err := traffic.Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+	for _, protocol := range []string{"UDP", "QUIC"} {
+		if err := store.Append(t.Context(), traffic.TrafficEvent{Time: time.Now().UTC(), Address: "192.0.2.2", Protocol: protocol, Port: 443, Kind: traffic.Unconfirmed}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	h := panelHandler("", "", nil, panelWrites{traffic: store})
+	res := dnsRequest(t, h, http.MethodGet, "/api/traffic?protocol=QUIC&limit=10", nil, "")
+	var page traffic.TrafficPage
+	if err := json.Unmarshal(res.Body.Bytes(), &page); err != nil || res.Code != 200 || page.Total != 1 || len(page.Events) != 1 || page.Events[0].Protocol != "QUIC" {
+		t.Fatalf("QUIC page: %d %s err=%v", res.Code, res.Body.String(), err)
 	}
 }

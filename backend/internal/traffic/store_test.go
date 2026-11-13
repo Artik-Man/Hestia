@@ -32,6 +32,7 @@ func TestJournalPages(t *testing.T) {
 	events[13].Kind = Blocked
 	events[13].BlockReason = "reject"
 	events[13].Connection = ""
+	events[21].Connection = ""
 	events[12].Kind = Observed
 	events[12].NetworkInterface = "ppp0"
 	events[12].Connection = "ru"
@@ -56,6 +57,10 @@ func TestJournalPages(t *testing.T) {
 	blocked, err := store.Page(ctx, Query{Limit: 10, Text: "db8::", Protocol: "TCP", Output: Blocked})
 	if err != nil || len(blocked.Events) != 1 || blocked.Events[0].BlockReason != "reject" {
 		t.Fatalf("blocked: %+v %v", blocked, err)
+	}
+	unknown, err := store.Page(ctx, Query{Limit: 10, Output: UnknownOutput})
+	if err != nil || unknown.Total != 1 || len(unknown.Events) != 1 || unknown.Events[0].ID != "22" {
+		t.Fatalf("unknown output: %+v %v", unknown, err)
 	}
 	if err = store.RecordLoss(ctx, 3); err != nil {
 		t.Fatal(err)
@@ -203,5 +208,25 @@ func TestJournalInterruptionUpgrade(t *testing.T) {
 	p, err = s.Page(ctx, Query{Limit: 1})
 	if err != nil || p.LastInterruption == nil || !p.LastInterruption.Equal(gap) || !p.SourceAvailable || p.Lost != 0 || p.Total != 1 {
 		t.Fatalf("recovered gap: %+v %v", p, err)
+	}
+}
+
+// TestQUICFilter persists confirmed QUIC separately from ordinary UDP and filters both independently.
+func TestQUICFilter(t *testing.T) {
+	store, err := Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+	for _, protocol := range []string{"UDP", "QUIC"} {
+		if err := store.Append(t.Context(), TrafficEvent{Time: time.Now().UTC(), Protocol: protocol, Address: "192.0.2.2", Port: 443, Kind: Unconfirmed}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, protocol := range []string{"UDP", "QUIC"} {
+		page, err := store.Page(t.Context(), Query{Limit: 10, Protocol: protocol})
+		if err != nil || page.Total != 1 || len(page.Events) != 1 || page.Events[0].Protocol != protocol {
+			t.Fatalf("%s page: %+v %v", protocol, page, err)
+		}
 	}
 }

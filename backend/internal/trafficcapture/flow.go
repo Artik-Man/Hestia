@@ -120,7 +120,7 @@ func (p *parser) accept(now time.Time, message string) {
 	p.finish(elm, true)
 }
 
-// router saves only same-flow route rules and explicit block/FakeIP evidence, releasing hijacked DNS without a flow.
+// router saves same-flow route, sniffed QUIC and block/FakeIP evidence, releasing hijacked DNS without a flow.
 func (p *parser) router(elm *list.Element, detail string) {
 	e := &elm.Value.(*pendingFlow).event
 	if name, ok := strings.CutPrefix(detail, "found fakeip domain: "); ok && validDomain(name) {
@@ -134,6 +134,12 @@ func (p *parser) router(elm *list.Element, detail string) {
 		return
 	}
 	if strings.HasPrefix(detail, "sniffed ") {
+		if protocol, ok := strings.CutPrefix(detail, "sniffed packet protocol: "); ok && e.Protocol == "UDP" {
+			protocol, _, _ = strings.Cut(protocol, ", ")
+			if protocol == "quic" {
+				e.Protocol = "QUIC"
+			}
+		}
 		_, name, ok := strings.Cut(detail, ", domain: ")
 		name, _, _ = strings.Cut(name, ", ")
 		if ok && validDomain(name) {

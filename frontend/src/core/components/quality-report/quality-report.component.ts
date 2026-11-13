@@ -7,6 +7,7 @@ import {
   ElementRef,
   Injector,
   inject,
+  input,
   model,
   output,
   signal,
@@ -23,7 +24,7 @@ import { Textarea } from "primeng/textarea";
 import { finalize, Observable, timeout } from "rxjs";
 import { PanelService } from "../../services/api/generated/api/panel.service";
 import type { QualityCheck } from "../../services/api/generated/model/qualityCheck";
-import type { QualitySettings } from "../../services/api/generated/model/qualitySettings";
+import type { GroupSettings } from "../../services/api/generated/model/groupSettings";
 import { Notifications } from "../../services/notifications.service";
 import {
   isQualitySettings,
@@ -65,7 +66,7 @@ interface CheckDraft {
   requestPath: string;
 }
 
-/** QualityEditor owns independent dialogs for the individual checks and their shared scoring window. */
+/** QualityEditor owns independent dialogs for the individual checks and their group scoring window. */
 @Component({
   selector: "hestia-quality-settings",
   imports: [
@@ -82,7 +83,10 @@ interface CheckDraft {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class QualityEditor {
-  readonly settings = model.required<QualitySettings>();
+  readonly settings = model.required<GroupSettings>();
+  readonly groupID = input.required<string>();
+  readonly groupName = input.required<string>();
+  readonly closed = output<void>();
   readonly saved = output<void>();
   protected readonly draft = signal<CheckDraft | null>(null);
   protected readonly windowDraft = signal<{
@@ -122,7 +126,7 @@ export class QualityEditor {
     });
   }
 
-  /** editWindow initializes the separate editor for the shared assessment period. */
+  /** editWindow initializes the separate editor for the group assessment period. */
   protected editWindow(): void {
     const original = this.settings().windowMinutes;
     this.windowDraft.set({ original, minutes: original });
@@ -180,7 +184,7 @@ export class QualityEditor {
     }
     if (protocol === "TCP") form.focus();
     this.persist(
-      this.api.putQualityCheck(protocol, item),
+      this.api.putGroupQualityCheck(this.groupID(), protocol, item),
       (settings) => {
         const check = settings.checks.find(
           (check) => check.protocol === protocol,
@@ -215,7 +219,9 @@ export class QualityEditor {
     )
       return;
     this.persist(
-      this.api.putQualityWindow({ windowMinutes: minutes }),
+      this.api.putGroupQualityWindow(this.groupID(), {
+        windowMinutes: minutes,
+      }),
       (settings) => settings.windowMinutes === minutes,
     );
   }
@@ -225,7 +231,7 @@ export class QualityEditor {
     const item = this.deleting();
     if (!item || !this.current(item.protocol, item) || this.saving()) return;
     this.persist(
-      this.api.deleteQualityCheck(item.protocol),
+      this.api.deleteGroupQualityCheck(this.groupID(), item.protocol),
       (settings) =>
         !settings.checks.some((check) => check.protocol === item.protocol),
     );
@@ -257,8 +263,8 @@ export class QualityEditor {
 
   /** persist verifies a scoped write and refreshes the TCP editor with saved endpoints or closes the completed dialog. */
   private persist(
-    request: Observable<QualitySettings>,
-    confirmed: (settings: QualitySettings) => boolean,
+    request: Observable<GroupSettings>,
+    confirmed: (settings: GroupSettings) => boolean,
     tcpDraft?: CheckDraft,
   ): void {
     this.saving.set(true);

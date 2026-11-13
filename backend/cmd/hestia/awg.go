@@ -152,7 +152,12 @@ func runAWGCommand(mode string, input io.Reader, output io.Writer) int {
 		}
 		for _, connection := range connections {
 			if connection.ID == request.ID {
-				return encodeAWGResponse(output, publicAWGConnection(connection))
+				public, err := publicAWGConnection(connection)
+				if err != nil {
+					fmt.Fprintln(os.Stderr, "connection state is unavailable")
+					return 1
+				}
+				return encodeAWGResponse(output, public)
 			}
 		}
 		return 1
@@ -168,7 +173,11 @@ func runAWGCommand(mode string, input io.Reader, output io.Writer) int {
 		}
 		public := make([]panelmodel.AWGConnection, len(connections))
 		for i, connection := range connections {
-			public[i] = publicAWGConnection(connection)
+			public[i], err = publicAWGConnection(connection)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "connection state is unavailable")
+				return 1
+			}
 		}
 		return encodeAWGResponse(output, public)
 	case "-awg-delete":
@@ -225,7 +234,11 @@ func encodeAWGResponse(output io.Writer, value any) int {
 }
 
 // publicAWGConnection joins persisted preference with verified runtime health without exposing keys or stale transport choices.
-func publicAWGConnection(c awg.Metadata) panelmodel.AWGConnection {
+func publicAWGConnection(c awg.Metadata) (panelmodel.AWGConnection, error) {
+	enabled, err := binding.Installed().ConnectionEnabled(c.ID)
+	if err != nil {
+		return panelmodel.AWGConnection{}, err
+	}
 	status, active := c.Status, ""
 	if status == "ready" {
 		selected, ok := controller.AWGTransportHealth(c.ID)
@@ -235,5 +248,5 @@ func publicAWGConnection(c awg.Metadata) panelmodel.AWGConnection {
 			active = selected
 		}
 	}
-	return panelmodel.AWGConnection{Name: c.DisplayName(), ID: c.ID, Group: c.Group, Priority: c.Priority, Status: status, IPv6Blocked: c.IPv6Blocked, Underlays: c.Underlays, ActiveUnderlay: active}
+	return panelmodel.AWGConnection{Enabled: enabled, Name: c.DisplayName(), ID: c.ID, Group: c.Group, Priority: c.Priority, Status: status, IPv6Blocked: c.IPv6Blocked, Underlays: c.Underlays, ActiveUnderlay: active}, nil
 }

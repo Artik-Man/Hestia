@@ -1,0 +1,8 @@
+Local validation, 2026-11-13; dirty working tree on 03e710d41c31991bac3fad0d0d92cf86e82829a8
+No Keenetic access or deployment.
+PASS: frontend format, lint, 25 unit tests, Angular build.
+PASS: node --test frontend/tests/browser/traffic.mjs (Chromium, mocked API, 10020 events): default 5m, auto refresh 5s + disable, retained filters/detail, no recovered/lost notice. One earlier run hit dropdown animation instability; repeat passed.
+PASS: Go traffic/trafficcapture and targeted panel TestTraffic; independent code/security review.
+PASS: full make test and test-installer outside sandbox; workflow tests and docs-check.
+LIMIT: make check stops because ShellCheck missing.
+LIMIT: lab DNS restart/rotation/stale/warm tests require unavailable Python dns module (dnspython).

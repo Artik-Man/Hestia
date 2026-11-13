@@ -32,6 +32,7 @@ type Hysteria2WriteRequest struct {
 
 // Hysteria2Connection returns public settings and committed placement without credential fields.
 type Hysteria2Connection struct {
+	Enabled bool `json:"enabled"`
 	Hysteria2Settings
 	ID             string `json:"id" format:"uuid"`
 	Group          string `json:"group" minLength:"1"`

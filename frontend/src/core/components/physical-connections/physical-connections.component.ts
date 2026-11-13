@@ -9,11 +9,13 @@ import {
   inject,
   input,
   signal,
+  untracked,
 } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { ButtonDirective } from "primeng/button";
 import { InputText } from "primeng/inputtext";
-import { firstValueFrom } from "rxjs";
+import { firstValueFrom, timeout } from "rxjs";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { PanelService } from "../../services/api/generated/api/panel.service";
 import { Notifications } from "../../services/notifications.service";
 
@@ -116,7 +118,7 @@ export class PhysicalConnections {
   constructor() {
     effect(() => {
       this.revision();
-      void this.load();
+      untracked(() => void this.load());
     });
     const timer = setInterval(() => {
       if (
@@ -125,7 +127,7 @@ export class PhysicalConnections {
         !this.reading()
       )
         void this.load();
-    }, 15000);
+    }, 3000);
     this.destroy.onDestroy(() => {
       clearInterval(timer);
       this.generation++;
@@ -135,11 +137,14 @@ export class PhysicalConnections {
 
   /** load discards out-of-order reads and preserves the last successful inventory during an outage. */
   private async load(): Promise<void> {
+    if (this.reading()) return;
     const generation = ++this.generation;
     this.reading.set(true);
     try {
       const result: unknown = await firstValueFrom(
-        this.api.listPhysicalConnections(),
+        this.api
+          .listPhysicalConnections()
+          .pipe(timeout(10000), takeUntilDestroyed(this.destroy)),
       );
       if (generation !== this.generation) return;
       if (!validInventory(result))

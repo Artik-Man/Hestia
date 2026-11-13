@@ -1,6 +1,6 @@
 import { isHysteria2Connection } from "../models/hysteria2-connection";
 import type { Hysteria2Connection } from "./api/generated/model/hysteria2Connection";
-import { Injectable, inject, signal } from "@angular/core";
+import { Injectable, computed, inject, signal } from "@angular/core";
 import { PanelService } from "./api/generated/api/panel.service";
 import type { AWGUnderlayCandidate } from "./api/generated/model/aWGUnderlayCandidate";
 import { isUnderlayCandidate } from "../models/awg-connection";
@@ -22,6 +22,8 @@ export class ConnectionCatalog {
   readonly hysteriaFailed = signal(false);
   readonly entries = this.rows.asReadonly();
   readonly loading = signal(false);
+  private readonly hysteriaLoading = signal(false);
+  readonly reading = computed(() => this.loading() || this.hysteriaLoading());
   readonly failed = signal(false);
 
   /** Publishes only the latest validated catalog and records failed reads. */
@@ -46,8 +48,9 @@ export class ConnectionCatalog {
         takeUntilDestroyed(),
       )
       .subscribe((rows) => {
+        this.hysteriaLoading.set(false);
         this.hysteriaFailed.set(rows === null);
-        this.hysteriaRows.set(rows ?? new Map());
+        if (rows !== null) this.hysteriaRows.set(rows);
       });
     this.requests
       .pipe(
@@ -71,16 +74,28 @@ export class ConnectionCatalog {
       .subscribe((rows) => {
         this.loading.set(false);
         this.failed.set(rows === null);
-        this.rows.set(rows ?? new Map());
+        if (rows !== null) this.rows.set(rows);
       });
   }
 
-  /** reload supersedes stale catalog requests after navigation or a saved rename. */
-  reload(): void {
+  /** reload supersedes stale reads after a write, or skips unfinished reads during background polling. */
+  reload(skipBusy = false): void {
+    if (skipBusy && this.reading()) return;
+    this.hysteriaLoading.set(true);
     this.loading.set(true);
-    this.failed.set(false);
-    this.hysteriaFailed.set(false);
     this.requests.next();
+  }
+
+  /** confirmEnabled applies the gateway-confirmed state before a fresh catalog supersedes it. */
+  confirmEnabled(id: string, enabled: boolean): void {
+    this.rows.update((rows) => {
+      const entry = rows.get(id);
+      return entry ? new Map(rows).set(id, { ...entry, enabled }) : rows;
+    });
+    this.hysteriaRows.update((rows) => {
+      const entry = rows.get(id);
+      return entry ? new Map(rows).set(id, { ...entry, enabled }) : rows;
+    });
   }
 
   /** name resolves backend-provided labels and never exposes an unresolved routing identifier to the panel. */

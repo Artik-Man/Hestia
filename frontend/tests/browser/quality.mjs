@@ -3,6 +3,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 
+/** Verifies group-scoped settings, modal editing, polling stability and protocol-specific result columns. */
 test("quality page displays all ranked groups, keeps a measured zero, and persists each individual modal action", async () => {
   const udp = {
     protocol: "UDP",
@@ -18,6 +19,10 @@ test("quality page displays all ranked groups, keeps a measured zero, and persis
     timeoutSeconds: 3,
   };
   let settings = { windowMinutes: 60, checks: [udp, tcp] };
+  const extraSettings = {
+    windowMinutes: 120,
+    checks: [{ ...tcp, targets: ["8.8.4.4:443"] }],
+  };
   const writes = [];
   let catalogAvailable = false;
   let confirmed = true;
@@ -27,7 +32,7 @@ test("quality page displays all ranked groups, keeps a measured zero, and persis
   });
   try {
     const page = await browser.newPage();
-    page.setDefaultTimeout(5000);
+    page.setDefaultTimeout(10000);
     await page.route("**/*", async (route) => {
       const path = new URL(route.request().url()).pathname;
       if (path === "/api/navigation")
@@ -84,13 +89,18 @@ test("quality page displays all ranked groups, keeps a measured zero, and persis
             settings,
             capturedAt: fresh ? new Date().toISOString() : "",
             groups: [
-              { id: "fi", name: "Финляндия", connections },
-              { id: "extra", name: "Пустая группа", connections: [] },
+              { id: "fi", name: "Финляндия", settings, connections },
+              {
+                id: "extra",
+                name: "Пустая группа",
+                settings: extraSettings,
+                connections: [],
+              },
             ],
           },
         });
       }
-      if (path.startsWith("/api/quality/checks/")) {
+      if (path.startsWith("/api/quality/groups/fi/checks/")) {
         const protocol = path.split("/").at(-1);
         const method = route.request().method();
         if (method === "PUT") {
@@ -135,7 +145,7 @@ test("quality page displays all ranked groups, keeps a measured zero, and persis
         return route.fulfill({ json: settings });
       }
       if (
-        path === "/api/quality/window" &&
+        path === "/api/quality/groups/fi/window" &&
         route.request().method() === "PUT"
       ) {
         const body = route.request().postDataJSON();
@@ -156,10 +166,13 @@ test("quality page displays all ranked groups, keeps a measured zero, and persis
       });
     });
     await page.goto("http://127.0.0.1/#/quality");
-    await page.getByRole("rowheader", { name: "b", exact: true }).waitFor();
+    await page
+      .getByRole("rowheader", { name: "Подключение недоступно", exact: true })
+      .first()
+      .waitFor();
     assert.deepEqual(
       await page.getByRole("heading", { level: 2 }).allTextContents(),
-      ["Группы подключений", "Проверки"],
+      ["Группы подключений"],
     );
     const menu = page.getByRole("navigation", { name: "Основная навигация" });
     const links = menu.getByRole("link");
@@ -182,7 +195,10 @@ test("quality page displays all ranked groups, keeps a measured zero, and persis
       );
     }
     catalogAvailable = true;
-    await page.getByRole("button", { name: "Обновить", exact: true }).click();
+    assert.equal(
+      await page.getByRole("button", { name: "Обновить", exact: true }).count(),
+      0,
+    );
     await page.getByRole("rowheader", { name: "Бета", exact: true }).waitFor();
     await page.getByRole("heading", { name: "Пустая группа" }).waitFor();
     const table = page.getByRole("table").first();
@@ -195,11 +211,43 @@ test("quality page displays all ranked groups, keeps a measured zero, and persis
     for (const score of ["0%", "86%", "85%"])
       await first.getByText(score, { exact: true }).waitFor();
     assert.match(await table.getByRole("row").nth(2).innerText(), /Нет данных/);
+    assert.equal(
+      await page
+        .getByRole("button", {
+          name: "Редактировать проверку TCP",
+          exact: true,
+        })
+        .count(),
+      0,
+    );
+    await page
+      .getByRole("button", {
+        name: "Настройки проверок группы Пустая группа",
+        exact: true,
+      })
+      .click();
+    await page.getByRole("dialog").getByText("Окно оценки: 120 мин").waitFor();
+    await page
+      .getByRole("dialog")
+      .getByText("8.8.4.4:443", { exact: true })
+      .waitFor();
+    await page.keyboard.press("Escape");
+    await page.getByRole("dialog").waitFor({ state: "hidden" });
+    await page
+      .getByRole("button", {
+        name: "Настройки проверок группы Финляндия",
+        exact: true,
+      })
+      .click();
+    await page.getByRole("dialog").getByText("Окно оценки: 60 мин").waitFor();
     const open = async (name) => {
       await page.getByRole("button", { name, exact: true }).click();
-      const dialog = page.getByRole("dialog");
+      const title =
+        name === "Редактировать окно оценки"
+          ? "Окно оценки"
+          : name.replace(/^Добавить /u, "Добавить проверку ");
+      const dialog = page.getByRole("dialog", { name: title, exact: true });
       await dialog.waitFor();
-      assert.equal(await dialog.count(), 1);
       return dialog;
     };
     const edit = await open("Редактировать проверку UDP");
@@ -210,12 +258,19 @@ test("quality page displays all ranked groups, keeps a measured zero, and persis
     assert.equal(await edit.getByLabel("Цели").count(), 1);
     assert.equal(await edit.getByText(/TCP|Окно оценки/).count(), 0);
     await edit.getByLabel("Интервал, с").fill("15");
+    await page.waitForResponse(
+      (response) => new URL(response.url()).pathname === "/api/quality",
+      { timeout: 7000 },
+    );
+    assert.equal(await edit.getByLabel("Интервал, с").inputValue(), "15");
     await edit.getByRole("button", { name: "Сохранить" }).click();
     await page
       .locator("hestia-panel > p-toast")
       .getByText("Настройки проверок сохранены.")
       .waitFor();
-    await page.getByRole("dialog").waitFor({ state: "hidden" });
+    await page.waitForFunction(
+      () => document.querySelectorAll('[role="dialog"]').length === 1,
+    );
     assert.deepEqual(writes, [
       {
         method: "PUT",
@@ -312,18 +367,42 @@ test("quality page displays all ranked groups, keeps a measured zero, and persis
     await windowDialog.getByRole("button", { name: "Сохранить" }).click();
     await page.getByText("Окно оценки: 90 мин").waitFor();
     assert.deepEqual(writes.at(-1), { windowMinutes: 90 });
+    assert.deepEqual(extraSettings, {
+      windowMinutes: 120,
+      checks: [{ ...tcp, targets: ["8.8.4.4:443"] }],
+    });
     await page.reload();
+    await page
+      .getByRole("button", {
+        name: "Настройки проверок группы Финляндия",
+        exact: true,
+      })
+      .click();
     await page.getByText("Окно оценки: 90 мин").waitFor();
+    await page.keyboard.press("Escape");
+    await page.getByRole("dialog").waitFor({ state: "hidden" });
     confirmed = false;
-    await page.getByRole("button", { name: "Обновить", exact: true }).click();
+    assert.equal(
+      await page.getByRole("button", { name: "Обновить", exact: true }).count(),
+      0,
+    );
     await first.getByText("Активный выход неизвестен").waitFor();
     fresh = false;
     confirmed = true;
-    await page.getByRole("button", { name: "Обновить", exact: true }).click();
+    assert.equal(
+      await page.getByRole("button", { name: "Обновить", exact: true }).count(),
+      0,
+    );
     await page.locator("time").waitFor({ state: "detached" });
     await first.getByText("Активный выход неизвестен").waitFor();
     assert.equal(writes.length, 7);
 
+    await page
+      .getByRole("button", {
+        name: "Настройки проверок группы Финляндия",
+        exact: true,
+      })
+      .click();
     const tcpDialog = await open("Редактировать проверку TCP");
     const targets = tcpDialog.getByLabel("Цели");
     await targets.fill("8.8.8.8\nmissing.example");

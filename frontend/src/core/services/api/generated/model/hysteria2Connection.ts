@@ -12,6 +12,7 @@
 export interface Hysteria2Connection { 
     activeUnderlay?: string;
     certificatePEM?: string;
+    enabled: boolean;
     group: string;
     id: string;
     name: string;

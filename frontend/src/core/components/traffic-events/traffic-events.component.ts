@@ -21,6 +21,11 @@ export class TrafficEvents {
   readonly closed = output<void>();
   protected readonly catalog = inject(ConnectionCatalog);
 
+  /** connectionName resolves a selected connector using its API-provided name. */
+  protected connectionName(id: string): string {
+    return this.catalog.name(id);
+  }
+
   /** formatConntrackMark renders a numeric conntrack mark without implying a packet mark verdict. */
   protected formatConntrackMark(mark: number | undefined): string {
     return mark === undefined

@@ -5,6 +5,19 @@
       <button
         pButton
         type="button"
+        [severity]="autoRefresh() ? 'primary' : 'secondary'"
+        aria-label="Автообновление"
+        [attr.aria-pressed]="autoRefresh()"
+        (click)="toggleAutoRefresh()"
+        pTooltip="Обновлять каждые 5 секунд"
+        tooltipEvent="both"
+      >
+        <svg data-p-icon="refresh" aria-hidden="true"></svg>
+        <span>Автообновление</span>
+      </button>
+      <button
+        pButton
+        type="button"
         severity="secondary"
         aria-label="Обновить журнал"
         [disabled]="busy()"
@@ -43,15 +56,6 @@
       }
       Ниже показаны сохранённые записи.
     </p>
-  } @else if (lastInterruption(); as interruptedAt) {
-    <p class="notice" role="status">
-      Сбор возобновлён. Последний раз связь с журналом sing-box прервалась
-      {{ timestamp(interruptedAt) }}. За время перерыва часть событий могла быть
-      пропущена.
-    </p>
-  }
-  @if (lost() > 0) {
-    <p class="notice" role="status">Потеряно событий: {{ lost() }}</p>
   }
   <p-table
     [value]="rows()"

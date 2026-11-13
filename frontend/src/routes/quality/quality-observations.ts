@@ -1,5 +1,5 @@
 import type { QualityReport } from "../../core/services/api/generated/model/qualityReport";
-import type { QualitySettings } from "../../core/services/api/generated/model/qualitySettings";
+import type { GroupSettings } from "../../core/services/api/generated/model/groupSettings";
 
 export const qualityProtocols = [
   "UDP",
@@ -20,7 +20,7 @@ function validProtocol(value: unknown): value is Check["protocol"] {
   return qualityProtocols.some((p) => p === value);
 }
 
-type Check = QualitySettings["checks"][number];
+type Check = GroupSettings["checks"][number];
 type Connection = QualityReport["groups"][number]["connections"][number];
 type Result = Connection["result"]["checks"][number];
 
@@ -117,7 +117,7 @@ export function validCheck(value: unknown, tcpInput = false): value is Check {
 }
 
 /** isQualitySettings verifies the full editable settings contract with at most one check per supported protocol. */
-export function isQualitySettings(value: unknown): value is QualitySettings {
+export function isQualitySettings(value: unknown): value is GroupSettings {
   return (
     record(value) &&
     whole(value.windowMinutes, 1, 1440) &&
@@ -238,6 +238,7 @@ export function isQualityReport(value: unknown): value is QualityReport {
         record(group) &&
         typeof group.id === "string" &&
         typeof group.name === "string" &&
+        isQualitySettings(group.settings) &&
         Array.isArray(group.connections) &&
         group.connections.every(validConnection),
     )

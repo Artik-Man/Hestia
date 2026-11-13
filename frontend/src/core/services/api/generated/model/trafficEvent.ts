@@ -46,7 +46,8 @@ export namespace TrafficEvent {
     export type KindEnum = typeof KindEnum[keyof typeof KindEnum];
     export const ProtocolEnum = {
         Tcp: 'TCP',
-        Udp: 'UDP'
+        Udp: 'UDP',
+        Quic: 'QUIC'
     } as const;
     export type ProtocolEnum = typeof ProtocolEnum[keyof typeof ProtocolEnum];
 }

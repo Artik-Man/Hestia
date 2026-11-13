@@ -555,6 +555,35 @@ class ProfileTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "cyclic"):
             self.compile()
 
+    def test_disabled_hysteria_blocks_public_private_and_probe_paths(self):
+        """An administratively disabled relay has no usable public or private QUIC path after restart."""
+        self.profile.update(version=2, connectors=[])
+        self.profile["interfaces"].append({"id": "wan", "type": "direct", "bind_interface": "eth0"})
+        self.profile["groups"][0]["exits"].extend(["wan", "relay", "parent"])
+        base = {"name": "Test", "server": "test.example", "port": 443, "password": "test-only", "probeSecret": "b0" * 32}
+        self.profile["hysteria2"] = [dict(base, id="relay", underlays=["wan", "parent"]), dict(base, id="parent")]
+        self.profile["healthy"].update(relay=True, parent=True)
+        enabled_snapshot, enabled_backend = self.compile()
+        self.profile["disabled_connections"] = ["relay"]
+        snapshot, compiled = self.compile()
+        out = {item["tag"]: item for item in compiled["outbounds"]}
+        for tag in ("relay", "_hy2/relay/wan", "_hy2/relay/parent"):
+            self.assertEqual(out[tag], {"type": "block", "tag": tag})
+        self.assertFalse(snapshot["healthy"]["relay"])
+        self.assertTrue(snapshot["healthy"]["parent"])
+        self.assertFalse(any(path["id"] == "relay" or path.get("relay") == "relay" for path in pinned_paths(compiled)))
+        self.install_managed_profile(self.base, self.profile)
+        managed_profile(self.base)
+        stage = self.base / "reordered-disabled-hysteria"
+        stage.mkdir(mode=0o700)
+        order = [{"id": group["id"], "exits": list(group["exits"])} for group in reversed(self.profile["groups"])]
+        stage_order(self.base, stage, order)
+        _, staged_snapshot, staged_backend = managed_profile(stage)
+        self.assertFalse(staged_snapshot["healthy"]["relay"])
+        self.assertEqual(next(item for item in staged_backend["outbounds"] if item["tag"] == "relay"), {"type": "block", "tag": "relay"})
+        self.profile["disabled_connections"] = []
+        self.assertEqual(self.compile(), (enabled_snapshot, enabled_backend))
+
     def test_dns_path_export_scopes_credentials_and_generation(self):
         """Export per-exit resolver addresses, confinement and generation without copying private VPN keys."""
         _, backend = self.compile()
@@ -755,6 +784,24 @@ class ProfileTests(unittest.TestCase):
         self.assertEqual(direct["bind_interface"], "wan9")
         transport = next(rule for rule in routed["route"]["rules"] if rule.get("inbound") == ["_wg-transport-0-0"])
         self.assertEqual(transport["outbound"], provider["id"])
+
+        self.profile["disabled_connections"] = [connector]
+        snapshot, disabled = self.compile()
+        self.assertFalse(snapshot["healthy"][connector])
+        self.assertTrue(self.profile["healthy"][connector])
+        self.assertEqual(next(item for item in disabled["outbounds"] if item["tag"] == connector), {"type": "block", "tag": connector})
+        self.assertFalse(any(item["id"] == connector for item in pinned_paths(disabled)))
+        self.assertFalse(any(item.get("tag", "").startswith("_wg-transport-") for item in disabled["inbounds"]))
+        self.install_managed_profile(self.base, self.profile)
+        managed_profile(self.base)
+        stage = self.base / "reordered-disabled-awg"
+        stage.mkdir(mode=0o700)
+        shutil.copytree(self.base / "awg", stage / "awg")
+        order = [{"id": group["id"], "exits": list(group["exits"])} for group in reversed(self.profile["groups"])]
+        stage_order(self.base, stage, order)
+        _, staged_snapshot, staged_backend = managed_profile(stage)
+        self.assertFalse(staged_snapshot["healthy"][connector])
+        self.assertEqual(next(item for item in staged_backend["outbounds"] if item["tag"] == connector), {"type": "block", "tag": connector})
 
     def test_two_ready_connectors_use_distinct_interfaces_and_dns(self):
         """Keep overlapping IPv4 profiles on distinct devices and reject slot aliasing."""

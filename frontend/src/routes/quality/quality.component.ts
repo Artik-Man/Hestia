@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   inject,
   signal,
@@ -31,6 +32,10 @@ export class QualityScreen {
   private readonly notifications = inject(Notifications);
   protected readonly catalog = inject(ConnectionCatalog);
   protected readonly report = signal<QualityReport | null>(null);
+  protected readonly selectedGroupID = signal<string | null>(null);
+  protected readonly selectedGroup = computed(() =>
+    this.report()?.groups.find((group) => group.id === this.selectedGroupID()),
+  );
   protected readonly failed = signal(false);
   protected readonly label = qualityLabel;
   protected readonly busy = signal(false);
@@ -44,16 +49,16 @@ export class QualityScreen {
   /** Starts lightweight polling while this route is visible and cancels outstanding reads on navigation. */
   constructor() {
     this.catalog.reload();
-    timer(0, 15000)
+    timer(0, 5000)
       .pipe(takeUntilDestroyed())
       .subscribe(() => {
-        if (!this.busy()) this.reload();
+        if (!this.busy()) this.reload(true);
       });
   }
 
   /** reload supersedes the previous read and accepts only a valid gateway report. */
   protected reload(refreshNames = false): void {
-    if (refreshNames) this.catalog.reload();
+    if (refreshNames) this.catalog.reload(true);
     this.request?.unsubscribe();
     this.busy.set(true);
     this.request = this.api
