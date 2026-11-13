@@ -134,6 +134,15 @@ async function fixture(
     rejectNext: false,
     failToggle: false,
     invalidToggle: false,
+    conflictToggles: 0,
+    holdToggle: false,
+    busyDuringToggle: false,
+    conflictReads: new Set(),
+    operations: new Map(),
+    receiptOverride: null,
+    rollbackToggle: false,
+    dropToggle: false,
+    toggleHeld: [],
     holdReads: new Set(),
     held: [],
     failReads: new Set(),
@@ -162,9 +171,26 @@ async function fixture(
     if (requestOrigin !== origin) return route.abort();
     if (req.method() === "GET") {
       state.reads.push(pathname);
+      if (
+        state.conflictReads.has(pathname) ||
+        (state.busyDuringToggle &&
+          state.toggleHeld.length &&
+          !pathname.startsWith("/api/connections/operations/"))
+      )
+        return route.fulfill({ status: 409 });
       if (state.holdReads.has(pathname))
         await new Promise((resolve) => state.held.push(resolve));
       if (state.failReads.has(pathname)) return route.fulfill({ status: 503 });
+    }
+    const receiptMatch = /^\/api\/connections\/operations\/([^/]+)$/.exec(
+      pathname,
+    );
+    if (receiptMatch && req.method() === "GET") {
+      const receipt =
+        state.receiptOverride ?? state.operations.get(receiptMatch[1]);
+      return receipt
+        ? route.fulfill({ json: receipt })
+        : route.fulfill({ status: 404 });
     }
     const enabledMatch = /^\/api\/connections\/([^/]+)\/enabled$/.exec(
       pathname,
@@ -173,7 +199,29 @@ async function fixture(
       const id = enabledMatch[1];
       const data = req.postDataJSON();
       state.writes.push({ method: req.method(), pathname, data });
-      if (state.failToggle) return route.fulfill({ status: 503 });
+      assert.match(
+        data.operationId,
+        /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/u,
+      );
+      if (state.dropToggle) return route.abort();
+      const receipt = {
+        operationId: data.operationId,
+        id,
+        enabled: data.enabled,
+        state: "pending",
+      };
+      state.operations.set(data.operationId, receipt);
+      if (state.conflictToggles > 0) {
+        receipt.state = "failed";
+        receipt.status = 409;
+        state.conflictToggles--;
+        return route.fulfill({ status: 409 });
+      }
+      if (state.failToggle) {
+        receipt.state = "failed";
+        receipt.status = 503;
+        return route.fulfill({ status: 503 });
+      }
       if (state.invalidToggle)
         return route.fulfill({ json: { id: "wrong", enabled: data.enabled } });
       const record =
@@ -183,8 +231,21 @@ async function fixture(
             ? hysteria
             : records.get(id);
       if (!record) return route.fulfill({ status: 404 });
-      record.enabled = data.enabled;
-      return route.fulfill({ json: { id, enabled: data.enabled } });
+      const rolledBack = state.rollbackToggle;
+      if (!rolledBack) record.enabled = data.enabled;
+      if (!state.busyDuringToggle) {
+        receipt.state = rolledBack ? "failed" : "succeeded";
+        receipt.status = rolledBack ? 503 : 200;
+      }
+      if (state.holdToggle)
+        await new Promise((resolve) => state.toggleHeld.push(resolve));
+      if (state.busyDuringToggle) {
+        receipt.state = "succeeded";
+        receipt.status = 200;
+      }
+      return rolledBack
+        ? route.fulfill({ status: 503 })
+        : route.fulfill({ json: { id, enabled: data.enabled } });
     }
     if (pathname === "/api/hysteria2" && req.method() === "GET")
       return route.fulfill({ json: hysteriaCandidate ? [hysteria] : [] });
@@ -1291,6 +1352,323 @@ test("connections poll state and provider every three seconds without manual ref
       }),
     ).toHaveCount(1);
     assert.equal(state.writes.length, 0);
+  } finally {
+    await browser.close();
+  }
+});
+
+/** Drains shared reads, tolerates a brief writer collision and completes off/on without a page reload. */
+test("VPN switching pauses every state reader and retries a brief conflict without locking the page", async () => {
+  const browser = await chromium.launch({
+    executablePath: process.env.CHROME_BIN,
+  });
+  try {
+    const page = await browser.newPage({ serviceWorkers: "block" });
+    await page.clock.install();
+    let loads = 0;
+    page.on("load", () => loads++);
+    const { state, records } = await fixture(page);
+    await perform(page, "GET", "/api/awg", () => page.goto(url));
+    const row = savedRow(page, "existing");
+    const toggle = row.getByRole("switch");
+    await expect(toggle).toBeChecked();
+    const paths = [
+      "/api/groups-and-rules",
+      "/api/awg-underlays",
+      "/api/hysteria2",
+      "/api/awg",
+      "/api/physical-connections",
+    ];
+    await page.clock.pauseAt(
+      await page.evaluate(() => new Date(Date.now() + 1000).toISOString()),
+    );
+    state.holdReads = new Set(paths);
+    await page.clock.runFor(3000);
+    await expect.poll(() => state.held.length).toBe(paths.length);
+    state.conflictToggles = 1;
+    state.holdToggle = true;
+    state.busyDuringToggle = true;
+    await toggle.click();
+    await page.clock.runFor(100);
+    await expect(row.getByText("Отключается…", { exact: true })).toBeVisible();
+    assert.equal(state.writes.length, 0);
+    state.holdReads.clear();
+    state.held.forEach((release) => release());
+    state.held = [];
+    await expect
+      .poll(async () => {
+        await page.clock.runFor(100);
+        return state.writes.length;
+      })
+      .toBe(1);
+    await page.clock.runFor(600);
+    await expect
+      .poll(async () => {
+        await page.clock.runFor(100);
+        return state.toggleHeld.length;
+      })
+      .toBe(1);
+    assert.equal(state.writes.length, 2);
+    assert.notEqual(
+      state.writes[0].data.operationId,
+      state.writes[1].data.operationId,
+    );
+    assert.equal(records.get(storedID).enabled, false);
+    const counts = paths.map(
+      (path) => state.reads.filter((read) => read === path).length,
+    );
+    await page.clock.runFor(6000);
+    assert.deepEqual(
+      paths.map((path) => state.reads.filter((read) => read === path).length),
+      counts,
+    );
+    await expect(toggle).toBeDisabled();
+    assert.equal(await page.locator(".p-toast-message-error").count(), 0);
+    state.holdToggle = false;
+    state.toggleHeld.forEach((release) => release());
+    state.toggleHeld = [];
+    await page.clock.runFor(100);
+    await expect
+      .poll(async () => {
+        await page.clock.runFor(50);
+        return toggle.isDisabled();
+      })
+      .toBe(false);
+    await expect(row.getByText("Отключено", { exact: true })).toBeVisible();
+    await toggle.click();
+    await page.clock.runFor(100);
+    await expect(toggle).toBeChecked();
+    await expect
+      .poll(async () => {
+        await page.clock.runFor(50);
+        return toggle.isDisabled();
+      })
+      .toBe(false);
+    await expect(row.getByText("Доступно", { exact: true })).toBeVisible();
+    assert.equal(records.get(storedID).enabled, true);
+    assert.equal(state.writes.length, 3);
+    assert.equal(loads, 1);
+    assert.equal(await page.locator(".p-toast-message-error").count(), 0);
+  } finally {
+    await browser.close();
+  }
+});
+
+/** A successful operation receipt releases a held response without allowing an overlapping mutation. */
+test("a lost toggle response is reconciled and the opposite switch works without reloading", async () => {
+  const browser = await chromium.launch({
+    executablePath: process.env.CHROME_BIN,
+  });
+  try {
+    const page = await browser.newPage({ serviceWorkers: "block" });
+    await page.clock.install();
+    let loads = 0;
+    page.on("load", () => loads++);
+    const { state, records } = await fixture(page);
+    await perform(page, "GET", "/api/awg", () => page.goto(url));
+    const row = savedRow(page, "existing");
+    const toggle = row.getByRole("switch");
+    await expect(toggle).toBeChecked();
+    await page.clock.pauseAt(
+      await page.evaluate(() => new Date(Date.now() + 1000).toISOString()),
+    );
+    state.holdToggle = true;
+    await toggle.click();
+    await page.clock.runFor(100);
+    await expect.poll(() => state.toggleHeld.length).toBe(1);
+    assert.equal(records.get(storedID).enabled, false);
+    await expect(toggle).toBeDisabled();
+    state.receiptOverride = {
+      operationId: "unrelated",
+      id: storedID,
+      enabled: false,
+      state: "succeeded",
+    };
+    await page.clock.runFor(5000);
+    await expect(toggle).toBeDisabled();
+    state.receiptOverride = null;
+    await page.clock.runFor(3000);
+    await expect
+      .poll(async () => {
+        await page.clock.runFor(50);
+        return toggle.isDisabled();
+      })
+      .toBe(false);
+    await expect(row.getByText("Отключено", { exact: true })).toBeVisible();
+    state.holdToggle = false;
+    await toggle.click();
+    await page.clock.runFor(100);
+    await expect
+      .poll(async () => {
+        await page.clock.runFor(50);
+        return toggle.isDisabled();
+      })
+      .toBe(false);
+    await expect(toggle).toBeChecked();
+    assert.equal(records.get(storedID).enabled, true);
+    state.toggleHeld.forEach((release) => release());
+    state.toggleHeld = [];
+    await page.clock.runFor(100);
+    await expect(toggle).toBeChecked();
+    assert.equal(loads, 1);
+    assert.equal(await page.locator(".p-toast-message-error").count(), 0);
+  } finally {
+    await browser.close();
+  }
+});
+
+/** Temporary shared-lock conflicts preserve visible state and initial snapshot reads resume automatically. */
+test("busy connection readers retain last good data without error notifications", async () => {
+  const browser = await chromium.launch({
+    executablePath: process.env.CHROME_BIN,
+  });
+  try {
+    const page = await browser.newPage({ serviceWorkers: "block" });
+    await page.clock.install();
+    const { state } = await fixture(page);
+    state.conflictReads.add("/api/groups-and-rules");
+    await page.goto(url);
+    await expect
+      .poll(
+        () => state.reads.filter((p) => p === "/api/groups-and-rules").length,
+      )
+      .toBe(1);
+    assert.equal(await page.locator(".p-toast-message-error").count(), 0);
+    state.conflictReads.clear();
+    await page.clock.runFor(3000);
+    const row = savedRow(page, "existing");
+    await expect(row.getByRole("switch")).toBeChecked();
+    const paths = [
+      "/api/groups-and-rules",
+      "/api/awg-underlays",
+      "/api/hysteria2",
+      "/api/awg",
+      "/api/physical-connections",
+    ];
+    state.conflictReads = new Set(paths);
+    await page.clock.runFor(3000);
+    await expect(row).toBeVisible();
+    await expect(row.getByRole("switch")).toBeChecked();
+    assert.equal(await page.locator(".p-toast-message-error").count(), 0);
+  } finally {
+    await browser.close();
+  }
+});
+
+/** A failed receipt settles a held response after rollback without falsely confirming the requested state. */
+test("a held failed enable response unlocks after rollback and can be retried on the same page", async () => {
+  const browser = await chromium.launch({
+    executablePath: process.env.CHROME_BIN,
+  });
+  try {
+    const page = await browser.newPage({ serviceWorkers: "block" });
+    await page.clock.install();
+    let loads = 0;
+    page.on("load", () => loads++);
+    const { state, records } = await fixture(page);
+    records.get(storedID).enabled = false;
+    await perform(page, "GET", "/api/awg", () => page.goto(url));
+    const row = savedRow(page, "existing");
+    const toggle = row.getByRole("switch");
+    await expect(toggle).not.toBeChecked();
+    await page.clock.pauseAt(
+      await page.evaluate(() => new Date(Date.now() + 1000).toISOString()),
+    );
+    state.holdToggle = true;
+    state.rollbackToggle = true;
+    await toggle.click();
+    await expect
+      .poll(async () => {
+        await page.clock.runFor(50);
+        return state.toggleHeld.length;
+      })
+      .toBe(1);
+    assert.equal(records.get(storedID).enabled, false);
+    await expect(toggle).toBeDisabled();
+    await page.clock.runFor(5000);
+    await expect
+      .poll(async () => {
+        await page.clock.runFor(50);
+        return toggle.isDisabled();
+      })
+      .toBe(false);
+    await expect(toggle).not.toBeChecked();
+    await expect(row.getByText("Отключено", { exact: true })).toBeVisible();
+    await expect(
+      page.getByText(
+        "Не удалось подтвердить состояние подключения. Обновляем состояние со шлюза.",
+        { exact: true },
+      ),
+    ).toBeVisible();
+    state.holdToggle = false;
+    state.rollbackToggle = false;
+    await toggle.click();
+    await expect
+      .poll(async () => {
+        await page.clock.runFor(50);
+        return toggle.isDisabled();
+      })
+      .toBe(false);
+    await expect(toggle).toBeChecked();
+    assert.equal(records.get(storedID).enabled, true);
+    state.toggleHeld.forEach((release) => release());
+    state.toggleHeld = [];
+    await page.clock.runFor(100);
+    await expect(toggle).toBeChecked();
+    assert.equal(state.writes.length, 2);
+    assert.equal(loads, 1);
+  } finally {
+    await browser.close();
+  }
+});
+
+/** A request dropped before registration has no receipt; a rejected transport must still release the UI. */
+test("a toggle dropped before reaching the server releases pending and allows a same-page retry", async () => {
+  const browser = await chromium.launch({
+    executablePath: process.env.CHROME_BIN,
+  });
+  try {
+    const page = await browser.newPage({ serviceWorkers: "block" });
+    await page.clock.install();
+    let loads = 0;
+    page.on("load", () => loads++);
+    const { state, records } = await fixture(page);
+    await perform(page, "GET", "/api/awg", () => page.goto(url));
+    const row = savedRow(page, "existing");
+    const toggle = row.getByRole("switch");
+    await expect(toggle).toBeChecked();
+    await page.clock.pauseAt(
+      await page.evaluate(() => new Date(Date.now() + 1000).toISOString()),
+    );
+    state.dropToggle = true;
+    await toggle.click();
+    await expect
+      .poll(async () => {
+        await page.clock.runFor(50);
+        return state.writes.length;
+      })
+      .toBe(1);
+    await expect
+      .poll(async () => {
+        await page.clock.runFor(50);
+        return toggle.isDisabled();
+      })
+      .toBe(false);
+    await expect(toggle).toBeChecked();
+    assert.equal(state.operations.size, 0);
+    assert.equal(records.get(storedID).enabled, true);
+    state.dropToggle = false;
+    await toggle.click();
+    await expect
+      .poll(async () => {
+        await page.clock.runFor(50);
+        return toggle.isDisabled();
+      })
+      .toBe(false);
+    await expect(toggle).not.toBeChecked();
+    assert.equal(records.get(storedID).enabled, false);
+    assert.equal(state.writes.length, 2);
+    assert.equal(loads, 1);
   } finally {
     await browser.close();
   }

@@ -11,5 +11,9 @@
 
 export interface ConnectionEnabledRequest { 
     enabled: boolean;
+    /**
+     * UUID одной попытки изменения; повтор не запускает операцию заново.
+     */
+    operationId?: string;
 }
 

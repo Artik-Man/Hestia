@@ -1,4 +1,5 @@
 import { inject, Injectable, signal } from "@angular/core";
+import { HttpErrorResponse } from "@angular/common/http";
 import { toSignal } from "@angular/core/rxjs-interop";
 import {
   catchError,
@@ -30,12 +31,14 @@ export class SnapshotState {
   private readonly notifications = inject(Notifications);
   private readonly requests = new Subject<boolean>();
   readonly reading = signal(false);
+  readonly connectionMutationPending = signal(false);
   private lastGood?: Snapshot;
   private readFailed = false;
   readonly view = toSignal(
     this.requests.pipe(
       startWith(false),
       switchMap((keepCurrent) => {
+        let busy = false;
         const read = defer(() => {
           this.reading.set(true);
           return this.api.getGroupsAndRules();
@@ -47,15 +50,18 @@ export class SnapshotState {
               ? { kind: "ready", snapshot: value }
               : { kind: "failed" },
           ),
-          catchError(() => of<View>({ kind: "failed" })),
+          catchError((error: unknown) => {
+            busy = error instanceof HttpErrorResponse && error.status === 409;
+            return of<View>({ kind: "failed" });
+          }),
           tap((view) => {
             if (view.kind === "ready") this.lastGood = view.snapshot;
-            if (view.kind === "failed" && !this.readFailed)
+            if (view.kind === "failed" && !busy && !this.readFailed)
               this.notifications.show(
                 "error",
                 "Не удалось загрузить конфигурацию шлюза.",
               );
-            this.readFailed = view.kind === "failed";
+            if (!busy) this.readFailed = view.kind === "failed";
           }),
           map((view): View =>
             view.kind === "failed" && keepCurrent && this.lastGood
@@ -73,7 +79,8 @@ export class SnapshotState {
 
   /** reload asks for the latest snapshot and supersedes an earlier read only when reconciling a write. */
   reload(afterWrite = false, keepCurrent = false): void {
-    if (afterWrite || (!this.reading() && this.view().kind !== "loading"))
+    if (this.connectionMutationPending() && !afterWrite) return;
+    if (afterWrite || !this.reading())
       this.requests.next(keepCurrent && this.view().kind === "ready");
   }
 }

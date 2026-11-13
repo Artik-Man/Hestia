@@ -74,8 +74,9 @@ type runtimeChange struct {
 
 // runtimePlan lists the only instances requiring a stop, and whether the live router can keep its exact loaded generation.
 type runtimePlan struct {
-	changes      []runtimeChange
-	sameTopology bool
+	changes         []runtimeChange
+	sameTopology    bool
+	guardedEnableID string
 }
 
 // planInstances compares immutable journal generations, even after a partial publication of the installed files.
@@ -220,7 +221,8 @@ func (e Engine) stop(ctx context.Context, journal string, routingOnly bool) (run
 	return plan, nil
 }
 
-// startVerified confirms real tunnel egress before committing. Manual transports need the guarded backend to reach their peer.
+// startVerified confirms real tunnel egress except for an explicit administrative enable, which requires fail-closed guards.
+// Rollback and profile edits retain strict peer readiness; manual transports need the guarded backend to reach their peer.
 func (e Engine) startVerified(ctx context.Context, plan runtimePlan) error {
 	ready, err := readyAWG(e.dir)
 	if err != nil {
@@ -234,6 +236,12 @@ func (e Engine) startVerified(ctx context.Context, plan runtimePlan) error {
 		}
 		if err := e.startInstance(ctx, change.id, true); err != nil {
 			return errors.Join(ErrAWGRuntimeUnconfirmed, err)
+		}
+		if change.id == plan.guardedEnableID {
+			if err := e.waitInstanceGuards(ctx, change); err != nil {
+				return errors.Join(ErrAWGRuntimeUnconfirmed, err)
+			}
+			continue
 		}
 		if runtime.underlays != "" && !plan.sameTopology {
 			if err := e.waitInstanceGuards(ctx, change); err != nil {

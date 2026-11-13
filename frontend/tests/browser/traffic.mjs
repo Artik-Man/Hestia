@@ -14,6 +14,7 @@ test("traffic journal reaches rows past 500 and refresh preserves its filters", 
     await page.emulateMedia({ reducedMotion: "reduce" });
     let catalogAvailable = false;
     let revision = 1;
+    let pendingTraffic;
     let sourceAvailable = true;
     let settings = { maxMB: 1024, retentionHours: 24 };
     const requests = [];
@@ -68,6 +69,7 @@ test("traffic journal reaches rows past 500 and refresh preserves its filters", 
       if (url.pathname === "/api/traffic") {
         const q = url.searchParams;
         requests.push(Object.fromEntries(q));
+        if (pendingTraffic) await pendingTraffic;
         const matching = events.filter(
           (e) =>
             (!q.has("query") || e.domain.includes(q.get("query"))) &&
@@ -135,6 +137,12 @@ test("traffic journal reaches rows past 500 and refresh preserves its filters", 
       .getByText("Подключение недоступно", { exact: true })
       .first()
       .waitFor();
+    const auto = page.getByRole("switch", {
+      name: "Автообновление",
+      exact: true,
+    });
+    assert.equal(await auto.isChecked(), true);
+    await auto.click();
     catalogAvailable = true;
     await page.getByRole("button", { name: "Обновить журнал" }).click();
     await page.getByText("Офис", { exact: true }).first().waitFor();
@@ -296,23 +304,29 @@ test("traffic journal reaches rows past 500 and refresh preserves its filters", 
       ],
       ["flow-119", "UDP", "connection:" + officeID, undefined],
     );
-    const auto = page.getByRole("button", {
-      name: "Автообновление",
-      exact: true,
-    });
     await auto.click();
-    await page.waitForFunction(
-      () =>
-        document
-          .querySelector('[aria-label="Автообновление"]')
-          .getAttribute("aria-pressed") === "true",
-    );
+    assert.equal(await auto.isChecked(), true);
     await page
       .getByRole("button", { name: "flow-119-new.example", exact: true })
       .click();
     await page.getByRole("dialog").waitFor();
     const beforeAuto = requests.length;
+    let releaseTraffic;
+    pendingTraffic = new Promise((resolve) => {
+      releaseTraffic = resolve;
+    });
     await page.clock.runFor(5000);
+    await page.getByText("Загрузка событий…", { exact: true }).waitFor();
+    assert.equal(
+      await page
+        .getByRole("button", { name: "flow-119-new.example", exact: true })
+        .isVisible(),
+      true,
+    );
+    await page.clock.runFor(5000);
+    assert.equal(requests.length, beforeAuto + 1);
+    releaseTraffic();
+    pendingTraffic = undefined;
     await page.waitForFunction(
       () => !document.body.innerText.includes("Загрузка событий…"),
     );

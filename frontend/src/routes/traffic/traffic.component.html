@@ -2,19 +2,16 @@
   <div class="title-line">
     <h1>Журнал трафика</h1>
     <div class="journal-actions">
-      <button
-        pButton
-        type="button"
-        [severity]="autoRefresh() ? 'primary' : 'secondary'"
-        aria-label="Автообновление"
-        [attr.aria-pressed]="autoRefresh()"
-        (click)="toggleAutoRefresh()"
-        pTooltip="Обновлять каждые 5 секунд"
-        tooltipEvent="both"
-      >
-        <svg data-p-icon="refresh" aria-hidden="true"></svg>
+      <label class="auto-refresh" for="traffic-auto-refresh">
+        <p-toggleswitch
+          inputId="traffic-auto-refresh"
+          [ngModel]="autoRefresh()"
+          (ngModelChange)="autoRefresh.set($event)"
+          pTooltip="Обновлять каждые 5 секунд"
+          tooltipEvent="both"
+        />
         <span>Автообновление</span>
-      </button>
+      </label>
       <button
         pButton
         type="button"

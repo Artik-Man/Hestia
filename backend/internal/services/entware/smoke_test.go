@@ -28,15 +28,18 @@ func TestEffectiveHealthRequiresFreshAWGHeartbeat(t *testing.T) {
 		ConnectorKinds: map[string]string{"awg-connector": "awg"},
 	}
 	for _, tc := range []struct {
-		name  string
-		ready func(string) bool
-		want  bool
+		name      string
+		available bool
+		ready     func(string) bool
+		want      bool
 	}{
-		{name: "stale heartbeat", ready: func(string) bool { return false }, want: false},
-		{name: "fresh heartbeat", ready: func(string) bool { return true }, want: true},
-		{name: "missing heartbeat reader", ready: nil, want: false},
+		{name: "stale heartbeat", available: true, ready: func(string) bool { return false }, want: false},
+		{name: "fresh heartbeat", available: true, ready: func(string) bool { return true }, want: true},
+		{name: "missing heartbeat reader", available: true, ready: nil, want: false},
+		{name: "administratively disabled", available: false, ready: func(string) bool { return true }, want: false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			config.Healthy["awg-connector"] = tc.available
 			health := effectiveHealth(config, backendConfig{}, tc.ready)
 			if health["awg-connector"] != tc.want {
 				t.Fatalf("AWG health = %v, want %v", health["awg-connector"], tc.want)

@@ -239,7 +239,7 @@ func effectiveHealth(config smokeConfig, backend backendConfig, awgHealthy func(
 	for _, group := range config.Groups {
 		for _, id := range group.Exits {
 			if config.ConnectorKinds[id] == "awg" {
-				health[id] = awgHealthy != nil && awgHealthy(id)
+				health[id] = health[id] && awgHealthy != nil && awgHealthy(id)
 				continue
 			}
 			device, direct := devices[id]

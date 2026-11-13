@@ -1,0 +1,57 @@
+VPN toggle investigation and fix — 2026-11-13
+
+Baseline: Keenetic KN-1012, Hestia 0.1.15; Laurel (AWG3.1).
+The baseline live OFF request returned HTTP 409 in 1299 ms while background
+readers competed for the installation lock. No state changed in that attempt.
+Earlier panel logs showed snapshot/physical reader conflicts during mutation.
+An isolated Go reproducer confirmed that an unavailable peer prevented
+administrative enable and rolled the state back to disabled.
+Mocked browser tests reproduced held-response blocking and held-response plus
+rollback blocking. The fix uses exact per-attempt UUID receipts, not an elapsed
+unlock timeout or an assumed old state. Normal terminal network errors retain
+the unconfirmed-state warning and reread behavior.
+
+Validation before release:
+- Full Go tests, go vet, 63 deploy tests (7 environment skips): passed.
+- Focused binding and receipt API race tests: passed.
+- 19 connection browser tests, 27 frontend unit tests, lint and build: passed.
+- Pure Linux smoke test TestEffectiveHealthRequiresFreshAWGHeartbeat: all four
+  subcases passed on the router. This test used synthetic data and did not read
+  or modify devices, RCI or the installed configuration.
+- Independent backend, API and UI reviews: no remaining actionable findings.
+
+Combined release:
+The user explicitly requested including the completed traffic changes from the
+parallel chat: ToggleSwitch enabled by default, retained rows until a validated
+response, and no overlapping automatic reads.
+make build and verify_bundle passed for 0.1.16.
+IPK SHA-256: 31b1b9fd2293ef523bdbba7373c07d9e36e3b870bdd71b3b041cda38d619d827
+Rollback 0.1.15 SHA-256:
+36a2cb8cded0c8c636ae2a3f4f38d99d2468b85d27f9746b19c35ea193b71545
+Root-only latest backup:
+/opt/tmp/hestia-deploy-0.1.16-toggle-fix-20261113/final
+The verified rollback package is retained in its parent directory.
+Transfer hashes, hardware preflight, staged compiler/snapshot and sing-box
+checks passed before opkg. opkg exited 0; version 0.1.16 is install user installed.
+Supervisor is ready; maintenance marker absent; installed configurations valid.
+The profile file changed serialization only: parsed JSON equals the backup.
+Snapshot and sing-box hashes matched before live toggle testing.
+Default IPv4 route hash remains:
+f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871
+IPv6 default route remains absent.
+
+Live Chromium check against installed 0.1.16-keenetic:
+- OFF: HTTP 200, confirmed disabled in 5977 ms.
+- ON: HTTP 200, confirmed enabled on the same page in 23770 ms.
+- No page reload between operations, no error toast at any point (DOM observer).
+- Both exact operation receipts reported succeeded/status 200.
+- All original administrative enable flags were restored.
+- Full parsed profile equals the pre-install backup after the test.
+- Traffic ToggleSwitch is present and checked by default.
+One intermediate observer assertion checked the DOM before Angular had applied
+the pending render. Its enable operation still succeeded (receipt confirmed);
+the corrected observer waited for the pending lifecycle and the full rerun passed.
+Temporary uploads were removed. The LAN CLI process created for this run was
+stopped and its listener closure confirmed; the pre-existing listener was left
+untouched. Final supervisor readiness passed.
+This check does not measure throughput or independently capture physical egress.

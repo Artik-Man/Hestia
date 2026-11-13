@@ -11,6 +11,7 @@ import {
   signal,
   untracked,
 } from "@angular/core";
+import { HttpErrorResponse } from "@angular/common/http";
 import { FormsModule } from "@angular/forms";
 import { ButtonDirective } from "primeng/button";
 import { InputText } from "primeng/inputtext";
@@ -93,13 +94,14 @@ function validInventory(value: unknown): value is Inventory {
 })
 export class PhysicalConnections {
   readonly revision = input(0);
+  readonly mutationPending = input(false);
   private readonly api = inject(PanelService);
   private readonly notifications = inject(Notifications);
   private readonly destroy = inject(DestroyRef);
   protected readonly inventory = signal<Inventory | null>(null);
   protected readonly failed = signal(false);
   protected readonly busy = signal(false);
-  protected readonly reading = signal(false);
+  readonly reading = signal(false);
   protected readonly editing = signal<WifiProfile | null>(null);
   protected readonly radios = computed(
     () =>
@@ -123,6 +125,7 @@ export class PhysicalConnections {
     const timer = setInterval(() => {
       if (
         document.visibilityState === "visible" &&
+        !this.mutationPending() &&
         !this.busy() &&
         !this.reading()
       )
@@ -137,7 +140,7 @@ export class PhysicalConnections {
 
   /** load discards out-of-order reads and preserves the last successful inventory during an outage. */
   private async load(): Promise<void> {
-    if (this.reading()) return;
+    if (this.mutationPending() || this.reading()) return;
     const generation = ++this.generation;
     this.reading.set(true);
     try {
@@ -151,7 +154,8 @@ export class PhysicalConnections {
         throw new Error("Invalid physical inventory");
       this.inventory.set(result);
       this.failed.set(false);
-    } catch {
+    } catch (error: unknown) {
+      if (error instanceof HttpErrorResponse && error.status === 409) return;
       if (generation === this.generation && !this.failed()) {
         this.failed.set(true);
         this.notifications.show(

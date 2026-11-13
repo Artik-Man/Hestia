@@ -64,7 +64,10 @@
     </table>
   </div>
 </section>
-<hestia-physical-connections [revision]="revision()" />
+<hestia-physical-connections
+  [revision]="revision()"
+  [mutationPending]="snapshot.connectionMutationPending()"
+/>
 <section aria-labelledby="connections-heading">
   <div class="section-heading profile-toolbar">
     <h2 id="connections-heading">Виртуальные подключения</h2>
@@ -114,7 +117,7 @@
                 [ngModel]="changingEnabled().get(row.id) ?? row.enabled"
                 (ngModelChange)="setEnabled(row.id, $event)"
                 [disabled]="
-                  changingEnabled().has(row.id) || deleting() === row.id
+                  snapshot.connectionMutationPending() || deleting() === row.id
                 "
                 [ariaLabel]="'Включить подключение ' + row.name"
               />
@@ -133,15 +136,19 @@
               <span class="health" [class.up]="row.enabled && row.available"
                 ><span class="dot"></span
                 >{{
-                  !row.enabled
-                    ? "Отключено"
-                    : row.profile?.status === "checking"
-                      ? "Проверяется"
-                      : row.available === undefined
-                        ? "Нет данных"
-                        : row.available
-                          ? "Доступно"
-                          : "Недоступно"
+                  changingEnabled().has(row.id)
+                    ? changingEnabled().get(row.id)
+                      ? "Включается…"
+                      : "Отключается…"
+                    : !row.enabled
+                      ? "Отключено"
+                      : row.profile?.status === "checking"
+                        ? "Проверяется"
+                        : row.available === undefined
+                          ? "Нет данных"
+                          : row.available
+                            ? "Доступно"
+                            : "Недоступно"
                 }}</span
               >
             </td>

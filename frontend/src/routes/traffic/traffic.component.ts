@@ -9,7 +9,7 @@ import {
   viewChild,
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { FormControl, ReactiveFormsModule } from "@angular/forms";
+import { FormControl, FormsModule, ReactiveFormsModule } from "@angular/forms";
 import {
   Subscription,
   debounceTime,
@@ -21,6 +21,7 @@ import {
 import { ButtonDirective } from "primeng/button";
 import { RefreshIcon } from "primeng/icons/refresh";
 import { InputText } from "primeng/inputtext";
+import { ToggleSwitchModule } from "primeng/toggleswitch";
 import { SelectModule } from "primeng/select";
 import { Table, TableModule } from "primeng/table";
 import type { TableLazyLoadEvent } from "primeng/types/table";
@@ -42,8 +43,10 @@ import { trafficLimits, validTrafficPage } from "./traffic-observations";
     RefreshIcon,
     InputText,
     SelectModule,
+    ToggleSwitchModule,
     TableModule,
     ReactiveFormsModule,
+    FormsModule,
     TrafficEvents,
     TrafficSettingsDialog,
   ],
@@ -86,7 +89,7 @@ export class TrafficScreen {
   protected readonly windowSize = 10000;
   protected readonly windowStart = signal(0);
   protected readonly total = signal(0);
-  protected readonly autoRefresh = signal(false);
+  protected readonly autoRefresh = signal(true);
   protected readonly sourceAvailable = signal(true);
   protected readonly lastInterruption = signal<string | undefined>(undefined);
   protected readonly error = signal(false);
@@ -150,12 +153,7 @@ export class TrafficScreen {
     this.refresh();
   }
 
-  /** toggleAutoRefresh switches polling without changing filters or issuing an immediate request. */
-  protected toggleAutoRefresh(): void {
-    this.autoRefresh.update((enabled) => !enabled);
-  }
-
-  /** refresh anchors a new time window at the present and resets scrolling without changing any filter. */
+  /** refresh anchors a new time window at the present and replaces the visible window only after a validated response. */
   protected refresh(refreshNames = false, preserveSelection = false): void {
     if (refreshNames) this.catalog.reload();
     this.request?.unsubscribe();
@@ -171,14 +169,8 @@ export class TrafficScreen {
       ).toISOString(),
     };
     this.snapshot = undefined;
-    this.windowStart.set(0);
-    this.total.set(0);
-    this.pageStart = 0;
-    this.pageEnd = 0;
-    this.rows.set([]);
     if (!preserveSelection) this.selected.set(null);
-    this.table()?.scrollToVirtualIndex(0);
-    this.read(0, trafficLimits.page);
+    this.read(0, trafficLimits.page, true);
   }
 
   /** viewport loads a contiguous page around the visible range, dropping previously loaded rows outside it. */
@@ -210,7 +202,7 @@ export class TrafficScreen {
   }
 
   /** read cancels superseded requests and publishes only validated rows belonging to the active snapshot. */
-  private read(offset: number, limit: number): void {
+  private read(offset: number, limit: number, resetWindow = false): void {
     this.request?.unsubscribe();
     this.busy.set(true);
     this.pageStart = offset;
@@ -239,6 +231,7 @@ export class TrafficScreen {
           this.error.set(false);
           this.snapshot = value.snapshot;
           this.total.set(value.total);
+          if (resetWindow) this.windowStart.set(0);
           if (this.windowStart() > 0 && this.windowStart() >= value.total) {
             this.windowStart.set(0);
             this.table()?.scrollToVirtualIndex(0);
@@ -253,6 +246,7 @@ export class TrafficScreen {
             placeholders[offset - this.windowStart() + index] = row;
           });
           this.rows.set(placeholders);
+          if (resetWindow) this.table()?.scrollToVirtualIndex(0);
           this.sourceAvailable.set(value.sourceAvailable);
           this.lastInterruption.set(value.lastInterruption);
           const chosen = this.output.value;

@@ -1,10 +1,21 @@
 import { isHysteria2Connection } from "../models/hysteria2-connection";
 import type { Hysteria2Connection } from "./api/generated/model/hysteria2Connection";
+import { HttpErrorResponse } from "@angular/common/http";
 import { Injectable, computed, inject, signal } from "@angular/core";
 import { PanelService } from "./api/generated/api/panel.service";
 import type { AWGUnderlayCandidate } from "./api/generated/model/aWGUnderlayCandidate";
 import { isUnderlayCandidate } from "../models/awg-connection";
-import { Subject, catchError, map, of, switchMap, timeout } from "rxjs";
+import {
+  EMPTY,
+  Subject,
+  catchError,
+  defer,
+  finalize,
+  map,
+  of,
+  switchMap,
+  timeout,
+} from "rxjs";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 
 /** ConnectionCatalog resolves immutable gateway IDs to the latest validated public display names. */
@@ -31,7 +42,10 @@ export class ConnectionCatalog {
     this.requests
       .pipe(
         switchMap(() =>
-          this.api.listHysteria2Connections().pipe(
+          defer(() => {
+            this.hysteriaLoading.set(true);
+            return this.api.listHysteria2Connections();
+          }).pipe(
             timeout(10000),
             map((rows: unknown) => {
               if (
@@ -42,7 +56,12 @@ export class ConnectionCatalog {
                 throw new Error("Invalid Hysteria 2 catalog");
               return new Map(rows.map((row) => [row.id, row]));
             }),
-            catchError(() => of(null)),
+            catchError((error: unknown) =>
+              error instanceof HttpErrorResponse && error.status === 409
+                ? EMPTY
+                : of(null),
+            ),
+            finalize(() => this.hysteriaLoading.set(false)),
           ),
         ),
         takeUntilDestroyed(),
@@ -55,7 +74,10 @@ export class ConnectionCatalog {
     this.requests
       .pipe(
         switchMap(() =>
-          this.api.listAWGUnderlays().pipe(
+          defer(() => {
+            this.loading.set(true);
+            return this.api.listAWGUnderlays();
+          }).pipe(
             timeout(10000),
             map((rows: unknown) => {
               if (
@@ -66,7 +88,12 @@ export class ConnectionCatalog {
                 throw new Error("Invalid connection catalog");
               return new Map(rows.map((row) => [row.id, row]));
             }),
-            catchError(() => of(null)),
+            catchError((error: unknown) =>
+              error instanceof HttpErrorResponse && error.status === 409
+                ? EMPTY
+                : of(null),
+            ),
+            finalize(() => this.loading.set(false)),
           ),
         ),
         takeUntilDestroyed(),
@@ -81,8 +108,6 @@ export class ConnectionCatalog {
   /** reload supersedes stale reads after a write, or skips unfinished reads during background polling. */
   reload(skipBusy = false): void {
     if (skipBusy && this.reading()) return;
-    this.hysteriaLoading.set(true);
-    this.loading.set(true);
     this.requests.next();
   }
 

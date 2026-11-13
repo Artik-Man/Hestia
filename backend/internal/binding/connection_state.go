@@ -55,7 +55,11 @@ func (e Engine) ConnectionEnabled(id string) (bool, error) {
 
 // SetConnectionEnabled applies an administrative VPN state through the verified generation transaction.
 // Group placement and secrets are retained; disabled public routes become explicit blocks.
+// Enabling restores a guarded runtime even when its peer is unavailable; live health still decides routing.
 func (e Engine) SetConnectionEnabled(ctx context.Context, id string, enabled bool) error {
+	if enabled {
+		e.administrativeEnableID = id
+	}
 	check := func(data []byte, staged bool) error {
 		config, err := controller.CheckSnapshot(data)
 		if err != nil {

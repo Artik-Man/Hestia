@@ -274,11 +274,48 @@ components:
         - id
         - enabled
       type: object
+    ConnectionEnabledOperation:
+      additionalProperties: false
+      properties:
+        enabled:
+          type: boolean
+        id:
+          maxLength: 63
+          minLength: 1
+          type: string
+        operationId:
+          maxLength: 36
+          minLength: 36
+          type: string
+        state:
+          enum:
+            - pending
+            - succeeded
+            - failed
+          type: string
+        status:
+          description: HTTP-статус завершённой операции; отсутствует, пока helper работает.
+          format: int64
+          maximum: 599
+          minimum: 100
+          type: integer
+      required:
+        - operationId
+        - id
+        - enabled
+        - state
+      type: object
     ConnectionEnabledRequest:
       additionalProperties: false
       properties:
         enabled:
           type: boolean
+        operationId:
+          description: UUID одной попытки изменения; повтор не запускает операцию заново.
+          maxLength: 36
+          minLength: 36
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+          type: string
       required:
         - enabled
       type: object
@@ -1833,6 +1870,46 @@ paths:
                 $ref: "#/components/schemas/ErrorModel"
           description: Service Unavailable
       summary: Обновить сохранённое подключение AmneziaWG
+      tags:
+        - Panel
+  /api/connections/operations/{operationId}:
+    get:
+      operationId: getConnectionEnabledOperation
+      parameters:
+        - in: path
+          name: operationId
+          required: true
+          schema:
+            maxLength: 36
+            minLength: 36
+            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionEnabledOperation"
+          description: OK
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Not Found
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+      summary: Прочитать результат операции включения подключения
       tags:
         - Panel
   /api/connections/{id}/enabled:

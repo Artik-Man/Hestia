@@ -10,6 +10,7 @@ export * from './appliedOrder';
 export * from './bindingChange';
 export * from './checkResult';
 export * from './connectionEnabled';
+export * from './connectionEnabledOperation';
 export * from './connectionEnabledRequest';
 export * from './countryMap';
 export * from './dNSClientUDP';

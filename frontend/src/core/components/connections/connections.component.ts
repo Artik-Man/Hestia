@@ -14,9 +14,25 @@ import {
   signal,
   OnInit,
   inject,
+  viewChild,
 } from "@angular/core";
 import { HttpErrorResponse } from "@angular/common/http";
-import { firstValueFrom, timer, timeout } from "rxjs";
+import {
+  EMPTY,
+  catchError,
+  defer,
+  exhaustMap,
+  filter,
+  firstValueFrom,
+  map,
+  merge,
+  Observable,
+  retry,
+  take,
+  throwError,
+  timer,
+  timeout,
+} from "rxjs";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { SnapshotState } from "../../services/snapshot-state.service";
 import { PhysicalConnections } from "../physical-connections/physical-connections.component";
@@ -26,6 +42,7 @@ import { InputText } from "primeng/inputtext";
 import type { AWGUnderlayCandidate } from "../../services/api/generated/model/aWGUnderlayCandidate";
 import type { Group } from "../../services/api/generated/model/group";
 import type { AWGConnection } from "../../services/api/generated/model/aWGConnection";
+import type { ConnectionEnabled } from "../../services/api/generated/model/connectionEnabled";
 import { PanelService } from "../../services/api/generated/api/panel.service";
 import { Notifications } from "../../services/notifications.service";
 import { Menu } from "primeng/menu";
@@ -130,7 +147,8 @@ export class Connections implements OnInit {
   private profileRead = 0;
   private profilesFailed = false;
   protected readonly loadingProfiles = signal(false);
-  private readonly snapshot = inject(SnapshotState);
+  protected readonly snapshot = inject(SnapshotState);
+  private readonly physical = viewChild(PhysicalConnections);
   private readonly destroyRef = inject(DestroyRef);
   private readonly panel = inject(PanelService);
   private readonly messages = inject(Notifications);
@@ -181,20 +199,23 @@ export class Connections implements OnInit {
       );
   });
 
-  /** setEnabled publishes a confirmed administrative state and restores the switch after a failed write. */
+  /** setEnabled pauses shared reads and reconciles the exact operation before releasing the switch. */
   protected async setEnabled(id: string, enabled: boolean): Promise<void> {
     if (
       typeof enabled !== "boolean" ||
+      this.snapshot.connectionMutationPending() ||
       this.changingEnabled().has(id) ||
       this.deleting() === id
     )
       return;
+    this.snapshot.connectionMutationPending.set(true);
     this.changingEnabled.update((pending) => new Map(pending).set(id, enabled));
     try {
+      await this.waitForReaders();
       const result: unknown = await firstValueFrom(
-        this.panel
-          .setConnectionEnabled(id, { enabled })
-          .pipe(takeUntilDestroyed(this.destroyRef)),
+        this.enabledOperation(id, enabled).pipe(
+          takeUntilDestroyed(this.destroyRef),
+        ),
       );
       if (
         !result ||
@@ -209,14 +230,8 @@ export class Connections implements OnInit {
         items.map((item) => (item.id === id ? { ...item, enabled } : item)),
       );
       this.catalog.confirmEnabled(id, enabled);
-      this.catalog.reload();
-      void this.loadAWGConnections();
-      this.snapshot.reload(true, true);
     } catch {
       if (this.destroyRef.destroyed) return;
-      this.catalog.reload();
-      void this.loadAWGConnections();
-      this.snapshot.reload(true, true);
       this.messages.show(
         "error",
         "Не удалось подтвердить состояние подключения. Обновляем состояние со шлюза.",
@@ -227,7 +242,114 @@ export class Connections implements OnInit {
         next.delete(id);
         return next;
       });
+      this.snapshot.connectionMutationPending.set(false);
+      if (!this.destroyRef.destroyed) this.refresh();
     }
+  }
+
+  /** enabledOperation retries brief lock conflicts and reconciles held HTTP responses through exact operation receipts. */
+  private enabledOperation(
+    id: string,
+    enabled: boolean,
+  ): Observable<ConnectionEnabled> {
+    return defer(() => {
+      const operationId = this.operationID();
+      const write = this.panel.setConnectionEnabled(id, {
+        enabled,
+        operationId,
+      });
+      const receipt = timer(5000, 3000).pipe(
+        exhaustMap(() =>
+          this.panel.getConnectionEnabledOperation(operationId).pipe(
+            timeout(10000),
+            catchError(() => EMPTY),
+          ),
+        ),
+        map((value: unknown) =>
+          this.operationResult(value, operationId, id, enabled),
+        ),
+        filter((value): value is ConnectionEnabled => value !== null),
+      );
+      return merge(write, receipt).pipe(take(1));
+    }).pipe(
+      retry({
+        count: 4,
+        delay: (error: unknown) =>
+          error instanceof HttpErrorResponse && error.status === 409
+            ? timer(500)
+            : throwError(() => error),
+      }),
+    );
+  }
+
+  /** operationID generates a UUIDv4 using the Web Crypto API available on trusted HTTP LAN pages. */
+  private operationID(): string {
+    const bytes = crypto.getRandomValues(new Uint8Array(16));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const hex = Array.from(bytes, (value) =>
+      value.toString(16).padStart(2, "0"),
+    ).join("");
+    return [
+      hex.slice(0, 8),
+      hex.slice(8, 12),
+      hex.slice(12, 16),
+      hex.slice(16, 20),
+      hex.slice(20),
+    ].join("-");
+  }
+
+  /** operationResult accepts only the exact requested receipt and surfaces a confirmed rollback as a failure. */
+  private operationResult(
+    value: unknown,
+    operationId: string,
+    id: string,
+    enabled: boolean,
+  ): ConnectionEnabled | null {
+    if (
+      !value ||
+      typeof value !== "object" ||
+      !("operationId" in value) ||
+      value.operationId !== operationId ||
+      !("id" in value) ||
+      value.id !== id ||
+      !("enabled" in value) ||
+      value.enabled !== enabled ||
+      !("state" in value)
+    )
+      return null;
+    const status = "status" in value ? value.status : undefined;
+    if (value.state === "succeeded")
+      return status === 200 ? { id, enabled } : null;
+    if (value.state === "failed") {
+      if (
+        typeof status !== "number" ||
+        !Number.isSafeInteger(status) ||
+        status < 400 ||
+        status > 599
+      )
+        return null;
+      throw new HttpErrorResponse({ status });
+    }
+    return null;
+  }
+
+  /** waitForReaders drains existing shared-lock reads before starting the exclusive toggle transaction. */
+  private async waitForReaders(): Promise<void> {
+    await firstValueFrom(
+      timer(0, 50).pipe(
+        filter(
+          () =>
+            !this.snapshot.reading() &&
+            !this.catalog.reading() &&
+            !this.loadingProfiles() &&
+            !this.physical()?.reading(),
+        ),
+        take(1),
+        timeout(11000),
+        takeUntilDestroyed(this.destroyRef),
+      ),
+    );
   }
 
   /** directPurpose translates the backend channel role into user-facing routing language. */
@@ -302,6 +424,7 @@ export class Connections implements OnInit {
       this.awgConnections.set(records);
     } catch (error: unknown) {
       if (this.destroyRef.destroyed || read !== this.profileRead) return;
+      if (error instanceof HttpErrorResponse && error.status === 409) return;
       if (this.profilesFailed) return;
       this.profilesFailed = true;
       this.messages.show(

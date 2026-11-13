@@ -37,3 +37,10 @@ tr:first-child > th:nth-child(3) {
     flex-wrap: wrap;
   }
 }
+
+.auto-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}

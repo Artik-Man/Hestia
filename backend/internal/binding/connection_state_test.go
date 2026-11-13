@@ -3,6 +3,7 @@ package binding
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"slices"
@@ -88,5 +89,67 @@ func TestAdministrativeIngressIsNotVirtual(t *testing.T) {
 	actual, err := os.ReadFile(filepath.Join(e.dir, "profile.json"))
 	if err != nil || string(actual) != string(original) {
 		t.Fatal("failed toggle changed profile")
+	}
+}
+
+// TestAdministrativeEnableAllowsGuardedUnavailablePeer separates the enabled switch from successful peer connectivity.
+func TestAdministrativeEnableAllowsGuardedUnavailablePeer(t *testing.T) {
+	e := connectorTestEngine(t)
+	id := "12345678-1234-4abc-8123-456789abcdef"
+	request := panelmodel.AWGSaveRequest{Name: "VPN", ID: id, Group: "fi", Priority: 1, Profile: connectorTestConfig}
+	if err := e.ApplyAWG(context.Background(), request, false); err != nil {
+		t.Fatal(err)
+	}
+	if err := e.SetConnectionEnabled(context.Background(), id, false); err != nil {
+		t.Fatal(err)
+	}
+	probes := 0
+	e.readyWait = func(context.Context, string) error { probes++; return context.DeadlineExceeded }
+	guards := 0
+	e.guardCheck = func(context.Context, string, int) error { guards++; return nil }
+	if err := e.SetConnectionEnabled(context.Background(), id, true); err != nil {
+		t.Fatalf("administrative enable depended on peer reachability: %v", err)
+	}
+	if enabled, err := e.ConnectionEnabled(id); err != nil || !enabled {
+		t.Fatalf("enabled=%v error=%v", enabled, err)
+	}
+	if probes != 0 || guards == 0 {
+		t.Fatalf("peer probes=%d guard checks=%d", probes, guards)
+	}
+	if err := e.SetConnectionEnabled(context.Background(), id, true); err != nil {
+		t.Fatalf("repeated enable failed: %v", err)
+	}
+	request.Name = "Edited VPN"
+	if err := e.ApplyAWG(context.Background(), request, true); !errors.Is(err, ErrAWGRuntimeUnconfirmed) {
+		t.Fatalf("profile edit lost strict peer readiness: %v", err)
+	}
+}
+
+// TestAdministrativeEnableRejectsMissingGuards preserves disabled state when the restored runtime cannot prove fail-closed guards.
+func TestAdministrativeEnableRejectsMissingGuards(t *testing.T) {
+	e := connectorTestEngine(t)
+	id := "12345678-1234-4abc-8123-456789abcdef"
+	if err := e.ApplyAWG(context.Background(), panelmodel.AWGSaveRequest{Name: "VPN", ID: id, Group: "fi", Priority: 1, Profile: connectorTestConfig}, false); err != nil {
+		t.Fatal(err)
+	}
+	if err := e.SetConnectionEnabled(context.Background(), id, false); err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	guards := 0
+	e.guardCheck = func(context.Context, string, int) error {
+		guards++
+		cancel()
+		return errors.New("missing guards")
+	}
+	if err := e.SetConnectionEnabled(ctx, id, true); err == nil {
+		t.Fatal("enabled a runtime without fail-closed guards")
+	}
+	if guards == 0 {
+		t.Fatal("did not validate guards")
+	}
+	if enabled, err := e.ConnectionEnabled(id); err != nil || enabled {
+		t.Fatalf("rollback enabled=%v error=%v", enabled, err)
 	}
 }

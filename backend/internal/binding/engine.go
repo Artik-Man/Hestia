@@ -98,16 +98,17 @@ var managedFiles = []string{"profile.json", "profile-source.sha256", "sing-box.j
 
 // Engine operates on fixed trusted installation paths. Its commands take structured arguments without a shell.
 type Engine struct {
-	compiler       profileexec.CompilerAPI
-	services       services.Manager
-	dir, lock      string
-	countryMapPath string
-	snapshotGID    int
-	retryAWGID     string
-	run            func(context.Context, string, ...string) error
-	unitCheck      func() (bool, error)
-	readyWait      func(context.Context, string) error
-	guardCheck     func(context.Context, string, int) error
+	compiler               profileexec.CompilerAPI
+	services               services.Manager
+	dir, lock              string
+	countryMapPath         string
+	snapshotGID            int
+	administrativeEnableID string
+	retryAWGID             string
+	run                    func(context.Context, string, ...string) error
+	unitCheck              func() (bool, error)
+	readyWait              func(context.Context, string) error
+	guardCheck             func(context.Context, string, int) error
 }
 
 // Installed returns the engine with storage and service adapters selected for the current platform build.
@@ -276,6 +277,7 @@ func (e Engine) activate(ctx context.Context) error {
 	if err := e.installFiles(journal, routingOnly); err != nil {
 		return err
 	}
+	plan.guardedEnableID = e.administrativeEnableID
 	if err := e.startVerified(ctx, plan); err != nil {
 		return err
 	}
