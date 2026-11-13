@@ -11,6 +11,7 @@ export function isHysteria2Connection(
 ): value is Hysteria2Connection {
   if (!value || typeof value !== "object") return false;
   return (
+    (!("enabled" in value) || typeof value.enabled === "boolean") &&
     "id" in value &&
     typeof value.id === "string" &&
     isConnectionUUID(value.id) &&

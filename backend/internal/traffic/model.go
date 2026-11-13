@@ -8,6 +8,7 @@ const (
 	Unconfirmed      = "unconfirmed"
 	Blocked          = "blocked"
 	ConnectionFilter = "connection:"
+	UnknownOutput    = "unknown"
 	MaxTraceStages   = 16
 )
 
@@ -15,7 +16,7 @@ const (
 type TrafficEvent struct {
 	ID               string         `json:"id"`
 	Time             time.Time      `json:"time"`
-	Protocol         string         `json:"protocol" enum:"TCP,UDP"`
+	Protocol         string         `json:"protocol" enum:"TCP,UDP,QUIC"`
 	Address          string         `json:"address"`
 	Country          string         `json:"country,omitempty" pattern:"^[A-Z]{2}$" doc:"Страна реального IP назначения по текущей базе GeoIP (ISO 3166-1 alpha-2)"`
 	CountryName      string         `json:"countryName,omitempty" doc:"Название страны на русском языке для отображения и текстового поиска"`

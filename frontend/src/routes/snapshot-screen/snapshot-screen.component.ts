@@ -5,7 +5,8 @@ import {
   inject,
   input,
 } from "@angular/core";
-import { toSignal } from "@angular/core/rxjs-interop";
+import { takeUntilDestroyed, toSignal } from "@angular/core/rxjs-interop";
+import { timer } from "rxjs";
 import { ActivatedRoute, RouterLink } from "@angular/router";
 import {
   Details,
@@ -35,6 +36,15 @@ import { SnapshotState } from "../../core/services/snapshot-state.service";
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SnapshotScreen {
+  /** Polls current connections without replacing their visible view or interrupting unfinished reads. */
+  constructor() {
+    timer(3000, 3000)
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => {
+        if (this.page().path === "connections") this.state.reload(false, true);
+      });
+  }
+
   readonly page = input.required<Page>();
   protected readonly order = inject(GroupsState);
   protected readonly binding = inject(BindingWrite);

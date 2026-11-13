@@ -55,7 +55,7 @@ func TestAWGEngineCreateUpdateDelete(t *testing.T) {
 		t.Fatalf("editor lost name or identity: %v", err)
 	}
 	catalog, err := e.UnderlayCandidates()
-	if err != nil || !slices.Contains(catalog, panelmodel.AWGUnderlayCandidate{ID: request.ID, Type: "wireguard", Name: updated.Name}) {
+	if err != nil || !slices.Contains(catalog, panelmodel.AWGUnderlayCandidate{ID: request.ID, Type: "wireguard", Name: updated.Name, Enabled: true}) {
 		t.Fatalf("catalog lost name or identity: %v", err)
 	}
 	if err := e.DeleteAWG(context.Background(), request.ID); err != nil {
@@ -457,6 +457,10 @@ func connectorTestEngine(t *testing.T) Engine {
 				return err
 			}
 			stage := args[3]
+			// Mirror the compiler's administrative mask without changing source readiness.
+			for _, id := range candidate.DisabledConnections {
+				candidate.Healthy[id] = false
+			}
 			snapshot, err := json.Marshal(struct {
 				Groups  []connectorGroup `json:"groups"`
 				Lists   any              `json:"lists"`

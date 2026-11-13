@@ -82,3 +82,29 @@ func TestRouteFormats(t *testing.T) {
 		t.Fatalf("sniff: %+v", events[3])
 	}
 }
+
+// TestQUICEvidence classifies only a pending UDP flow with exact same-context QUIC sniff evidence.
+func TestQUICEvidence(t *testing.T) {
+	for _, tc := range []struct {
+		name, ingress, sniff, wantProtocol, wantDomain string
+	}{
+		{"domain", "packet ", "[1 0ms] router: sniffed packet protocol: quic, domain: video.example, client: chrome", "QUIC", "video.example"},
+		{"without domain", "packet ", "[1 0ms] router: sniffed packet protocol: quic", "QUIC", ""},
+		{"ordinary UDP443", "packet ", "", "UDP", ""},
+		{"foreign context", "packet ", "[2 0ms] router: sniffed packet protocol: quic", "UDP", ""},
+		{"TCP", "", "[1 0ms] router: sniffed packet protocol: quic", "TCP", ""},
+		{"different token", "packet ", "[1 0ms] router: sniffed packet protocol: quic-fake", "UDP", ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var events []traffic.TrafficEvent
+			p := newParser(func(e traffic.TrafficEvent) { events = append(events, e) })
+			now := time.Now()
+			p.accept(now, "[1 0ms] inbound/tun[lan]: inbound "+tc.ingress+"connection to 192.0.2.2:443")
+			p.accept(now, tc.sniff)
+			p.accept(now, "[1 1ms] outbound/direct[wan]: outbound "+tc.ingress+"connection to 192.0.2.2:443")
+			if len(events) != 1 || events[0].Protocol != tc.wantProtocol || events[0].Domain != tc.wantDomain {
+				t.Fatalf("events: %+v", events)
+			}
+		})
+	}
+}

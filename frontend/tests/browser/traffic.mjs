@@ -10,7 +10,8 @@ test("traffic journal reaches rows past 500 and refresh preserves its filters", 
   });
   try {
     const page = await browser.newPage();
-    page.setDefaultTimeout(5000);
+    page.setDefaultTimeout(10000);
+    await page.emulateMedia({ reducedMotion: "reduce" });
     let catalogAvailable = false;
     let revision = 1;
     let sourceAvailable = true;
@@ -28,11 +29,24 @@ test("traffic journal reaches rows past 500 and refresh preserves its filters", 
       country: i % 2 ? undefined : "RU",
       port: 443,
       kind: "observed",
-      connection: i % 4 ? officeID : "RU-1",
+      connection: officeID,
       reason: "outbound[dns-" + officeID + "]",
       namespace: "test",
       networkInterface: "ppp0",
     }));
+    events[0].kind = "unconfirmed";
+    events[0].connection = "keenetic-uplink";
+    delete events[0].namespace;
+    delete events[0].networkInterface;
+    events[1].kind = "unconfirmed";
+    delete events[1].connection;
+    delete events[1].namespace;
+    delete events[1].networkInterface;
+    events[2].kind = "blocked";
+    events[2].blockReason = "Правило sing-box отклонило поток";
+    delete events[2].connection;
+    delete events[2].namespace;
+    delete events[2].networkInterface;
     events[600].country = "SE";
     events[601].country = "CH";
     const names = new Intl.DisplayNames("ru", { type: "region" });
@@ -63,7 +77,12 @@ test("traffic journal reaches rows past 500 and refresh preserves its filters", 
                 .includes(q.get("country").toLowerCase())) &&
             (!q.has("protocol") || e.protocol === q.get("protocol")) &&
             (!q.has("output") ||
-              "connection:" + e.connection === q.get("output")) &&
+              (q.get("output").startsWith("connection:") &&
+                e.connection === q.get("output").slice("connection:".length)) ||
+              (q.get("output") === "blocked" && e.kind === "blocked") ||
+              (q.get("output") === "unknown" &&
+                e.kind === "unconfirmed" &&
+                !e.connection)) &&
             Date.parse(e.time) >= Date.parse(q.get("from")),
         );
         const offset = Number(q.get("offset"));
@@ -74,8 +93,8 @@ test("traffic journal reaches rows past 500 and refresh preserves its filters", 
             total: matching.length,
             events: matching.slice(offset, offset + limit),
             snapshot: q.get("snapshot") || String(revision),
-            outputs: [officeID, "RU-1"],
-            lost: 0,
+            outputs: [officeID, "keenetic-uplink"],
+            lost: 16,
             sourceAvailable,
             lastInterruption: new Date(now - 60000).toISOString(),
           },
@@ -90,7 +109,8 @@ test("traffic journal reaches rows past 500 and refresh preserves its filters", 
         return route.fulfill({
           json: [
             { id: officeID, name: "Офис", type: "wireguard" },
-            { id: "keenetic-direct", type: "direct" },
+            { id: "keenetic-direct", name: "Провайдер", type: "direct" },
+            { id: "keenetic-uplink", name: "Мой провайдер", type: "direct" },
           ],
         });
       if (url.pathname.startsWith("/api/"))
@@ -105,9 +125,14 @@ test("traffic journal reaches rows past 500 and refresh preserves its filters", 
         ),
       });
     });
+    await page.clock.install();
     await page.goto("http://127.0.0.1/#/traffic");
+    await page.addStyleTag({
+      content:
+        "*, *::before, *::after { animation-duration: 0s !important; transition-duration: 0s !important; }",
+    });
     await page
-      .getByText("Название недоступно", { exact: true })
+      .getByText("Подключение недоступно", { exact: true })
       .first()
       .waitFor();
     catalogAvailable = true;
@@ -116,13 +141,30 @@ test("traffic journal reaches rows past 500 and refresh preserves its filters", 
     await page
       .getByRole("button", { name: "flow-0.example", exact: true })
       .waitFor();
-    await page.getByText(/Сбор возобновлён/).waitFor();
+    assert.equal(
+      await page.getByText(/Сбор возобновлён|Потеряно событий/).count(),
+      0,
+    );
+    assert.equal(
+      Date.parse(requests[0].until) - Date.parse(requests[0].from),
+      300000,
+    );
+    await page.getByRole("combobox", { name: "Период" }).click();
+    await page
+      .getByRole("option", { name: "Последний час", exact: true })
+      .click();
     await page.getByRole("columnheader", { name: "Страна" }).waitFor();
     await page
       .getByRole("cell", { name: "Россия", exact: true })
       .first()
       .waitFor();
     await page.getByRole("cell", { name: "Не определена" }).first().waitFor();
+    await page
+      .getByRole("cell", { name: "Мой провайдер", exact: true })
+      .waitFor();
+    await page
+      .getByRole("cell", { name: "Не определено", exact: true })
+      .waitFor();
     const scroller = page.locator(".p-virtualscroller");
     const initialHeight = (await scroller.boundingBox()).height;
     await page.setViewportSize({ width: 1280, height: 1080 });
@@ -139,17 +181,38 @@ test("traffic journal reaches rows past 500 and refresh preserves its filters", 
     );
     await page.getByRole("combobox", { name: "Выход", exact: true }).click();
     await page.getByRole("option", { name: "Офис", exact: true }).waitFor();
+    await page
+      .getByRole("option", { name: "Мой провайдер", exact: true })
+      .waitFor();
+    await page
+      .getByRole("option", { name: "Не определено", exact: true })
+      .waitFor();
+    await page
+      .getByRole("option", { name: "Заблокировано", exact: true })
+      .waitFor();
     assert.equal(
       await page.getByRole("option", { name: "Офис", exact: true }).count(),
       1,
     );
-    await page
-      .getByRole("option", { name: "keenetic-direct", exact: true })
-      .click();
+    await page.getByRole("option", { name: "Провайдер", exact: true }).click();
     await page
       .getByText("За выбранный период подходящих записей нет.")
       .waitFor();
     assert.equal(requests.at(-1).output, "connection:keenetic-direct");
+    await page.getByRole("combobox", { name: "Выход", exact: true }).click();
+    await page.getByRole("option", { name: "Все выходы", exact: true }).click();
+    await page
+      .getByRole("button", { name: "flow-0.example", exact: true })
+      .waitFor();
+    await page.getByRole("combobox", { name: "Выход", exact: true }).click();
+    await page
+      .getByRole("option", { name: "Не определено", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "flow-1.example", exact: true })
+      .waitFor();
+    await page.getByText("Найдено событий: 1", { exact: true }).waitFor();
+    assert.equal(requests.at(-1).output, "unknown");
     await page.getByRole("combobox", { name: "Выход", exact: true }).click();
     await page.getByRole("option", { name: "Все выходы", exact: true }).click();
     await page.getByRole("button", { name: "Старее" }).click();
@@ -196,7 +259,7 @@ test("traffic journal reaches rows past 500 and refresh preserves its filters", 
     await page.getByRole("combobox", { name: "Протокол", exact: true }).click();
     await page.getByRole("option", { name: "UDP", exact: true }).click();
     await page.getByRole("combobox", { name: "Выход", exact: true }).click();
-    await page.getByRole("option", { name: "RU-1", exact: true }).click();
+    await page.getByRole("option", { name: "Офис", exact: true }).click();
     await page
       .getByRole("button", { name: "flow-1192.example", exact: true })
       .waitFor();
@@ -211,6 +274,10 @@ test("traffic journal reaches rows past 500 and refresh preserves its filters", 
       id: "new",
       domain: "flow-119-new.example",
       time: new Date().toISOString(),
+      kind: "observed",
+      connection: officeID,
+      namespace: "test",
+      networkInterface: "ppp0",
     });
     await page.getByRole("button", { name: "Обновить журнал" }).click();
     await page
@@ -227,8 +294,38 @@ test("traffic journal reaches rows past 500 and refresh preserves its filters", 
         requests.at(-1).output,
         requests.at(-1).snapshot,
       ],
-      ["flow-119", "UDP", "connection:RU-1", undefined],
+      ["flow-119", "UDP", "connection:" + officeID, undefined],
     );
+    const auto = page.getByRole("button", {
+      name: "Автообновление",
+      exact: true,
+    });
+    await auto.click();
+    await page.waitForFunction(
+      () =>
+        document
+          .querySelector('[aria-label="Автообновление"]')
+          .getAttribute("aria-pressed") === "true",
+    );
+    await page
+      .getByRole("button", { name: "flow-119-new.example", exact: true })
+      .click();
+    await page.getByRole("dialog").waitFor();
+    const beforeAuto = requests.length;
+    await page.clock.runFor(5000);
+    await page.waitForFunction(
+      () => !document.body.innerText.includes("Загрузка событий…"),
+    );
+    assert.equal(requests.length, beforeAuto + 1);
+    assert.equal(await page.getByRole("dialog").count(), 1);
+    await page.keyboard.press("Escape");
+    assert.equal(requests.at(-1).query, "flow-119");
+    assert.equal(requests.at(-1).protocol, "UDP");
+    assert.equal(requests.at(-1).snapshot, undefined);
+    await auto.click();
+    const afterAuto = requests.length;
+    await page.clock.runFor(10000);
+    assert.equal(requests.length, afterAuto);
     await page.getByRole("button", { name: "Настройки журнала" }).click();
     const dialog = page.getByRole("dialog");
     await dialog.getByLabel("Объём, МБ").fill("512");

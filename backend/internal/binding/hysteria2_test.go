@@ -27,7 +27,7 @@ func TestHysteria2Lifecycle(t *testing.T) {
 		t.Fatal("missing private detail or legacy physical transport")
 	}
 	candidates, err := e.UnderlayCandidates()
-	if err != nil || !slices.Contains(candidates, panelmodel.AWGUnderlayCandidate{Name: req.Name, ID: id, Type: "hysteria2"}) {
+	if err != nil || !slices.Contains(candidates, panelmodel.AWGUnderlayCandidate{Name: req.Name, ID: id, Type: "hysteria2", Enabled: true}) {
 		t.Fatal("missing transport candidate")
 	}
 	if err := e.CreateGroup(ctx, "reserve"); err != nil {

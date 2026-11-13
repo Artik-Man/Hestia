@@ -15,6 +15,7 @@ import {
   debounceTime,
   distinctUntilChanged,
   merge,
+  interval,
   timeout,
 } from "rxjs";
 import { ButtonDirective } from "primeng/button";
@@ -29,6 +30,7 @@ import type { TrafficEvent } from "../../core/services/api/generated/model/traff
 import { ConnectionCatalog } from "../../core/services/connection-catalog.service";
 import { TrafficEvents } from "../../core/components/traffic-events/traffic-events.component";
 import { TrafficSettingsDialog } from "../../core/components/traffic-settings/traffic-settings.component";
+import { trafficOutcomeName } from "../../core/models/traffic-outcome";
 import { trafficLimits, validTrafficPage } from "./traffic-observations";
 
 /** TrafficScreen keeps one bounded page of a stable server-side result set behind PrimeNG's virtual viewport. */
@@ -57,15 +59,19 @@ export class TrafficScreen {
   private readonly table = viewChild(Table);
   protected readonly query = new FormControl("", { nonNullable: true });
   protected readonly country = new FormControl("", { nonNullable: true });
-  protected readonly protocol = new FormControl<"TCP" | "UDP" | "">("", {
-    nonNullable: true,
-  });
+  protected readonly protocol = new FormControl<"TCP" | "UDP" | "QUIC" | "">(
+    "",
+    {
+      nonNullable: true,
+    },
+  );
   protected readonly output = new FormControl("", { nonNullable: true });
-  protected readonly period = new FormControl(60, { nonNullable: true });
+  protected readonly period = new FormControl(5, { nonNullable: true });
   protected readonly protocols = [
     { label: "Все протоколы", value: "" },
     { label: "TCP", value: "TCP" },
     { label: "UDP", value: "UDP" },
+    { label: "QUIC", value: "QUIC" },
   ];
   protected readonly periods = [
     { label: "Последние 5 минут", value: 5 },
@@ -80,7 +86,7 @@ export class TrafficScreen {
   protected readonly windowSize = 10000;
   protected readonly windowStart = signal(0);
   protected readonly total = signal(0);
-  protected readonly lost = signal(0);
+  protected readonly autoRefresh = signal(false);
   protected readonly sourceAvailable = signal(true);
   protected readonly lastInterruption = signal<string | undefined>(undefined);
   protected readonly error = signal(false);
@@ -109,12 +115,12 @@ export class TrafficScreen {
       }),
     ),
     { label: "Заблокировано", value: "blocked" },
-    { label: "Выход не подтверждён", value: "unconfirmed" },
+    { label: "Не определено", value: "unknown" },
   ]);
   private filters!: {
     query?: string;
     country?: string;
-    protocol?: "TCP" | "UDP";
+    protocol?: "TCP" | "UDP" | "QUIC";
     output?: string;
     from: string;
     until: string;
@@ -136,11 +142,21 @@ export class TrafficScreen {
     )
       .pipe(takeUntilDestroyed())
       .subscribe(() => this.refresh());
+    interval(5000)
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => {
+        if (this.autoRefresh() && !this.busy()) this.refresh(false, true);
+      });
     this.refresh();
   }
 
+  /** toggleAutoRefresh switches polling without changing filters or issuing an immediate request. */
+  protected toggleAutoRefresh(): void {
+    this.autoRefresh.update((enabled) => !enabled);
+  }
+
   /** refresh anchors a new time window at the present and resets scrolling without changing any filter. */
-  protected refresh(refreshNames = false): void {
+  protected refresh(refreshNames = false, preserveSelection = false): void {
     if (refreshNames) this.catalog.reload();
     this.request?.unsubscribe();
     const now = Date.now();
@@ -160,7 +176,7 @@ export class TrafficScreen {
     this.pageStart = 0;
     this.pageEnd = 0;
     this.rows.set([]);
-    this.selected.set(null);
+    if (!preserveSelection) this.selected.set(null);
     this.table()?.scrollToVirtualIndex(0);
     this.read(0, trafficLimits.page);
   }
@@ -237,7 +253,6 @@ export class TrafficScreen {
             placeholders[offset - this.windowStart() + index] = row;
           });
           this.rows.set(placeholders);
-          this.lost.set(value.lost);
           this.sourceAvailable.set(value.sourceAvailable);
           this.lastInterruption.set(value.lastInterruption);
           const chosen = this.output.value;
@@ -271,12 +286,8 @@ export class TrafficScreen {
     return this.dateFormat.format(Date.parse(value));
   }
 
-  /** exitName separates the actual connection from blocked and unconfirmed routing decisions. */
+  /** exitName displays the selected connector or the flow's block/unknown outcome. */
   protected exitName(row: TrafficEvent): string {
-    if (row.kind === "observed") return this.catalog.name(row.connection ?? "");
-    if (row.kind === "blocked") return "Заблокировано";
-    return row.connection
-      ? this.catalog.name(row.connection) + " · выход не подтверждён"
-      : "Выход не подтверждён";
+    return trafficOutcomeName(row, (id) => this.catalog.name(id));
   }
 }

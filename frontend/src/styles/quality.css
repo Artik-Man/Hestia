@@ -90,3 +90,14 @@ summary {
 .add-checks {
   flex-wrap: wrap;
 }
+
+.quality-group-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.quality-group-heading h3 {
+  margin: 0;
+}

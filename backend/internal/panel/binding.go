@@ -53,7 +53,7 @@ func runInstalledChange[T panelmodel.RuleList | panelmodel.BindingChange | panel
 }
 
 // runInstalledHelper sends one typed request on stdin and captures only the fixed helper's public confirmation.
-func runInstalledHelper[T panelmodel.CountryMap | panelmodel.RuleList | panelmodel.DomainListUpdate | panelmodel.DomainListValues | panelmodel.BindingChange | panelmodel.GroupOrderChange | panelmodel.GroupIdentifier | panelmodel.GroupCreateRequest | panelmodel.ExitMoveCommand | panelmodel.GroupDeleteCommand](ctx context.Context, mode string, change T, output io.Writer) error {
+func runInstalledHelper[T panelmodel.ConnectionEnabled | panelmodel.CountryMap | panelmodel.RuleList | panelmodel.DomainListUpdate | panelmodel.DomainListValues | panelmodel.BindingChange | panelmodel.GroupOrderChange | panelmodel.GroupIdentifier | panelmodel.GroupCreateRequest | panelmodel.ExitMoveCommand | panelmodel.GroupDeleteCommand](ctx context.Context, mode string, change T, output io.Writer) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -67,7 +67,7 @@ func runInstalledHelper[T panelmodel.CountryMap | panelmodel.RuleList | panelmod
 		if code := platformhelper.ExitCode(err); code >= 0 {
 			switch code {
 			case 44:
-				if mode == "-rename-direct" {
+				if mode == "-rename-direct" || mode == "-set-connection-enabled" {
 					return huma.Error404NotFound("Подключение не найдено")
 				}
 				if mode == "-delete-group" {

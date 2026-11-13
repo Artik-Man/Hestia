@@ -30,7 +30,7 @@ type Installed struct{}
 // validMode rejects unknown operations before starting a privileged process.
 func validMode(mode Mode) bool {
 	switch mode {
-	case "-apply-binding", "-apply-group-order", "-apply-country-map", "-move-exit", "-create-group", "-rename-group", "-rename-direct", "-delete-group", "-create-domain-list", "-update-domain-list", "-delete-domain-list",
+	case "-apply-binding", "-apply-group-order", "-apply-country-map", "-move-exit", "-create-group", "-rename-group", "-rename-direct", "-set-connection-enabled", "-delete-group", "-create-domain-list", "-update-domain-list", "-delete-domain-list",
 		"-awg-check", "-awg-create", "-awg-update", "-awg-list", "-awg-read", "-awg-delete", "-awg-underlays",
 		"-physical-list", "-wifi-create", "-wifi-save", "-wifi-delete",
 		"-hysteria2-list", "-hysteria2-read", "-hysteria2-create", "-hysteria2-update", "-hysteria2-delete":

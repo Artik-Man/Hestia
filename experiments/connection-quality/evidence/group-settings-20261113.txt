@@ -1,0 +1,11 @@
+Local macOS ARM64 validation, 2026-11-13; working tree based on 03e710d41c31991bac3fad0d0d92cf86e82829a8
+No device access or deployment.
+PASS go test ./internal/quality ./internal/controller ./internal/panel (loopback permitted).
+PASS race detector quality/controller (backend executor).
+PASS go vet all Go packages.
+PASS frontend lint, unit tests26, Angular build.
+PASS Chromium quality test with mocked API: independent modal/group edits/window, reserves report, distinct second group retained.
+PASS Chromium traffic test: API-provided connector label including keenetic-uplink, default5m, auto5s. Test animations disabled to remove dropdown timing instability.
+PASS fmt-check and docs-check.
+Backend/API cross-review: no actionable correctness/security issues.
+Limit: no live Keenetic probes; load increase with groups not measured. Full make check remains blocked by unavailable ShellCheck and unrelated DNS lab tests missing Python dns module.

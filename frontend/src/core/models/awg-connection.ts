@@ -36,6 +36,7 @@ export function isUnderlayCandidate(
   return (
     typeof value === "object" &&
     value !== null &&
+    (!("enabled" in value) || typeof value.enabled === "boolean") &&
     "id" in value &&
     typeof value.id === "string" &&
     isExitID(value.id) &&
@@ -79,6 +80,7 @@ export function isUnderlayOrder(
 export function isAWGConnection(value: unknown): value is AWGConnection {
   if (typeof value !== "object" || value === null) return false;
   return (
+    (!("enabled" in value) || typeof value.enabled === "boolean") &&
     "id" in value &&
     typeof value.id === "string" &&
     isExitID(value.id) &&

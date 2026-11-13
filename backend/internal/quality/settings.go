@@ -29,10 +29,39 @@ const (
 	MaxSamplesPerExit = 32768
 )
 
-// QualitySettings defines a common scoring window and the checks shared by every exit.
+// QualitySettings retains the legacy migration seed and independently configured groups.
 type QualitySettings struct {
+	Groups        map[string]GroupSettings `json:"groups" nullable:"true"`
+	WindowMinutes int                      `json:"windowMinutes" minimum:"1" maximum:"1440"`
+	Checks        []QualityCheck           `json:"checks" minItems:"0" maxItems:"6" nullable:"false"`
+}
+
+// GroupSettings defines the scoring window and probes for all connections in one group.
+type GroupSettings struct {
 	WindowMinutes int            `json:"windowMinutes" minimum:"1" maximum:"1440"`
 	Checks        []QualityCheck `json:"checks" minItems:"0" maxItems:"6" nullable:"false"`
+}
+
+// ForGroup returns a detached override, the legacy seed before migration, or defaults for a new group.
+func (s QualitySettings) ForGroup(id string) GroupSettings {
+	g, ok := s.Groups[id]
+	if !ok {
+		seed := s
+		if s.Groups != nil {
+			seed = DefaultSettings()
+		}
+		g = GroupSettings{WindowMinutes: seed.WindowMinutes, Checks: seed.Checks}
+	}
+	g.Checks = slices.Clone(g.Checks)
+	for i := range g.Checks {
+		g.Checks[i].Targets = slices.Clone(g.Checks[i].Targets)
+	}
+	return g
+}
+
+// Validate enforces the same scheduling and network boundaries for an individual group.
+func (g GroupSettings) Validate() error {
+	return (QualitySettings{WindowMinutes: g.WindowMinutes, Checks: g.Checks}).validateSchedule()
 }
 
 // QualityCheck configures one transport test against literal IP:port targets.
@@ -64,6 +93,22 @@ func ValidateSettings(s Settings) error { return s.Validate() }
 
 // Validate accepts only distinct supported protocols, bounded scheduling and distinct public targets for each test.
 func (s QualitySettings) Validate() error {
+	if err := s.validateSchedule(); err != nil {
+		return err
+	}
+	for id, group := range s.Groups {
+		if strings.TrimSpace(id) == "" {
+			return errors.New("пустой идентификатор группы проверок")
+		}
+		if err := group.Validate(); err != nil {
+			return fmt.Errorf("группа %s: %w", id, err)
+		}
+	}
+	return nil
+}
+
+// validateSchedule checks one bounded schedule without traversing group settings.
+func (s QualitySettings) validateSchedule() error {
 	if s.WindowMinutes < 1 || s.WindowMinutes > 1440 || s.Checks == nil || len(s.Checks) > len(protocols) {
 		return errors.New("нужны окно от 1 до 1440 минут и список проверок")
 	}

@@ -1,98 +1,110 @@
-<section aria-labelledby="checks-title">
-  <div class="section-heading">
-    <h2 id="checks-title">Проверки</h2>
-    <div class="card-title">
-      <span>Окно оценки: {{ settings().windowMinutes }} мин</span>
-      <button
-        pButton
-        type="button"
-        severity="secondary"
-        [text]="true"
-        [rounded]="true"
-        aria-label="Редактировать окно оценки"
-        (click)="editWindow()"
-        pTooltip="Редактировать окно оценки"
-        tooltipEvent="both"
-      >
-        <span class="edit-icon" aria-hidden="true"></span>
-      </button>
-    </div>
-  </div>
-  <div class="check-grid">
-    @for (check of settings().checks; track check.protocol) {
-      <article class="check-card">
-        <div class="card-title">
-          <h3>Проверка {{ label(check.protocol) }}</h3>
-          <button
-            pButton
-            type="button"
-            severity="secondary"
-            [text]="true"
-            [rounded]="true"
-            [attr.aria-label]="
-              'Редактировать проверку ' + label(check.protocol)
-            "
-            [attr.data-quality-editor]="check.protocol"
-            (click)="edit(check.protocol)"
-            [pTooltip]="'Редактировать проверку ' + label(check.protocol)"
-            tooltipEvent="both"
-          >
-            <span class="edit-icon" aria-hidden="true"></span>
-          </button>
-          <button
-            pButton
-            type="button"
-            severity="danger"
-            [text]="true"
-            [rounded]="true"
-            [attr.aria-label]="'Удалить проверку ' + label(check.protocol)"
-            (click)="deleting.set(check)"
-            [pTooltip]="'Удалить проверку ' + label(check.protocol)"
-            tooltipEvent="both"
-          >
-            <span class="delete-icon" aria-hidden="true"></span>
-          </button>
-        </div>
-        <p>{{ descriptions[check.protocol] }}</p>
-        <dl>
-          <dt>Цели</dt>
-          <dd>{{ check.targets.join(", ") }}</dd>
-          @if (check.dnsName) {
-            <dt>Домен</dt>
-            <dd>{{ check.dnsName }}</dd>
-          }
-          @if (check.serverName) {
-            <dt>Имя сервера</dt>
-            <dd>{{ check.serverName }}</dd>
-            <dt>Путь</dt>
-            <dd>{{ check.requestPath }}</dd>
-          }
-          <dt>Интервал</dt>
-          <dd>{{ check.intervalSeconds }} с</dd>
-          <dt>Тайм-аут</dt>
-          <dd>{{ check.timeoutSeconds }} с</dd>
-        </dl>
-      </article>
-    } @empty {
-      <p>Проверки не настроены.</p>
-    }
-  </div>
-  <div class="actions add-checks">
-    @for (protocol of protocols; track protocol) {
-      @if (!check(protocol)) {
+<p-dialog
+  [visible]="true"
+  [modal]="true"
+  [header]="'Проверки группы «' + groupName() + '»'"
+  [closeOnEscape]="!draft() && !windowDraft() && !deleting() && !saving()"
+  [closable]="!saving()"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: 'min(64rem, calc(100vw - 2rem))' }"
+  (visibleChange)="!$event && closed.emit()"
+>
+  <section aria-labelledby="checks-title">
+    <div class="section-heading">
+      <h2 id="checks-title">Проверки</h2>
+      <div class="card-title">
+        <span>Окно оценки: {{ settings().windowMinutes }} мин</span>
         <button
           pButton
           type="button"
           severity="secondary"
-          [attr.data-quality-editor]="protocol"
-          (click)="edit(protocol)"
+          [text]="true"
+          [rounded]="true"
+          aria-label="Редактировать окно оценки"
+          (click)="editWindow()"
+          pTooltip="Редактировать окно оценки"
+          tooltipEvent="both"
         >
-          Добавить {{ label(protocol) }}
+          <span class="edit-icon" aria-hidden="true"></span>
         </button>
+      </div>
+    </div>
+    <div class="check-grid">
+      @for (check of settings().checks; track check.protocol) {
+        <article class="check-card">
+          <div class="card-title">
+            <h3>Проверка {{ label(check.protocol) }}</h3>
+            <button
+              pButton
+              type="button"
+              severity="secondary"
+              [text]="true"
+              [rounded]="true"
+              [attr.aria-label]="
+                'Редактировать проверку ' + label(check.protocol)
+              "
+              [attr.data-quality-editor]="check.protocol"
+              (click)="edit(check.protocol)"
+              [pTooltip]="'Редактировать проверку ' + label(check.protocol)"
+              tooltipEvent="both"
+            >
+              <span class="edit-icon" aria-hidden="true"></span>
+            </button>
+            <button
+              pButton
+              type="button"
+              severity="danger"
+              [text]="true"
+              [rounded]="true"
+              [attr.aria-label]="'Удалить проверку ' + label(check.protocol)"
+              (click)="deleting.set(check)"
+              [pTooltip]="'Удалить проверку ' + label(check.protocol)"
+              tooltipEvent="both"
+            >
+              <span class="delete-icon" aria-hidden="true"></span>
+            </button>
+          </div>
+          <p>{{ descriptions[check.protocol] }}</p>
+          <dl>
+            <dt>Цели</dt>
+            <dd>{{ check.targets.join(", ") }}</dd>
+            @if (check.dnsName) {
+              <dt>Домен</dt>
+              <dd>{{ check.dnsName }}</dd>
+            }
+            @if (check.serverName) {
+              <dt>Имя сервера</dt>
+              <dd>{{ check.serverName }}</dd>
+              <dt>Путь</dt>
+              <dd>{{ check.requestPath }}</dd>
+            }
+            <dt>Интервал</dt>
+            <dd>{{ check.intervalSeconds }} с</dd>
+            <dt>Тайм-аут</dt>
+            <dd>{{ check.timeoutSeconds }} с</dd>
+          </dl>
+        </article>
+      } @empty {
+        <p>Проверки не настроены.</p>
       }
-    }
-  </div>
-</section>
+    </div>
+    <div class="actions add-checks">
+      @for (protocol of protocols; track protocol) {
+        @if (!check(protocol)) {
+          <button
+            pButton
+            type="button"
+            severity="secondary"
+            [attr.data-quality-editor]="protocol"
+            (click)="edit(protocol)"
+          >
+            Добавить {{ label(protocol) }}
+          </button>
+        }
+      }
+    </div>
+  </section>
+</p-dialog>
 @for (protocol of protocols; track protocol) {
   <p-dialog
     [visible]="draft()?.protocol === protocol"
@@ -284,7 +296,10 @@
       position="top-right"
       [life]="5500"
     />
-    <p>Прекратить проверку {{ label(item.protocol) }} для всех подключений?</p>
+    <p>
+      Прекратить проверку {{ label(item.protocol) }} для всех подключений группы
+      «{{ groupName() }}»?
+    </p>
     <div class="actions">
       <button
         pButton

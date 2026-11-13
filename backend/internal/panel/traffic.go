@@ -17,8 +17,8 @@ import (
 
 type trafficInput struct {
 	Query    string `query:"query" doc:"Подстрока домена или адреса назначения" maxLength:"255"`
-	Protocol string `query:"protocol" doc:"Протокол потока" enum:"TCP,UDP"`
-	Output   string `query:"output" doc:"connection:<ID> для выбранного подключения, blocked или unconfirmed для результата" maxLength:"512"`
+	Protocol string `query:"protocol" doc:"Протокол потока" enum:"TCP,UDP,QUIC"`
+	Output   string `query:"output" doc:"connection:<ID> для выбранного подключения, blocked для блокировки или unknown для неопределённого решения" maxLength:"512"`
 	From     string `query:"from" doc:"Начало периода включительно (RFC 3339)" format:"date-time"`
 	Until    string `query:"until" doc:"Конец периода включительно (RFC 3339)" format:"date-time"`
 	Offset   int    `query:"offset" doc:"Число пропускаемых совпадений от начала выборки" minimum:"0" maximum:"2147483647"`

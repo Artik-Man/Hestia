@@ -2,8 +2,11 @@ import type { Hysteria2Connection } from "../../services/api/generated/model/hys
 import { Hysteria2Editor } from "../hysteria2-editor/hysteria2-editor.component";
 import { Tooltip } from "primeng/tooltip";
 import { Toast } from "primeng/toast";
+import { FormsModule } from "@angular/forms";
+import { ToggleSwitchModule } from "primeng/toggleswitch";
 import {
   ChangeDetectionStrategy,
+  DestroyRef,
   Component,
   computed,
   effect,
@@ -13,7 +16,8 @@ import {
   inject,
 } from "@angular/core";
 import { HttpErrorResponse } from "@angular/common/http";
-import { firstValueFrom } from "rxjs";
+import { firstValueFrom, timer, timeout } from "rxjs";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { SnapshotState } from "../../services/snapshot-state.service";
 import { PhysicalConnections } from "../physical-connections/physical-connections.component";
 import { ProfileDraft } from "../profile-draft/profile-draft.component";
@@ -31,12 +35,15 @@ import { ButtonDirective } from "primeng/button";
 import {
   isAWGConnection,
   isUnderlayCandidate,
+  isUserSelectableUnderlay,
 } from "../../models/awg-connection";
 
-/** Connections merges gateway exits and saved profiles by stable routing ID. */
+/** Connections merges gateway exits and saved profiles by stable routing ID, excluding platform ingress. */
 @Component({
   selector: "hestia-connections",
   imports: [
+    FormsModule,
+    ToggleSwitchModule,
     Tooltip,
     Toast,
     ButtonDirective,
@@ -63,7 +70,10 @@ export class Connections implements OnInit {
       ),
     );
     return [...this.catalog.entries().values()]
-      .filter((entry) => entry.type === "direct")
+      .filter(
+        (entry) =>
+          entry.type === "direct" && isUserSelectableUnderlay(entry.id, entry),
+      )
       .map((entry) => ({
         ...entry,
         name: this.catalog.name(entry.id),
@@ -113,10 +123,15 @@ export class Connections implements OnInit {
   }
   protected readonly editing = signal<AWGConnection | null>(null);
   protected readonly deleting = signal<string | null>(null);
+  protected readonly changingEnabled = signal<ReadonlyMap<string, boolean>>(
+    new Map(),
+  );
   protected readonly awgConnections = signal<readonly AWGConnection[]>([]);
   private profileRead = 0;
+  private profilesFailed = false;
   protected readonly loadingProfiles = signal(false);
   private readonly snapshot = inject(SnapshotState);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly panel = inject(PanelService);
   private readonly messages = inject(Notifications);
   readonly groups = input.required<readonly Group[]>();
@@ -152,16 +167,68 @@ export class Connections implements OnInit {
           entry,
           name: profile?.name ?? this.catalog.name(id),
           available,
+          enabled:
+            profile?.enabled ?? hysteria?.enabled ?? entry?.enabled ?? true,
         };
       })
       .filter(
         (row) =>
-          row.profile ||
-          row.hysteria ||
-          row.entry?.type === "wireguard" ||
-          row.entry?.type === "amneziawg",
+          isUserSelectableUnderlay(row.id, row.entry) &&
+          (row.profile ||
+            row.hysteria ||
+            row.entry?.type === "wireguard" ||
+            row.entry?.type === "amneziawg"),
       );
   });
+
+  /** setEnabled publishes a confirmed administrative state and restores the switch after a failed write. */
+  protected async setEnabled(id: string, enabled: boolean): Promise<void> {
+    if (
+      typeof enabled !== "boolean" ||
+      this.changingEnabled().has(id) ||
+      this.deleting() === id
+    )
+      return;
+    this.changingEnabled.update((pending) => new Map(pending).set(id, enabled));
+    try {
+      const result: unknown = await firstValueFrom(
+        this.panel
+          .setConnectionEnabled(id, { enabled })
+          .pipe(takeUntilDestroyed(this.destroyRef)),
+      );
+      if (
+        !result ||
+        typeof result !== "object" ||
+        !("id" in result) ||
+        result.id !== id ||
+        !("enabled" in result) ||
+        result.enabled !== enabled
+      )
+        throw new Error("Invalid connection state response");
+      this.awgConnections.update((items) =>
+        items.map((item) => (item.id === id ? { ...item, enabled } : item)),
+      );
+      this.catalog.confirmEnabled(id, enabled);
+      this.catalog.reload();
+      void this.loadAWGConnections();
+      this.snapshot.reload(true, true);
+    } catch {
+      if (this.destroyRef.destroyed) return;
+      this.catalog.reload();
+      void this.loadAWGConnections();
+      this.snapshot.reload(true, true);
+      this.messages.show(
+        "error",
+        "Не удалось подтвердить состояние подключения. Обновляем состояние со шлюза.",
+      );
+    } finally {
+      this.changingEnabled.update((pending) => {
+        const next = new Map(pending);
+        next.delete(id);
+        return next;
+      });
+    }
+  }
 
   /** directPurpose translates the backend channel role into user-facing routing language. */
   protected directPurpose(role: AWGUnderlayCandidate["role"]): string {
@@ -177,6 +244,13 @@ export class Connections implements OnInit {
 
   /** Reports each catalog read failure through the active page or modal toast. */
   constructor() {
+    timer(3000, 3000)
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => {
+        if (this.changingEnabled().size || this.deleting()) return;
+        this.catalog.reload(true);
+        if (!this.loadingProfiles()) void this.loadAWGConnections();
+      });
     effect(() => {
       if (this.catalog.hysteriaFailed())
         this.messages.show(
@@ -207,25 +281,29 @@ export class Connections implements OnInit {
     void this.loadAWGConnections();
   }
 
-  /** loadAWGConnections reads the typed metadata endpoint and presents a safe unavailable state on failure. */
+  /** loadAWGConnections validates metadata, retains the last confirmed rows and announces an outage once. */
   protected async loadAWGConnections(): Promise<void> {
     const read = ++this.profileRead;
     this.loadingProfiles.set(true);
     try {
       const records: unknown = await firstValueFrom(
-        this.panel.listAWGConnections(),
+        this.panel
+          .listAWGConnections()
+          .pipe(timeout(10000), takeUntilDestroyed(this.destroyRef)),
       );
-      if (read !== this.profileRead) return;
+      if (this.destroyRef.destroyed || read !== this.profileRead) return;
       if (
         !Array.isArray(records) ||
         !records.every(isAWGConnection) ||
         new Set(records.map((item) => item.id)).size !== records.length
       )
         throw new Error("Invalid connection list");
+      this.profilesFailed = false;
       this.awgConnections.set(records);
     } catch (error: unknown) {
-      if (read !== this.profileRead) return;
-      this.awgConnections.set([]);
+      if (this.destroyRef.destroyed || read !== this.profileRead) return;
+      if (this.profilesFailed) return;
+      this.profilesFailed = true;
       this.messages.show(
         "error",
         error instanceof HttpErrorResponse && error.status === 503

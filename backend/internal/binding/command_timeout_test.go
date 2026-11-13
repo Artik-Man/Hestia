@@ -12,6 +12,7 @@ func TestCommandTimeoutKeepsIngressMigrationBounded(t *testing.T) {
 		want time.Duration
 	}{
 		{mode: "-enable-keenetic-ingress", want: AWGActivationLimit},
+		{mode: "-set-connection-enabled", want: AWGActivationLimit},
 		{mode: "-enable-cpu-profiling", want: AWGActivationLimit},
 		{mode: "-disable-cpu-profiling", want: AWGActivationLimit},
 		{mode: "-disable-keenetic-ingress", want: 2 * time.Minute},

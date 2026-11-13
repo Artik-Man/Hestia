@@ -45,7 +45,9 @@ function validEvent(value: unknown): value is TrafficEvent {
     !value["id"] ||
     typeof value["time"] !== "string" ||
     !Number.isFinite(Date.parse(value["time"])) ||
-    (value["protocol"] !== "TCP" && value["protocol"] !== "UDP") ||
+    (value["protocol"] !== "TCP" &&
+      value["protocol"] !== "UDP" &&
+      value["protocol"] !== "QUIC") ||
     typeof value["address"] !== "string" ||
     !(value["address"] || value["domain"] || value["fakeIP"]) ||
     (value["country"] !== undefined &&

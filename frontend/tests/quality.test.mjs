@@ -44,6 +44,7 @@ test("accepts a measured zero score and rejects inconsistent counters or counter
       {
         id: "main",
         name: "Main",
+        settings,
         connections: [
           {
             id: "fi",
@@ -97,7 +98,7 @@ test("validates optional DNS response-code counters against the per-target error
   const report = {
     settings,
     capturedAt: "2026-11-05T12:00:00Z",
-    groups: [{ id: "fi", name: "", connections: [connection] }],
+    groups: [{ id: "fi", name: "", settings, connections: [connection] }],
   };
   assert.equal(isQualityReport(report), true);
   target.dnsResponseCodes = { 2: 1, 3: 1 };
@@ -160,4 +161,29 @@ test("raw TCP targets are accepted only on input, including when TCP is the seco
   assert.equal(validCheck(tcp, true), true);
   assert.equal(isQualitySettings({ ...settings, checks: [udp, tcp] }), false);
   assert.equal(validCheck({ ...udp, targets: tcp.targets }, true), false);
+});
+
+/** Rejects missing or invalid settings in one group even when the legacy global seed is valid. */
+test("quality reports require independently validated group settings", () => {
+  const group = { id: "ru", name: "Россия", connections: [], settings };
+  const report = {
+    settings,
+    capturedAt: "",
+    groups: [
+      group,
+      { ...group, id: "world", settings: { windowMinutes: 90, checks: [] } },
+    ],
+  };
+  assert.equal(isQualityReport(report), true);
+  assert.equal(
+    isQualityReport({ ...report, groups: [{ ...group, settings: undefined }] }),
+    false,
+  );
+  assert.equal(
+    isQualityReport({
+      ...report,
+      groups: [{ ...group, settings: { ...settings, windowMinutes: 0 } }],
+    }),
+    false,
+  );
 });

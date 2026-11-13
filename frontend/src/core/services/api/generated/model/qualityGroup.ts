@@ -8,11 +8,13 @@
  * Do not edit the class manually.
  */
 import { QualityConnection } from './qualityConnection';
+import { GroupSettings } from './groupSettings';
 
 
 export interface QualityGroup { 
     connections: Array<QualityConnection>;
     id: string;
     name: string;
+    settings: GroupSettings;
 }
 

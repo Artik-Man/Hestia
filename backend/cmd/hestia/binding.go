@@ -103,6 +103,19 @@ func runBindingCommand(mode string, input io.Reader, output io.Writer) int {
 				err = json.NewEncoder(output).Encode(confirmed)
 			}
 		}
+	case "-set-connection-enabled":
+		var request struct {
+			ID      string `json:"id"`
+			Enabled *bool  `json:"enabled"`
+		}
+		if decodeChange(input, 1024, &request) != nil || request.Enabled == nil {
+			err = binding.ErrInvalidOrder
+		} else {
+			err = engine.SetConnectionEnabled(ctx, request.ID, *request.Enabled)
+			if err == nil {
+				err = json.NewEncoder(output).Encode(panelmodel.ConnectionEnabled{ID: request.ID, Enabled: *request.Enabled})
+			}
+		}
 	case "-rename-group", "-rename-direct":
 		var group panelmodel.GroupIdentifier
 		if decodeChange(input, 1024, &group) != nil {

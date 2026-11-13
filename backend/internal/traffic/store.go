@@ -230,7 +230,7 @@ func (s *Store) AppendBatch(ctx context.Context, events []TrafficEvent) error {
 
 // validateEvent rejects invented or malformed evidence before it can enter history.
 func validateEvent(event TrafficEvent) error {
-	if event.Time.IsZero() || (event.Protocol != "TCP" && event.Protocol != "UDP") || event.Port < 0 || event.Port > 65535 || (event.Address == "" && event.Domain == "" && event.FakeIP == "") {
+	if event.Time.IsZero() || (event.Protocol != "TCP" && event.Protocol != "UDP" && event.Protocol != "QUIC") || event.Port < 0 || event.Port > 65535 || (event.Address == "" && event.Domain == "" && event.FakeIP == "") {
 		return errors.New("invalid traffic observation")
 	}
 	for _, addr := range []string{event.Address, event.FakeIP} {
@@ -326,7 +326,7 @@ func validateTraceNDMConntrack(evidence *NDMConntrackEvidence) error {
 // Page returns recent events first and applies filters before pagination; new inserts cannot move a snapshot.
 func (s *Store) Page(ctx context.Context, q Query) (TrafficPage, error) {
 	page := TrafficPage{Events: []TrafficEvent{}, Outputs: []string{}, SourceAvailable: s.available.Load()}
-	if q.Limit < 1 || q.Limit > 500 || q.Offset < 0 || (q.Protocol != "" && q.Protocol != "UDP" && q.Protocol != "TCP") || (!q.From.IsZero() && !q.Until.IsZero() && q.From.After(q.Until)) {
+	if q.Limit < 1 || q.Limit > 500 || q.Offset < 0 || (q.Protocol != "" && q.Protocol != "UDP" && q.Protocol != "TCP" && q.Protocol != "QUIC") || (!q.From.IsZero() && !q.Until.IsZero() && q.From.After(q.Until)) {
 		return page, ErrQuery
 	}
 	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
@@ -392,6 +392,9 @@ func (s *Store) Page(ctx context.Context, q Query) (TrafficPage, error) {
 	case q.Output == Blocked || q.Output == Unconfirmed:
 		where += " AND kind=?"
 		args = append(args, q.Output)
+	case q.Output == UnknownOutput:
+		where += " AND kind=? AND connection=''"
+		args = append(args, Unconfirmed)
 	case strings.HasPrefix(q.Output, ConnectionFilter) && len(q.Output) > len(ConnectionFilter):
 		where += " AND connection=?"
 		args = append(args, strings.TrimPrefix(q.Output, ConnectionFilter))

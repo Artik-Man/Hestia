@@ -1,9 +1,9 @@
 <section aria-labelledby="direct-connections-heading">
   <div class="section-heading">
-    <h2 id="direct-connections-heading">Вход и выход</h2>
+    <h2 id="direct-connections-heading">Прямые подключения</h2>
   </div>
   <div class="list-wrap">
-    <table aria-label="Вход и выход">
+    <table aria-label="Прямые подключения">
       <thead>
         <tr>
           <th scope="col">Канал</th>
@@ -70,15 +70,6 @@
     <h2 id="connections-heading">Виртуальные подключения</h2>
     <div class="profile-actions">
       <button
-        pButton
-        type="button"
-        class="p-button secondary"
-        [disabled]="loadingProfiles()"
-        (click)="refresh()"
-      >
-        Обновить состояния
-      </button>
-      <button
         #addTrigger
         pButton
         type="button"
@@ -106,6 +97,7 @@
     <table aria-label="Виртуальные подключения">
       <thead>
         <tr>
+          <th scope="col">Включено</th>
           <th scope="col">Название подключения</th>
           <th scope="col">Тип подключения</th>
           <th scope="col">Доступность</th>
@@ -117,6 +109,16 @@
       <tbody>
         @for (row of rows(); track row.id) {
           <tr>
+            <td>
+              <p-toggleswitch
+                [ngModel]="changingEnabled().get(row.id) ?? row.enabled"
+                (ngModelChange)="setEnabled(row.id, $event)"
+                [disabled]="
+                  changingEnabled().has(row.id) || deleting() === row.id
+                "
+                [ariaLabel]="'Включить подключение ' + row.name"
+              />
+            </td>
             <th scope="row">{{ row.name }}</th>
             <td>
               {{
@@ -128,16 +130,18 @@
               }}
             </td>
             <td>
-              <span class="health" [class.up]="row.available"
+              <span class="health" [class.up]="row.enabled && row.available"
                 ><span class="dot"></span
                 >{{
-                  row.profile?.status === "checking"
-                    ? "Проверяется"
-                    : row.available === undefined
-                      ? "Нет данных"
-                      : row.available
-                        ? "Доступно"
-                        : "Недоступно"
+                  !row.enabled
+                    ? "Отключено"
+                    : row.profile?.status === "checking"
+                      ? "Проверяется"
+                      : row.available === undefined
+                        ? "Нет данных"
+                        : row.available
+                          ? "Доступно"
+                          : "Недоступно"
                 }}</span
               >
             </td>
@@ -166,7 +170,9 @@
                   class="icon-action"
                   #editTrigger
                   [attr.aria-label]="'Редактировать профиль ' + row.name"
-                  [disabled]="deleting() === row.id"
+                  [disabled]="
+                    deleting() === row.id || changingEnabled().has(row.id)
+                  "
                   (click)="
                     row.hysteria
                       ? editHysteria(row.hysteria, editTrigger)
@@ -184,7 +190,9 @@
                   type="button"
                   class="icon-action delete-action connection-remove"
                   [attr.aria-label]="'Удалить подключение ' + row.name"
-                  [disabled]="deleting() === row.id"
+                  [disabled]="
+                    deleting() === row.id || changingEnabled().has(row.id)
+                  "
                   (click)="deleteConnection(profile)"
                   [pTooltip]="'Удалить подключение ' + row.name"
                   tooltipEvent="both"
@@ -199,7 +207,7 @@
           </tr>
         } @empty {
           <tr>
-            <td colspan="6">
+            <td colspan="7">
               {{
                 loadingProfiles()
                   ? "Загрузка подключений…"

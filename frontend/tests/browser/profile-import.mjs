@@ -59,6 +59,8 @@ async function fixture(
     hasRadio = true,
     directName,
     inputCandidate = false,
+    nativeCandidate = false,
+    hysteriaCandidate = false,
     savedUnderlays = [],
   } = {},
 ) {
@@ -68,6 +70,7 @@ async function fixture(
     group: "test",
     priority: 2,
     status: "ready",
+    enabled: true,
     ipv6Blocked: true,
     ...(savedUnderlays.length ? { underlays: savedUnderlays } : {}),
   };
@@ -83,7 +86,7 @@ async function fixture(
     });
     profiles.set("pending", config);
   }
-  const direct = { id: "wan-a", type: "direct", name: directName };
+  const direct = { id: "wan-a", type: "direct", name: directName ?? "wan-a" };
   const physical = {
     interfaces: [
       {
@@ -126,13 +129,65 @@ async function fixture(
     physical.interfaces = physical.interfaces.filter(
       (item) => item.kind !== "wifi",
     );
-  const state = { loseNext: false, rejectNext: false, writes: [], details: [] };
+  const state = {
+    loseNext: false,
+    rejectNext: false,
+    failToggle: false,
+    invalidToggle: false,
+    holdReads: new Set(),
+    held: [],
+    failReads: new Set(),
+    writes: [],
+    details: [],
+    reads: [],
+  };
+  const native = {
+    id: "native-wg",
+    type: "wireguard",
+    name: "Native WG",
+    enabled: true,
+  };
+  const hysteria = {
+    id: "20330000-1111-4222-8333-444455556666",
+    name: "Hysteria test",
+    server: "vpn.example.org",
+    port: 443,
+    group: "test",
+    priority: 3,
+    enabled: true,
+  };
   await page.route("**/*", async (route) => {
     const req = route.request();
     const { pathname, origin: requestOrigin } = new URL(req.url());
     if (requestOrigin !== origin) return route.abort();
+    if (req.method() === "GET") {
+      state.reads.push(pathname);
+      if (state.holdReads.has(pathname))
+        await new Promise((resolve) => state.held.push(resolve));
+      if (state.failReads.has(pathname)) return route.fulfill({ status: 503 });
+    }
+    const enabledMatch = /^\/api\/connections\/([^/]+)\/enabled$/.exec(
+      pathname,
+    );
+    if (enabledMatch && req.method() === "PUT") {
+      const id = enabledMatch[1];
+      const data = req.postDataJSON();
+      state.writes.push({ method: req.method(), pathname, data });
+      if (state.failToggle) return route.fulfill({ status: 503 });
+      if (state.invalidToggle)
+        return route.fulfill({ json: { id: "wrong", enabled: data.enabled } });
+      const record =
+        id === native.id
+          ? native
+          : id === hysteria.id
+            ? hysteria
+            : records.get(id);
+      if (!record) return route.fulfill({ status: 404 });
+      record.enabled = data.enabled;
+      return route.fulfill({ json: { id, enabled: data.enabled } });
+    }
     if (pathname === "/api/hysteria2" && req.method() === "GET")
-      return route.fulfill({ json: [] });
+      return route.fulfill({ json: hysteriaCandidate ? [hysteria] : [] });
     if (pathname === "/api/physical-connections")
       return route.fulfill({ json: physical });
     const wifiPath = "/api/wifi-connections/" + wifiID;
@@ -182,8 +237,9 @@ async function fixture(
       return route.fulfill({
         json: [
           direct,
-          { id: "wan-b", type: "direct" },
-          { id: "unmatched", type: "direct" },
+          ...(nativeCandidate ? [native] : []),
+          { id: "wan-b", type: "direct", name: "wan-b" },
+          { id: "unmatched", type: "direct", name: "unmatched" },
           ...(inputCandidate
             ? [
                 {
@@ -192,11 +248,18 @@ async function fixture(
                   name: "Вход",
                   role: "input",
                 },
+                {
+                  id: "keenetic-opkgtun",
+                  type: "direct",
+                  name: "Вход TUN",
+                  role: "input",
+                },
               ]
             : []),
-          ...[...records.values()].map(({ id, name }) => ({
+          ...[...records.values()].map(({ id, name, enabled }) => ({
             name,
             id,
+            enabled,
             type: id === storedID ? "amneziawg" : "wireguard",
           })),
         ],
@@ -247,6 +310,7 @@ async function fixture(
         underlays: data.underlays,
         priority: records.get(tag)?.priority ?? records.size + 2,
         status: "ready",
+        enabled: records.get(tag)?.enabled ?? true,
         ipv6Blocked: true,
       };
       records.set(tag, record);
@@ -326,7 +390,11 @@ test("one dialog creates manually, reopens all stored keys, retains drafts on fa
     assert.equal(state.details.length, 0);
     await savedRow(page, "existing").waitFor();
     assert.equal(await page.getByRole("table").count(), 3);
-    for (const name of ["Ethernet", "Wi-Fi", "Виртуальные подключения"])
+    for (const name of [
+      "Прямые подключения",
+      "Wi-Fi",
+      "Виртуальные подключения",
+    ])
       assert.ok(
         await page.getByRole("table", { name, exact: true }).isVisible(),
       );
@@ -334,7 +402,7 @@ test("one dialog creates manually, reopens all stored keys, retains drafts on fa
     const native = savedRow(page, "wan-a");
     await native.waitFor();
     assert.equal(
-      await native.getByText("Линк не поднят", { exact: true }).count(),
+      await native.getByText("Недоступно", { exact: true }).count(),
       1,
     );
     assert.deepEqual(
@@ -343,6 +411,7 @@ test("one dialog creates manually, reopens all stored keys, retains drafts on fa
         .getByRole("columnheader")
         .allTextContents(),
       [
+        "Включено",
         "Название подключения",
         "Тип подключения",
         "Доступность",
@@ -583,6 +652,13 @@ test("underlay picker hides platform input and preserves its saved reference", a
       savedUnderlays: ["wg-keenetic"],
     });
     await perform(page, "GET", "/api/awg", () => page.goto(url));
+    await expect(
+      page.getByRole("rowheader", { name: "ПАКТ", exact: true }),
+    ).toBeVisible();
+    assert.equal(
+      await page.getByRole("rowheader", { name: /^Вход(?: TUN)?$/ }).count(),
+      0,
+    );
     const dialog = await edit(page, storedID, "existing");
     const trigger = dialog.locator("#underlay-trigger");
     assert.match(await trigger.innerText(), /Системный маршрут/);
@@ -631,9 +707,9 @@ test("connections retain profiles absent from the snapshot and native exits abse
     await perform(page, "GET", "/api/awg", () => page.goto(url));
 
     await savedRow(page, "wan-b")
-      .getByText("Адаптер отсутствует", { exact: true })
+      .getByText("Нет данных", { exact: true })
       .waitFor();
-    assert.equal(await savedRow(page, "unmatched").count(), 0);
+    assert.equal(await savedRow(page, "unmatched").count(), 1);
     const pending = savedRow(page, "pending");
     await pending.getByText("Проверяется", { exact: true }).waitFor();
     assert.ok(
@@ -671,7 +747,10 @@ test("a legacy direct-connection link opens the Ethernet table", async (t) => {
   await fixture(page);
   await page.goto(url + "?exit=wan-a");
 
-  const ethernet = page.getByRole("table", { name: "Ethernet", exact: true });
+  const ethernet = page.getByRole("table", {
+    name: "Прямые подключения",
+    exact: true,
+  });
   const row = ethernet.getByRole("row").filter({
     has: page.getByRole("rowheader", { name: "wan-a", exact: true }),
   });
@@ -694,10 +773,13 @@ test("renaming an Ethernet connection updates its row and survives a reload", as
   const { state } = await fixture(page);
   await page.goto(url);
 
-  const ethernet = page.getByRole("table", { name: "Ethernet", exact: true });
-  const port = ethernet
-    .getByRole("row")
-    .filter({ has: page.getByRole("cell", { name: "eth0", exact: true }) });
+  const ethernet = page.getByRole("table", {
+    name: "Прямые подключения",
+    exact: true,
+  });
+  const port = ethernet.getByRole("row").filter({
+    has: page.getByRole("rowheader", { name: "wan-a", exact: true }),
+  });
   await port
     .getByRole("button", {
       name: "Редактировать подключение wan-a",
@@ -723,9 +805,13 @@ test("renaming an Ethernet connection updates its row and survives a reload", as
     },
   ]);
   await expect(dialog).toBeHidden();
-  await expect(port.getByRole("rowheader")).toHaveText(label);
+  await expect(
+    ethernet.getByRole("rowheader", { name: label, exact: true }),
+  ).toBeVisible();
   await page.reload();
-  await expect(port.getByRole("rowheader")).toHaveText(label);
+  await expect(
+    ethernet.getByRole("rowheader", { name: label, exact: true }),
+  ).toBeVisible();
 });
 
 test("selecting a named Ethernet transport saves its routing ID in the VPN profile", async (t) => {
@@ -1055,6 +1141,156 @@ test("Hysteria 2 imports a YAML and PEM pair, preserves the secret on rename and
         .click(),
     );
     await expect(savedRow(page, "Резерв")).toHaveCount(0);
+  } finally {
+    await browser.close();
+  }
+});
+
+/** Confirms virtual administrative state only after the gateway acknowledges the requested ID and value. */
+test("virtual connection switches confirm state, roll back errors and retain disabled profiles after editing", async () => {
+  const browser = await chromium.launch({
+    executablePath: process.env.CHROME_BIN,
+  });
+  try {
+    const page = await browser.newPage({ serviceWorkers: "block" });
+    const { state, records } = await fixture(page, {
+      nativeCandidate: true,
+      hysteriaCandidate: true,
+    });
+    await perform(page, "GET", "/api/awg", () => page.goto(url));
+    const row = await savedRow(page, "existing");
+    const toggle = row.getByRole("switch", {
+      name: "Включить подключение existing",
+      exact: true,
+    });
+    await expect(toggle).toBeChecked();
+    await toggle.click();
+    await expect(toggle).not.toBeChecked();
+    await expect(row.getByText("Отключено", { exact: true })).toBeVisible();
+    assert.equal(records.get(storedID).enabled, false);
+    await toggle.click();
+    await expect(toggle).toBeChecked();
+    await expect(row.getByText("Доступно", { exact: true })).toBeVisible();
+    state.failToggle = true;
+    await toggle.click();
+    await page
+      .getByText(
+        "Не удалось подтвердить состояние подключения. Обновляем состояние со шлюза.",
+        { exact: true },
+      )
+      .waitFor();
+    await expect(toggle).toBeChecked();
+    state.failToggle = false;
+    state.invalidToggle = true;
+    await toggle.click();
+    await expect(toggle).toBeChecked();
+    state.invalidToggle = false;
+    await toggle.click();
+    await expect(row.getByText("Отключено", { exact: true })).toBeVisible();
+    const dialog = await edit(page, storedID, "existing");
+    await dialog.getByLabel("Название подключения").fill("disabled edited");
+    await perform(page, "PUT", "/api/awg/" + storedID, () =>
+      dialog.getByRole("button", { name: "Сохранить", exact: true }).click(),
+    );
+    const edited = await savedRow(page, "disabled edited");
+    await expect(edited.getByText("Отключено", { exact: true })).toBeVisible();
+    const native = page.getByRole("row").filter({
+      has: page.getByRole("rowheader", { name: "Native WG", exact: true }),
+    });
+    await native.getByRole("switch").click();
+    await expect(native.getByText("Отключено", { exact: true })).toBeVisible();
+    assert.equal(
+      state.writes.at(-1).pathname,
+      "/api/connections/native-wg/enabled",
+    );
+    const hysteriaRow = page.getByRole("row").filter({
+      has: page.getByRole("rowheader", {
+        name: "Hysteria test",
+        exact: true,
+      }),
+    });
+    await hysteriaRow.getByRole("switch").click();
+    await expect(
+      hysteriaRow.getByText("Отключено", { exact: true }),
+    ).toBeVisible();
+  } finally {
+    await browser.close();
+  }
+});
+
+/** Polls state every three seconds without refreshing away an unsaved profile draft. */
+test("connections poll state and provider every three seconds without manual refresh controls or draft loss", async () => {
+  const browser = await chromium.launch({
+    executablePath: process.env.CHROME_BIN,
+  });
+  try {
+    const page = await browser.newPage({ serviceWorkers: "block" });
+    await page.clock.install();
+    const { state } = await fixture(page);
+    await perform(page, "GET", "/api/awg", () => page.goto(url));
+    await expect(
+      page.getByRole("button", { name: /^(Обновить|Обновить состояния)$/ }),
+    ).toHaveCount(0);
+    const dialog = await edit(page, storedID, "existing");
+    const name = dialog.getByLabel("Название подключения");
+    await name.fill("unsaved polling draft");
+    const paths = [
+      "/api/groups-and-rules",
+      "/api/awg-underlays",
+      "/api/hysteria2",
+      "/api/awg",
+      "/api/physical-connections",
+    ];
+    await page.clock.pauseAt(
+      await page.evaluate(() => new Date(Date.now() + 1000).toISOString()),
+    );
+    const before = paths.map(
+      (path) => state.reads.filter((read) => read === path).length,
+    );
+    await page.clock.runFor(3000);
+    await expect
+      .poll(() =>
+        paths.map((path) => state.reads.filter((read) => read === path).length),
+      )
+      .toEqual(before.map((n) => n + 1));
+    await expect(name).toHaveValue("unsaved polling draft");
+    state.holdReads = new Set(paths);
+    await page.clock.runFor(3000);
+    await expect.poll(() => state.held.length).toBe(paths.length);
+    const heldCounts = paths.map(
+      (path) => state.reads.filter((read) => read === path).length,
+    );
+    await page.clock.runFor(6000);
+    assert.deepEqual(
+      paths.map((path) => state.reads.filter((read) => read === path).length),
+      heldCounts,
+    );
+    state.failReads = new Set(paths);
+    state.holdReads.clear();
+    state.held.forEach((release) => release());
+    state.held = [];
+    await page.clock.runFor(50);
+    await expect(name).toHaveValue("unsaved polling draft");
+    const outage = page.getByText(
+      "Управление WireGuard/AmneziaWG пока недоступно на этом шлюзе.",
+      {
+        exact: true,
+      },
+    );
+    await expect(outage).toHaveCount(1);
+    await page.clock.runFor(3000);
+    await expect(outage).toHaveCount(1);
+    await expect(
+      page.getByText("Не удалось загрузить типы и названия подключений.", {
+        exact: true,
+      }),
+    ).toHaveCount(1);
+    await expect(
+      page.getByText("Не удалось загрузить подключения Hysteria 2.", {
+        exact: true,
+      }),
+    ).toHaveCount(1);
+    assert.equal(state.writes.length, 0);
   } finally {
     await browser.close();
   }

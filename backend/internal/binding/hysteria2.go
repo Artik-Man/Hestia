@@ -40,7 +40,9 @@ func (e Engine) ListHysteria2() ([]panelmodel.Hysteria2Connection, error) {
 	}
 	result := make([]panelmodel.Hysteria2Connection, 0, len(current.Hysteria2))
 	for _, item := range current.Hysteria2 {
-		result = append(result, item.publicConnection(current.Groups))
+		record := item.publicConnection(current.Groups)
+		record.Enabled = current.connectionEnabled(item.ID)
+		result = append(result, record)
 	}
 	return result, nil
 }
@@ -60,6 +62,7 @@ func (e Engine) ReadHysteria2Profile(id string) (panelmodel.Hysteria2ConnectionP
 	for _, item := range current.Hysteria2 {
 		if item.ID == id {
 			result.Hysteria2Connection = item.publicConnection(current.Groups)
+			result.Enabled = current.connectionEnabled(id)
 			result.Password = item.Password
 			return result, nil
 		}
@@ -137,6 +140,7 @@ func (e Engine) SaveHysteria2(ctx context.Context, id string, req panelmodel.Hys
 			return ErrInvalidConnector
 		}
 		result = item.publicConnection(current.Groups)
+		result.Enabled = current.connectionEnabled(id)
 		return compileConnectorGeneration(ctx, e, stage, current)
 	}
 	if err := e.apply(ctx, prepare, check, false); err != nil {
@@ -190,6 +194,7 @@ func (e Engine) DeleteHysteria2(ctx context.Context, id string) error {
 			return err
 		}
 		delete(current.Healthy, id)
+		current.DisabledConnections = slices.DeleteFunc(current.DisabledConnections, func(value string) bool { return value == id })
 		for i := range current.Connectors {
 			c := &current.Connectors[i]
 			c.Group, c.Priority = groupExitLocation(current.Groups, c.ID)

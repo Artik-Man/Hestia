@@ -38,7 +38,8 @@ func readyAWG(directory string) (map[string]runtimeGeneration, error) {
 		return nil, ErrUnavailable
 	}
 	var profile struct {
-		Connectors []connectorProfile `json:"connectors"`
+		Connectors          []connectorProfile `json:"connectors"`
+		DisabledConnections []string           `json:"disabled_connections"`
 	}
 	if json.Unmarshal(data, &profile) != nil {
 		return nil, ErrUnavailable
@@ -46,7 +47,7 @@ func readyAWG(directory string) (map[string]runtimeGeneration, error) {
 	ready := make(map[string]runtimeGeneration)
 	var used [awg.SlotCount]bool
 	for _, c := range profile.Connectors {
-		if c.Status != "ready" {
+		if c.Status != "ready" || slices.Contains(profile.DisabledConnections, c.ID) {
 			continue
 		}
 		if !awg.ValidConnectionID(c.ID) || c.Slot < 0 || c.Slot >= len(used) || used[c.Slot] {
@@ -118,7 +119,17 @@ func (e Engine) planInstances(journal string, routingOnly bool) (runtimePlan, er
 			plan.changes = append(plan.changes, runtimeChange{id, added.slot})
 		}
 	}
-	if err := includeRuntimeChange(&plan, after, e.retryAWGID); err != nil {
+	retryID := e.retryAWGID
+	if retryID != "" {
+		candidate, readErr := readStoredProfile(journal)
+		if readErr != nil {
+			return plan, readErr
+		}
+		if !candidate.connectionEnabled(retryID) {
+			retryID = ""
+		}
+	}
+	if err := includeRuntimeChange(&plan, after, retryID); err != nil {
 		return plan, err
 	}
 	slices.SortFunc(plan.changes, func(a, b runtimeChange) int { return strings.Compare(a.id, b.id) })

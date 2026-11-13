@@ -8,32 +8,34 @@
   }
   <div class="title-line">
     <h1 #pageHeading tabindex="-1">{{ heading() }}</h1>
-    <button
-      pButton
-      type="button"
-      class="refresh"
-      (click)="state.reload()"
-      [disabled]="
-        current.kind === 'loading' || binding.pending() || order.pending()
-      "
-    >
-      <svg
-        viewBox="0 0 24 24"
-        width="17"
-        height="17"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1.8"
-        aria-hidden="true"
+    @if (page().path !== "connections") {
+      <button
+        pButton
+        type="button"
+        class="refresh"
+        (click)="state.reload()"
+        [disabled]="
+          current.kind === 'loading' || binding.pending() || order.pending()
+        "
       >
-        <path d="M20 5v5h-5M4 19v-5h5" stroke-linejoin="round" />
-        <path
-          d="M5.3 9a7.4 7.4 0 0 1 12.2-3L20 9M4 15l2.6 3a7.4 7.4 0 0 0 12.1-3"
-          stroke-linecap="round"
-        />
-      </svg>
-      {{ current.kind === "failed" ? "Повторить загрузку" : "Обновить" }}
-    </button>
+        <svg
+          viewBox="0 0 24 24"
+          width="17"
+          height="17"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          aria-hidden="true"
+        >
+          <path d="M20 5v5h-5M4 19v-5h5" stroke-linejoin="round" />
+          <path
+            d="M5.3 9a7.4 7.4 0 0 1 12.2-3L20 9M4 15l2.6 3a7.4 7.4 0 0 0 12.1-3"
+            stroke-linecap="round"
+          />
+        </svg>
+        {{ current.kind === "failed" ? "Повторить загрузку" : "Обновить" }}
+      </button>
+    }
   </div>
 </header>
 @switch (current.kind) {

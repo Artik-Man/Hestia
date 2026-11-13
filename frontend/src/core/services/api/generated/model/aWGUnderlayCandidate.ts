@@ -10,6 +10,7 @@
 
 
 export interface AWGUnderlayCandidate { 
+    enabled: boolean;
     id: string;
     name?: string;
     /**

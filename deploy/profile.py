@@ -397,7 +397,7 @@ def transport_fragments(profile: dict, directory: Path) -> tuple[list[dict], lis
     listeners, rules = [], []
     for connector in profile.get("connectors", []):
         candidates = connector.get("underlays", [])
-        if connector["status"] != "ready" or not candidates:
+        if connector["status"] != "ready" or connector["id"] in profile.get("disabled_connections", []) or not candidates:
             continue
         config = configparser.ConfigParser(interpolation=None, delimiters=("=",))
         try:
@@ -841,6 +841,72 @@ def committed_wireguard(interface: dict, backend: dict) -> tuple[dict, dict]:
     return endpoints[0], servers[0]
 
 
+def administrative_fields(profile: dict) -> str:
+    """Return optional private administrative fields for exact top-level schema checks."""
+    return "".join(" " + key for key in ("disabled_connections", "disabled_native_endpoints") if key in profile)
+
+
+def validate_administrative_state(profile: dict) -> None:
+    """Accept only virtual exit IDs and confined archived native WireGuard endpoint material."""
+    native = {item["id"] for item in profile["interfaces"] if item.get("type") == "wireguard" and item["id"] != "wg-keenetic"}
+    virtual = native | {item["id"] for item in profile.get("connectors", [])} | {item["id"] for item in profile.get("hysteria2", [])}
+    disabled = profile.get("disabled_connections", [])
+    require(isinstance(disabled, list) and len(disabled) <= len(virtual)
+            and all(isinstance(item, str) and item in virtual for item in disabled)
+            and len(disabled) == len(set(disabled)), "invalid disabled connection list")
+    archives = profile.get("disabled_native_endpoints", {})
+    require(isinstance(archives, dict) and set(archives) <= native, "invalid archived native connections")
+    for tag, archive in archives.items():
+        fields(archive, "endpoint server")
+        endpoint, server = archive["endpoint"], archive["server"]
+        fields(endpoint, "type tag system address private_key domain_resolver peers")
+        require(endpoint["type"] == "wireguard" and endpoint["tag"] == tag and endpoint["system"] is False
+                and endpoint["domain_resolver"] == "dns-" + tag, "invalid archived WireGuard endpoint")
+        key(endpoint["private_key"])
+        require(isinstance(endpoint["address"], list) and len(endpoint["address"]) == 1, "invalid archived WireGuard address")
+        ipaddress.IPv4Interface(endpoint["address"][0])
+        require(isinstance(endpoint["peers"], list) and len(endpoint["peers"]) == 1, "invalid archived WireGuard peers")
+        peer = endpoint["peers"][0]
+        fields(peer, "address port public_key allowed_ips")
+        ipaddress.IPv4Address(peer["address"])
+        port(peer["port"])
+        key(peer["public_key"])
+        require(isinstance(peer["allowed_ips"], list), "invalid archived allowed IPs")
+        for network in peer["allowed_ips"]:
+            ipaddress.IPv4Network(network)
+        fields(server, "type tag server detour")
+        require(server["type"] == "udp" and server["tag"] == "dns-" + tag and server["detour"] == tag,
+                "invalid archived WireGuard DNS")
+        ipaddress.IPv4Address(server["server"])
+    require(set(disabled) & native <= set(archives), "disabled native connection requires archived configuration")
+
+
+def administrative_outbounds(profile: dict, outbounds: list[dict]) -> list[dict]:
+    """Replace disabled public exits and private Hysteria transport variants with blocking outbounds."""
+    disabled = set(profile.get("disabled_connections", []))
+    return [{"type": "block", "tag": item["tag"]}
+            if item.get("tag") in disabled or any(item.get("tag", "").startswith("_hy2/" + tag + "/") for tag in disabled)
+            else item for item in outbounds]
+
+
+def apply_administrative_state(profile: dict, snapshot: dict, backend: dict) -> None:
+    """Remove disabled native runtimes, block all their public detours and mask controller availability."""
+    disabled = set(profile.get("disabled_connections", []))
+    if not disabled:
+        return
+    snapshot["healthy"] = {tag: available and tag not in disabled for tag, available in snapshot["healthy"].items()}
+    backend["outbounds"] = administrative_outbounds(profile, backend["outbounds"])
+    endpoints = backend.get("endpoints", [])
+    for endpoint in endpoints:
+        if endpoint["tag"] in disabled:
+            backend["outbounds"].append({"type": "block", "tag": endpoint["tag"]})
+    endpoints = [item for item in endpoints if item["tag"] not in disabled]
+    if endpoints:
+        backend["endpoints"] = endpoints
+    else:
+        backend.pop("endpoints", None)
+
+
 def compile_profile(profile: dict, directory: Path, committed: dict | None = None) -> tuple[dict, dict]:
     """Validate a stand profile and derive the matching controller snapshot and sing-box configuration."""
     if (
@@ -872,14 +938,14 @@ def compile_profile(profile: dict, directory: Path, committed: dict | None = Non
     )
     managed_v2 = False
     if profile["version"] == 1:
-        fields(profile, "version interfaces groups lists healthy socks_port" + (" countryMap" if "countryMap" in profile else ""))
+        fields(profile, "version interfaces groups lists healthy socks_port" + (" countryMap" if "countryMap" in profile else "") + administrative_fields(profile))
         connectors = []
     else:
         managed_v2 = "inbounds" in profile
         if managed_v2:
-            fields(profile, "version interfaces connectors groups lists healthy inbounds" + (" hysteria2" if "hysteria2" in profile else "") + (" countryMap" if "countryMap" in profile else "") + (" diagnostics" if "diagnostics" in profile else ""))
+            fields(profile, "version interfaces connectors groups lists healthy inbounds" + (" hysteria2" if "hysteria2" in profile else "") + (" countryMap" if "countryMap" in profile else "") + (" diagnostics" if "diagnostics" in profile else "") + administrative_fields(profile))
         else:
-            fields(profile, "version interfaces connectors groups lists healthy socks_port" + (" hysteria2" if "hysteria2" in profile else "") + (" countryMap" if "countryMap" in profile else ""))
+            fields(profile, "version interfaces connectors groups lists healthy socks_port" + (" hysteria2" if "hysteria2" in profile else "") + (" countryMap" if "countryMap" in profile else "") + administrative_fields(profile))
         connectors = profile["connectors"]
         require(isinstance(connectors, list) and len(connectors) <= 64, "invalid connector list")
     listen = None
@@ -888,6 +954,7 @@ def compile_profile(profile: dict, directory: Path, committed: dict | None = Non
         require(listen >= 1024 and listen != 9090, "invalid SOCKS port")
     else:
         require(isinstance(profile["inbounds"], list), "expected inbounds array")
+    validate_administrative_state(profile)
     groups, lists, health = (profile[k] for k in ("groups", "lists", "healthy"))
     require(
         all(isinstance(x, list) for x in (profile["interfaces"], groups, lists))
@@ -914,7 +981,9 @@ def compile_profile(profile: dict, directory: Path, committed: dict | None = Non
                 }
             )
         else:
-            endpoint, server = (wireguard(interface, directory) if committed is None
+            archive = profile.get("disabled_native_endpoints", {}).get(interface["id"])
+            endpoint, server = ((archive["endpoint"], archive["server"]) if archive is not None
+                                else wireguard(interface, directory) if committed is None
                                 else committed_wireguard(interface, committed))
             tag = endpoint["tag"]
             require(interface["type"] == "wireguard", "invalid interface type")
@@ -1027,7 +1096,10 @@ def compile_profile(profile: dict, directory: Path, committed: dict | None = Non
     transport_inbounds, transport_rules = transport_fragments(profile, directory)
     existing_ports = {item.get("listen_port") for item in inbounds}
     require(all(item["listen_port"] not in existing_ports for item in transport_inbounds), "occupied WireGuard transport port")
-    quality_inbounds, quality_rules = quality_fragments(endpoints, existing_ports | {item["listen_port"] for item in transport_inbounds}, profile.get("hysteria2", []))
+    quality_inbounds, quality_rules = quality_fragments(
+        [item for item in endpoints if item["tag"] not in profile.get("disabled_connections", [])],
+        existing_ports | {item["listen_port"] for item in transport_inbounds},
+        [item for item in profile.get("hysteria2", []) if item["id"] not in profile.get("disabled_connections", [])])
     inbounds += transport_inbounds + quality_inbounds
     inbound_tags = {item.get("tag") for item in inbounds if "tag" in item}
     require(
@@ -1073,6 +1145,7 @@ def compile_profile(profile: dict, directory: Path, committed: dict | None = Non
     snapshot_groups = [snapshot_group(group) for group in groups]
     unique_group_names(snapshot_groups)
     snapshot = {"groups": snapshot_groups, "lists": lists, "healthy": health}
+    apply_administrative_state(profile, snapshot, backend)
     if "countryMap" in profile:
         snapshot["countryMap"] = profile["countryMap"]
     if connector_kinds(profile):
@@ -1110,16 +1183,17 @@ def managed_profile(base: Path) -> tuple[dict, dict, dict]:
     require(type(profile.get("version")) is int and profile["version"] in {1, 2}, "unsupported profile")
     managed_v2 = False
     if profile["version"] == 1:
-        fields(profile, "version interfaces groups lists healthy socks_port" + (" countryMap" if "countryMap" in profile else ""))
+        fields(profile, "version interfaces groups lists healthy socks_port" + (" countryMap" if "countryMap" in profile else "") + administrative_fields(profile))
         connectors = []
     else:
         managed_v2 = "inbounds" in profile
         if managed_v2:
-            fields(profile, "version interfaces connectors groups lists healthy inbounds" + (" hysteria2" if "hysteria2" in profile else "") + (" countryMap" if "countryMap" in profile else "") + (" diagnostics" if "diagnostics" in profile else ""))
+            fields(profile, "version interfaces connectors groups lists healthy inbounds" + (" hysteria2" if "hysteria2" in profile else "") + (" countryMap" if "countryMap" in profile else "") + (" diagnostics" if "diagnostics" in profile else "") + administrative_fields(profile))
         else:
-            fields(profile, "version interfaces connectors groups lists healthy socks_port" + (" hysteria2" if "hysteria2" in profile else "") + (" countryMap" if "countryMap" in profile else ""))
+            fields(profile, "version interfaces connectors groups lists healthy socks_port" + (" hysteria2" if "hysteria2" in profile else "") + (" countryMap" if "countryMap" in profile else "") + administrative_fields(profile))
         connectors = profile["connectors"]
         require(isinstance(connectors, list), "invalid connector metadata")
+    validate_administrative_state(profile)
     backend = read_verified(base, "sing-box.json", "profile-backend.sha256")
     snapshot = json.loads(
         (base / "snapshot.json").read_bytes(), object_pairs_hook=unique
@@ -1155,7 +1229,8 @@ def managed_profile(base: Path) -> tuple[dict, dict, dict]:
     require([item for item in backend.get("inbounds", []) if item.get("tag", "").startswith("_wg-transport-")]
             == transport_inbounds, "backend transport listeners differ from the selected underlays")
     quality_inbounds, quality_rules = quality_fragments(backend.get("endpoints", []),
-        {item.get("listen_port") for item in backend.get("inbounds", []) if not item.get("tag", "").startswith("_quality-")}, profile.get("hysteria2", []))
+        {item.get("listen_port") for item in backend.get("inbounds", []) if not item.get("tag", "").startswith("_quality-")},
+        [item for item in profile.get("hysteria2", []) if item["id"] not in profile.get("disabled_connections", [])])
     installed_quality = [item for item in backend.get("inbounds", []) if item.get("tag", "").startswith("_quality-")]
     if quality_inbounds and not installed_quality:
         # Upgrade only a known pre-quality generation, preserving endpoint keys and route order.
@@ -1186,6 +1261,7 @@ def managed_profile(base: Path) -> tuple[dict, dict, dict]:
     )
     validate_underlays(profile)
     connector_routes, connector_servers = connector_outbounds(connectors, base)
+    connector_routes = administrative_outbounds(profile, connector_routes)
     if connector_routes:
         # Normalize only the exact outbound emitted by v1 for an inactive legacy
         # profile. Staged generations then publish a blocked exit for that profile.
@@ -1618,20 +1694,23 @@ def stage_order(
             outbound["domain_resolver"] = UNDERLAY_DNS["tag"]
     connector_routes, _ = connector_outbounds(profile.get("connectors", []), base)
     connector_routes.extend(hysteria_outbounds(profile))
+    connector_routes = administrative_outbounds(profile, connector_routes)
+    native_blocks = [{"type": "block", "tag": item["id"]} for item in profile["interfaces"]
+                     if item["type"] == "wireguard" and item["id"] in profile.get("disabled_connections", [])]
     require(
         backend["outbounds"]
         == (
             [*(selector(g, g.get("defaultExit", "deny")) for g in old), *previous_direct_routes, *connector_routes, deny]
             if "inbounds" in profile and previous_direct_routes
             else [deny, *(selector(g, g.get("defaultExit", "deny")) for g in old), *previous_direct_routes, *connector_routes]
-        ),
+        ) + native_blocks,
         "unexpected selector topology",
     )
     backend["outbounds"] = (
         [*(selector(g, g.get("defaultExit", "deny")) for g in desired_groups), *direct_routes, *connector_routes, deny]
         if "inbounds" in profile and direct_routes
         else [deny, *(selector(g, g.get("defaultExit", "deny")) for g in desired_groups), *direct_routes, *connector_routes]
-    )
+    ) + native_blocks
     synchronize_connector_assignments(profile, desired_groups, stage)
     ordered_routes = domain_routes(
         profile["lists"], {group["id"]: i for i, group in enumerate(groups)}
@@ -1666,7 +1745,7 @@ def main() -> None:
     if len(sys.argv) == 3 and sys.argv[1] == "--awg-start-plan":
         profile, _, _ = managed_profile(Path(sys.argv[2]))
         for connector in profile.get("connectors", []):
-            if connector["status"] == "ready":
+            if connector["status"] == "ready" and connector["id"] not in profile.get("disabled_connections", []):
                 mode = "manual" if connector.get("underlays") else "auto"
                 plan = [connection_id(connector["id"]), connector_slot(connector), mode]
                 if mode == "manual":
@@ -1676,7 +1755,7 @@ def main() -> None:
     if len(sys.argv) == 3 and sys.argv[1] == "--ready-awg":
         profile, _, _ = managed_profile(Path(sys.argv[2]))
         for connector in profile.get("connectors", []):
-            if connector["status"] == "ready":
+            if connector["status"] == "ready" and connector["id"] not in profile.get("disabled_connections", []):
                 print(connection_id(connector["id"]))
         return
     if len(sys.argv) == 3 and sys.argv[1] == "--validate-managed":

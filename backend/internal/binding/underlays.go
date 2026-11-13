@@ -121,7 +121,7 @@ func (e Engine) connectionCatalog() ([]panelmodel.AWGUnderlayCandidate, error) {
 		if role != "" {
 			name = channelRoleLabel(role)
 		}
-		candidates = append(candidates, panelmodel.AWGUnderlayCandidate{ID: item.ID, Type: item.Type, Name: name, Role: role})
+		candidates = append(candidates, panelmodel.AWGUnderlayCandidate{ID: item.ID, Type: item.Type, Name: name, Role: role, Enabled: profile.connectionEnabled(item.ID)})
 	}
 	for _, item := range profile.Connectors {
 		if !awg.ValidConnectionID(item.ID) || (item.Name != "" && ValidateGroupName(item.Name) != nil) || (item.Type != "wireguard" && item.Type != "amneziawg") {
@@ -131,15 +131,16 @@ func (e Engine) connectionCatalog() ([]panelmodel.AWGUnderlayCandidate, error) {
 		if name == "" {
 			name = item.ID
 		}
-		candidates = append(candidates, panelmodel.AWGUnderlayCandidate{ID: item.ID, Type: item.Type, Name: name})
+		candidates = append(candidates, panelmodel.AWGUnderlayCandidate{ID: item.ID, Type: item.Type, Name: name, Enabled: profile.connectionEnabled(item.ID)})
 	}
 	for _, item := range profile.Hysteria2 {
 		if !awg.ValidConnectionID(item.ID) || ValidateGroupName(item.Name) != nil {
 			return nil, ErrUnavailable
 		}
-		candidates = append(candidates, panelmodel.AWGUnderlayCandidate{ID: item.ID, Type: "hysteria2", Name: item.Name})
+		candidates = append(candidates, panelmodel.AWGUnderlayCandidate{ID: item.ID, Type: "hysteria2", Name: item.Name, Enabled: profile.connectionEnabled(item.ID)})
 	}
 	for _, candidate := range platformUnderlayCandidates() {
+		candidate.Enabled = true
 		candidate.Role = platformChannelRole(candidate.ID)
 		if candidate.Role != "" {
 			candidate.Name = channelRoleLabel(candidate.Role)

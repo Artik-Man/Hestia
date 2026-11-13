@@ -4,6 +4,39 @@ import {
   validTrafficPage,
   validTrafficSettings,
 } from "../src/routes/traffic/traffic-observations.ts";
+import { trafficOutcomeName } from "../src/core/models/traffic-outcome.ts";
+
+/** Keeps journal outcomes focused on the selected connector, explicit block, or missing decision. */
+test("traffic outcomes show selected outputs and distinguish blocked from unknown", () => {
+  const resolveName = (id) =>
+    id === "awg-id" ? "Zarubin" : "Название недоступно";
+  const event = { connection: "awg-id", kind: "unconfirmed" };
+  assert.equal(trafficOutcomeName(event, resolveName), "Zarubin");
+  assert.equal(
+    trafficOutcomeName(
+      { ...event, connection: "keenetic-uplink" },
+      resolveName,
+    ),
+    "Название недоступно",
+  );
+  for (const name of ["Мой провайдер", "Новое имя"]) {
+    assert.equal(
+      trafficOutcomeName(
+        { ...event, connection: "keenetic-uplink" },
+        () => name,
+      ),
+      name,
+    );
+  }
+  assert.equal(
+    trafficOutcomeName({ kind: "blocked" }, resolveName),
+    "Заблокировано",
+  );
+  assert.equal(
+    trafficOutcomeName({ kind: "unconfirmed" }, resolveName),
+    "Не определено",
+  );
+});
 
 /** Covers bounded viewport allocation, stable snapshots and rejection of malformed evidence. */
 test("traffic page validates the window and the source before accepting observations", () => {
@@ -24,6 +57,20 @@ test("traffic page validates the window and the source before accepting observat
     sourceAvailable: false,
   };
   assert.ok(validTrafficPage(page, 1, 500, "2"));
+  assert.ok(
+    validTrafficPage(
+      { ...page, events: [{ ...event, protocol: "QUIC" }] },
+      1,
+      500,
+    ),
+  );
+  assert.ok(
+    !validTrafficPage(
+      { ...page, events: [{ ...event, protocol: "ICMP" }] },
+      1,
+      500,
+    ),
+  );
   assert.ok(!validTrafficPage(page, 1, 500, "3"));
   for (const country of ["", "Russia", null, 12]) {
     assert.ok(
