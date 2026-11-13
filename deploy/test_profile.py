@@ -18,6 +18,7 @@ from profile import (
     KEENETIC_INGRESS_INBOUND,
     keenetic_interface_extension,
     managed_profile,
+    normalize_legacy_ingress_route_order,
     pinned_paths,
     semantically_equal_backend,
     stage_binding,
@@ -110,6 +111,7 @@ class ProfileTests(unittest.TestCase):
             "priority": 1, "ipv6Blocked": True, "status": "ready",
         }]
         self.profile["groups"].append({"id": "amnezia", "exits": [connector_id]})
+        self.profile["lists"] = [{"id": "safe-domain", "group": "amnezia", "masks": ["*.safe.test"]}]
         self.profile["healthy"][connector_id] = True
         self.profile["version"] = 2
         self.profile.pop("socks_port")
@@ -146,28 +148,31 @@ class ProfileTests(unittest.TestCase):
             {"inbound": ["hestia-keenetic-ingress"], "action": "sniff", "timeout": "300ms"},
             enabled_backend["route"]["rules"],
         )
-        self.assertIn(
-            {"inbound": ["hestia-keenetic-ingress"], "action": "route", "outbound": "amnezia"},
-            enabled_backend["route"]["rules"],
+        ingress_rule = {
+            "inbound": ["hestia-keenetic-ingress"],
+            "action": "route",
+            "outbound": "amnezia",
+        }
+        self.assertIn(ingress_rule, enabled_backend["route"]["rules"])
+        self.assertGreater(
+            enabled_backend["route"]["rules"].index(ingress_rule),
+            enabled_backend["route"]["rules"].index(
+                next(rule for rule in enabled_backend["route"]["rules"] if "domain_suffix" in rule)
+            ),
         )
-        ingress_rule = enabled_backend["route"]["rules"].index(
-            {"inbound": ["hestia-keenetic-ingress"], "action": "route", "outbound": "amnezia"}
-        )
-        self.assertLess(ingress_rule, enabled_backend["route"]["rules"].index(
-            next(rule for rule in enabled_backend["route"]["rules"] if "domain_suffix" in rule)
-        ))
 
         disabled_stage = self.base / "disabled"
         disabled_stage.mkdir()
         shutil.copytree(self.base / "awg", enabled_stage / "awg")
-        stage_keenetic_ingress(enabled_stage, disabled_stage, False)
+        with patch("profile.keenetic_default_route_device", return_value="wan9"):
+            stage_keenetic_ingress(enabled_stage, disabled_stage, False)
         disabled_profile = json.loads((disabled_stage / "profile.json").read_bytes())
         disabled_backend = json.loads((disabled_stage / "sing-box.json").read_bytes())
         self.assertNotIn("hestia-keenetic-ingress", [item["tag"] for item in disabled_profile["inbounds"]])
         self.assertIn("hestia-local-socks", [item["tag"] for item in disabled_backend["inbounds"]])
 
-    def test_keenetic_ingress_accepts_safe_awg_and_hysteria_group(self):
-        """Allow non-recursive Hysteria beside ready AWG while rejecting unsafe exits and ambiguity."""
+    def test_keenetic_ingress_accepts_safe_groups_and_uses_default_as_fallback(self):
+        """Allow several safe policy targets and use the configured default group for unmatched ingress."""
         connector_id = "7f02067a-ca17-4c38-ae26-7c7fb21ca06a"
         hysteria_id = "2db91e0d-39d2-4194-a8b9-1c9fdc9c86bd"
         relay_id = "8f6f8820-52f0-4d87-956e-217b99a5d544"
@@ -180,26 +185,205 @@ class ProfileTests(unittest.TestCase):
             ],
             "groups": [{"id": "rest-of-world", "exits": [connector_id, hysteria_id], "defaultExit": "deny"}],
         }
-        self.assertEqual(client_route(profile, "direct", [], [])[
-            "rules"], [{"inbound": ["hestia-keenetic-ingress"], "action": "route", "outbound": "rest-of-world"}])
+        fallback = {"inbound": ["hestia-keenetic-ingress"], "action": "route", "outbound": "rest-of-world"}
+        self.assertEqual(client_route(profile, "rest-of-world", [], [])[
+            "rules"], [fallback])
         profile["groups"].append({"id": "also-safe", "exits": [connector_id], "defaultExit": "deny"})
-        with self.assertRaisesRegex(ValueError, "one .*AWG-anchored VPN group"):
-            client_route(profile, "direct", [], [])
+        self.assertEqual(client_route(profile, "rest-of-world", [], [])[
+            "rules"], [fallback])
         profile["groups"].pop()
         profile["groups"][0]["exits"].append("direct-wan")
-        self.assertEqual(client_route(profile, "direct", [], [])[
-            "rules"], [{"inbound": ["hestia-keenetic-ingress"], "action": "route", "outbound": "deny"}])
+        self.assertEqual(
+            client_route(profile, "rest-of-world", [], [])["rules"],
+            [{"inbound": ["hestia-keenetic-ingress"], "action": "route", "outbound": "deny"}],
+        )
         profile["groups"][0]["exits"] = [connector_id, hysteria_id]
         profile["hysteria2"][0]["underlay"] = relay_id
-        self.assertEqual(client_route(profile, "direct", [], [])[
-            "rules"], [{"inbound": ["hestia-keenetic-ingress"], "action": "route", "outbound": "deny"}])
+        self.assertEqual(
+            client_route(profile, "rest-of-world", [], [])["rules"],
+            [{"inbound": ["hestia-keenetic-ingress"], "action": "route", "outbound": "deny"}],
+        )
         profile["hysteria2"][0]["underlay"] = "keenetic-uplink"
         profile["groups"][0]["defaultExit"] = connector_id
-        self.assertEqual(client_route(profile, "direct", [], [])[
-            "rules"], [{"inbound": ["hestia-keenetic-ingress"], "action": "route", "outbound": "rest-of-world"}])
+        self.assertEqual(client_route(profile, "rest-of-world", [], [])[
+            "rules"], [fallback])
         profile["groups"][0]["defaultExit"] = "direct-wan"
-        self.assertEqual(client_route(profile, "direct", [], [])[
-            "rules"], [{"inbound": ["hestia-keenetic-ingress"], "action": "route", "outbound": "deny"}])
+        self.assertEqual(
+            client_route(profile, "rest-of-world", [], [])["rules"],
+            [{"inbound": ["hestia-keenetic-ingress"], "action": "route", "outbound": "deny"}],
+        )
+
+    def test_keenetic_ingress_allows_provider_exit_bound_to_current_uplink(self):
+        """Allow the explicit provider interface beside VPN exits when it matches the active WAN device."""
+        connector_id = "7f02067a-ca17-4c38-ae26-7c7fb21ca06a"
+        profile = {
+            "inbounds": [{"type": "tun", "tag": "hestia-keenetic-ingress"}],
+            "connectors": [{"id": connector_id, "type": "amneziawg", "status": "ready"}],
+            "hysteria2": [],
+            "interfaces": [{"id": "keenetic-uplink", "type": "direct", "bind_interface": "eth3"}],
+            "groups": [{
+                "id": "russia",
+                "exits": [connector_id, "keenetic-uplink"],
+                "defaultExit": "keenetic-uplink",
+            }],
+        }
+
+        with patch("profile.keenetic_default_route_device", return_value="eth3"):
+            route = client_route(profile, "russia", [], [])
+
+        self.assertEqual(
+            route["rules"],
+            [{"inbound": ["hestia-keenetic-ingress"], "action": "route", "outbound": "russia"}],
+        )
+        domain_rule = {"domain_suffix": "ru", "action": "route", "outbound": "russia"}
+        with patch("profile.keenetic_default_route_device", return_value="eth3"):
+            routed = client_route(profile, "russia", [domain_rule], [])
+        self.assertIn(domain_rule, routed["rules"])
+
+    def test_keenetic_ingress_rejects_provider_exit_not_bound_to_current_uplink(self):
+        """Fail closed when the configured provider interface differs from the verified default WAN."""
+        connector_id = "7f02067a-ca17-4c38-ae26-7c7fb21ca06a"
+        profile = {
+            "inbounds": [{"type": "tun", "tag": "hestia-keenetic-ingress"}],
+            "connectors": [{"id": connector_id, "type": "amneziawg", "status": "ready"}],
+            "hysteria2": [],
+            "interfaces": [{"id": "keenetic-uplink", "type": "direct", "bind_interface": "eth2"}],
+            "groups": [{
+                "id": "russia",
+                "exits": [connector_id, "keenetic-uplink"],
+                "defaultExit": connector_id,
+            }],
+        }
+
+        with patch("profile.keenetic_default_route_device", return_value="eth3"):
+            route = client_route(profile, "russia", [], [])
+
+        self.assertEqual(
+            route["rules"],
+            [{"inbound": ["hestia-keenetic-ingress"], "action": "route", "outbound": "deny"}],
+        )
+
+    def test_managed_profile_normalizes_only_legacy_ingress_rule_order(self):
+        """Migrate the exact previous ingress-before-domain ordering while preserving other route changes."""
+        profile = {
+            "inbounds": [{"type": "tun", "tag": "hestia-keenetic-ingress"}],
+            "connectors": [],
+            "groups": [],
+        }
+        domain_rule = {"domain_suffix": "ru", "action": "route", "outbound": "russia"}
+        fallback = {"inbound": ["hestia-keenetic-ingress"], "action": "route", "outbound": "world"}
+        pinned = [{"ip_cidr": ["192.0.2.1/32"], "action": "route", "outbound": "deny"}]
+        expected_rules = [*pinned, {"inbound": ["hestia-keenetic-ingress"], "action": "sniff", "timeout": "300ms"}, domain_rule, fallback]
+        expected = {"final": "world", "rules": expected_rules}
+        actual = {
+            "final": "world",
+            "rules": [*pinned, expected_rules[1], fallback, domain_rule],
+        }
+
+        normalize_legacy_ingress_route_order(actual, expected, profile, pinned, [domain_rule])
+
+        self.assertEqual(actual, expected)
+        altered = {"final": "world", "rules": [*pinned, expected_rules[1], fallback, domain_rule, {"action": "deny"}]}
+        normalize_legacy_ingress_route_order(altered, expected, profile, pinned, [domain_rule])
+        self.assertNotEqual(altered, expected)
+
+    def test_keenetic_ingress_applies_domain_then_country_then_safe_fallback(self):
+        """Route ingress by domains before GeoIP and reserve the safe default group for unmatched traffic."""
+        root = Path(__file__).resolve().parents[1]
+        codes = (root / "backend/internal/geoip/countries.txt").read_text().split()
+        geoip_dir = self.base / "geoip"
+        overrides_dir = self.base / "overrides"
+        geoip_dir.mkdir()
+        overrides_dir.mkdir()
+        (geoip_dir / "manifest.json").write_text(json.dumps({"countries": ["RU", "US"]}))
+        awg_world = "7f02067a-ca17-4c38-ae26-7c7fb21ca06a"
+        awg_russia = "2db91e0d-39d2-4194-a8b9-1c9fdc9c86bd"
+        profile = {
+            "inbounds": [{"type": "tun", "tag": "hestia-keenetic-ingress"}],
+            "connectors": [
+                {"id": awg_world, "type": "amneziawg", "status": "ready"},
+                {"id": awg_russia, "type": "amneziawg", "status": "ready"},
+            ],
+            "hysteria2": [],
+            "groups": [
+                {"id": "rest-of-world", "exits": [awg_world], "defaultExit": awg_world},
+                {"id": "russia", "exits": [awg_russia], "defaultExit": awg_russia},
+            ],
+            "countryMap": {
+                "enabled": True,
+                "version": "test-version",
+                "assignments": {code: "rest-of-world" for code in codes},
+            },
+        }
+        profile["countryMap"]["assignments"]["RU"] = "russia"
+        domain_rule = {"domain_suffix": "ru", "action": "route", "outbound": "rest-of-world"}
+
+        with patch("profile.GEOIP_DIRECTORY", geoip_dir), patch("profile.GEOIP_OVERRIDES", overrides_dir):
+            route = client_route(profile, "rest-of-world", [domain_rule], [])
+
+        rules = route["rules"]
+        fallback = {"inbound": ["hestia-keenetic-ingress"], "action": "route", "outbound": "rest-of-world"}
+        domain_index = rules.index(domain_rule)
+        country_index = next(
+            index for index, rule in enumerate(rules)
+            if rule.get("rule_set") == ["geoip-RU"]
+        )
+        fallback_index = rules.index(fallback)
+        self.assertLess(domain_index, country_index)
+        self.assertLess(country_index, fallback_index)
+        self.assertIn(
+            {"type": "local", "tag": "geoip-RU", "format": "source", "path": str(geoip_dir / "RU.json")},
+            route["rule_set"],
+        )
+
+    def test_keenetic_ingress_rejects_unsafe_country_route_group(self):
+        """Reject an ingress GeoIP target whose VPN underlay would re-enter through OpkgTun."""
+        root = Path(__file__).resolve().parents[1]
+        codes = (root / "backend/internal/geoip/countries.txt").read_text().split()
+        geoip_dir = self.base / "geoip"
+        overrides_dir = self.base / "overrides"
+        geoip_dir.mkdir()
+        overrides_dir.mkdir()
+        (geoip_dir / "manifest.json").write_text(json.dumps({"countries": ["RU"]}))
+        awg_world = "7f02067a-ca17-4c38-ae26-7c7fb21ca06a"
+        relay_id = "2db91e0d-39d2-4194-a8b9-1c9fdc9c86bd"
+        profile = {
+            "inbounds": [{"type": "tun", "tag": "hestia-keenetic-ingress"}],
+            "connectors": [{"id": awg_world, "type": "amneziawg", "status": "ready"}],
+            "hysteria2": [{"id": relay_id, "underlay": "keenetic-opkgtun"}],
+            "groups": [
+                {"id": "rest-of-world", "exits": [awg_world], "defaultExit": awg_world},
+                {"id": "russia", "exits": [relay_id], "defaultExit": relay_id},
+            ],
+            "countryMap": {
+                "enabled": True,
+                "version": "test-version",
+                "assignments": {code: "rest-of-world" for code in codes},
+            },
+        }
+        profile["countryMap"]["assignments"]["RU"] = "russia"
+
+        with patch("profile.GEOIP_DIRECTORY", geoip_dir), patch("profile.GEOIP_OVERRIDES", overrides_dir):
+            with self.assertRaisesRegex(ValueError, "unsafe Keenetic ingress route group: russia"):
+                client_route(profile, "rest-of-world", [], [])
+
+    def test_keenetic_ingress_rejects_unsafe_domain_route_group(self):
+        """Reject a domain binding to a group whose Hysteria transport recursively uses OpkgTun."""
+        awg_world = "7f02067a-ca17-4c38-ae26-7c7fb21ca06a"
+        relay_id = "2db91e0d-39d2-4194-a8b9-1c9fdc9c86bd"
+        profile = {
+            "inbounds": [{"type": "tun", "tag": "hestia-keenetic-ingress"}],
+            "connectors": [{"id": awg_world, "type": "amneziawg", "status": "ready"}],
+            "hysteria2": [{"id": relay_id, "underlay": "keenetic-opkgtun"}],
+            "groups": [
+                {"id": "rest-of-world", "exits": [awg_world], "defaultExit": awg_world},
+                {"id": "russia", "exits": [relay_id], "defaultExit": relay_id},
+            ],
+        }
+        domain_rule = {"domain_suffix": "ru", "action": "route", "outbound": "russia"}
+
+        with self.assertRaisesRegex(ValueError, "unsafe Keenetic ingress route group: russia"):
+            client_route(profile, "rest-of-world", [domain_rule], [])
 
     def test_keenetic_interface_extension_is_narrowly_scoped(self):
         """Permit only the reserved Keenetic underlay bound to the discovered uplink device."""

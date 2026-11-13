@@ -501,7 +501,7 @@ KEENETIC_INGRESS_INBOUND = {
 def client_route(
     profile: dict, final: str, domain_rules: list[dict], pinned: list[dict]
 ) -> dict:
-    """Build pinned, OpkgTun-to-AmneziaWG, domain and default routes in precedence order."""
+    """Build pinned routes, domain and country policies, and a guarded Keenetic ingress fallback."""
     rules = list(pinned)
     inbound_tags = [
         item["tag"]
@@ -510,19 +510,21 @@ def client_route(
     ]
     if inbound_tags and domain_rules:
         rules.append({"inbound": inbound_tags, "action": "sniff", "timeout": "300ms"})
-    ingress_group = keenetic_ingress_group(profile)
-    if ingress_group is not None:
-        rules.append({
-            "inbound": [KEENETIC_INGRESS_INBOUND["tag"]],
-            "action": "route",
-            "outbound": ingress_group,
-        })
-    elif any(item.get("tag") == KEENETIC_INGRESS_INBOUND["tag"] for item in profile.get("inbounds", [])):
-        rules.append({
-            "inbound": [KEENETIC_INGRESS_INBOUND["tag"]],
-            "action": "route",
-            "outbound": "deny",
-        })
+    has_keenetic_ingress = any(
+        item.get("type") == "tun" and item.get("tag") == KEENETIC_INGRESS_INBOUND["tag"]
+        for item in profile.get("inbounds", [])
+    )
+    safe_ingress_groups = keenetic_ingress_groups(profile) if has_keenetic_ingress else set()
+    ingress_fallback = (
+        keenetic_ingress_group(profile, final) if has_keenetic_ingress else None
+    )
+    if has_keenetic_ingress:
+        for rule in domain_rules:
+            target = rule.get("outbound")
+            require(
+                target in safe_ingress_groups,
+                f"unsafe Keenetic ingress route group: {target}",
+            )
     rules.extend(domain_rules)
     route = {"final": final}
     policy = profile.get("countryMap")
@@ -543,6 +545,12 @@ def client_route(
             "invalid country routing assignments",
         )
         if policy["enabled"]:
+            if has_keenetic_ingress:
+                for target in set(assignments.values()):
+                    require(
+                        target in safe_ingress_groups,
+                        f"unsafe Keenetic ingress route group: {target}",
+                    )
             manifest = json.loads(
                 (GEOIP_DIRECTORY / "manifest.json").read_bytes(),
                 object_pairs_hook=unique,
@@ -582,6 +590,12 @@ def client_route(
                     for group, tags in by_group.items()
                 )
             route["rule_set"] = local_sets
+    if has_keenetic_ingress:
+        rules.append({
+            "inbound": [KEENETIC_INGRESS_INBOUND["tag"]],
+            "action": "route",
+            "outbound": ingress_fallback or "deny",
+        })
     if rules:
         route["rules"] = rules
     return route
@@ -638,20 +652,68 @@ def normalize_stale_ingress_route(
         actual_rules[index] = wanted
 
 
-def keenetic_ingress_group(profile: dict) -> str | None:
-    """Resolve the unique AWG-anchored VPN group without recursive OpkgTun transports."""
+def normalize_legacy_ingress_route_order(
+    actual: dict,
+    expected: dict,
+    profile: dict,
+    pinned: list[dict],
+    domain_rules: list[dict],
+) -> None:
+    """Accept only the previous managed generation with ingress fallback before domain and GeoIP rules."""
+    actual_rules = actual.get("rules", [])
+    expected_rules = expected.get("rules", [])
+    if not isinstance(actual_rules, list) or not isinstance(expected_rules, list) or not expected_rules:
+        return
+    fallback = expected_rules[-1]
+    if (
+        not isinstance(fallback, dict)
+        or fallback.get("inbound") != [KEENETIC_INGRESS_INBOUND["tag"]]
+        or fallback.get("action") != "route"
+        or set(fallback) != {"inbound", "action", "outbound"}
+    ):
+        return
+    prefix_length = len(pinned)
+    has_tun_inbound = any(
+        item.get("type") == "tun" and item.get("tag")
+        for item in profile.get("inbounds", [])
+    )
+    if has_tun_inbound and domain_rules:
+        prefix_length += 1
+    legacy_rules = list(expected_rules[:-1])
+    legacy_rules.insert(prefix_length, fallback)
+    legacy_route = {**expected, "rules": legacy_rules}
+    if actual == legacy_route:
+        actual["rules"] = expected_rules
+
+
+def keenetic_ingress_groups(profile: dict) -> set[str]:
+    """Return VPN-anchored groups with only safe VPN exits or the verified provider uplink."""
     if not any(
         item.get("type") == "tun" and item.get("tag") == KEENETIC_INGRESS_INBOUND["tag"]
         for item in profile.get("inbounds", [])
     ):
-        return None
+        return set()
     connectors = {
         item["id"]: item
         for item in profile.get("connectors", [])
         if item.get("type") == "amneziawg" and item.get("status") == "ready"
     }
     hysteria2 = {item["id"]: item for item in profile.get("hysteria2", [])}
+    interfaces = {item["id"]: item for item in profile.get("interfaces", [])}
+    uses_provider_uplink = any(
+        "keenetic-uplink" in group.get("exits", [])
+        for group in profile.get("groups", [])
+    )
+    provider_uplink = interfaces.get("keenetic-uplink", {})
+    safe_provider_uplink = (
+        uses_provider_uplink
+        and provider_uplink.get("type") == "direct"
+        and isinstance(provider_uplink.get("bind_interface"), str)
+        and provider_uplink["bind_interface"] == keenetic_default_route_device()
+    )
     allowed_exits = {*connectors, *hysteria2}
+    if safe_provider_uplink:
+        allowed_exits.add("keenetic-uplink")
     transports = {
         item["id"]: item.get("underlays", [item.get("underlay")] if item.get("underlay") else [])
         for item in [*profile.get("connectors", []), *profile.get("hysteria2", [])]
@@ -666,17 +728,25 @@ def keenetic_ingress_group(profile: dict) -> str | None:
         visited.add(identifier)
         return any(depends_on_opkgtun(item, visited) for item in transports.get(identifier, []))
 
-    candidates = [
-        group
+    candidates = {
+        group["id"]
         for group in profile.get("groups", [])
         if group.get("exits")
         and any(member in connectors for member in group["exits"])
         and group.get("defaultExit", "deny") in {"deny", *group["exits"]}
         and all(member in allowed_exits for member in group["exits"])
         and all(not depends_on_opkgtun(member, set()) for member in group["exits"])
-    ]
-    require(len(candidates) <= 1, "Keenetic ingress requires at most one safe AWG-anchored VPN group")
-    return candidates[0]["id"] if candidates else None
+    }
+    return candidates
+
+
+def keenetic_ingress_group(profile: dict, default: str) -> str | None:
+    """Choose a safe ingress fallback, preferring the configured default when it qualifies."""
+    candidates = keenetic_ingress_groups(profile)
+    if default in candidates:
+        return default
+    require(len(candidates) <= 1, "Keenetic ingress requires an unambiguous safe fallback group")
+    return next(iter(candidates), None)
 
 
 def replace_domain_routes(
@@ -1106,6 +1176,9 @@ def managed_profile(base: Path) -> tuple[dict, dict, dict]:
         if backend["route"] == previous_route:
             backend["route"] = expected_route
     normalize_stale_ingress_route(backend["route"], expected_route, groups)
+    normalize_legacy_ingress_route_order(
+        backend["route"], expected_route, profile, transport_rules + quality_rules, domains
+    )
     require(
         backend["route"]
         == expected_route,

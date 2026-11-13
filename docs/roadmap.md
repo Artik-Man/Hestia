@@ -219,3 +219,13 @@ NDM conntrack trace собран как `20261109-203924-db76edb7f3e1`, но е�
 **Настройки GC sing-box на KN-1012, 12 ноября 2026 года:** по предложению владельца пакет `0.1.8` установлен с `GOGC=100` и `GOMEMLIMIT=140MiB`. После перезагрузки версия, readiness supervisor и оба значения подтверждены; IPv4 default-route hash сохранился. По сообщению владельца, Ookla по-прежнему показывает около 30 Мбит/с при загрузке CPU 80–90%, то есть заметного прироста нет. Это не контролируемый замер с сохранённой телеметрией; причина ограничения не установлена. [Отчёт и свидетельство](../experiments/keenetic-ipk-packaging/README.md#настройки-gc-140-mib--100-на-kn-1012--12-ноября-2026-года).
 
 **Профилирование CPU dataplane на KN-1012, 12 ноября 2026 года:** установлен `0.1.10` с временным sing-box pprof; профиль и независимые `top` samples сняты при контролируемом Cloudflare трафике через Hestia ingress. Записи Hestia, connector route manifest и дельты `awg1`/`eth3` counters подтвердили AmneziaWG `awg1` как фактический выход. Нагрузка задействовала sing-box/gVisor TCP/IP stack, `amneziawg-go -f awg1` и softirq; отдельная tuple-stage trace не сохранилась из-за SQLite busy/deadline. Pprof выключен, supervisor готов и default-route hash совпадает. Сравнение с Hysteria и функциям kernel per-function ещё нужны отдельные измерения. [Отчёт и сырые свидетельства](../experiments/keenetic-client-dataplane/README.md#профилирование-cpu-sing-box-и-awg-на-kn-1012--12-ноября-2026-года).
+
+**Маршрутизация Keenetic ingress по стране, 13 ноября 2026 года:** после
+уточнения владельца группа может включать VPN-выходы и провайдерский
+`keenetic-uplink`, привязанный к проверенному текущему WAN. IPK `0.1.13`
+установлен на KN-1012; supervisor, managed profile, sing-box и три panel API
+прошли проверки, IPv4 default route сохранился. IP-literal запрос из
+`hestia-client` к `77.88.8.8` получил HTTP 404, журнал определил страну RU,
+правило `geoip-RU`, группу «Россия» и выбранный `keenetic-uplink`; журнал
+пометил egress как `unconfirmed`. VPN egress отдельно не проверялся.
+[Протокол установки и ограничения](../experiments/keenetic-ipk-packaging/README.md#установка-маршрутизации-ingress-на-kn-1012--13-ноября-2026-года).

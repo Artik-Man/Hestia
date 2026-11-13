@@ -1,0 +1,63 @@
+Вопрос: успешно ли на KN-1012 устанавливается новая версия Hestia с
+маршрутизацией Keenetic ingress по домену, стране и безопасному fallback,
+сохраняя прямой провайдерский выход в группе наряду с VPN?
+
+Среда: физический Keenetic Giga KN-1012, KeeneticOS 5.02.B.3.0-2, Entware
+`aarch64-3.10`; до обновления Hestia `0.1.10`. Владелец поручил обновить
+роутер и подтвердил, что Hestia должна направлять потоки как в VPN, так и
+на провайдера через `keenetic-uplink`.
+
+**Сборка и безопасность обновления.** `make build` собрал Keenetic bundle
+`dist/artifacts/0.1.13/keenetic-arm64-experimental`; `verify_bundle` подтвердил
+версию `0.1.13`. IPK SHA-256:
+`078493f703a8dcea5dc0c0d26e1878a8020035dc6f6a46c6460abf2b21da43ab`.
+Перед обновлением новый компилятор на KN-1012 создал временную генерацию из
+активного managed-профиля. Профиль и географические правила прошли managed
+validation, а `sing-box check` завершился успешно. `keenetic-uplink` был
+привязан к `eth3`, единственному выбранному IPv4 default-route устройству.
+
+До остановки `0.1.10` создана root-only резервная копия
+`/opt/tmp/hestia-deploy-0.1.13-pre-route-20261113`: каталог и копия настроек
+имеют режим `0700`, rollback IPK `0.1.10` — `0600`. Его SHA-256
+`b73fe5409eb5bac7bbda28bff777b3553eabf88eb1d05019bbc07734841e1508` совпадает
+с локальным проверенным файлом.
+
+**Установка.** `/opt/bin/opkg install
+/opt/var/lib/hestia-cli/inbox/hestia_0.1.13_aarch64-3.10.ipk` штатно остановил
+старый процесс (`stopped /opt/bin/hestia`), прошёл target preflight и
+завершился кодом 0. Итоговый `opkg status hestia`: версия `0.1.13`,
+`Status: install user installed`, `Architecture: aarch64-3.10`. Supervisor
+readiness прошла; readiness marker является обычным файлом, package-maintenance
+marker отсутствует. `profile.py --validate-managed` и `sing-box check` прошли.
+API `/`, `/api/groups-and-rules` и `/api/physical-connections` вернули HTTP 200.
+
+В активном sing-box конфиге порядок правил для проверенного маршрута:
+домен `.ru` — индекс 9, `geoip-RU` — индекс 13, ingress fallback — индекс 14.
+Доменное и страновое назначение указывали на `default` (группа «Россия»), а
+fallback — на «Остальной мир». IPv4 default-route hash до и после установки
+совпал: `f06c293b969676f64f57820103587f105084b9f90ca6c30640a925da0eba3871`;
+IPv6 default route отсутствовал.
+
+**Клиентская проверка.** `hestia-client` (`192.168.1.124`) имела default route
+через Keenetic `192.168.1.1` по `lima0`. Запрос IP-literal
+`https://77.88.8.8/` завершился HTTP 404 и кодом curl 0. Отфильтрованная запись
+`/api/traffic?query=77.88.8.8` сообщила `country=RU`, `countryName=Россия`,
+`reason=match[13] rule_set=geoip-RU`, `group=default`,
+`connection=keenetic-uplink`, TCP/443. `kind=unconfirmed`: журнал не подтвердил
+физический egress, хотя клиент получил HTTP-ответ от адреса назначения.
+
+Контрольный IP-literal запрос к `1.1.1.1` (AU) вернул HTTP 301. Фильтр журнала
+показал событие `unconfirmed` с причиной `opt-in flow trace summary`, без группы
+и выбранного подключения; поэтому этот контроль не подтверждает конкретный
+VPN-выход.
+
+После проверки удалены временные IPK и `profile-check.py` из inbox, а также
+staging-файлы. Временный LAN-only `hestia-cli` listener остановлен; ранее
+существовавший listener на `198.51.100.11:8081` этим обновлением не менялся.
+Rollback IPK и копия конфигурации сохранены в закрытом backup-каталоге.
+
+**Границы вывода.** Подтверждены установка, readiness, managed profile,
+синтаксис sing-box, порядок правил, country match для IP-literal и выбранный
+провайдерский outbound в журнале. В журнале не подтверждён выбор Msk AWG 3.1 или
+Msk H2 для контрольного не-RU запроса; прямой физический egress счётчиками
+интерфейса или packet capture также не подтверждён.
