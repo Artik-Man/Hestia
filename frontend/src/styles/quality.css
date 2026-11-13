@@ -18,8 +18,7 @@
   padding: 1rem;
   min-width: 0;
 }
-.check-card p,
-.quality-group details {
+.check-card p {
   color: var(--ui-muted);
   font-size: 0.875rem;
 }
@@ -74,11 +73,16 @@ input[type="number"] {
 .quality-group th:first-child {
   width: auto;
 }
-summary {
-  cursor: pointer;
+.check-score {
+  display: block;
+  font-size: 1.25rem;
+  line-height: 1.4;
 }
-.quality-group details p {
-  margin-top: 0.35rem;
+.check-samples {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--ui-muted);
+  font-size: 0.75rem;
 }
 .card-title {
   display: flex;

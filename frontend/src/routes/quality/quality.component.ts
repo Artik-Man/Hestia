@@ -8,7 +8,6 @@ import {
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ButtonDirective } from "primeng/button";
-import { KeyValuePipe } from "@angular/common";
 import { TableModule } from "primeng/table";
 import { Subscription, timer, timeout } from "rxjs";
 import { PanelService } from "../../core/services/api/generated/api/panel.service";
@@ -21,7 +20,7 @@ import { QualityEditor } from "../../core/components/quality-report/quality-repo
 /** QualityScreen displays the gateway's ordered group rows and refreshes without disturbing edits. */
 @Component({
   selector: "hestia-quality",
-  imports: [ButtonDirective, QualityEditor, TableModule, KeyValuePipe],
+  imports: [ButtonDirective, QualityEditor, TableModule],
   templateUrl: "./quality.component.html",
   styleUrl: "../../styles/quality.css",
   changeDetection: ChangeDetectionStrategy.OnPush,

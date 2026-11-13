@@ -91,34 +91,16 @@
                   } @else if (
                     item && item.score !== null && item.score !== undefined
                   ) {
-                    <strong>{{ roundScore(item.score) }}%</strong>
+                    <strong class="check-score"
+                      >{{ roundScore(item.score) }}%</strong
+                    >
                   } @else {
                     Нет данных
                   }
                   @if (item && !item.unsupported) {
-                    <details>
-                      <summary>
-                        Успешно {{ item.successes }} из {{ item.samples }}
-                      </summary>
-                      @for (target of item.targets; track target.target) {
-                        <p>
-                          {{ target.target }} · {{ target.successes }} из
-                          {{ target.samples }}
-                          @if (target.localErrors) {
-                            · Ошибки измерителя: {{ target.localErrors }}
-                          }
-                          @if (target.dnsErrors) {
-                            · Ошибки DNS: {{ target.dnsErrors }}
-                            @for (
-                              code of target.dnsResponseCodes | keyvalue;
-                              track code.key
-                            ) {
-                              · RCODE {{ code.key }} — {{ code.value }}
-                            }
-                          }
-                        </p>
-                      }
-                    </details>
+                    <small class="check-samples">
+                      {{ item.successes }} / {{ item.samples }}
+                    </small>
                   }
                 </td>
               }
